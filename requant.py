@@ -16,6 +16,7 @@ class Classification(object):
         self.bam_file = bam_file
         self.bed_file = bed_file
         self.output_file = output_file
+        self.outf = open(self.output_file, 'w') if self.output_file else sys.stdout
         self.junc_cutoff = junc_cutoff
         self.counts = {}
         self.bps = self.get_breakpoints()
@@ -87,26 +88,29 @@ class Classification(object):
                 
             self.counts[ref_id] = (reads_gene_a, reads_gene_b, junc_reads, span_pairs)
 
-        print("FGID;MD5;Type;Reads_Gene_A;Reads_Gene_B;Junc_Reads;Span_Pairs")
+        self.outf.write("FGID;MD5;Type;Reads_Gene_A;Reads_Gene_B;Junc_Reads;Span_Pairs\n")
         for ref_id in sorted(self.counts):
             ref_id_split = ref_id.rsplit("_", 2)
             fgid = ref_id_split[0]
             context_id = ref_id_split[1]
             type = ref_id_split[2]
             (reads_gene_a, reads_gene_b, junc_reads, span_pairs) = self.counts[ref_id]
-            print("{};{};{};{};{};{};{}".format(fgid, context_id, type, reads_gene_a, reads_gene_b, junc_reads, span_pairs))
+            self.outf.write("{};{};{};{};{};{};{}\n".format(fgid, context_id, type, reads_gene_a, reads_gene_b, junc_reads, span_pairs))
+
+        if self.outf is not sys.stdout:
+            self.outf.close()
 
 
 def main():
     parser = ArgumentParser(description='Extracts information on fusion genes')
     parser.add_argument('-i', '--bam', dest='bam', help='Specify input alignment file (BAM).', required=True)
     parser.add_argument('-b', '--bed', dest='bed', help='Specify reference fusion BED file.', required=True)
-    parser.add_argument('-o', '--output', dest='output', help='Specify output file with mapping information', default=sys.stdout)
+    parser.add_argument('-o', '--output-file', dest='output_file', help='Specify output file with mapping information', default="")
     parser.add_argument('-c', '--junc-cutoff', dest='junc_cutoff', help='Specify cutoff for junction reads. A Read has to overlap the breakpoint with at least <INT> bases.', default=10)
 
     args = parser.parse_args()
 
-    c = Classification(args.bam, args.bed, args.output, args.junc_cutoff)
+    c = Classification(args.bam, args.bed, args.output_file, args.junc_cutoff)
 
     c.run()
 
