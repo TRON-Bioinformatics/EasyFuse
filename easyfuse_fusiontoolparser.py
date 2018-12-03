@@ -244,7 +244,7 @@ class FusionParser(object):
                     #   elements[59] ~ gene_strand (only if --gene-gtf specified): The annotated genes strands, if there are
                     # * elements[60] ~ annotated_gene_donor (only if --gene-gtf specified): The name of the gene annotated to the doner site of the fusion
                     # * elements[61] ~ annotated_gene_acceptor (only if --gene-gtf specified): The name of the gene annotated to the acceptor site of the fusion
-                    fusion_gene = (elements[60] + elements[61]).rstrip(",").replace(",", "_").upper()
+                    fusion_gene = (elements[60].split(",")[0] + "_" + elements[61].split(",")[0]).upper()
                     fp_write.write(fusion_gene.replace("_", "--") + "\n")
 
                     # element[0] = chr num, [1/2] = breakpoints, [5] = strands
@@ -351,7 +351,7 @@ class FusionParser(object):
                     #   elements[31] ~ expression_2
                     #   elements[32] ~ splice_motif
                     #   elements[33] ~ filters
-                    fusion_gene = "{0}_{1}".format(self.get_fusion_gene_id_infusion(elements[22]), self.get_fusion_gene_id_infusion(elements[28])).upper()
+                    fusion_gene = "{0}_{1}".format(self.get_fusion_gene_id_infusion(elements[21], elements[22]), self.get_fusion_gene_id_infusion(elements[27], elements[28])).upper()
                     fp_write.write("{0}\n".format(fusion_gene.replace("_", "--")))
 
                     # element[1/4] = chr num, [2/5] = breakpoints, [23/29] = strands
@@ -375,8 +375,13 @@ class FusionParser(object):
         return fusion_map
 
     @staticmethod
-    def get_fusion_gene_id_infusion(transcript_list_field):
+    def get_fusion_gene_id_infusion(gene_id, transcript_list_field):
         """Helper method for infusion data parsing. Returns the most frequently listed fusion id in a list of fusion ids"""
+        # if only 1 gene id is returned as fusion partner, return this
+        if not ";" in gene_id:
+            return gene_id.replace("_","-")
+        
+        # if 2 or more gene ids are given, take the most frequent from the transcript list
         gid_dict = {}
         for gid in transcript_list_field.split(";"):
             id_test = gid.split(":")[0][:-4]
@@ -384,7 +389,9 @@ class FusionParser(object):
                 gid_dict[id_test] = 0
             gid_dict[id_test] += 1
 
-        return max(gid_dict.iteritems(), key=operator.itemgetter(1))[0]
+        best_hit = max(gid_dict.iteritems(), key=operator.itemgetter(1))[0]
+
+        return best_hit.replace("_","-")
 
     # pizzly - results file is "kallizzy.json.txt"
     def get_pizzly_results(self):
