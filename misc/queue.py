@@ -1,15 +1,24 @@
 #!/usr/bin/env python
+"""
+Simple method collection for:
+1) Job submission to slurm workload manager (Creates an sbatch file and starts it)
+2) Program execution outside the scheduler with "subprocess"
+3) Slurm queue querying
 
+@author: Tron (PASO), BNT (URLA)
+@version: 20181126
+"""
+
+from __future__ import print_function
 import os
 import sys
-import time
 import subprocess
 
 from argparse import ArgumentParser
 
 
 def get_jobs_by_name(name, system="slurm"):
-    '''This function returns a list of job ids for a given job name.'''
+    """This function returns a list of job ids for a given job name."""
     if system == "slurm":
         return get_jobs_by_name_slurm(name)
     elif system == "pbs":
@@ -26,10 +35,11 @@ def get_jobs_with_name_pbs(name):
     job_id = ""
     job_name = ""
     for x in output.rstrip().split("\n"):
-        if x.lstrip().startswith("Job Id"):
-            job_id = x.lstrip().rsplit(" ",1)[1]
-        if x.lstrip().startswith("Job_Name"):
-            job_name = x.lstrip().split(" = ")[1]
+        line = x.lstrip()
+        if line.startswith("Job Id"):
+            job_id = line.rsplit(" ",1)[1]
+        if line.startswith("Job_Name"):
+            job_name = line.split(" = ")[1]
 
             if name == job_name:
                 jobs.append(job_id)
@@ -38,100 +48,117 @@ def get_jobs_with_name_pbs(name):
     return jobs
 
 def get_jobs_by_name_slurm(name):
+    """Check if slurm job is already running (by name) and return its jobid if it does"""
     output = ""
     try:
-        output = subprocess.check_output(["squeue", "-o %.18i %.9P %.60j %.8u %.2t %.10M %.6D %R"])
-    except:
-        output = subprocess.Popen(["squeue", "-o %.18i %.9P %.60j %.8u %.2t %.10M %.6D %R"], stdout=subprocess.PIPE).communicate()[0]
+        output = subprocess.check_output(["squeue", "-o %i %j"])
+    except subprocess.CalledProcessError as call_error:
+        print(call_error.output)
+        output = subprocess.Popen(["squeue", "-o %i %j"], stdout=subprocess.PIPE).communicate()[0]
     jobs = []
-    for x in output.rstrip().split("\n")[1:]:
-        elements = x.lstrip().split()
+    for job_list in output.rstrip().split("\n")[1:]:
+        elements = job_list.lstrip().split()
 
-        if name in elements[2]:
+        if name in elements[1]:
             jobs.append(elements[0])
     return jobs
 
 
 def submit(job_name, cmd, cores, mem_usage, output_results_folder, dependencies, partitions, sched="slurm"):
     if sched == "slurm":
-        submit_slurm(job_name, cmd, cores, mem_usage, output_results_folder, dependencies, partitions)
+        _submit_slurm(job_name, cmd, cores, mem_usage, output_results_folder, dependencies, partitions)
     elif sched == "pbs":
-        submit_pbs(job_name, cmd, cores, mem_usage, output_results_folder, dependencies)
+        _submit_pbs(job_name, cmd, cores, mem_usage, output_results_folder, dependencies)
     else:
-        submit_nonqueue(cmd, output_results_folder)
+        _submit_nonqueue(cmd, output_results_folder)
     
-def submit_nonqueue(cmd, output_results_folder):
+def _submit_nonqueue(cmd, output_results_folder):
     print(cmd)
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=output_results_folder, shell=True)
     (stdoutdata, stderrdata) = p.communicate()
     r = p.returncode
     if r != 0:
+        print("Error: Command \"{}\" returned non-zero exit status".format(cmd))
         print(stderrdata)
         sys.exit(1)
 
-def submit_pbs(job_name, cmd, cores, mem_usage, output_results_folder, dependencies):
-    p = subprocess.Popen('qsub', stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-    (output, input) = (p.stdout, p.stdin)
 
-    processors = "nodes=1:ppn={},mem={}gb,vmem={}gb".format(cores, mem_usage, mem_usage)
-    error_file = os.path.join(output_results_folder, "error.log")
-    output_file = os.path.join(output_results_folder, "output.log")
+def _submit_pbs(job_name, cmd, cores, mem_usage, output_results_folder, dependencies):
+    """This function submits a predefined job with specific PBS parameters to the Portable Batch System (PBS)."""
 
-    job_string = """#!/bin/bash
-#PBS -N {}
-#PBS -l walltime=999:00:00
-#PBS -l {}
-#PBS -W depend=afterok:{}
-#PBS -d {}
-#PBS -e {}
-#PBS -o {}
-
-{}""".format(job_name, walltime, processors, ":".join(dependencies), output_results_folder, error_file, output_file, cmd)
-
-    # Send job_string to qsub
-    input.write(job_string)
-    input.close()
-
-    print(job_string)
-        
-    time.sleep(1)
-
-
-def submit_slurm(job_name, cmd, cores, mem_usage, output_results_folder, dependencies, partitions):
-    '''This function submits a predefined job with specific SBATCH parameters to the Slurm workload manager system.'''
-    p = subprocess.Popen('sbatch', stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-    (output, input) = (p.stdout, p.stdin)
-
-    depend = ""
+    depend = "\n"
     if len(dependencies) != 0:
-        depend = "#SBATCH --dependency=afterok:{}".format(":".join(dependencies))
-    else:
-        depend = ""
+        depend = "#PBS -W depend=afterok:{}\n".format(":".join(dependencies))
+
     error_file = os.path.join(output_results_folder, "error.log")
     output_file = os.path.join(output_results_folder, "output.log")
 
-    job_string = """#!/bin/bash
-#SBATCH -J {}
-#SBATCH -p {}
-#SBATCH --kill-on-invalid-dep=yes
-#SBATCH --cpus-per-task={}
-#SBATCH --mem={}
-#SBATCH --time=30-00:00:00
-{}
-#SBATCH --workdir={}
-#SBATCH --error={}
-#SBATCH --output={}
+    # Generate pbs script for your job in working dir
+    pbs_script = os.path.join(output_results_folder, job_name + ".pbs")
+    with open(pbs_script, "w") as pbs:
+        pbs.writelines([
+            "#!/bin/bash\n",
+            "#PBS -N {}\n".format(),
+            "#PBS -l walltime=999:00:00",
+            "#PBS -l nodes=1:ppn={},mem={}gb,vmem={}gb\n".format(cores, mem_usage, mem_usage),
+            depend,
+            "#PBS -d {}\n".format(output_results_folder),
+            "#PBS -e {}\n".format(error_file),
+            "#PBS -o {}\n".format(output_file),
+            "{}".format(cmd)
+        ])
 
-srun {}""".format(job_name, partitions, cores, int(mem_usage)*1000, depend, output_results_folder, error_file, output_file, cmd)
+    # and run it
+    try:
+        output = subprocess.check_output(["qsub", pbs_script])
+        print("{} ({})\n".format(output.rstrip(), job_name))
+    except subprocess.CalledProcessError as call_error:
+        print(call_error.output)
+        print("Could not start pbs script {}".format(pbs_script))
+        sys.exit(1)
 
-    input.write(job_string)
-    input.close()
+
+def _submit_slurm(job_name, cmd, cores, mem_usage, output_results_folder, dependencies, partitions):
+    """This function submits a predefined job with specific SBATCH parameters to the Slurm workload manager system."""
+
+    depend = "\n"
+    if len(dependencies) != 0:
+        depend = "#SBATCH --dependency=afterok:{}\n".format(":".join(dependencies))
+    error_file = os.path.join(output_results_folder, "error.log")
+    output_file = os.path.join(output_results_folder, "output.log")
 
     # Generate sbatch script for your job in working dir
-    outf = open(os.path.join(output_results_folder, "{}.sbatch".format(job_name)), "w")
-    print(job_string)
-    outf.write(job_string)
-    outf.close()
+    slurm_script = os.path.join(output_results_folder, job_name + ".sbatch")
+    with open(slurm_script, "w") as sbatch:
+        sbatch.writelines([
+
+            "#!/bin/bash\n",
+            "#SBATCH -J {}\n".format(job_name),
+            "#SBATCH -p {}\n".format(partitions),
+            "#SBATCH --account {}\n".format(userid),
+            "#SBATCH --kill-on-invalid-dep=yes\n",
+            "#SBATCH --cpus-per-task={}\n".format(cores),
+            "#SBATCH --mem={}\n".format(int(mem_usage)*1000),
+            "#SBATCH --time=30-00:00:00",
+            depend,
+            "#SBATCH --workdir={}\n".format(output_results_folder),
+            "#SBATCH --error={}\n".format(error_file),
+            "#SBATCH --output={}\n".format(output_file),
+            "#SBATCH --requeue\n",
+            "\n",
+            "set -eo pipefail -o nounset\n",
+            "srun {}\n".format(cmd)
+        ])
+
+    # and run it
+    try:
+        output = subprocess.check_output(["sbatch", slurm_script])
+        print("{} ({})\n".format(output.rstrip(), job_name))
+    except subprocess.CalledProcessError as call_error:
+        print(call_error.output)
+        print("Could not start slurm script {}".format(slurm_script))
+        sys.exit(1)
+
 
 def main():
     parser = ArgumentParser(description='Handle data streams')
