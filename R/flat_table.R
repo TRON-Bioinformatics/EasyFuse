@@ -202,7 +202,6 @@ flat_table <- function(sample_folder, tools = c("infusion", "starfusion",
   #-----------------------------------------------------------------------------
   # combine all tables into a single flat table
   #-----------------------------------------------------------------------------
-  
   flat_fusions_raw <- context_seq %>% 
     left_join(FGID_to_tool, by = "FGID") %>%
     left_join(FGID_to_tool_count, by = "FGID") %>%
@@ -236,10 +235,10 @@ flat_table <- function(sample_folder, tools = c("infusion", "starfusion",
   #cpm = reads / total_read_pairs * 10^6  
   flat_fusions <- flat_fusions %>% 
     mutate_at(
-      .vars = vars(matches("_junc$|_span$_a$_b$")),
+      .vars = vars(matches("_junc$|_span$|_a$|_b$")),
       .funs = function(x){ x / total_read_pairs * 10^6}
       )
 
-    return(flat_fusions)
+  return(flat_fusions)
   
 }
