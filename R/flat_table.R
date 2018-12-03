@@ -47,6 +47,18 @@ read_quantification <- function(file_path){
 
   }
 
+#' parse read counts from FASTQC file
+#' 
+#' @param fastqc_file Path to fastqc output file 
+#' 
+#' @return the total read counts as integer
+#' 
+parse_read_counts <- function(fastqc_file){
+  content <- readr::read_file(fastqc_file) %>% 
+    str_match(pattern = "Total Sequences\\s([\\d]*)") %>% 
+    magrittr::extract(, 2) %>% 
+    parse_integer()
+}
 
 #' A function to parse all nececary files from a EsayFuse output sample
 #' 
@@ -85,6 +97,11 @@ flat_table <- function(sample_folder, tools = c("infusion", "starfusion",
     fs::file_exists(context_seq_file),
     fs::file_exists(fastqc_files)
     )
+  
+  # assume two fastqc files 
+  stopifnot(
+    length(fastqc_files) == 2
+  )
   
 
   #-----------------------------------------------------------------------------
@@ -161,6 +178,10 @@ flat_table <- function(sample_folder, tools = c("infusion", "starfusion",
   
   # combine potentially multiple transcripts to one entry per context sequence
   context_seq <- context_seq_raw %>% 
+    
+    # filter out missing context_sequence
+    filter(!is.na(context_sequence)) %>% 
+    
     group_by(FGID, Fusion_Gene, Breakpoint1, Breakpoint2, 
              context_sequence_id, context_sequence, 
              type, exon_boundary1, exon_boundary2, exon_boundary, context_sequence_bp) %>% 
@@ -181,15 +202,43 @@ flat_table <- function(sample_folder, tools = c("infusion", "starfusion",
   #-----------------------------------------------------------------------------
   # combine all tables into a single flat table
   #-----------------------------------------------------------------------------
-  
-  flat_fusions <- context_seq %>% 
+  flat_fusions_raw <- context_seq %>% 
     left_join(FGID_to_tool, by = "FGID") %>%
     left_join(FGID_to_tool_count, by = "FGID") %>%
-    left_join(quant_data, by = c("FGID", "context_sequence_id")) %>% 
+    left_join(quant_data, by = c("FGID", "context_sequence_id"))
+  
+  # Fix mutliplie FGID and Fusion_Gene columns for same context_sequence_id
+  flat_fusions <- flat_fusions_raw %>% 
+    
+    
+    # # combine FGID and Fusion_Gene columns by ";"
+    # group_by(context_sequence_id, Breakpoint1, Breakpoint2) %>% 
+    # summarize(
+    #   FGID = str_c(FGID, collapse = ";"),
+    #   Fusion_Gene = str_c(Fusion_Gene, collapse = ";")
+    # ) %>% 
+    # left_join(
+    #   flat_fusions_raw %>% select(-FGID, -Fusion_Gene) %>% distinct(),
+    #   by = c("context_sequence_id", "Breakpoint1", "Breakpoint2")
+    # )
+    distinct(context_sequence_id, Breakpoint1, Breakpoint2, .keep_all = TRUE) %>% 
   
     # rearrange columns for better overview
     select(Sample, Fusion_Gene, FGID, context_sequence_id, everything())
-  
-  return(flat_fusions)
 
+  #-----------------------------------------------------------------------------
+  # Normalize read counts to CPM
+  #-----------------------------------------------------------------------------
+  total_read_pairs <- map_int(fastqc_files, parse_read_counts) %>% 
+    sum()
+  
+  #cpm = reads / total_read_pairs * 10^6  
+  flat_fusions <- flat_fusions %>% 
+    mutate_at(
+      .vars = vars(matches("_junc$|_span$|_a$|_b$")),
+      .funs = function(x){ x / total_read_pairs * 10^6}
+      )
+
+  return(flat_fusions)
+  
 }
