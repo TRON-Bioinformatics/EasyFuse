@@ -102,10 +102,8 @@ class Samples(object):
     def write_file(self):
         """Write a sample file to disk"""
         with open(self.infile, 'w') as outf:
-            outf.write("{}\t{}\n".format("#sample_id",
-                                         "state",
-                                         "fastq_files")
-            for key in self.sample_map.iterkeys():
+            outf.write("{}\t{}\n".format("#sample_id", "state", "fastq_files"))
+            for key in self.sample_map:
                 (state, fastq) = self.sample_map[key]
                 outf.write("{}\t{}\t{}\n".format(key, state, fastq))
 
