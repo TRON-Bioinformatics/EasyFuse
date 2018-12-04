@@ -1,8 +1,16 @@
 #!/usr/bin/env python
 
 """
-Main class for processing large cohorts of data with easyfuse pipeline
+Read fastq files
+create per-sample (sub)folder tree
+run gene fusion predictions
+start data collection
+during all steps, perform slurm scheduling and process monitoring
+
+@author: Tron (PASO), BNT (URLA)
+@version: 20181126
 """
+
 
 from __future__ import print_function
 import os
@@ -14,30 +22,54 @@ from misc.config import Config
 from misc.samples import Samples
 import misc.queue as Queueing
 import misc.io_methods as IOMethods
+from misc.versioncontrol import VersCont
+import misc.version as eav
+
 
 class Processing(object):
-    def __init__(self, config, input_paths, working_dir, ref_genome, min_rl_perc, filter_reads, partitions):
-        '''This function inits the input parameters and creates the working directory.'''
-        self.cfg = config
-        self.input_paths = []
-        for i in input_paths:
-            self.input_paths.append(i.rstrip("/"))
+    """Run, monitor and schedule fastq processing for fusion gene prediction"""
+    def __init__(self, config, input_path, working_dir, partitions, userid, overwrite):
+        """Parameter initiation and work folder creation. Start of progress logging."""
         self.working_dir = working_dir.rstrip("/")
-        IOMethods.create_folder(self.working_dir)
+        self.logger = Logger(os.path.join(self.working_dir, "processing_{}.log".format(str(int(round(time.time()))))))
+        urlaio.create_folder(self.working_dir, self.logger)
+        self.logger.info("Starting easyfuse")
+        self.cfg = config
+        self.input_path = input_path
         self.samples = Samples(os.path.join(self.working_dir, "samples.csv"))
-        self.ref_genome = ref_genome
-        self.min_rl_perc = min_rl_perc
-        self.filter_reads = filter_reads
         self.partitions = partitions
+        self.userid = userid
+        self.overwrite = overwrite
         self.sched = self.cfg.get('general', 'queueing_system')
 
-    def run(self):
-        '''This function starts processing of the samples.'''
+    # The run method simply greps and organises fastq input files.
+    # Fastq pairs (single end input is currently not supported) are then send to "execute_pipeline"
+    def run(self, tool_num_cutoff, filter_reads, icam_run):
+        """General parameter setting, identification of fastq files and initiation of processing"""
+        # Checking dependencies
+        VersCont(self.cfg.get('easyfuse_helper', 'dependencies')).get_and_print_tool_versions()
+        
+        # urla: organism is currently not used for anything, however, this might change; is mouse processing relevant at some point?
+        ref_genome = self.cfg.get('general', 'ref_genome_build')
+        ref_trans = self.cfg.get('general', 'ref_trans_version')
 
+        self.logger.info("Reference Genome: {0}, Reference Transcriptome: {1}".format(ref_genome, ref_trans))
+        if self.overwrite:
+            self.logger.info("#############################################################################")
+            self.logger.info("")
+            self.logger.info("Overwrite flag is set => all previously existing results may be overwritten!")
+            self.logger.info("")
+            self.logger.info("#############################################################################")
+            
+        # get fastq files
+        # urla: the icam_run flag starts a file walker which searches fastq files in a dir-tree containing icam-flowcell folders
+        #       An example of an input root folder would be "/mnt/bfx/IVAC2_0/BNT/iCaM2Scheduler/data/demux_out"
+        #       Only folders containing a valid (see iomethods for details) "demux_stats.csv" file can be processed atm
+        # urla: the icam_run flag is probably not necessary for production usage but very convenient if novel tools/methods should be run on a bunch of existing datasets (future development / evaluations)
         if icam_run:
             self.logger.info("Started processing of icam data; searching fastq files in \"{}\"".format(self.input_path))
             # print(len(self.samples.sample_map)) <- 0 for empty list
-            _, fastq_dict, counter_list = urlaio.get_icam_reads_data(self.input_path, list(self.samples.sample_map), self.logger)
+            _, fastq_dict, counter_list = IOMethods.get_icam_reads_data(self.input_path, list(self.samples.sample_map), self.logger)
             count_all = sum(counter_list)
             self.logger.debug("Found a total of {0} datasets in the specified folder, {1} have been processed previously, {2} are new.".format(count_all, counter_list[0], counter_list[1]))
             self.logger.debug("{0} datasets could not be processed due to an unexpected format of the demux_stats.csv file.".format(counter_list[2]))
@@ -50,27 +82,19 @@ class Processing(object):
                 self.logger.info("Sample 2: {}".format(fastq_dict[sample_id_key][1]))
                 self.execute_pipeline(fastq_dict[sample_id_key][0], fastq_dict[sample_id_key][1], sample_id, ref_genome, ref_trans, tool_num_cutoff, filter_reads)
         else:
-            fastqs = IOMethods.get_fastq_files(self.input_paths)
-            file_array = sorted(fastqs)
-            left = []
-            right = []
-            for i in range(len(file_array)):
-                file_array_split = file_array[i].rsplit("_",2)
-                if "R1" in file_array_split[1]:
-                    left.append(file_array[i])
-                elif "R2" in file_array_split[1]:
-                    right.append(file_array[i])
-            for i,ele in enumerate(left):
-                sample_id = left[i].rsplit("/",1)[1].rsplit("_",2)[0]
-                if len(right) != 0:
-                    print("Processing Sample ID: {} (paired-end)".format(sample_id))
-                    print("Sample 1: {}".format(left[i]))
-                    print("Sample 2: {}".format(right[i]))
-                    self.execute_pipeline(left[i], right[i], sample_id)
+            left, right, sample_id = IOMethods.get_fastq_files(self.input_path, self.logger)
+            for i, _ in enumerate(left):
+                #sample_id = re.search('(\w*)(\_|\_R)([1])(\_|\.f)', urlaio.path_leaf(left[i])).group(1) # urla - todo: check pylint w1401 (is this a correct regex?)
+                print(sample_id)
+                if len(left) == len(right):
+                    self.logger.info("Processing Sample ID: {} (paired end)".format(sample_id))
+                    self.logger.info("Sample 1: {}".format(left[i]))
+                    self.logger.info("Sample 2: {}".format(right[i]))
+                    #self.execute_pipeline(left[i], right[i], sample_id, ref_genome, ref_trans, tool_num_cutoff, filter_reads)
+                    
 
     def execute_pipeline(self, fq1, fq2, sample_id):
-        '''This function executes a defined set of tools on a given sample and creates the respective folder structure.'''
-        
+        """Create sample specific subfolder structure and run tools on fastq files"""
         organism = "human" if self.ref_genome in ['hg18', 'hg19', 'hg38'] else "mouse"
 
         self.samples.add_sample(sample_id, "NA", "R1:{};R2:{}".format(fq1, fq2))
@@ -88,8 +112,6 @@ class Processing(object):
         infusion_cfg_path = self.cfg.get("otherFiles", "{0}_infusion_cfg_{1}".format(ref_trans, ref_genome))
         starchip_param_path = self.cfg.get("otherFiles", "{0}_starchip_param_{1}".format(ref_trans, ref_genome))
 
-
-#        output_results_folder = os.path.join(self.working_dir, "Sample_{}".format(sample_id), "scratch")
         output_results_folder = os.path.join(self.working_dir, sample_id, "scratch")
         filtered_reads_path = os.path.join(output_results_path, "filtered_reads")
         expression_path = os.path.join(output_results_folder, "expression")
@@ -111,6 +133,7 @@ class Processing(object):
         # IVAC specific tools
         pizzly_path = os.path.join(fusion_path, "pizzly")
         starchip_path = os.path.join(fusion_path, "starchip")
+
 
         fetchdata_path = os.path.join(self.working_dir, sample_id, "fetchdata")
 
