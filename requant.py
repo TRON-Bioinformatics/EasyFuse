@@ -36,18 +36,21 @@ class Classification(object):
         samfile = pysam.AlignmentFile(self.bam_file, 'rb')
 
         ref_ids = samfile.references[:-1]
-
         for ref_id in ref_ids:
             reads_on_ref_l = {}
             reads_on_ref_r = {}
             for read in samfile.fetch(ref_id):
+                if read.flag > 255:
+                    continue
                 query_name = read.query_name
                 start = read.reference_start
                 end = read.reference_end
+                
                 if read.is_read1:
                     reads_on_ref_l[query_name] = (start, end)
                 else:
                     reads_on_ref_r[query_name] = (start, end)
+
 
             bp_pos = self.bps[ref_id][0]
 
@@ -60,21 +63,28 @@ class Classification(object):
                 (start_r1, end_r1) = reads_on_ref_l[query_name]
                 (start_r2, end_r2) = reads_on_ref_r[query_name]
 
-
-                if start_r1 < bp_pos:
+                if end_r1 < bp_pos:
                     reads_gene_a += 1
 
-                if start_r2 < bp_pos:
+                if end_r2 < bp_pos:
                     reads_gene_a += 1
 
-                if end_r1 > bp_pos:
+                if start_r1 > bp_pos:
                     reads_gene_b += 1
 
-                if end_r2 > bp_pos:
+                if start_r2 > bp_pos:
                     reads_gene_b += 1
 
-                if (start_r1 <= bp_pos <= end_r2 or
-                    start_r2 <= bp_pos <= end_r1):
+                if (
+                        (start_r1 < bp_pos and 
+                         end_r1 < bp_pos and 
+                         start_r2 > bp_pos and 
+                         end_r2 > bp_pos) or 
+                        (start_r1 > bp_pos and 
+                         end_r1 > bp_pos and 
+                         start_r2 < bp_pos and 
+                         end_r2 < bp_pos)
+                ):
                     # Increment spanning pair count
                     span_pairs += 1
 
@@ -87,6 +97,7 @@ class Classification(object):
                     junc_reads += 1
                 
             self.counts[ref_id] = (reads_gene_a, reads_gene_b, junc_reads, span_pairs)
+
 
         self.outf.write("FGID;MD5;Type;Reads_Gene_A;Reads_Gene_B;Junc_Reads;Span_Pairs\n")
         for ref_id in sorted(self.counts):
@@ -106,7 +117,7 @@ def main():
     parser.add_argument('-i', '--bam', dest='bam', help='Specify input alignment file (BAM).', required=True)
     parser.add_argument('-b', '--bed', dest='bed', help='Specify reference fusion BED file.', required=True)
     parser.add_argument('-o', '--output-file', dest='output_file', help='Specify output file with mapping information', default="")
-    parser.add_argument('-c', '--junc-cutoff', dest='junc_cutoff', help='Specify cutoff for junction reads. A Read has to overlap the breakpoint with at least <INT> bases.', default=10)
+    parser.add_argument('-c', '--junc-cutoff', dest='junc_cutoff', type=int, help='Specify cutoff for junction reads. A Read has to overlap the breakpoint with at least <INT> bases.', default=10)
 
     args = parser.parse_args()
 

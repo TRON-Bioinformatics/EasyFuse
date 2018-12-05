@@ -28,7 +28,7 @@ def get_jobs_with_name_pbs(name):
     jobs = []
     output = ""
     try:
-        output = subprocess.check_output(["qstat", "-f"])
+        output = subprocess.check_output(["qstat", "-f"], universal_newlines=True)
     except:
         output = subprocess.Popen(["qstat", "-f"],stdout=subprocess.PIPE).communicate()[0]
 
@@ -51,7 +51,7 @@ def get_jobs_by_name_slurm(name):
     """Check if slurm job is already running (by name) and return its jobid if it does"""
     output = ""
     try:
-        output = subprocess.check_output(["squeue", "-o %i %j"])
+        output = subprocess.check_output(["squeue", "-o %i %j"], universal_newlines=True)
     except subprocess.CalledProcessError as call_error:
         print(call_error.output)
         output = subprocess.Popen(["squeue", "-o %i %j"], stdout=subprocess.PIPE).communicate()[0]
