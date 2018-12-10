@@ -14,7 +14,7 @@ import os
 import re
 import operator
 from argparse import ArgumentParser
-from easyfuse_logger import Logger
+from misc.logger import Logger
 
 
 # pylint: disable=line-too-long
