@@ -24,6 +24,9 @@ class Samples(object):
         self.infile = infile
         if not os.path.exists(self.infile):
             open(self.infile, "a").close()
+            self.sample_map = {}
+            self.write_file()
+
         self.sample_map = self.read_file()
 
     # getter and setter methods
@@ -70,6 +73,17 @@ class Samples(object):
         if sample_id in self.sample_map:
             del self.sample_map[sample_id]
         self.write_file()
+
+    def get_tool_list_from_state(self, sample_id):
+        """Get a list of tools that have been successfully run on a sample based on its id"""
+        state = self.get_state(sample_id)
+        tools = []
+        if ", " in state:
+            for tool in state.split(", "):
+                tools.append(tool.split("-")[0])
+        else:
+            tools = state.split("-")[0]
+        return tools
 
     def append_state(self, sample_id, state):
         """Append something to an existing state or use update"""

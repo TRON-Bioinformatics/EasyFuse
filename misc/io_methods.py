@@ -31,9 +31,9 @@ def create_folder(path, logger=None):
             print("Created folder {}".format(path))
     else:
         if logger:
-            logger.debug("Folder {} already exists".format(folder))
+            logger.debug("Folder {} already exists".format(path))
         else:
-            print("Folder {} already exists".format(folder))    
+            print("Folder {} already exists".format(path))
 
 
 def grant_permissions(path, mode):
@@ -96,7 +96,7 @@ def get_fastq_files(input_path, logger=None):
             print('Warning: Ignoring \"{}\" as it doesn\'t seem to be a valid fastq file'.format(fq_file))
     # Check whether file names match between paired files
     if right:
-        for _, i in enumerate(left):
+        for i, fq_file in enumerate(left):
             # urla: ids for comparison are not generally applicable here, as they remove lane numbers as well
             #sample_id_l = re.search('(\w*)(\_|\_R)([1])(\_|\.f)', path_leaf(left[i])).group(1)
             #sample_id_r = re.search('(\w*)(\_|\_R)([2])(\_|\.f)', path_leaf(right[i])).group(1)

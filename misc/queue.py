@@ -64,9 +64,9 @@ def get_jobs_by_name_slurm(name):
     return jobs
 
 
-def submit(job_name, cmd, cores, mem_usage, output_results_folder, dependencies, partitions, sched="slurm"):
+def submit(job_name, cmd, cores, mem_usage, output_results_folder, dependencies, partitions, userid, sched="slurm"):
     if sched == "slurm":
-        _submit_slurm(job_name, cmd, cores, mem_usage, output_results_folder, dependencies, partitions)
+        _submit_slurm(job_name, cmd, cores, mem_usage, output_results_folder, dependencies, partitions, userid)
     elif sched == "pbs":
         _submit_pbs(job_name, cmd, cores, mem_usage, output_results_folder, dependencies)
     else:
@@ -118,7 +118,7 @@ def _submit_pbs(job_name, cmd, cores, mem_usage, output_results_folder, dependen
         sys.exit(1)
 
 
-def _submit_slurm(job_name, cmd, cores, mem_usage, output_results_folder, dependencies, partitions):
+def _submit_slurm(job_name, cmd, cores, mem_usage, output_results_folder, dependencies, partitions, userid):
     """This function submits a predefined job with specific SBATCH parameters to the Slurm workload manager system."""
 
     depend = "\n"
@@ -139,12 +139,12 @@ def _submit_slurm(job_name, cmd, cores, mem_usage, output_results_folder, depend
             "#SBATCH --kill-on-invalid-dep=yes\n",
             "#SBATCH --cpus-per-task={}\n".format(cores),
             "#SBATCH --mem={}\n".format(int(mem_usage)*1000),
-            "#SBATCH --time=30-00:00:00",
+            "#SBATCH --time=30-00:00:00\n",
             depend,
             "#SBATCH --workdir={}\n".format(output_results_folder),
             "#SBATCH --error={}\n".format(error_file),
             "#SBATCH --output={}\n".format(output_file),
-            "#SBATCH --requeue\n",
+#            "#SBATCH --requeue\n",
             "\n",
             "set -eo pipefail -o nounset\n",
             "srun {}\n".format(cmd)
