@@ -88,9 +88,9 @@ class Samples(object):
     def append_state(self, sample_id, state):
         """Append something to an existing state or use update"""
         if sample_id in self.sample_map:
-            if self.get_state_string(sample_id) == "NA":
+            if self.get_state(sample_id) == "NA":
                 self.set_state(sample_id, state)
-            elif state not in self.get_state_string(sample_id):
+            elif state not in self.get_state(sample_id):
                 self.sample_map[sample_id] = ("{0}, {1}".format(self.get_state(sample_id), state), self.sample_map[sample_id][1])
         self.write_file()
 

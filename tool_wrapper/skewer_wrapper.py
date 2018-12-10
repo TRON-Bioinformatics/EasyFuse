@@ -15,10 +15,9 @@ def main():
     parser.add_argument('-q', '--qc-table', dest='qc_table', help='Specify input QC table', required=True)
     parser.add_argument('-i', '--input', dest='input', nargs='+', help='Specify input FASTQ files', required=True)
     parser.add_argument('-o', '--output', dest='output', help='Specify output folder', default='.')
+    parser.add_argument('-b', '--skewer-bin', dest='skewer_bin', help='Specify path to skewer binary', default="skewer")
     parser.add_argument('-m', '--min-read-length-perc', dest='min_read_length_perc', type=float, help='Specify minimum read length percentage', default=0.75)
     args = parser.parse_args()
-
-    cfg = Config(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'config.ini'))
 
     min_rl_perc = args.min_read_length_perc
     remaining_len = 1000
@@ -33,7 +32,7 @@ def main():
                 remaining_len = remaining
 
     if remaining_len != read_len and remaining_len >= (min_rl_perc * read_len):
-        cmd = "{} -l {} -q 28 -m pe -t 6 -k 5 -z -o out_file {}".format(cfg.get('commands', 'skewer_cmd'), remaining_len, " ".join(args.input))
+        cmd = "{} -l {} -q 28 -m pe -t 6 -k 5 -z -o out_file {}".format(args.skewer_bin, remaining_len, " ".join(args.input))
 
         proc = subprocess.Popen(cmd, shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
         (stdoutdata, stderrdata) = proc.communicate()
@@ -53,14 +52,20 @@ def main():
         open(os.path.join(args.output, "to_be_discarded"), 'a').close()
         sys.exit(1)
     elif remaining_len == read_len:
-        if len(args.input) > 1:
+        if len(args.input) == 2:
             out_1 = os.path.join(args.output, "out_file-trimmed-pair1.fastq.gz")
             out_2 = os.path.join(args.output, "out_file-trimmed-pair2.fastq.gz")
             sys.stdout.write("Nothing to trim. Creating symlinks\n")
             sys.stdout.write("ln -s {} {}\n".format(args.input[0], out_1))
             sys.stdout.write("ln -s {} {}\n".format(args.input[1], out_2))
-            os.symlink(args.input[0], out_1)
-            os.symlink(args.input[1], out_2)
+            try:
+                os.symlink(args.input[0], out_1)
+            except OSError:
+                print("Symlink {} already exists".format(out_1))
+            try:
+                os.symlink(args.input[1], out_2)
+            except OSError:
+                print("Symlink {} already exists".format(out_2))
         else:
             out = os.path.join(args.output, "out_file-trimmed.fastq.gz")
             sys.stdout.write("Nothing to trim. Creating symlink\n")

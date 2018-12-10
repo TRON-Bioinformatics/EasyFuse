@@ -163,7 +163,7 @@ class Processing(object):
 
         cmd_fastqc = "{} --nogroup --extract -t 6 -o {} {} {}".format(self.cfg.get('commands', 'fastqc_cmd'), qc_path, fq1, fq2)
         cmd_qc_parser = "{} -i {}/*/fastqc_data.txt -q {} -o {}".format(self.cfg.get('commands', 'qc_parser_cmd'), qc_path, qc_table_path, overrepresented_path)
-        cmd_skewer = "{} -q {} -m {} -i {} {} -o {}".format(self.cfg.get('commands', 'skewer_wrapper_cmd'), qc_table_path, 0.75, fq1, fq2, skewer_path)
+        cmd_skewer = "{} -q {} -m {} -i {} {} -o {} -b {}".format(self.cfg.get('commands', 'skewer_wrapper_cmd'), qc_table_path, 0.75, fq1, fq2, skewer_path, self.cfg.get('commands', 'skewer_cmd'))
 
         fq0 = ""
         if run_qc:
@@ -207,7 +207,7 @@ class Processing(object):
         # (8) Infusion
         cmd_infusion = "{0} -1 {1} -2 {2} --skip-finished --min-unique-alignment-rate 0 --min-unique-split-reads 0 --allow-non-coding --out-dir {3} {4}".format(self.cfg.get("commands", "infusion_cmd"), fq1, fq2, infusion_path, infusion_cfg_path)
         # (x) Soapfuse
-        cmd_soapfuse = "{} -c {} -q {} -i {} -o {} -g {}".format(self.cfg.get('commands', 'soapfuse_wrapper_cmd'), self.cfg._file, qc_table_path, " ".join([fq1, fq2]), soapfuse_path, "human")
+        cmd_soapfuse = "{} -c {} -q {} -i {} -o {} -g {}".format(self.cfg.get('commands', 'soapfuse_wrapper_cmd'), self.cfg.get_path(), qc_table_path, " ".join([fq1, fq2]), soapfuse_path, "human")
         # (9) Data collection
         cmd_fetchdata = "{0} -i {1} -o {2} -s {3} -c {4} -g {5} -t {6} --fq1 {7} --fq2 {8}".format(self.cfg.get('commands', 'fetchdata_cmd'), output_results_path, fetchdata_path, sample_id, self.cfg.get_path(), ref_genome, ref_trans, fq1, fq2)
         # (10) De novo assembly of fusion transcripts
