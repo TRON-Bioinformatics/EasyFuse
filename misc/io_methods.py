@@ -84,7 +84,7 @@ def get_fastq_files(input_path, logger=None):
             #forrev = re.search('(\_|\_R)([1-2])(\_|\.f)', path_leaf(fq_file)).group(2)
             # urla: replaced original (up) with the following <- worked in minimal test set, should be fine for everything
             forrev = re.search('_R?([1-2])(_|[.]f)', path_leaf(fq_file)).group(1)
-            print(forrev)
+#            print(forrev)
         except AttributeError:
             forrev = '-1'
                                 
@@ -103,8 +103,8 @@ def get_fastq_files(input_path, logger=None):
             # urla: replaced original (up) with the following <- worked in minimal test set, should be fine for everything
             sample_id_l = re.search('(.*)_R?1(_|[.]f)', path_leaf(left[i])).group(1)
             sample_id_r = re.search('(.*)_R?2(_|[.]f)', path_leaf(right[i])).group(1)
-            print(sample_id_l)
-            print(sample_id_r)
+#            print(sample_id_l)
+#            print(sample_id_r)
             if sample_id_l != sample_id_r:
                 if logger:
                     logger.error('Error 99: Paired files names {0} and {1} do not match!'.format(sample_id_l, sample_id_r))

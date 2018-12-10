@@ -304,7 +304,6 @@ class Processing(object):
                     dependency.extend(Queueing.get_jobs_by_name("Readfilter-{}".format(sample_id)))
                 if run_qc:
                     dependency.extend(Queueing.get_jobs_by_name("QC-{}".format(sample_id)))
-                print(dependency)
                 self.logger.debug("Submitting slurm job: CMD - {0}; PATH - {1}; DEPS - {2}".format(cmd, exe_path[i], dependency))
                 self.submit_job(uid, cmd, cpu, mem, exe_path[i], dependency)
             else:
