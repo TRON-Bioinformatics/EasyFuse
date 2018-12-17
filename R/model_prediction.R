@@ -6,7 +6,7 @@ library(randomForest)
 
 # Load functions ---------------------------------------------------------------
 source("R/flat_table.R")
-source("R/prediction_function.R")
+source("R/prediction_functions.R")
 
 # Parse commandline arguments --------------------------------------------------
 options(stringsAsFactors = FALSE)
