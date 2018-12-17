@@ -79,8 +79,10 @@ flat_table <- function(sample_folder, tools = c("infusion", "starfusion",
   #-----------------------------------------------------------------------------
   detected_fusions_file <- fs::path(sample_folder, 
       "scratch/fetchdata_1tool/Detected_Fusions.csv")
+  
   requantification_file <- fs::path(sample_folder, 
       "scratch/fetchdata_1tool/Classification.csv")
+  
   context_seq_file <- fs::path(sample_folder, 
       "scratch/fetchdata_1tool/Context_seqs.csv")
   
@@ -183,7 +185,7 @@ flat_table <- function(sample_folder, tools = c("infusion", "starfusion",
     filter(!is.na(context_sequence)) %>% 
     
     group_by(FGID, Fusion_Gene, Breakpoint1, Breakpoint2, 
-             context_sequence_id, context_sequence, 
+             context_sequence_id, context_sequence_100_id, context_sequence, 
              type, exon_boundary1, exon_boundary2, exon_boundary, context_sequence_bp) %>% 
     summarize(
       n_transcripts_variants = n(),
