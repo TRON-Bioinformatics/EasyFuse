@@ -3,22 +3,6 @@ require(tidyverse)    # for analysing data in tabels
 require(fs)           # to handle file paths
 
 
-
-#' parse read counts from FASTQC file
-#' 
-#' @fastqc_file Path to a fastqc summary.txt file with read counts
-#' 
-#' 
-#' 
-parse_read_counts <- function(fastqc_file){
-  
-  readr::read_file(fastqc_file) %>% 
-    str_match(pattern = "Total Sequences\\s([\\d]*)") %>% 
-    magrittr::extract(, 2) %>% 
-    parse_integer()
-  
-}
-
 #' Reads a re-quantification file with read counts for each candidate fusion
 #' 
 #' @param file_path path to input file
@@ -47,69 +31,50 @@ read_quantification <- function(file_path){
 
   }
 
-#' parse read counts from FASTQC file
+#' A function to combine several output files into a singel table
+#'
+#' @param detected_fusion_file path to detected fusions file.
+#' @param context_seq_file path to annotated context sequence list of detected
+#'   fusions.
+#' @param requantification_file path to file with requantification results.
+#' @param qc_table_file path to FastQC file.
+#' @param tool_state_file path to tool_state file.
+#'
+#'   This funciton read all detected fusions and combines it with annotations
+#'   and requantificatoin data. Potentially multiple transcripts per fusion
+#'   breakpoint are combined to one entry per context sequence.
+#'
+#' @return A data.frame with one fusion (unique context sequence per breakpoint)
+#'   per row and several annotations in columns.
 #' 
-#' @param fastqc_file Path to fastqc output file 
-#' 
-#' @return the total read counts as integer
-#' 
-parse_read_counts <- function(fastqc_file){
-  content <- readr::read_file(fastqc_file) %>% 
-    str_match(pattern = "Total Sequences\\s([\\d]*)") %>% 
-    magrittr::extract(, 2) %>% 
-    parse_integer()
-}
-
-#' A function to parse all nececary files from a EsayFuse output sample
-#' 
-#' @param sample_folder path to sample output folder
-#' @param tools Vecotr of tool names. They should match the tools used in 
-#' EasyFuse pipeline. 
-#' 
-#' This funciton
-#' - combines potentially multiple transcripts to one entry per context sequence
-#' 
-#' 
-flat_table <- function(sample_folder, tools = c("infusion", "starfusion", 
-                                                "soapfuse", "mapsplice", 
-                                                "fusioncatcher")){
+read_fusion <- function(detected_fusion_file, context_seq_file, requantification_file, qc_table_file, 
+                        tool_state_file){
   
   #-----------------------------------------------------------------------------
   # get input files from sample folder
   #-----------------------------------------------------------------------------
-  detected_fusions_file <- fs::path(sample_folder, 
-      "scratch/fetchdata_1tool/Detected_Fusions.csv")
-  
-  requantification_file <- fs::path(sample_folder, 
-      "scratch/fetchdata_1tool/Classification.csv")
-  
-  context_seq_file <- fs::path(sample_folder, 
-      "scratch/fetchdata_1tool/Context_seqs.csv")
-  
-  fastqc_files <- fs::dir_ls(
-      fs::path(sample_folder, "scratch", "fastqc"),
-      type = "directory"
-    ) %>% 
-    fs::path("fastqc_data.txt")
 
   # stop if not all files exists
   stopifnot(
-    fs::file_exists(detected_fusions_file),
-    fs::file_exists(requantification_file),
+    fs::file_exists(detected_fusion_file),
     fs::file_exists(context_seq_file),
-    fs::file_exists(fastqc_files)
-    )
-  
-  # assume two fastqc files 
-  stopifnot(
-    length(fastqc_files) == 2
+    fs::file_exists(requantification_file),
+    fs::file_exists(qc_table_file),
+    fs::file_exists(tool_state_file)
   )
   
+  # parse used tools from tools_state_file
+  tools <- read_lines(tool_state_file, n_max = 1) %>% 
+    str_split(",") %>% 
+    unlist() %>% 
+    setdiff("Sample ID")
+  
+  message("INFO: Found the following used tools: ", str_c(tools, collapse= ",  "))
 
   #-----------------------------------------------------------------------------
   # read detected fusions
   #-----------------------------------------------------------------------------
-  fusions_raw <- read_delim(detected_fusions_file,
+  fusions_raw <- read_delim(detected_fusion_file,
                             delim = ";",
                             skip = 1,
                             col_names = c("FGID",
@@ -212,17 +177,7 @@ flat_table <- function(sample_folder, tools = c("infusion", "starfusion",
   # Fix mutliplie FGID and Fusion_Gene columns for same context_sequence_id
   flat_fusions <- flat_fusions_raw %>% 
     
-    
-    # # combine FGID and Fusion_Gene columns by ";"
-    # group_by(context_sequence_id, Breakpoint1, Breakpoint2) %>% 
-    # summarize(
-    #   FGID = str_c(FGID, collapse = ";"),
-    #   Fusion_Gene = str_c(Fusion_Gene, collapse = ";")
-    # ) %>% 
-    # left_join(
-    #   flat_fusions_raw %>% select(-FGID, -Fusion_Gene) %>% distinct(),
-    #   by = c("context_sequence_id", "Breakpoint1", "Breakpoint2")
-    # )
+    # take only unique entries for context_sequnce and breakpoints
     distinct(context_sequence_id, Breakpoint1, Breakpoint2, .keep_all = TRUE) %>% 
   
     # rearrange columns for better overview
@@ -231,16 +186,27 @@ flat_table <- function(sample_folder, tools = c("infusion", "starfusion",
   #-----------------------------------------------------------------------------
   # Normalize read counts to CPM
   #-----------------------------------------------------------------------------
-  total_read_pairs <- map_int(fastqc_files, parse_read_counts) %>% 
+  total_read_pairs <- read_csv(qc_table_file, col_types = cols(
+      filename = col_character(),
+      read_length = col_integer(),
+      suggested_trim_length = col_integer(),
+      remaining_read_length = col_integer(),
+      actual_trim_length = col_integer(),
+      badass_bases = col_integer(),
+      total_sequences = col_integer()
+    )) %>% 
+    pull(total_sequences) %>% 
     sum()
   
-  #cpm = reads / total_read_pairs * 10^6  
+  # normlaize to counts per millions: cpm = reads / total_read_pairs * 10^6  
   flat_fusions <- flat_fusions %>% 
     mutate_at(
       .vars = vars(matches("_junc$|_span$|_a$|_b$")),
       .funs = function(x){ x / total_read_pairs * 10^6}
       )
-
+  
+  message("INFO: Combined data for ", nrow(flat_fusions), " fusions.")
+  
   return(flat_fusions)
   
 }
