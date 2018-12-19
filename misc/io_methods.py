@@ -38,7 +38,7 @@ def create_folder(path, logger=None):
 
 def grant_permissions(path, mode):
     '''This function grants specific permissions for a given folder or file.'''
-    for root, dirs, files in os.walk(path, topdown=False):
+    for _, dirs, files in os.walk(path, topdown=False):
         for dir in dirs:
             os.chmod(dir, mode)
         for file in files:
@@ -74,6 +74,7 @@ def get_fastq_files(input_path, logger=None):
                         
     left = []
     right = []
+    sample_id = []
     # iterate over the sorted list of file names and check for left/right pair file
     print("\nGoing to process the following read files...")
     for i, fq_file in enumerate(sorted(fastqs)):
@@ -96,13 +97,14 @@ def get_fastq_files(input_path, logger=None):
             print('Warning: Ignoring \"{}\" as it doesn\'t seem to be a valid fastq file'.format(fq_file))
     # Check whether file names match between paired files
     if right:
-        for i, fq_file in enumerate(left):
+        for i, _ in enumerate(left):
             # urla: ids for comparison are not generally applicable here, as they remove lane numbers as well
             #sample_id_l = re.search('(\w*)(\_|\_R)([1])(\_|\.f)', path_leaf(left[i])).group(1)
             #sample_id_r = re.search('(\w*)(\_|\_R)([2])(\_|\.f)', path_leaf(right[i])).group(1)
             # urla: replaced original (up) with the following <- worked in minimal test set, should be fine for everything
             sample_id_l = re.search('(.*)_R?1(_|[.]f)', path_leaf(left[i])).group(1)
             sample_id_r = re.search('(.*)_R?2(_|[.]f)', path_leaf(right[i])).group(1)
+            sample_id.append(sample_id_l)
 #            print(sample_id_l)
 #            print(sample_id_r)
             if sample_id_l != sample_id_r:
@@ -110,7 +112,7 @@ def get_fastq_files(input_path, logger=None):
                     logger.error('Error 99: Paired files names {0} and {1} do not match!'.format(sample_id_l, sample_id_r))
                 print('Error 99: Paired files names {0} and {1} do not match!'.format(sample_id_l, sample_id_r))
                 sys.exit(99)
-    return (left, right, sample_id_l)
+    return (left, right, sample_id)
                     
 
 def get_icam_reads_data(root_path, sample_file_keys, logger):
