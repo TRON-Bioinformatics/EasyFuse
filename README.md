@@ -29,7 +29,7 @@ EsayFuse is a pipline for fusion gene detection from RNA-seq data.
 ## Usage
 
 
-### Annotated fusion breakpoints
+### Annotate fusion breakpoints
 
 To annoate predicted breakpoints for fusion genes the following R script has to 
 be executed with the given input files as command-line arguments.
