@@ -13,15 +13,37 @@ EsayFuse is a pipline for fusion gene detection from RNA-seq data.
     - optparse
     - tidyverse
     - randomForest
+    - Biostrings
+    - GenomicRanges
+    - BSgenome    
+    - bindrcpp
+    
 
   Install packages within R by
   
   ```
-  install.packages(c("optparse", "tidyverse", "randomForest"))
+  install.packages(c("optparse", "tidyverse", "randomForest", "Biostrings","GenomicRanges","BSgenome","optparse"))
   ```
   
 
 ## Usage
+
+
+### Annotated fusion breakpoints
+
+To annoate predicted breakpoints for fusion genes the following R script has to 
+be executed with the given input files as command-line arguments.
+
+```
+Rscript R/GetFusionSequence.R \
+	-i <detected_fusion_file> \
+	-f <fasta_genome_dir> \
+	-e <ensemble_csv_file> \
+	-o <output_file> \
+	--cis_near_distance \
+	--genomic_seq_len \
+	--context_seq_len \
+```	
 
 ### Apply prediction model
 
