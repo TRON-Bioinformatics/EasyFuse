@@ -48,14 +48,14 @@ genomic_seq_len = opt$genomic_seq_len
 context_seq_len = opt$context_seq_len
 
 #for testing 
-in_file = "Detected_Fusions.csv"
-in_expression = "transcript_BPKM.csv"
-out_file = paste0(getwd(),"/context_seqs")
-fa_path = paste0(getwd(), "/hg38_chroms")
-ensemble_csv_file = "GRCh38.86_cdna_all.csv"
-cis_near_distance = 1000000
-genomic_seq_len = 1000
-context_seq_len = 400
+#in_file = "Detected_Fusions.csv"
+#in_expression = "transcript_BPKM.csv"
+#out_file = paste0(getwd(),"/context_seqs")
+#fa_path = paste0(getwd(), "/hg38_chroms")
+#ensemble_csv_file = "GRCh38.86_cdna_all.csv"
+#cis_near_distance = 1000000
+#genomic_seq_len = 1000
+#context_seq_len = 400
 
 
 
