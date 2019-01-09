@@ -376,7 +376,7 @@ output = overlap %>%
 		context_sequence, context_sequence_bp, wt1_context_sequence, wt1_context_sequence_bp, wt2_context_sequence, wt2_context_sequence_bp, 
 		neo_peptide_sequence, neo_peptide_sequence_bp)
 
-write.csv2(output, paste0(out_file, ".csv"), row.names = FALSE, quote = FALSE)
+write.csv2(output, out_file, row.names = FALSE, quote = FALSE)
 
 
 
