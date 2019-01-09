@@ -8,35 +8,35 @@ library("GenomicRanges")
 library("dplyr")
 library("tidyr")
 library("digest")
-library("bindrcpp")
 library("BSgenome")
+library("bindrcpp")
 library("optparse")
 
 options(stringsAsFactors = FALSE)
 
 argument_list <- list(
-  make_option(c("-i", "--input_detected_fusions"), default="", help="Input list of detected fusions"), 
-  make_option(c("-f", "--fasta_genome_dir"), default="", help="Directory containing fasta sequences (one file per chr/contig) of the respective genome"), 
-  make_option(c("-e", "--ensembl_csv"), default="", help="Gtf derived csv file of transcript coordinates of the respective genome"), 
-  make_option(c("-o", "--output"), default="", help="Output file of context sequences"), 
-  make_option("--cis_near_distance", type="integer", default=1000000, help="Distance to call fusion cis near or far"), 
-  make_option("--genomic_seq_len", type="integer", default=1000, help="no idea"), 
-  make_option("--context_seq_len", type="integer", default=100, help="Length of the context sequence")
+	make_option(c("-i", "--input_detected_fusions"), default="", help="Input list of detected fusions"), 
+	make_option(c("-f", "--fasta_genome_dir"), default="", help="Directory containing fasta sequences (one file per chr/contig) of the respective genome"), 
+	make_option(c("-e", "--ensembl_csv"), default="", help="Gtf derived csv file of transcript coordinates of the respective genome"), 
+	make_option(c("-o", "--output"), default="", help="Output file of context sequences"), 
+	make_option("--cis_near_distance", type="integer", default=1000000, help="Distance to call fusion cis near or far"), 
+	make_option("--genomic_seq_len", type="integer", default=1000, help="no idea"), 
+	make_option("--context_seq_len", type="integer", default=100, help="Length of the context sequence")
 )
 opt <- parse_args(OptionParser(option_list=argument_list))
 
 # check mandatory arguments
 if(is.na(opt$input_detected_fusions) | opt$input_detected_fusions == "") {
-  print("Mandatory parameter \"detected fusions file\" missing. Aborting...")
+	print("Mandatory parameter \"detected fusions file\" missing. Aborting...")
 }
 if(is.na(opt$fasta_genome_dir) | opt$fasta_genome_dir == "") {
-  print("Mandatory parameter \"fasta genome directory\" missing. Aborting...")
+	print("Mandatory parameter \"fasta genome directory\" missing. Aborting...")
 }
 if(is.na(opt$ensembl_csv) | opt$ensembl_csv == "") {
-  print("Mandatory parameter \"ensembl csv file\" missing. Aborting...")
+	print("Mandatory parameter \"ensembl csv file\" missing. Aborting...")
 }
 if(is.na(opt$output) | opt$output == "") {
-  print("Mandatory parameter \"output file\" missing. Aborting...")
+	print("Mandatory parameter \"output file\" missing. Aborting...")
 }
 
 in_file = opt$input_detected_fusions
@@ -47,14 +47,17 @@ cis_near_distance = opt$cis_near_distance
 genomic_seq_len = opt$genomic_seq_len
 context_seq_len = opt$context_seq_len
 
-#win test
-#in_file = "C:\\Users\\Urs.Lahrmann\\Documents\\FusionPrediction\\Scripting\\testGetFusionSequence\\data\\Detected_Fusions.csv"
-#out_file = "C:\\Users\\Urs.Lahrmann\\Documents\\FusionPrediction\\Scripting\\testGetFusionSequence\\data\\context_seqs.csv"
-#fa_path = "C:\\Users\\Urs.Lahrmann\\Documents\\FusionPrediction\\Scripting\\testGetFusionSequence\\data\\chromosomes_PAG"
-#ensemble_csv_file = "C:\\Users\\Urs.Lahrmann\\Documents\\FusionPrediction\\Scripting\\testGetFusionSequence\\data\\Homo_sapiens.GRCh38.86.csv"
-#cis_near_distance = 1000000
-#genomic_seq_len = 1000
-#context_seq_len = 100
+#for testing 
+in_file = "Detected_Fusions.csv"
+in_expression = "transcript_BPKM.csv"
+out_file = paste0(getwd(),"/context_seqs")
+fa_path = paste0(getwd(), "/hg38_chroms")
+ensemble_csv_file = "GRCh38.86_cdna_all.csv"
+cis_near_distance = 1000000
+genomic_seq_len = 1000
+context_seq_len = 400
+
+
 
 # select optimal type of matching transcript
 select_type <- function(var1){
@@ -72,60 +75,47 @@ select_type <- function(var1){
 
 
 #custom function read all genomic sequences - using granges
-read_genome_seq2 <- function(chr, start, end, strand){
-	tmp_data = data.frame(chr, start, end, strand)
-		
-	# #for testing
-	# tmp_data = genomic_overlap %>%
-		# group_by(FGID, transcript_id, chr, start, end, strand, number) %>%
-		# summarize() %>%
-		# ungroup() %>%
-		# arrange(chr, transcript_id, number) %>% #reorder to reduce loading and ensure correct esembly of exon sequences to transcript
-		# select(chr, start, end, strand)
-		
+read_genome_seq <- function(chr, start, end, strand){
+
 	#list genome fasta files
 	chr_names = gsub(".fa", "", list.files(fa_path, pattern = "*.fa$", full.names = FALSE))
 	chr_files = list.files(fa_path, pattern = "*.fa$", full.names = TRUE)
-	# urla: I don't like dplyr pipes in code as it makes it very hard to read and understand!
-	# urla_c: is the following equivalent to
 	chr_dat = data.frame(chr = chr_names, chr_files)
-	chr_dat = chr_dat[chr_dat$chr %in% tmp_data$chr, ]
-	# this here?
-#	chr_dat = data.frame(chr = chr_names, chr_files) %>%
-#		semi_join(tmp_data, by = "chr") #filter for relevant chr
 	
+	# urla: I don't like dplyr pipes in code as it makes it very hard to read and understand!
+	# dawb: Personally I think it is much easier to read, furthermore execution of tidyr/dplyr 
+	# is much faster than base R, I would not recommend to change it
+
+	tmp_data = data.frame(chr, start, end, strand) %>%
+    left_join(chr_dat, by="chr")
+    
 	#empty dataframe for results
 	seq = c()
 	
 	#GenomicRanges
-	for (i in 1:nrow(chr_dat)){
-#		i_ranges = tmp_data %>%
-#			filter(chr == chr_dat$chr[i]) %>%#filter data for current chr
-#			makeGRangesFromDataFrame()
-		i_ranges = makeGRangesFromDataFrame(tmp_data[tmp_data$chr == chr_dat$chr[i], ])
+	for (i in unique(tmp_data$chr)){
+		i_ranges = makeGRangesFromDataFrame(filter(tmp_data, chr == i))
 			
-		print(paste0("->load chr: ", chr_dat$chr[i]))
-		chr_seq = tryCatch(readDNAStringSet(chr_dat$chr_files[i]), error = function(e) return(""))
+		print(paste0("->load chr: ", i))
+		chr_seq = tryCatch(readDNAStringSet(filter(chr_dat, chr == i)$chr_files), error = function(err) return(""))
 	
 		if (chr_seq != ""){
-			names(chr_seq) = chr_dat$chr[i] #rename chr
+			names(chr_seq) = i #rename chr
 			i_seq = as.character(getSeq(chr_seq, i_ranges)) #extract sequences
 		}else{
-			i_seq = ""
+			i_seq = rep("", length(i_ranges))
 		}
 		
-		if (i == 1){
-			seq = i_seq
-		}else{
-			seq = c(seq, i_seq)
-		}
+		seq = c(seq, i_seq)
+		
 	}#for i
-	
+
 	return(seq)
 }
 
 
-#determine relative exon end to tss by adding up sizes - not in use currently
+
+#determine relative distance of exon end to tss by adding up sizes - not in use currently
 calculate_rel_start <- function(FGID, transcript_id, number, size){
 	tmp_data = data.frame(FGID, transcript_id, number, size)
 	
@@ -133,7 +123,7 @@ calculate_rel_start <- function(FGID, transcript_id, number, size){
 	for (i in 1:nrow(tmp_data)){
 		tmp = tmp_data %>%
 			filter(FGID == tmp_data$FGID[i], transcript_id == tmp_data$transcript_id[i], number < tmp_data$number[i]) #filter all exons 1:n for current transcript and current exon n
-				
+		
 		rel_end = c(rel_end, sum(tmp$size)) #sum up exon sizes
 		
 	}
@@ -204,7 +194,8 @@ determine_type <- function(S1_chr, S1_pos, S1_strand, S2_chr, S2_pos, S2_strand)
 pep_translate <- function(cds_seq){
 	pep = c()
 	for (i in 1:length(cds_seq)){
-		pep = c(pep, sub("\\*.*", "", as.character(translate(DNAString(cds_seq[i]), genetic.code = GENETIC_CODE, if.fuzzy.codon = "error"))))
+		pep = c(pep, tryCatch({sub("\\*.*", "", as.character(translate(DNAString(cds_seq[i]), genetic.code = GENETIC_CODE, if.fuzzy.codon = "error")))},
+		               error=function(err) {"NA"}))
 	}
 	
 	return(pep)
@@ -235,13 +226,14 @@ print(paste0("->read detected fusion from: ", in_file))
 breakpoints = read.csv(in_file, sep = ";", dec = ".", na.strings = c("na")) %>%
 	group_by(FGID, Fusion_Gene, Breakpoint1, Breakpoint2) %>%
 	summarize() %>%
+  ungroup() %>%
 	gather(side, Breakpoint, -FGID, -Fusion_Gene) %>%
 	mutate(side = as.numeric(gsub("Breakpoint", "", side))) %>%
 	separate(Breakpoint, sep = ":", into = c("chr", "pos", "strand"), convert = TRUE) %>%
 	mutate(chr = gsub("chr", "", chr), strand = ifelse(strand == ".", "+|-", strand)) %>%
 	unnest(strand = strsplit(strand, "\\|")) %>%
-	mutate(element = ifelse((strand == "+" & side == 1) | (strand == "-" & side == 2), 1, 2)) %>% #element 1 keep left side, element 2 keep right side genomic
-	ungroup()
+	mutate(element = ifelse((strand == "+" & side == 1) | (strand == "-" & side == 2), 1, 2)) #element 1 keep left side, element 2 keep right side genomic
+
 
 
 	
@@ -258,10 +250,12 @@ ensemble_csv = breakpoints %>%
 	rbind(read.csv2(ensemble_csv_file))
 
 
+
 	
-#identify overlapping elements on genome 
+#identify overlapping elements on genome coordinates
 print("->identify overlapping elements")
 genomic_overlap = breakpoints %>% 
+  #filter(FGID == "C1ORF100_chr1:244363704:+_SNAP47_chr1:227735499:+") %>%
 	inner_join(ensemble_csv, by = c("chr","strand")) %>%   # <- huge memory usage ???
 	filter(pos >= gene_start, pos <= gene_end) %>% #filter overlapping genes
 	unnest(start2 = strsplit(start, "\\|"), end2 = strsplit(end, "\\|"), bp_element = strsplit(number, "\\|"), bp_type = strsplit(type, "\\|")) %>% #unnest bp_elements of overlapping genes
@@ -286,11 +280,9 @@ genomic_overlap = breakpoints %>%
 #load sequence for all elements
 print(paste0("->generate transcript sequences from: ", fa_path))
 transcript_seq = genomic_overlap %>%
-	group_by(FGID, transcript_id, chr, start, end, strand, number) %>%
-	summarize() %>%
-	ungroup() %>%
-	arrange(chr, transcript_id, number) %>% #reorder to reduce loading and ensure correct esembly of exon sequences to transcript
-	mutate(seq = read_genome_seq2(chr, start, end, strand)) %>% #determine sequence of all elements
+	distinct(FGID, transcript_id, chr, start, end, strand, number) %>%
+	arrange(chr, transcript_id, number) %>% #reorder to reduce loading and ensure correct assembly of exon sequences to transcript
+	mutate(seq = read_genome_seq(chr, start, end, strand)) %>% #determine sequence of all elements
 	group_by(FGID, transcript_id) %>%
 	summarize(seq = paste0(seq, collapse = "")) %>%
 	ungroup()
@@ -300,25 +292,25 @@ transcript_seq = genomic_overlap %>%
 #calculate relative positions of elements/exons on transcript
 print("->calculate relative positions on transcript")
 transcript_overlap_elements = genomic_overlap %>%	
-	full_join(select(genomic_overlap, FGID, transcript_id, number2 = number, size2 = size), by = c("FGID", "transcript_id")) %>% # combine all exons per trasncript
+	full_join(select(genomic_overlap, FGID, transcript_id, number2 = number, size2 = size), by = c("FGID", "transcript_id")) %>% # combine all exons per transcript
 	filter(number >= number2) %>%
 	group_by(FGID, transcript_id, number, size) %>%
 	summarize(end_rel = sum(size2)) %>%
-	mutate(start_rel = end_rel - size) %>%
-	ungroup()
+  ungroup() %>%
+  mutate(start_rel = end_rel - size)
+
 
 
 	
 #calculate relative positions of cds
 transcript_cds = genomic_overlap %>%
-                filter((cds_start >= start & cds_start <= end)|(cds_end >= start & cds_end <= end)) %>% #filter elements with cds_start or cds_end
-                inner_join(transcript_overlap_elements, by = c("FGID", "transcript_id", "number", "size")) %>%
-                mutate(cds_start_rel = ifelse(strand == "+", cds_start - start + start_rel + 1, end - cds_end + start_rel + 1),
-                               #cds_end_rel = ifelse(strand == "-", cds_start - start + start_rel, end - cds_end + start_rel)) %>% #error corrected 
-                               cds_end_rel = ifelse(strand == "+", cds_end - start + start_rel, end - cds_start + start_rel)) %>% #calculate 
-                group_by(FGID, transcript_id) %>%
-                summarize(cds_start_rel = max(cds_start_rel), cds_end_rel = min(cds_end_rel))
-
+	filter((cds_start >= start & cds_start <= end)|(cds_end >= start & cds_end <= end)) %>% #filter elements with cds_start or cds_end
+	inner_join(transcript_overlap_elements, by = c("FGID", "transcript_id", "number", "size")) %>%
+	mutate(cds_start_rel = ifelse(strand == "+", cds_start - start + start_rel + 1, end - cds_end + start_rel + 1),
+	   cds_end_rel = ifelse(strand == "+", cds_end - start + start_rel, end - cds_start + start_rel)) %>% #calculate 
+	group_by(FGID, transcript_id) %>%
+	summarize(cds_start_rel = max(cds_start_rel), cds_end_rel = min(cds_end_rel)) %>%
+  ungroup()
 
 
 
@@ -329,7 +321,8 @@ transcript_bp = genomic_overlap %>%
 	left_join(transcript_cds, by=c("FGID", "transcript_id")) %>%
 	mutate(pos_rel = ifelse(strand == "+", pos - start + start_rel + 1, end - pos + start_rel + 1)) %>% #calculate relative distance to bp account for strand
 	mutate(frame = calculate_frame(bp_type, side, cds_start_rel, cds_end_rel, pos_rel)) %>% #determine frame
-	inner_join(transcript_seq, by = c("FGID", "transcript_id"))
+	inner_join(transcript_seq, by = c("FGID", "transcript_id")) %>%
+  mutate(test2=nchar(seq))
 
 	
 
@@ -337,9 +330,10 @@ transcript_bp = genomic_overlap %>%
 overlap_side1 = filter(transcript_bp, side == 1) #breakpoint1
 colnames(overlap_side1)[3:ncol(overlap_side1)] = paste0("S1_", colnames(overlap_side1)[3:ncol(overlap_side1)])
 
-#filter information for side 1 of the breakpoint
+#filter information for side 2 of the breakpoint
 overlap_side2 = filter(transcript_bp, side == 2) #breakpoint2
 colnames(overlap_side2)[3:ncol(overlap_side2)] = paste0("S2_", colnames(overlap_side2)[3:ncol(overlap_side2)])
+
 
 
 #combine both sides and extract relevant information
@@ -347,7 +341,7 @@ print("->combine all information")
 overlap = overlap_side1 %>%
 	full_join(overlap_side2, by = c("FGID", "Fusion_Gene")) %>%
 	distinct() %>%
-	mutate(FGID = FGID, Fusion_Gene, 
+	transmute(FGID = FGID, Fusion_Gene, 
 		Breakpoint1 = paste0(S1_chr, ":", S1_pos, ":", S1_strand), Breakpoint2 = paste0(S2_chr, ":", S2_pos, ":", S2_strand), #determine breakpoints
 		FTID = paste0(S1_symbol, "_", S1_chr, ":", S1_pos, ":", S1_strand,"_", S1_transcript_id,  "_", S2_symbol, "_", S2_chr, ":", S2_pos, ":", S2_strand, "_", S2_transcript_id), #old style FTID
 		#FTID = paste0(S1_symbol, "_", S1_transcript_id, "_", S1_chr, ":", S1_pos, ":", S1_strand, "_", S2_symbol, "_", S2_transcript_id, "_", S2_chr, ":", S2_pos, ":", S2_strand), #calculate fusion transcript ID
@@ -371,96 +365,82 @@ overlap = overlap_side1 %>%
 		substr(peptide_sequence, round(peptide_sequence_bp - 13.5, 0), round(peptide_sequence_bp + 13.5, 0)),
 		substr(peptide_sequence, round(peptide_sequence_bp - 13.5, 0), nchar(peptide_sequence))), #determine sequence potentially immunogenic
 		neo_peptide_sequence_bp = peptide_sequence_bp - round(peptide_sequence_bp - 13.5, 0))
-		
 
+test = overlap %>%
+  filter(context_sequence == "")
 
 # select relevant columns for context_seq.csv
-overlap2 = overlap %>%
-	mutate(FTID = paste0(S1_symbol, "_", S1_chr, ":", S1_pos, ":", S1_strand,"_", S1_transcript_id,  "_", S2_symbol, "_", S2_chr, ":", S2_pos, ":", S2_strand, "_", S2_transcript_id)) %>%
+output = overlap %>%
 	select(FGID, Fusion_Gene, Breakpoint1, Breakpoint2, FTID, context_sequence_id, context_sequence_100_id,
-    type, exon_boundary1, exon_boundary2, exon_boundary, bp1_frame, bp2_frame, frame, 
-    context_sequence, context_sequence_bp, wt1_context_sequence, wt1_context_sequence_bp, wt2_context_sequence, wt2_context_sequence_bp, 
-	neo_peptide_sequence, neo_peptide_sequence_bp)
-	
-write.csv2(overlap2, out_file, row.names = FALSE, quote = FALSE)
+		type, exon_boundary1, exon_boundary2, exon_boundary, bp1_frame, bp2_frame, frame, 
+		context_sequence, context_sequence_bp, wt1_context_sequence, wt1_context_sequence_bp, wt2_context_sequence, wt2_context_sequence_bp, 
+		neo_peptide_sequence, neo_peptide_sequence_bp)
+
+write.csv2(output, paste0(out_file, ".csv"), row.names = FALSE, quote = FALSE)
+
+
 
 # urla: write context seqs to a fasta file with the Biostrings library function writeXStringSet and write context seq based bed file for classification with R base functions
 # urla: see comment in original "custom_transcriptome.py on the "problem" with bed file generation
+# dawb: further fasta files are generated for plausibility checks
 
-# create vectors of context sequences and names
-nameList <- c()
-seqList <- c()
-# create an empty dataframe for the bed file info
-tmpdf <- data.frame(context_id=character(),
-                    startA=numeric(),
-                    endA=numeric(),
-                    gene=character(),
-                    emptyOnly=character(),
-                    strand=character()
-                    )
-# each fgid+context_sequence_id needs to be processed only once, hence already processed ids are stored for reference in a list
-checkList <- c()
+# dataframe of sequences for fasta file
+print("->generate fasta data")
+context_seq_data = overlap %>%
+	select(name = context_sequence_id, ft_context_sequence = context_sequence, wt1_context_sequence,wt2_context_sequence) %>%
+	gather(type, sequence, -name) %>%
+	mutate(name = paste0(name, "_", gsub("_context_sequence","",type))) %>%
+	group_by(name, sequence) %>%
+	summarize() %>%
+	arrange(name) 
 
-for(i in 1:nrow(overlap2)) {
-  # get names and seqs for the fasta file
-#  nameList <- c(nameList, paste(overlap2$FGID[i], overlap2$context_sequence_id[i], "ft", sep = "_"))
-#  nameList <- c(nameList, paste(overlap2$FGID[i], overlap2$context_sequence_id[i], "wt1", sep = "_"))
-#  nameList <- c(nameList, paste(overlap2$FGID[i], overlap2$context_sequence_id[i], "wt2", sep = "_"))
-  nameList <- c(nameList, paste(overlap2$FTID[i], overlap2$context_sequence_id[i], overlap2$context_sequence_bp[i], "ft", sep = "_"))
-  nameList <- c(nameList, paste(overlap2$FTID[i], overlap2$context_sequence_id[i], "wt1", sep = "_"))
-  nameList <- c(nameList, paste(overlap2$FTID[i], overlap2$context_sequence_id[i], "wt2", sep = "_"))
-  seqList <- c(seqList, overlap2$context_sequence[i])
-  seqList <- c(seqList, overlap2$wt1_context_sequence[i])
-  seqList <- c(seqList, overlap2$wt2_context_sequence[i])
-  
-  fusion_id <- paste(overlap2$FGID[i], overlap2$context_sequence_id[i], sep = "_")
-  if(! fusion_id %in% checkList) {
-    # get names, length and strand for the bed file
-    #ft1
-    tmpdf[nrow(tmpdf) + 1, ] <- c(paste(fusion_id, "ft", sep = "_"),
-                                  0, overlap2$context_sequence_bp[i], strsplit(overlap2$Fusion_Gene[i], "_")[[1]][1],
-                                  "", strsplit(overlap2$Breakpoint1[i], ":")[[1]][3])
-    #ft2
-    tmpdf[nrow(tmpdf) + 1, ] <- c(paste(fusion_id, "ft", sep = "_"),
-                                  overlap2$context_sequence_bp[i], nchar(overlap2$context_sequence[i]), strsplit(overlap2$Fusion_Gene[i], "_")[[1]][2],
-                                  "", strsplit(overlap2$Breakpoint2[i], ":")[[1]][3])
-    #wt11
-    tmpdf[nrow(tmpdf) + 1, ] <- c(paste(fusion_id, "wt1", sep = "_"),
-                                  0, overlap2$wt1_context_sequence_bp[i], strsplit(overlap2$Fusion_Gene[i], "_")[[1]][1],
-                                  "", strsplit(overlap2$Breakpoint1[i], ":")[[1]][3])
-    #wt12
-    tmpdf[nrow(tmpdf) + 1, ] <- c(paste(fusion_id, "wt1", sep = "_"),
-                                  overlap2$wt1_context_sequence_bp[i], nchar(overlap2$wt1_context_sequence[i]), strsplit(overlap2$Fusion_Gene[i], "_")[[1]][2],
-                                  "", strsplit(overlap2$Breakpoint2[i], ":")[[1]][3])
-    #wt21
-    tmpdf[nrow(tmpdf) + 1, ] <- c(paste(fusion_id, "wt2", sep = "_"),
-                                  0, overlap2$wt2_context_sequence_bp[i], strsplit(overlap2$Fusion_Gene[i], "_")[[1]][1],
-                                  "", strsplit(overlap2$Breakpoint1[i], ":")[[1]][3])
-    #wt22
-    tmpdf[nrow(tmpdf) + 1, ] <- c(paste(fusion_id, "wt2", sep = "_"),
-                                  overlap2$wt2_context_sequence_bp[i], nchar(overlap2$wt2_context_sequence[i]), strsplit(overlap2$Fusion_Gene[i], "_")[[1]][2],
-                                  "", strsplit(overlap2$Breakpoint2[i], ":")[[1]][3])
-    checkList <- c(checkList, fusion_id)
-  }
-}
-
-# complete bed file
-tmpdf$startB <- tmpdf$startA
-tmpdf$endB <- tmpdf$endA
-tmpdf$zeroOnly <- 0
-tmpdf$oneOnly <- 1
-tmpdf$startC <- -1
-tmpdf[tmpdf$startA == 0, ]$startC <- tmpdf[tmpdf$startA == 0, ]$endA
-tmpdf[tmpdf$startA != 0, ]$startC <- as.numeric(tmpdf[tmpdf$startA != 0, ]$endA) - as.numeric(tmpdf[tmpdf$startA != 0, ]$startA)
-tmpdf$endC <- tmpdf$startA
-
-#nameList_v2 <- paste(rep(paste(overlap2$FGID[1:nrow(overlap2)], overlap2$context_sequence_id[1:nrow(overlap2)], sep = "_"), 6), c("ft", "ft", "wt1", "wt1", "wt2", "wt2"), sep = "_")
-
-# create an XString object with sequences, append names and write to file
-seqSet <- DNAStringSet(seqList)
-names(seqSet) <- nameList
-writeXStringSet(seqSet, paste(out_file, ".fasta", sep = ""), append = F, format = "fasta", width = 60)
+seqSet <- DNAStringSet(context_seq_data$sequence)
+names(seqSet) <- context_seq_data$name
+writeXStringSet(seqSet, paste0(out_file, ".fasta"), append = F, format = "fasta", width = 60)
 write.table(paste(length(seqSet), sum(width(seqSet)), sep = "\n"), paste(out_file, ".fasta.info", sep = ""), row.names = F, col.names = F, quote = F)
-# write bed file
-write.table(tmpdf, paste(out_file, ".bed", sep = ""), sep = "\t", row.names = F, col.names = F, quote = F)
+
+transcrtipt_seq_data = overlap %>%
+	transmute(name = FTID, ft_sequence = paste0(transcript_sequence,":",transcript_sequence_bp),
+		cds_sequence = paste0(cds_sequence,":",cds_sequence_bp)) %>%
+	gather(type, sequence, -name) %>%
+	separate(sequence, into=c("sequence","bp"), sep=":") %>%
+	mutate(name = paste0(name, "_", gsub("_sequence","",type),":",bp)) %>%
+	group_by(name, sequence) %>%
+	summarize() %>%
+	arrange(name)
+
+transcriptseqSet <- DNAStringSet(transcrtipt_seq_data$sequence)
+names(transcriptseqSet) <- transcrtipt_seq_data$name
+writeXStringSet(transcriptseqSet, paste0(out_file, "_transcript.fasta"), append = F, format = "fasta", width = 60)
+
+
+peptide_seq_data = overlap %>%
+	transmute(name = paste0(FTID,":", context_sequence_id, ":", peptide_sequence_bp, ":", frame), 
+		sequence = peptide_sequence) %>%
+	group_by(name, sequence) %>%
+	summarize()
+
+peptideseqSet <- AAStringSet(peptide_seq_data$sequence)
+names(peptideseqSet) <- peptide_seq_data$name
+writeXStringSet(peptideseqSet, paste0(out_file, "_peptide.fasta"), append = F, format = "fasta", width = 60)
+
+
+
+# dataframe with positions for bed file
+print("->generate bed data")
+bed_data = overlap %>%
+	extract(FGID, into=c("Gene1","Strand1","Gene2","Strand2"), regex="^(.*)_.*([//+|//-])_(.*)_.*([//+|//-])", remove=FALSE) %>% #extract gene and strand
+	group_by(ID = paste0(FGID,"_",context_sequence_id)) %>% #remove redundancy per ID, keep only first
+	summarize(Gene = first(paste0(Gene1,"|",Gene2)), Strand = first(paste0(Strand1,"|",Strand2)), 
+		ft = first(paste0("0,", context_sequence_bp,"|", context_sequence_bp,",", nchar(context_sequence))),
+		wt1 = first(paste0("0,", wt1_context_sequence_bp,"|", wt1_context_sequence_bp,",", nchar(wt1_context_sequence))),
+		wt2 = first(paste0("0,", wt2_context_sequence_bp,"|", wt2_context_sequence_bp,",", nchar(wt2_context_sequence)))) %>% #calculate positions
+	gather(type, Position, -ID, -Gene, -Strand) %>%
+	arrange(ID, type) %>%
+	unnest(Strand = strsplit(Strand, "\\|"), Gene = strsplit(Gene, "\\|"), Position = strsplit(Position, "\\|")) %>%
+	separate(Position, into=c("startA", "endA"), sep=",", convert=TRUE) %>%
+	transmute(ID = paste0(ID, "_", type), startA = startA, endA = endA, gene = Gene, emptyOnly = "", strand = Strand,
+		startB = startA, endB = endA, zeroOnly=0, oneOnly=1, startC = ifelse(startA == 0, endA, endA-startA), endC = startA) 
+
+write.table(bed_data, paste(out_file, ".bed", sep = ""), sep = "\t", row.names = F, col.names = F, quote = F)
 print(paste0("->finished, overall processing time: ", Sys.time() - tmp_time))
