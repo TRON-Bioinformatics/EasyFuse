@@ -9,14 +9,13 @@ library("dplyr")
 library("tidyr")
 library("digest")
 library("BSgenome")
-#library("bindrcpp")
 library("optparse")
 
 options(stringsAsFactors = FALSE)
 
 argument_list <- list(
 	make_option(c("-i", "--input_detected_fusions"), default="Detected_Fusions.csv", help="Input list of detected fusions"), 
-	make_option(c("-f", "--fasta_genome_dir"), default="/hg38_chroms", help="Directory containing fasta sequences (one file per chr/contig) of the respective genome"), 
+	make_option(c("-f", "--fasta_genome_dir"), default="", help="Directory containing fasta sequences (one file per chr/contig) of the respective genome"), 
 	make_option(c("-e", "--ensembl_csv"), default="GRCh38.86_cdna_all.csv", help="Gtf derived csv file of transcript coordinates of the respective genome"), 
 	make_option(c("-o", "--output"), default="context_seqs.csv", help="Output file of context sequences"), 
 	make_option("--cis_near_distance", type="integer", default=1000000, help="Distance to call fusion cis near or far"), 
@@ -41,14 +40,12 @@ if(is.na(opt$output) | opt$output == "") {
 
 in_file = opt$input_detected_fusions
 out_file = opt$output
-fa_path = opt$fasta_genome_dir
+fa_path = opt$fasta_genome_dir #fa_path = paste0(getwd(), "/hg38_chroms/")
 ensemble_csv_file = opt$ensembl_csv
 cis_near_distance = opt$cis_near_distance
 genomic_seq_len = opt$genomic_seq_len
 context_seq_len = opt$context_seq_len
 
-#for testing 
-#setwd("..\get_fusion_seq_test")
 
 # select optimal type of matching transcript
 select_type <- function(var1){
@@ -240,7 +237,6 @@ ensemble_csv = breakpoints %>%
 
 
 
-	
 #identify overlapping elements on genome coordinates
 print("->identify overlapping elements")
 genomic_overlap = breakpoints %>% 
