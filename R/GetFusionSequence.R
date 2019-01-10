@@ -9,16 +9,16 @@ library("dplyr")
 library("tidyr")
 library("digest")
 library("BSgenome")
-library("bindrcpp")
+#library("bindrcpp")
 library("optparse")
 
 options(stringsAsFactors = FALSE)
 
 argument_list <- list(
-	make_option(c("-i", "--input_detected_fusions"), default="", help="Input list of detected fusions"), 
-	make_option(c("-f", "--fasta_genome_dir"), default="", help="Directory containing fasta sequences (one file per chr/contig) of the respective genome"), 
-	make_option(c("-e", "--ensembl_csv"), default="", help="Gtf derived csv file of transcript coordinates of the respective genome"), 
-	make_option(c("-o", "--output"), default="", help="Output file of context sequences"), 
+	make_option(c("-i", "--input_detected_fusions"), default="Detected_Fusions.csv", help="Input list of detected fusions"), 
+	make_option(c("-f", "--fasta_genome_dir"), default="/hg38_chroms", help="Directory containing fasta sequences (one file per chr/contig) of the respective genome"), 
+	make_option(c("-e", "--ensembl_csv"), default="GRCh38.86_cdna_all.csv", help="Gtf derived csv file of transcript coordinates of the respective genome"), 
+	make_option(c("-o", "--output"), default="context_seqs.csv", help="Output file of context sequences"), 
 	make_option("--cis_near_distance", type="integer", default=1000000, help="Distance to call fusion cis near or far"), 
 	make_option("--genomic_seq_len", type="integer", default=1000, help="no idea"), 
 	make_option("--context_seq_len", type="integer", default=100, help="Length of the context sequence")
@@ -48,16 +48,7 @@ genomic_seq_len = opt$genomic_seq_len
 context_seq_len = opt$context_seq_len
 
 #for testing 
-#in_file = "Detected_Fusions.csv"
-#in_expression = "transcript_BPKM.csv"
-#out_file = paste0(getwd(),"/context_seqs")
-#fa_path = paste0(getwd(), "/hg38_chroms")
-#ensemble_csv_file = "GRCh38.86_cdna_all.csv"
-#cis_near_distance = 1000000
-#genomic_seq_len = 1000
-#context_seq_len = 400
-
-
+#setwd("..\get_fusion_seq_test")
 
 # select optimal type of matching transcript
 select_type <- function(var1){
@@ -195,7 +186,7 @@ pep_translate <- function(cds_seq){
 	pep = c()
 	for (i in 1:length(cds_seq)){
 		pep = c(pep, tryCatch({sub("\\*.*", "", as.character(translate(DNAString(cds_seq[i]), genetic.code = GENETIC_CODE, if.fuzzy.codon = "error")))},
-		               error=function(err) {"NA"}))
+		               error=function(err) {""}))
 	}
 	
 	return(pep)
@@ -224,9 +215,7 @@ tmp_time = Sys.time()
 #read in and split breakpoints
 print(paste0("->read detected fusion from: ", in_file))
 breakpoints = read.csv(in_file, sep = ";", dec = ".", na.strings = c("na")) %>%
-	group_by(FGID, Fusion_Gene, Breakpoint1, Breakpoint2) %>%
-	summarize() %>%
-  ungroup() %>%
+	distinct(FGID, Fusion_Gene, Breakpoint1, Breakpoint2) %>%
 	gather(side, Breakpoint, -FGID, -Fusion_Gene) %>%
 	mutate(side = as.numeric(gsub("Breakpoint", "", side))) %>%
 	separate(Breakpoint, sep = ":", into = c("chr", "pos", "strand"), convert = TRUE) %>%
@@ -266,10 +255,9 @@ genomic_overlap = breakpoints %>%
 	group_by(FGID, Fusion_Gene, side, chr, pos, strand) %>%
 	filter(bp_type == select_type(bp_type)) %>% #filter best matching transcripts per breakpoint
 	arrange() %>%
-	group_by(FGID, Fusion_Gene, side, element, chr, pos, strand, bp_type, bp_element, transcript_id, symbol, 
+  ungroup() %>%
+  distinct(FGID, Fusion_Gene, side, element, chr, pos, strand, bp_type, bp_element, transcript_id, symbol, 
 		gene_start, gene_end, cds_start, cds_end, start, end, number, type) %>%
-	summarize() %>%
-	ungroup() %>%
 	unnest(start = strsplit(start, "\\|"), end = strsplit(end, "\\|"), number = strsplit(number, "\\|"), type = strsplit(type, "\\|")) %>%
 	mutate(start = as.numeric(start), end = as.numeric(end), number = as.numeric(number)) %>%
 	filter(type != "intron" | number == bp_element) %>% #keep only exons and introns and intergenic elements with breakpoints
@@ -280,13 +268,13 @@ genomic_overlap = breakpoints %>%
 #load sequence for all elements
 print(paste0("->generate transcript sequences from: ", fa_path))
 transcript_seq = genomic_overlap %>%
-	distinct(FGID, transcript_id, chr, start, end, strand, number) %>%
-	arrange(chr, transcript_id, number) %>% #reorder to reduce loading and ensure correct assembly of exon sequences to transcript
+  distinct(FGID, transcript_id, chr, start, end, strand, number) %>%
+  arrange(chr, transcript_id, number) %>% #reorder to reduce loading and ensure correct assembly of exon sequences to transcript
 	mutate(seq = read_genome_seq(chr, start, end, strand)) %>% #determine sequence of all elements
 	group_by(FGID, transcript_id) %>%
-	summarize(seq = paste0(seq, collapse = "")) %>%
+	summarize(seq = paste0(seq, collapse = ""), exon_nr = n(), exon_starts = paste0(start, collapse="|"), exon_ends = paste0(end, collapse="|")) %>%
 	ungroup()
-  
+
 
 
 #calculate relative positions of elements/exons on transcript
@@ -321,10 +309,9 @@ transcript_bp = genomic_overlap %>%
 	left_join(transcript_cds, by=c("FGID", "transcript_id")) %>%
 	mutate(pos_rel = ifelse(strand == "+", pos - start + start_rel + 1, end - pos + start_rel + 1)) %>% #calculate relative distance to bp account for strand
 	mutate(frame = calculate_frame(bp_type, side, cds_start_rel, cds_end_rel, pos_rel)) %>% #determine frame
-	inner_join(transcript_seq, by = c("FGID", "transcript_id")) %>%
-  mutate(test2=nchar(seq))
-
+	inner_join(transcript_seq, by = c("FGID", "transcript_id"))
 	
+
 
 #filter information for side 1 of the breakpoint
 overlap_side1 = filter(transcript_bp, side == 1) #breakpoint1
@@ -350,6 +337,7 @@ overlap = overlap_side1 %>%
 		exon_boundary = ifelse(S1_bp_type == "boundary", ifelse(S2_bp_type == "boundary", "both", "5prime"), ifelse(S2_bp_type == "boundary", "3prime", "none")), #determine if bp matches with known exon_boundaries
 		bp1_frame = S1_frame, bp2_frame = S2_frame,	frame = determine_frame(S1_frame, S2_frame),
 		#wt1_sequence = S1_seq, wt1_sequence_bp = S1_pos_rel, wt2_sequence = S2_seq, wt2_sequence_bp = S2_pos_rel, #determine wildtype transcripts and breakpoint positions
+		exon_nr = S1_exon_nr + S2_exon_nr, exon_starts = paste0(S1_exon_starts, "|", S2_exon_starts), exon_ends = paste0(S1_exon_ends, "|", S2_exon_ends), #combine exon positions
 		transcript_sequence = paste0(substr(S1_seq, 1, S1_pos_rel), substr(S2_seq, S2_pos_rel, nchar(S2_seq))), transcript_sequence_bp = S1_pos_rel, #combine sequence for fusion transcript
 		wt1_context_sequence = substr(S1_seq, S1_pos_rel - context_seq_len + 1, S1_pos_rel + context_seq_len), wt1_context_sequence_bp = pmin(S1_pos_rel, context_seq_len),
 		wt2_context_sequence = substr(S2_seq, S2_pos_rel - context_seq_len, S2_pos_rel + context_seq_len - 1), wt2_context_sequence_bp = pmin(S2_pos_rel, context_seq_len),
@@ -366,15 +354,13 @@ overlap = overlap_side1 %>%
 		substr(peptide_sequence, round(peptide_sequence_bp - 13.5, 0), nchar(peptide_sequence))), #determine sequence potentially immunogenic
 		neo_peptide_sequence_bp = peptide_sequence_bp - round(peptide_sequence_bp - 13.5, 0))
 
-test = overlap %>%
-  filter(context_sequence == "")
+
 
 # select relevant columns for context_seq.csv
 output = overlap %>%
 	select(FGID, Fusion_Gene, Breakpoint1, Breakpoint2, FTID, context_sequence_id, context_sequence_100_id,
-		type, exon_boundary1, exon_boundary2, exon_boundary, bp1_frame, bp2_frame, frame, 
-		context_sequence, context_sequence_bp, wt1_context_sequence, wt1_context_sequence_bp, wt2_context_sequence, wt2_context_sequence_bp, 
-		neo_peptide_sequence, neo_peptide_sequence_bp)
+		type, exon_nr, exon_starts, exon_ends, exon_boundary1, exon_boundary2, exon_boundary, bp1_frame, bp2_frame, frame, 
+		context_sequence, context_sequence_bp, neo_peptide_sequence, neo_peptide_sequence_bp)
 
 write.csv2(output, out_file, row.names = FALSE, quote = FALSE)
 
@@ -390,8 +376,7 @@ context_seq_data = overlap %>%
 	select(name = context_sequence_id, ft_context_sequence = context_sequence, wt1_context_sequence,wt2_context_sequence) %>%
 	gather(type, sequence, -name) %>%
 	mutate(name = paste0(name, "_", gsub("_context_sequence","",type))) %>%
-	group_by(name, sequence) %>%
-	summarize() %>%
+	distinct(name, sequence) %>%
 	arrange(name) 
 
 seqSet <- DNAStringSet(context_seq_data$sequence)
@@ -405,8 +390,7 @@ transcrtipt_seq_data = overlap %>%
 	gather(type, sequence, -name) %>%
 	separate(sequence, into=c("sequence","bp"), sep=":") %>%
 	mutate(name = paste0(name, "_", gsub("_sequence","",type),":",bp)) %>%
-	group_by(name, sequence) %>%
-	summarize() %>%
+	distinct(name, sequence) %>%
 	arrange(name)
 
 transcriptseqSet <- DNAStringSet(transcrtipt_seq_data$sequence)
@@ -417,8 +401,7 @@ writeXStringSet(transcriptseqSet, paste0(out_file, "_transcript.fasta"), append 
 peptide_seq_data = overlap %>%
 	transmute(name = paste0(FTID,":", context_sequence_id, ":", peptide_sequence_bp, ":", frame), 
 		sequence = peptide_sequence) %>%
-	group_by(name, sequence) %>%
-	summarize()
+	distinct(name, sequence)
 
 peptideseqSet <- AAStringSet(peptide_seq_data$sequence)
 names(peptideseqSet) <- peptide_seq_data$name
