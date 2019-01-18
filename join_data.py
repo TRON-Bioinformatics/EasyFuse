@@ -15,7 +15,7 @@ import os
 import sys
 import pandas as pd
 from Bio import pairwise2 # Bio is not available where I run pylint => pylint: disable=E0401
-from easyfuse_iomethods import IOmethods as urlaio
+import misc.io_methods as IOMethods
 
 # pylint: disable=line-too-long
 #         yes they are partially, but I do not consider this to be relevant here
