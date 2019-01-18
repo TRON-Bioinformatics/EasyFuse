@@ -89,13 +89,11 @@ class Processing(object):
         else:
             left, right, sample_id = IOMethods.get_fastq_files(self.input_path, self.logger)
             for i, fastq_file in enumerate(left):
-                sample_id = re.search('(\w*)(\_|\_R)([1])(\_|\.f)', IOMethods.path_leaf(left[i])).group(1) # urla - todo: check pylint w1401 (is this a correct regex?)
-                print(sample_id)
                 if len(left) == len(right):
-                    self.logger.info("Processing Sample ID: {} (paired end)".format(sample_id))
+                    self.logger.info("Processing Sample ID: {} (paired end)".format(sample_id[i]))
                     self.logger.info("Sample 1: {}".format(left[i]))
                     self.logger.info("Sample 2: {}".format(right[i]))
-                    self.execute_pipeline(left[i], right[i], sample_id, ref_genome, ref_trans, tool_num_cutoff, run_qc, filter_reads)
+                    self.execute_pipeline(left[i], right[i], sample_id[i], ref_genome, ref_trans, tool_num_cutoff, run_qc, filter_reads)
 
     # Per sample, define input parameters and execution commands, create a folder tree and submit runs to slurm
     def execute_pipeline(self, fq1, fq2, sample_id, ref_genome, ref_trans, tool_num_cutoff, run_qc, filter_reads):
@@ -213,6 +211,8 @@ class Processing(object):
         # (10) De novo assembly of fusion transcripts
         # urla: This is currently still under active development and has not been tested thoroughly
         cmd_denovoassembly = "{0} -i waiting_for_gene_list_input -c {1} -b {2}_Aligned.out.bam -g {3} -t {4} -o waiting_for_assembly_out_dir".format(self.cfg.get('commands', 'denovoassembly_cmd'), self.cfg.get_path(), os.path.join(filtered_reads_path, sample_id), ref_genome, ref_trans)
+        # (11) data summarization
+        cmd_summarize = "{0} -i {1} -f {2} --icam_run".format(self.cfg.get('commands', 'summary_cmd'), self.working_dir, fusiontools.split(","))
         # (X) Sample monitoring
         cmd_samples = "{0} --output-file={1} --sample-id={2} --action=append_state --state='".format(self.cfg.get('commands', 'samples_cmd'), self.samples.infile, sample_id)
 
@@ -230,7 +230,8 @@ class Processing(object):
             "Infusion", #9
             "Soapfuse", #10
             "Fetchdata", #11
-            "Assembly" #12
+            "Assembly", #12
+            "Summarize" #13
             ]
         exe_cmds = [
             " && ".join([cmd_fastqc, cmd_qc_parser, cmd_skewer]), #0
@@ -245,7 +246,8 @@ class Processing(object):
             cmd_infusion, #9
             cmd_soapfuse, #10
             cmd_fetchdata, #11
-            cmd_denovoassembly #12
+            cmd_denovoassembly, #12
+            cmd_summarize #13
             ]
         exe_path = [
             qc_path, #0
@@ -260,7 +262,8 @@ class Processing(object):
             infusion_path, #9
             soapfuse_path, #10
             fetchdata_path, #11
-            "" #12
+            "", #12
+            self.working_dir #13
             ]
 
         # create and submit slurm job if the tool is requested and hasn't been run before
@@ -296,7 +299,7 @@ class Processing(object):
                     dependency = Queueing.get_jobs_by_name("Star-{}".format(sample_id))
                 elif tool == "Fetchdata":
                     dependency = Queueing.get_jobs_by_name(sample_id)
-                elif tool == "Assembly":
+                elif tool == "Summarize":
                     dependency = Queueing.get_jobs_by_name("Fetchdata-{}".format(sample_id))
                 elif tool == "ReadFilter":
                     dependency = Queueing.get_jobs_by_name("QC-{}".format(sample_id))
