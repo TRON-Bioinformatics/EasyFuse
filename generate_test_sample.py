@@ -69,20 +69,31 @@ class SampleGenerator:
         start_r2 = r2.reference_start
         end_r2 = r2.reference_end
 
+
+        
+        valid_r1 = False
+        valid_r2 = False
+
         for (chrom, min_start, max_end) in self.fusion_loci:
             if chrom == rname_r1 or chrom == rname_r2:
                 valid_r1 = min_start < start_r1 < max_end or min_start < end_r1 < max_end
                 valid_r2 = min_start < start_r2 < max_end or min_start < end_r2 < max_end
 
                 if valid_r1 or valid_r2:
-                    self.sample_size += 2
-                    seq_r1 = r1.get_forward_sequence()
-                    seq_r2 = r2.get_forward_sequence()
-                    qual_r1 = "".join([chr(x+33) for x in r1.get_forward_qualities()])
-                    qual_r2 = "".join([chr(x+33) for x in r2.get_forward_qualities()])
-                    # write to FASTQ
-                    self.fq1.write("@{} 1:N:0:NNNNNN\n{}\n+\n{}\n".format(qname_r1, seq_r1, qual_r1))
-                    self.fq2.write("@{} 2:N:0:NNNNNN\n{}\n+\n{}\n".format(qname_r2, seq_r2, qual_r2))
+                    break
+
+
+        if valid_r1 or valid_r2:
+            self.sample_size += 2
+
+            seq_r1 = r1.get_forward_sequence()
+            seq_r2 = r2.get_forward_sequence()
+            qual_r1 = "".join([chr(x+33) for x in r1.get_forward_qualities()])
+            qual_r2 = "".join([chr(x+33) for x in r2.get_forward_qualities()])
+
+            # write to FASTQ
+            self.fq1.write("@{} 1:N:0:NNNNNN\n{}\n+\n{}\n".format(qname_r1, seq_r1, qual_r1))
+            self.fq2.write("@{} 2:N:0:NNNNNN\n{}\n+\n{}\n".format(qname_r2, seq_r2, qual_r2))
 
 #                    print(rname_r1, start_r1, end_r1)
 #                    print(rname_r2, start_r2, end_r2)

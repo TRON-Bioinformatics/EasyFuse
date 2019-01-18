@@ -12,7 +12,7 @@ def main():
     parser.add_argument('-q','--qc-table', dest='qc_table', help='Specify input QC table', required=True)
     parser.add_argument('-i','--input', dest='input', nargs='+', help='Specify input FASTQ files', required=True)
     parser.add_argument('-o','--output', dest='output', help='Specify output folder', default='.')
-    parser.add_argument('-g','--genome', dest='genome', help='Specify reference genome', default='human')
+    parser.add_argument('-g','--genome', dest='genome', help='Specify reference genome', default='hg38')
     parser.add_argument('-c','--config', dest='config', help='Specify config file')
     args = parser.parse_args()
 
@@ -21,7 +21,7 @@ def main():
     else:
         cfg = Config(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'config.ini'))
 
-    soapfuse_cfg = cfg.get('commands', 'soapfuse_cfg_{}'.format(args.genome))
+    soapfuse_cfg = cfg.get('otherFiles', 'ensembl_soapfuse_cfg_{}'.format(args.genome))
 
     remaining_len = 1000
     read_len = 0

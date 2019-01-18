@@ -207,7 +207,7 @@ class Processing(object):
         # (8) Infusion
         cmd_infusion = "{0} -1 {1} -2 {2} --skip-finished --min-unique-alignment-rate 0 --min-unique-split-reads 0 --allow-non-coding --out-dir {3} {4}".format(self.cfg.get("commands", "infusion_cmd"), fq1, fq2, infusion_path, infusion_cfg_path)
         # (x) Soapfuse
-        cmd_soapfuse = "{} -c {} -q {} -i {} -o {} -g {}".format(self.cfg.get('commands', 'soapfuse_wrapper_cmd'), self.cfg.get_path(), qc_table_path, " ".join([fq1, fq2]), soapfuse_path, "human")
+        cmd_soapfuse = "{} -c {} -q {} -i {} -o {} -g {}".format(self.cfg.get('commands', 'soapfuse_wrapper_cmd'), self.cfg.get_path(), qc_table_path, " ".join([fq1, fq2]), soapfuse_path, ref_genome)
         # (9) Data collection
         cmd_fetchdata = "{0} -i {1} -o {2} -s {3} -c {4} -g {5} -t {6} --fq1 {7} --fq2 {8}".format(self.cfg.get('commands', 'fetchdata_cmd'), output_results_path, fetchdata_path, sample_id, self.cfg.get_path(), ref_genome, ref_trans, fq1, fq2)
         # (10) De novo assembly of fusion transcripts
@@ -347,7 +347,7 @@ def main():
     # create a local copy of the config file in the working dir folder in order to be able to re-run the script
     # urla: todo - the file permission should be set to read only after it was copied to the project folder (doesn't work for icam as "bfx" is a windows file system)
 
-
+    print(args.run_qc, args.filter_reads)
     proc = Processing(args.config, args.input, args.output_folder, args.partitions, args.userid, args.overwrite)
     proc.run(args.tool_support, args.run_qc, args.filter_reads, args.icam_run)
 
