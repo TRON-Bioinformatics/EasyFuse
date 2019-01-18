@@ -6,7 +6,7 @@ Simple method collection for:
 3) Slurm queue querying
 
 @author: Tron (PASO), BNT (URLA)
-@version: 20181126
+@version: 20180118
 """
 
 from __future__ import print_function
@@ -70,17 +70,17 @@ def submit(job_name, cmd, cores, mem_usage, output_results_folder, dependencies,
     elif sched == "pbs":
         _submit_pbs(job_name, cmd, cores, mem_usage, output_results_folder, dependencies)
     else:
-        _submit_nonqueue(cmd, output_results_folder)
+        _submit_nonqueue(cmd)
     
 def _submit_nonqueue(cmd, output_results_folder):
-    print(cmd)
-    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=output_results_folder, shell=True)
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=False)
     (stdoutdata, stderrdata) = p.communicate()
     r = p.returncode
     if r != 0:
         print("Error: Command \"{}\" returned non-zero exit status".format(cmd))
         print(stderrdata)
         sys.exit(1)
+    return stdoutdata
 
 
 def _submit_pbs(job_name, cmd, cores, mem_usage, output_results_folder, dependencies):
