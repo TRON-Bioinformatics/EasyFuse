@@ -5,6 +5,7 @@
 # 4) To whom shall slurm mails be sent to (receiver)
 [general]
 tools=Mapsplice,Fusioncatcher,Star,Starfusion,Infusion,Soapfuse,Fetchdata
+fusiontools=Mapsplice,Fusioncatcher,Starfusion,Starchip,Infusion
 fd_tools=Fusiongrep,Contextseq,Starindex,Staralign,Bamindex,Requantify
 ref_trans_version=ensembl
 ref_genome_build=hg38
@@ -62,6 +63,8 @@ star_cmd=/path/to/star_bin
 samtools_cmd=/path/to/samtools_bin
 trinity_cmd=
 blastn_cmd=
+# for liftover
+crossmap_cmd=/path/to/CrossMap.py
 
 # full path to reference files
 [references]
@@ -92,3 +95,7 @@ ensembl_soapfuse_cfg_mm10=/path/to/soapfuse_mouse.cfg
 dependencies=/path/to/repo/dependency_versions_tron.txt
 fasta_reformat=/path/to/repo/reformatfasta.py
 gtf_reformat=/path/to/repo/reformatgtf.py
+
+# required crossmap cmds/data in case you use the incooperated liftover capabilities
+[liftover]
+crossmap_chain=/path/to/GRCh38_to_GRCh37.chain.gz
