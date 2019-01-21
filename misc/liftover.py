@@ -16,8 +16,8 @@ import sys
 import os.path
 from distutils.spawn import find_executable
 import pandas as pd
-from easyfuse_config import Config
-from easyfuse_scheduling import Queue
+from misc.config import Config
+import misc.queue as Queueing
 
 class FusionLiftover(object):
     """Select alignments belonging to putative fusions from an s/bam file"""
@@ -28,7 +28,7 @@ class FusionLiftover(object):
     def liftcoords(self):
         """Parse ensembl transcriptome fasta file and modify header"""
         # initial defs for crossmap (the tool requires that its lib path is in the PYTHONPATH)
-        crossmap_exe = self.cfg.get('liftover', 'crossmap_cmd')
+        crossmap_exe = self.cfg.get('commands', 'crossmap_cmd')
         crossmap_root_path = os.path.dirname(os.path.dirname(os.path.realpath(find_executable(crossmap_exe)))) # assumes that crossmap exe is in root_path/bin
         crossmap_lib_path = os.path.join(crossmap_root_path, "lib")
         sys.path.append(crossmap_lib_path)
@@ -55,7 +55,7 @@ class FusionLiftover(object):
 
         # run crossmap to perform liftover
         cmd_crossmap = "{0} bed {1} {2} {3}".format(crossmap_exe, crossmap_chain, tmp_org_bed, tmp_dest_bed)
-        Queue.submit_nonqueue(cmd_crossmap.split(" "))
+        Queueing.submit("", cmd_crossmap.split(" "), "", "", "", "", "", "", "none")
         # check whether some coords were unmapped and print which those are (i.e. which fusion will be lost)
         if os.stat(tmp_dest_bed_unmap).st_size == 0:
             print("Liftover was successful for all fusion breakpoints! Creating a new DetectedFusions table...")

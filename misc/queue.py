@@ -139,7 +139,7 @@ def _submit_slurm(job_name, cmd, cores, mem_usage, output_results_folder, depend
             "#SBATCH --kill-on-invalid-dep=yes\n",
             "#SBATCH --cpus-per-task={}\n".format(cores),
             "#SBATCH --mem={}\n".format(int(mem_usage)*1000),
-            "#SBATCH --time=30-00:00:00\n",
+            "#SBATCH --time=03:00:00\n",
             depend,
             "#SBATCH --workdir={}\n".format(output_results_folder),
             "#SBATCH --error={}\n".format(error_file),

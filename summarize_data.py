@@ -23,7 +23,7 @@ class IcamSummary(object):
     """Collect stats of the run and write them to file"""
     def __init__(self, input_path, config_path):
         self.input_path = input_path
-        self.sample = Samples(os.path.join(input_path, "samples2.csv"))
+        self.sample = Samples(os.path.join(input_path, "samples.csv"))
         self.cfg = Config(config_path)
         self.figure_list = []
 

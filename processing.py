@@ -99,7 +99,11 @@ class Processing(object):
         
         # summarize all data if selected
         if "Summary" in self.cfg.get('general', 'tools'):
-            dependency = [Queueing.get_jobs_by_name("Fetchdata-{}".format(sample)) for sample in sample_list]
+            #dependency = [Queueing.get_jobs_by_name("Fetchdata-{}".format(sample)) for sample in sample_list]
+            # urla - note: would be happy to get the dependencies with a stacked LC, but is atm to complicated for me ^^
+            dependency = []
+            for sample in sample_list:
+                dependency.extend(Queueing.get_jobs_by_name("Fetchdata-{}".format(sample)))
             icam_run_string = ""
             if icam_run:
                 icam_run_string = " --icam_run"
@@ -109,7 +113,7 @@ class Processing(object):
             cmd_summarize = "{0} --input {1} --config {2}{3}{4}".format(self.cfg.get('commands', 'summary_cmd'), self.working_dir, self.cfg.get_path(), icam_run_string, modelling_string)
             self.logger.debug("Submitting slurm job: CMD - {0}; PATH - {1}; DEPS - {2}".format(cmd_summarize, self.working_dir, dependency))
             cpu, mem = self.cfg.get("resources", "summary").split(",")
-            self.submit_job("-".join(["Summary", str(int(round(time.time())))]), cmd_summarize, cpu, mem, self.working_dir, Queueing.get_jobs_by_name("Fetchdata-{}".format(sample_id)))
+            self.submit_job("-".join(["Summary", str(int(round(time.time())))]), cmd_summarize, cpu, mem, self.working_dir, dependency)
 
     # Per sample, define input parameters and execution commands, create a folder tree and submit runs to slurm
     def execute_pipeline(self, fq1, fq2, sample_id, ref_genome, ref_trans, tool_num_cutoff, run_qc, filter_reads, icam_run):
@@ -198,7 +202,7 @@ class Processing(object):
             if run_qc:
                 tools.insert(1, "Readfilter")
             else:
-                tools.insert(0, "ReadFilter")
+                tools.insert(0, "Readfilter")
         cmd_bam_to_fastq = "{0} fastq -0 {1} -1 {2} -2 {3} --threads waiting_for_cpu_number {4}_Aligned.out.filtered.bam".format(self.cfg.get('commands', 'samtools_cmd'), fq0, fq1, fq2, os.path.join(filtered_reads_path, sample_id))
         # (1) Kallisto expression quantification (required for pizzly)
         cmd_kallisto = "{0} quant --threads waiting_for_cpu_number --genomebam --gtf {1} --chromosomes {2} --index {3} --fusion --output-dir waiting_for_output_string {4} {5}".format(self.cfg.get('commands', 'kallisto_cmd'), genes_gtf_path, genome_sizes_path, kallisto_index_path, fq1, fq2)
