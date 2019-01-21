@@ -14,21 +14,24 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 import pandas as pd
 import seaborn as sns
-from misc.samples import Samples
+from misc.config import Config
 from join_data import DataJoining
+from misc.samples import Samples
 import misc.io_methods as IOMethods
 
 class IcamSummary(object):
     """Collect stats of the run and write them to file"""
-    def __init__(self, input_path):
+    def __init__(self, input_path, config_path):
         self.input_path = input_path
         self.sample = Samples(os.path.join(input_path, "samples2.csv"))
+        self.cfg = Config(config_path)
         self.figure_list = []
 
-    def run(self, icam_run, fusion_tools):
+    def run(self, icam_run, model_predictions):
         """Execute individual methods"""
+        fusion_tools = self.cfg.get("general", "fusiontools").split(",")
         fusion_data_summary_path = os.path.join(self.input_path, "FusionSummary")
-        urlaio.create_folder_wo_logging(fusion_data_summary_path)
+        IOMethods.create_folder(fusion_data_summary_path)
 
         now_time = datetime.fromtimestamp(time.time()).strftime("%Y%m%d_%H%M%S")
         figure_out_path = os.path.join(fusion_data_summary_path, "FusionSelection_figures_{}.pdf".format(now_time))
@@ -50,6 +53,7 @@ class IcamSummary(object):
 
         count_pairs = 0
         count_valid_pairs = 0
+        count_valid_sample = 0
         # check how many samples are available for processing and create {sample_id: sample_date} dict
         sample_date_dict = {}
         sample_toolCnt_dict = {}
@@ -61,6 +65,8 @@ class IcamSummary(object):
                 sample_date_dict[sample] = "NA"
             # count the numbers of fusion tools that have been run on this sample
             sample_toolCnt_dict[sample] = len([tool for tool in fusion_tools if tool in self.sample.get_tool_list_from_state(sample)])
+            if "Fetchdata" in self.sample.get_tool_list_from_state(sample):
+                count_valid_sample += 1
             if icam_run:
                 if "Rep1" in sample:
                     current_base = sample.split("_")[0]
@@ -79,9 +85,11 @@ class IcamSummary(object):
                         count_valid_pairs += 1
         if icam_run:
             print("Found {0} (partially) processed samples (from {1} patients) in {2}. Data will be collected from {3} patient samples for which fetchdata has been run on both replicates.".format(i, count_pairs, self.input_path, count_valid_pairs))
+        else:
+            print("Found {0} (partially) processed samples in {1}. Data will be collected from {2} samples for which fetchdata has been run.".format(i, self.input_path, count_valid_sample))
 
         average_time = 0
-        count_processed_pairs = 0
+        count_processed = 0
         with open(data_out_path_fltr, "w") as fltr_out:
             fltr_out.write("SampleID\tSampleDate\tFusionToolCnt\t" + "\t".join(colnames_filtering) + "\n")
             for sample in sid_list:
@@ -95,10 +103,10 @@ class IcamSummary(object):
                         sample2 = sample
                         #call fusionranking
                         if "Fetchdata" in self.sample.get_tool_list_from_state(sample1) and "Fetchdata" in self.sample.get_tool_list_from_state(sample2):
-                            count_processed_pairs += 1
-                            print("Processing patient ID {0} (dataset {1}/{2})".format(current_base, count_processed_pairs, count_valid_pairs))
+                            count_processed += 1
+                            print("Processing patient ID {0} (dataset {1}/{2})".format(current_base, count_processed, count_valid_pairs))
                             start_time = time.time()
-                            fusion_data_summary = DataJoining(self.input_path, sample1, sample2, os.path.join(fusion_data_summary_path, current_base), False).run(fusion_tools, icam_run)
+                            fusion_data_summary = DataJoining(self.input_path, sample1, sample2, os.path.join(fusion_data_summary_path, current_base), False).run(self.cfg, icam_run, model_predictions)
 
                             fusion_frequency_all = self.add_to_fus_dict(fusion_data_summary[0][1], fusion_frequency_all)
                             fusion_frequency_all = self.add_to_fus_dict(fusion_data_summary[1][1], fusion_frequency_all)
@@ -113,23 +121,23 @@ class IcamSummary(object):
                             fltr_out.write(current_base + "\t" + str(sample_date_dict[current_base]) + "\t" + str(sample_toolCnt_dict[current_base]) + "\t" + "\t".join(map(str, fusion_data_summary[2][0])) + "\n")
 
                             time_taken = time.time() - start_time
-                            average_time = (average_time * (count_processed_pairs-1) + time_taken) / count_processed_pairs
-                            estimated_end = average_time * (count_valid_pairs - count_processed_pairs)
+                            average_time = (average_time * (count_processed-1) + time_taken) / count_processed
+                            estimated_end = average_time * (count_valid_pairs - count_processed)
                             print("done. Processing time: {0:.2f}s; Average processing time: {1:.2f}s; Estimated end of processing in {2:.2f}s)".format(time_taken, average_time, estimated_end))
                 else:
                     if "Fetchdata" in self.sample.get_tool_list_from_state(sample):
-                        count_processed_pairs += 1
-                        print("Processing sample {0} (dataset {1}/{2})".format(sample, count_processed_pairs, len(sid_list)))
+                        count_processed += 1
+                        print("Processing sample {0} (dataset {1}/{2})".format(sample, count_processed, len(sid_list)))
                         start_time = time.time()
-                        fusion_data_summary = DataJoining(self.input_path, sample, "", os.path.join(fusion_data_summary_path, sample), False).run(fusion_tools, icam_run)
+                        fusion_data_summary = DataJoining(self.input_path, sample, "", os.path.join(fusion_data_summary_path, sample), False).run(self.cfg, icam_run, model_predictions)
 
                         fusion_frequency_all = self.add_to_fus_dict(fusion_data_summary[1], fusion_frequency_all)
                         filtering_data_1[sample] = fusion_data_summary[0]
                         fltr_out.write(sample + "\t" + str(sample_date_dict[sample]) + "\t" + str(sample_toolCnt_dict[sample]) + "\t" + "\t".join(map(str, fusion_data_summary[0])) + "\n")
 
                         time_taken = time.time() - start_time
-                        average_time = (average_time * (count_processed_pairs-1) + time_taken) / count_processed_pairs
-                        estimated_end = average_time * (count_valid_pairs - count_processed_pairs)
+                        average_time = (average_time * (count_processed-1) + time_taken) / count_processed
+                        estimated_end = average_time * (count_valid_sample - count_processed)
                         print("done. Processing time: {0:.2f}s; Average processing time: {1:.2f}s; Estimated end of processing in {2:.2f}s)".format(time_taken, average_time, estimated_end))
 
 
@@ -225,11 +233,12 @@ def main():
     parser = argparse.ArgumentParser(description='Post processing of an easyfuse run - currently, collecting runtimes only :)')
 
     parser.add_argument('-i', '--input', dest='input', help='Specify the easyfuse root dir of the run you want to process.', required=True)
-    parser.add_argument('-f', '--fus_tool', dest='fustool', help='List of fusion tools to consider')
+    parser.add_argument('-c', '--config', dest='config', help='Specify config file.', required=True)
+    parser.add_argument('--model_predictions', default=False, action='store_true', help='Score predictions based on pre-train model')
     parser.add_argument('--icam_run', dest='icam_run', help=argparse.SUPPRESS, default=False, action='store_true')
     args = parser.parse_args()
-    stats = IcamSummary(args.input)
-    stats.run(args.icam_run, args.fustool.split(","))
+    stats = IcamSummary(args.input, args.config)
+    stats.run(args.icam_run, args.model_predictions)
 
 if __name__ == '__main__':
     main()

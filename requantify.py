@@ -2,13 +2,15 @@
 Junction/Spanning read pair counting
 
 @author: BNT (URLA)
-@version: 20181126
+@version: 20190118
 """
 
-from __future__ import print_function
+from __future__ import print_function, division
+import os.path
 from argparse import ArgumentParser
 #from urla_logger_latest import Logger
 import pysam # pysam is not available for windows (where I run pylint) => pylint: disable=E0401
+
 
 # pylint: disable=line-too-long
 #         yes they are partially, but I do not consider this to be relevant here
@@ -21,42 +23,44 @@ class Requantification(object):
         self.bp_distance_threshold = int(bp_distance_threshold)
         self.fusion_seq_dict = {}
         #self.logger = Logger("{}.fusionReadFilterLog".format(output))
+        self.input_read_count = 0
 
     def quantify_read_groups(self, read_buffer, reference_base):
         """Count junction/spanning pairs on ft and wt1/2"""
         breakpoint_pos = self.fusion_seq_dict[reference_base][0]
         anchor_ft = 0
-        anchor_wt = 0
+        anchor_wt1 = 0
+        anchor_wt2 = 0
+        # the read_buffer contains all reads mapping to the fusion transcript and the wildtyp backgrounds
+        # the read_group is list of reads (incl multimappers) belonging to a single read pair
+        # reads from this read group can map independently to ft, wt1 and wt2
         for read_group in read_buffer:
             junction_ft = 0 # 0 = no junction overlapping read, 1+ = at least one of the paired reads is a junction read
             spanning_ft = [0, 0] # left: paired read cnt fully left of the fusion bp, right: paired read cnt fulls right of the fusion bp
-            junction_wt = 0 # like is_junction_ft but for wt
-            spanning_wt = [0, 0] # like is_spanning_ft but for wt
+            junction_wt1 = 0 # like is_junction_ft but for wt1
+            spanning_wt1 = [0, 0] # like is_spanning_ft but for wt1
+            junction_wt2 = 0 # like is_junction_ft but for wt2
+            spanning_wt2 = [0, 0] # like is_spanning_ft but for wt2
 
+            # each processed read belongs to one of the three defined read_groups
             for read in read_buffer[read_group]:
-                # exclude non-primary alignments
-                #if read.flag > 255:
-                #    continue
-                # exclude low mapq alignments
-                #if read.mapping_quality < 1:
-                #    continue
                 if read.reference_name.endswith("ft"):
                     junction_ft, spanning_ft, anchor_ft = self.count_junc_span(read, breakpoint_pos, junction_ft, spanning_ft, anchor_ft)
+                elif read.reference_name.endswith("wt1"):
+                    junction_wt1, spanning_wt1, anchor_wt1 = self.count_junc_span(read, breakpoint_pos, junction_wt1, spanning_wt1, anchor_wt1)
                 else:
-                    junction_wt, spanning_wt, anchor_wt = self.count_junc_span(read, breakpoint_pos, junction_wt, spanning_wt, anchor_wt)
+                    junction_wt2, spanning_wt2, anchor_wt2 = self.count_junc_span(read, breakpoint_pos, junction_wt2, spanning_wt2, anchor_wt2)
 
             #print("stored before: {}".format(self.fusion_seq_dict[reference_base]))
             #print("jft: {}, sft: {}, jwt: {}, swt: {}".format(is_junction_ft, is_spanning_ft, is_junction_wt, is_spanning_wt))
-            if junction_ft > 0:
-                self.fusion_seq_dict[reference_base][1] += 1
-            elif spanning_ft[0] > 0 and spanning_ft[0] == spanning_ft[1]:
-                self.fusion_seq_dict[reference_base][2] += 1
-            if junction_wt > 0:
-                self.fusion_seq_dict[reference_base][3] += 1
-            elif spanning_wt[0] > 0 and spanning_wt[0] == spanning_wt[1]:
-                self.fusion_seq_dict[reference_base][4] += 1
+            # update junction and spanning counts
+            self.update_counts(reference_base, junction_ft, spanning_ft, 1)
+            self.update_counts(reference_base, junction_wt1, spanning_wt1, 6)
+            self.update_counts(reference_base, junction_wt2, spanning_wt2, 11)
+        # set max anchor for this reference base
         self.fusion_seq_dict[reference_base][5] = anchor_ft
-        self.fusion_seq_dict[reference_base][6] = anchor_wt
+        self.fusion_seq_dict[reference_base][10] = anchor_wt1
+        self.fusion_seq_dict[reference_base][15] = anchor_wt2
             #print("stored after: {}".format(self.fusion_seq_dict[reference_base]))
 
     def count_junc_span(self, read, breakpoint_pos, junction_count, spanning_counts, anchor):
@@ -73,14 +77,48 @@ class Requantification(object):
             spanning_counts[1] += 1
         return junction_count, spanning_counts, anchor
 
+    # counter_start should be 1 for ft, 6 for wt1 and 11 for wt2 (see comment in header_to_dict for details)
+    def update_counts(self, reference_base, junctions, spannings, counter_start):
+        """Updates the read counter in the fusion_seq_dict"""
+        if spannings[0] > 0:
+            self.fusion_seq_dict[reference_base][counter_start] += 1
+        if spannings[1] > 0:
+            self.fusion_seq_dict[reference_base][counter_start + 1] += 1
+        if junctions > 0:
+            self.fusion_seq_dict[reference_base][counter_start + 2] += 1
+        elif spannings[0] > 0 and spannings[0] == spannings[1]:
+            self.fusion_seq_dict[reference_base][counter_start + 3] += 1
+
+    def normalize_counts_cpm(self, count):
+        """Returns the CPM of a read count based on the number of original input reads"""
+        if self.input_read_count == 0:
+            return count
+        return count / self.input_read_count * 1000000
+
     def header_to_dict(self):
         """Convert bam header into a dict with keys = SN fields and values = list of breakpoint + junction/spanning counter"""
         for header_seq_id in self.in_bam.header.to_dict()["SQ"]:
             if header_seq_id["SN"].endswith("_ft"):
                 id_split = header_seq_id["SN"].split("_")
-                self.fusion_seq_dict["_".join(id_split[:-2])] = [int(id_split[-2]), 0, 0, 0, 0, 0, 0] # initialize with bp loc on ft as well as counter for junction ft, spanning ft, junction wt, spanning wt mappings and longest anchor
+                # fusion dict counter
+                # [0]: breakpoint position on ft
+                # [1]: gene a counts on ft
+                # [2]: gene b counts on ft
+                # [3]: junction read count on ft
+                # [4]: spanning pairs count on ft
+                # [5]: longest anchor on ft
+                # [6]: gene a counts on wt1
+                # [7]: gene b counts on wt2
+                # [8]: junction read count on wt1
+                # [9]: spanning pairs count on wt1
+                # [10]: longest anchor on wt1
+                # [11]: gene a counts on wt2
+                # [12]: gene b counts on wt2
+                # [13]: junction read count on wt2
+                # [14]: spanning pairs count on wt2
+                # [15]: longest anchor on wt2
+                self.fusion_seq_dict["_".join(id_split[:-2])] = [int(id_split[-2]), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] # initialize with bp loc on ft as well as counter for (junction, spanning and longest anchor) each on ft, wt1 and wt2
         print("Found {} potential fusion sequences".format(len(self.fusion_seq_dict)))
-
 
     def run(self):
         """Walk linewise through a s/bam file and send reads mapping to the same fusion/wt context to counting"""
@@ -105,10 +143,10 @@ class Requantification(object):
             read_buffer[read.query_name].append(read)
             # reference name conventions may change in the near future, but the tail must be
             # "*_breakpointPosition_ft" for the fusion transcript and "*_wt{1,2}" for the wt background
-            if read.reference_name.endswith("ft"):
-                last_reference = "_".join(read.reference_name.split("_")[:-2])
-            else:
-                last_reference = "_".join(read.reference_name.split("_")[:-1])
+#            if read.reference_name.endswith("ft"):
+            last_reference = "_".join(read.reference_name.split("_")[:-2])
+#            else:
+#                last_reference = "_".join(read.reference_name.split("_")[:-1])
 
         # process the last read_buffer
         self.quantify_read_groups(read_buffer, last_reference)
@@ -116,14 +154,55 @@ class Requantification(object):
         # close reading/writing stream
         self.in_bam.close()
         # write data to file. Change out_file_sep to ";" to create a csv file
-        out_file_sep = "\t"
-        with open(self.output, "w") as out_file:
-            out_file.write(out_file_sep.join(["fusion_id", "breakpoint_pos", "junction_ft", "spanning_ft", "junction_wt", "spanning_wt", "longest_anchor_ft", "longest_anchor_wt"]) + "\n")
+
+        # get input read count
+        with open(os.path.join(os.path.dirname(self.output), "Star_org_input_reads.txt"), "r") as rfile:
+            self.input_read_count = int(rfile.next())
+
+        out_file_sep = ";"
+        header_string = out_file_sep.join(
+            ["ftid_plus", "breakpoint_pos",
+             "ft_a", "ft_b", "ft_junc", "ft_span", "ft_anch",
+             "wt1_a", "wt1_b", "wt1_junc", "wt1_span", "wt1_anch",
+             "wt2_a", "wt2_b", "wt2_junc", "wt2_span", "wt2_anch"])
+        # write counts and normalized counts
+        # for normalization, breakpoint and anchor must not be converted: list positions 0, 5, 10, 15
+        no_norm = {0, 5, 10, 15}
+        with open("{}.counts".format(self.output), "w") as out_counts, open(self.output, "w") as out_norm:
+            out_counts.write("{}\n".format(header_string))
+            out_norm.write("{}\n".format(header_string))
             for key in self.fusion_seq_dict:
+                out_counts.write("{}{}".format(key, out_file_sep))
+                out_norm.write("{}{}".format(key, out_file_sep))
+                # write counts directly
+                out_counts.write("{}\n".format(out_file_sep.join(map(str, self.fusion_seq_dict[key]))))
+                # normalize and write normalized counts
+                self.fusion_seq_dict[key] = [read_count if i in no_norm else self.normalize_counts_cpm(read_count) for i, read_count in enumerate(self.fusion_seq_dict[key])]
+                #self.fusion_seq_dict[key] = map(self.normalize_counts_cpm, self.fusion_seq_dict[key])
+                out_norm.write("{}\n".format(out_file_sep.join(map(str, self.fusion_seq_dict[key]))))
+        # write normalized counts
+#        with
+#            out_file2.write("{}\n".format(header_string))
+#            for key in self.fusion_seq_dict:
                 # write only those putative fusions, where not all counts are 0
                 #if sum(self.fusion_seq_dict[key][1:]) > 0:
-                self.fusion_seq_dict[key].insert(0, key)
-                out_file.write(out_file_sep.join(map(str, self.fusion_seq_dict[key])) + "\n")
+                #self.fusion_seq_dict[key].insert(0, key.rsplit("_", 2)[0])
+#                self.fusion_seq_dict[key] = map(self.normalize_counts_cpm, self.fusion_seq_dict[key])
+#                self.fusion_seq_dict[key].insert(0, key)
+#                out_file.write("{}\n".format(out_file_sep.join(map(str, self.fusion_seq_dict[key]))))
+
+#        out_file_sep = ";"
+#        with open(self.output, "w") as out_file:
+#            out_file.write(out_file_sep.join(["ftid_plus", "Type", "Reads_Gene_A", "Reads_Gene_B", "Junction_Reads", "Spanning_Pairs", "Longest_Anchor"]) + "\n")
+#            for key in self.fusion_seq_dict:
+#                # write only those putative fusions, where not all counts are 0
+#                #if sum(self.fusion_seq_dict[key][1:]) > 0:
+#                #ABCA7_19:1059141:+_ENST00000532194_DNHD1_11:6546666:+_ENST00000533649_9dd39c73a904776e_100_ft
+#                ftid_p = key.rsplit("_", 2)[0]
+#                (_, junc_ft, span_ft, anch_ft, junc_wt1, span_wt1, anch_wt1, junc_wt2, span_wt2, anch_wt2) = self.fusion_seq_dict[key]
+#                out_file.write(out_file_sep.join(map(str, [ftid_p, "ft", "NA", "NA", junc_ft, span_ft, anch_ft])) + "\n")
+#                out_file.write(out_file_sep.join(map(str, [ftid_p, "wt1", "NA", "NA", junc_wt1, span_wt1, anch_wt1])) + "\n")
+#                out_file.write(out_file_sep.join(map(str, [ftid_p, "wt2", "NA", "NA", junc_wt2, span_wt2, anch_wt2])) + "\n")
 
 def main():
     """Parse command line arguments and start script"""

@@ -369,11 +369,11 @@ write.csv2(output, out_file, row.names = FALSE, quote = FALSE)
 # dataframe of sequences for fasta file
 print("->generate fasta data")
 context_seq_data = overlap %>%
-	select(name = context_sequence_id, ft_context_sequence = context_sequence, wt1_context_sequence,wt2_context_sequence) %>%
-	gather(type, sequence, -name) %>%
-	mutate(name = paste0(name, "_", gsub("_context_sequence","",type))) %>%
+	select(name = FTID, hash_context = context_sequence_id, breakpoint = context_sequence_bp, ft_context_sequence = context_sequence, wt1_context_sequence,wt2_context_sequence) %>%
+  gather(type, sequence, -breakpoint, -hash_context, -name) %>%
+  mutate(name = paste(name, hash_context, breakpoint, gsub("_context_sequence","",type), sep = "_")) %>%
 	distinct(name, sequence) %>%
-	arrange(name) 
+	arrange(name)
 
 seqSet <- DNAStringSet(context_seq_data$sequence)
 names(seqSet) <- context_seq_data$name

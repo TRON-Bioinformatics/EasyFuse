@@ -24,7 +24,7 @@ def get_jobs_by_name(name, system="slurm"):
     elif system == "pbs":
         return get_jobs_by_name_pbs(name)
 
-def get_jobs_with_name_pbs(name):
+def get_jobs_by_name_pbs(name):
     jobs = []
     output = ""
     try:
@@ -72,7 +72,7 @@ def submit(job_name, cmd, cores, mem_usage, output_results_folder, dependencies,
     else:
         _submit_nonqueue(cmd)
     
-def _submit_nonqueue(cmd, output_results_folder):
+def _submit_nonqueue(cmd):
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=False)
     (stdoutdata, stderrdata) = p.communicate()
     r = p.returncode

@@ -16,6 +16,7 @@ import sys
 import pandas as pd
 from Bio import pairwise2 # Bio is not available where I run pylint => pylint: disable=E0401
 import misc.io_methods as IOMethods
+import misc.queue as Queueing
 
 # pylint: disable=line-too-long
 #         yes they are partially, but I do not consider this to be relevant here
@@ -38,7 +39,7 @@ class DataJoining(object):
         assembly_data = {}
         assembly_file_list = glob.glob(os.path.join(blast_assembly_dir, "*.blast.out.fusionTranscript"))
         for assembly_file in assembly_file_list:
-            fusid = urlaio.path_leaf(assembly_file).split(".")[0]
+            fusid = IOMethods.path_leaf(assembly_file).split(".")[0]
             assembly_data[fusid] = {}
             with open(assembly_file, "r") as afile:
                 tmp_header = ""
@@ -267,15 +268,17 @@ class DataJoining(object):
         if self.check_files(requant_file, False):
             requant_data = pd.read_table(requant_file, sep=";")
         context_data = context_data.set_index("ftid_plus").join(requant_data.set_index("ftid_plus"), how="left")
-        
+
         return context_data.fillna(0)
 
 
-    def run(self, fusion_tools, icam_run):
+    def run(self, config, icam_run, model_predictions):
         """run the data concatenation"""
+        fusion_tools = config.get("general", "fusiontools").split(",")
         # urla - note: with icam_run set to True, two results from technical replicates are expected as input
         print("Looking for required files...")
         # check whether output already exists
+        cols_to_aggregate_on = ["FGID", "context_sequence_id", "FTID"]
 
         if not self.overwrite and self.check_files("{}_fusRank_1.csv".format(self.output), True):
             print("Found pre-calculated output files. If you would like to re-calculate everything, re-start with the --overwrite parameter supplied.")
@@ -285,13 +288,12 @@ class DataJoining(object):
                 joined_table_12 = pd.read_csv("{}_fusRank_12.csv".format(self.output), sep=";")
         else:
             joined_table_1 = self.create_joined_table(self.id1, fusion_tools)
-            joined_table_1B = joined_table_1.groupby(by=["FGID", "context_sequence_id"], sort=False, as_index=False)
-            joined_table_1B.agg(self.custom_data_aggregation).to_csv("{}_fusRank_1.csv".format(self.output), sep=";", index=False)
-
+            joined_table_1b = joined_table_1.groupby(by=cols_to_aggregate_on, sort=False, as_index=False)
+            joined_table_1b.agg(self.custom_data_aggregation).to_csv("{}_fusRank_1.csv".format(self.output), sep=";", index=False)
             if icam_run:
                 joined_table_2 = self.create_joined_table(self.id2, fusion_tools)
-                joined_table_2B = joined_table_2.groupby(by=["FGID", "context_sequence_id"], sort=False, as_index=False)
-                joined_table_2B.agg(self.custom_data_aggregation).to_csv("{}_fusRank_2.csv".format(self.output), sep=";", index=False)
+                joined_table_2b = joined_table_2.groupby(by=cols_to_aggregate_on, sort=False, as_index=False)
+                joined_table_2b.agg(self.custom_data_aggregation).to_csv("{}_fusRank_2.csv".format(self.output), sep=";", index=False)
 
                 print("Merging data...")
                 # final columns in context data:
@@ -356,7 +358,7 @@ class DataJoining(object):
                 joined_table_12 = joined_table_1.join(joined_table_2, lsuffix="_1", rsuffix="_2", how="inner")
                 # write data to file
                 joined_table_12 = self.create_joined_table(self.id2, fusion_tools)
-                joined_table_12 = joined_table_12.groupby(by=["FGID", "context_sequence_id"], sort=False, as_index=False)
+                joined_table_12 = joined_table_12.groupby(by=cols_to_aggregate_on, sort=False, as_index=False)
                 joined_table_12.agg(self.custom_data_aggregation).to_csv("{}_fusRank_12.csv".format(self.output), sep=";", index=False)
 
                 # urla - note: the following can currently be considered as "putative developmental leftovers ^^"
@@ -374,6 +376,16 @@ class DataJoining(object):
     #                for fusion_pair in set(context_data12["Fusion_Gene"]):
     #                    fgl1.write("{}\n".format(fusion_pair.replace("_", "--")))
     #                    fgl2.write("{}\n".format(fusion_pair.replace("_", "--")))
+
+        for table in ["1", "2", "12"]:
+            summary_file = "{}_fusRank_{}.csv".format(self.output, table)
+            if model_predictions and self.check_files(summary_file, True):
+                model_exe = config.get("commands", "model_cmd")
+                model_path = config.get("otherFiles", "easyfuse_model")
+                # append prediction scores based on pre-calculated model
+                cmd_model = "{0} --fusion_summary {1} --model_file {2} --output {3}".format(model_exe, summary_file, model_path, "{}.pModelPred.csv".format(summary_file[:-4]))
+                Queueing.submit("", cmd_model.split(" "), "", "", "", "", "", "", sched="none")
+
         if icam_run:
             return (self.count_records(joined_table_1), self.count_records(joined_table_2), self.count_records(joined_table_12))
         return self.count_records(joined_table_1)
@@ -436,7 +448,7 @@ def main():
     args = parser.parse_args()
 
     fusrank = DataJoining(args.input_dir, args.id1, args.id2, args.output, args.overwrite)
-    fusrank.run(args.fustool, args.icam_run)
+    fusrank.run(args.fustool, args.icam_run, args.model_predictions)
 
 if __name__ == '__main__':
     main()

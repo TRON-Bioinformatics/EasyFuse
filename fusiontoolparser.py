@@ -16,7 +16,6 @@ import operator
 from argparse import ArgumentParser
 from misc.logger import Logger
 
-
 # pylint: disable=line-too-long
 #         yes they are partially, but I do not consider this to be relevant here
 class FusionParser(object):
@@ -161,7 +160,6 @@ class FusionParser(object):
     def get_mapsplice_results(self):
         """Load and parse results from mapsplice"""
         mapsplice_predict = os.path.join(self.scratch_path, "fusion", "mapsplice", "fusions_well_annotated.txt")
-
         fusion_map = {}
         with open(mapsplice_predict) as prediction:
             # next(prediction) # mapsplice final result table, doesn't have a header!

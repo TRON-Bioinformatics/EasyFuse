@@ -5,7 +5,7 @@ run requantification and
 combine all results
 
 @author: Tron (PASO), BNT (URLA)
-@version: 20180118
+@version: 20190118
 """
 
 from __future__ import print_function
@@ -58,7 +58,7 @@ class Fetching(object):
                     return int(line.split("|")[1].strip())
         return -1
 
-    def run(self, ref_genome, ref_trans, fusion_support, fq1, fq2):
+    def run(self, fusion_support, fq1, fq2, icam_run):
         """Identification of fastq files and initiation of processing"""
         # print sample id
         # execute processing pipe
@@ -67,15 +67,17 @@ class Fetching(object):
         if not fq1 or not fq2:
             self.logger.debug("Either ReadFile 1 or 2 or both are missing, trying to get original files from samples.csv")
             (fq1, fq2) = self.sample.get_fastq_files(self.sample_id)
-        self.execute_pipeline((fq1, fq2), ref_genome, ref_trans, fusion_support)
+        self.execute_pipeline((fq1, fq2), fusion_support, icam_run)
 
     # urla: there are a lot of local variables declarated in the following method.
     #       Although this could be reduced quite strongly, readability would be strongly reduced as well
     #       pylint:disable=R0914
-    def execute_pipeline(self, (fq1, fq2), ref_genome, ref_trans, fusion_support, icam_run):
+    def execute_pipeline(self, (fq1, fq2), fusion_support, icam_run):
         """Create sample specific subfolder structuge and run tools on fastq files"""
 
-		 # Genome/Gene references to use
+		# Genome/Gene references to use
+        ref_trans = self.cfg.get('general', 'ref_trans_version')
+        ref_genome = self.cfg.get('general', 'ref_genome_build')
         genome_fastadir_path = self.cfg.get('references', ref_trans + '_genome_fastadir_' + ref_genome)
         genes_csv_path = self.cfg.get('references', ref_trans + '_genes_csv_' + ref_genome)
 
@@ -90,10 +92,6 @@ class Fetching(object):
         classification_path = os.path.join(fetchdata_current_path, "classification")
         classification_file = os.path.join(classification_path, "classification.tdt")
 
-        # urla - note: tmp hack to get original star input reads for normalization
-        with open(os.path.join(classification_path, "Star_org_input_reads.txt"), "w") as infile:
-            infile.write(str(self.get_input_read_count_from_star(os.path.join(self.scratch_path, "filtered_reads", "{}_Aligned.out.bam".format(self.sample_id)))))
-
         for folder in [
                 fetchdata_current_path,
                 detected_fusions_path, context_seq_path,
@@ -102,10 +100,13 @@ class Fetching(object):
             ]:
             IOMethods.create_folder(folder, self.logger)
 
+        # urla - note: tmp hack to get original star input reads for normalization
+        with open(os.path.join(classification_path, "Star_org_input_reads.txt"), "w") as infile:
+            infile.write(str(self.get_input_read_count_from_star(os.path.join(self.scratch_path, "filtered_reads", "{}_Aligned.out.bam".format(self.sample_id)))))
+
         # Define cmd strings for each program
-        fusiontools = "Mapsplice,Fusioncatcher,Starfusion,Starchip,Infusion"
-        cmd_fusiondata = "{0} -i {1} -o {2} -s {3} -t {4} -f {5} -l {6}".format(self.cfg.get('commands', 'fetch_fusiondata_cmd'), self.scratch_path, detected_fusions_path, self.sample_id, fusion_support, fusiontools, self.logger.get_path())
-#        cmd_liftover = "{0} -i {1} -c {2}".format(self.cfg.get('commands', 'liftover_cmd'), detected_fusions_file, self.cfg.get_path)
+        cmd_fusiondata = "{0} -i {1} -o {2} -s {3} -t {4} -f {5} -l {6}".format(self.cfg.get('commands', 'fetch_fusiondata_cmd'), self.scratch_path, detected_fusions_path, self.sample_id, fusion_support, self.cfg.get('general', 'fusiontools'), self.logger.get_path())
+        cmd_liftover = "{0} -i {1} -c {2}".format(self.cfg.get('commands', 'liftover_cmd'), detected_fusions_file, self.cfg.get_path)
         cmd_contextseq = "{0} --input_detected_fusions {1} --fasta_genome_dir {2} --ensembl_csv {3} --output {4}".format(self.cfg.get('commands', 'fetch_context_cmd'), detected_fusions_file, genome_fastadir_path, genes_csv_path, context_seq_file)
         cpu = 12
         cmd_starindex = "{0} --runMode genomeGenerate --runThreadN {1} --limitGenomeGenerateRAM 30000000000 --genomeChrBinNbits waiting_for_bin_size_input --genomeSAindexNbases waiting_for_sa_idx_input --genomeDir {2} --genomeFastaFiles {3}".format(self.cfg.get('commands', 'star_cmd'), cpu, star_genome_path, "{0}{1}".format(context_seq_file, ".fasta"))
@@ -116,13 +117,13 @@ class Fetching(object):
         tools = self.cfg.get('general', 'fd_tools').split(",")
 
         # An icam_run must currently not be run w/o a liftover
-#        if icam_run:
-#            tools.insert("Liftover")
+        if icam_run:
+            tools.insert("Liftover")
 
         # set final lists of executable tools and path
         exe_tools = [
             "Fusiongrep", #1
-#            "Liftover", #2
+            "Liftover", #2
             "Contextseq", #3
             "Starindex", #4
             "Staralign", #5
@@ -131,7 +132,7 @@ class Fetching(object):
             ]
         exe_cmds = [
             cmd_fusiondata, #1
-#            cmd_liftover, #2
+            cmd_liftover, #2
             cmd_contextseq, #3
             cmd_starindex, #4
             cmd_staralign, #5
@@ -140,7 +141,7 @@ class Fetching(object):
             ]
         exe_dependencies = [
             "", #1
-#            detected_fusions_file, #2
+            detected_fusions_file, #2
             detected_fusions_file, #3
             "{0}{1}".format(context_seq_file, ".fasta.info"), #4
             star_genome_path, #5
@@ -157,9 +158,8 @@ class Fetching(object):
                         (star_bin, star_sa) = self.get_pseudo_genome_adjustments_for_star("{0}{1}".format(context_seq_file, ".fasta.info"))
                         exe_cmds[i] = exe_cmds[i].replace("waiting_for_bin_size_input", star_bin)
                         exe_cmds[i] = exe_cmds[i].replace("waiting_for_sa_idx_input", star_sa)
-                    #cmd = " && ".join([exe_cmds[i], cmd_samples + uid + "'"])
                     self.logger.debug("Executing: {}".format(exe_cmds[i]))
-                    Queueing._submit_nonqueue(exe_cmds[i].split(" "))
+                    Queueing.submit("", exe_cmds[i].split(" "), "", "", "", "", "", "", "none")
                 else:
                     self.logger.error("Could not run {0} due to the missing dependency {1}".format(tool, exe_dependencies[i]))
                     sys.exit(1)
@@ -173,15 +173,12 @@ def main():
     parser.add_argument('-i', '--input', dest='input', help='Data input directory.', required=True)
     parser.add_argument('-o', '--output', dest='output', help='Data output directory.', required=True)
     parser.add_argument('-s', '--sample', dest='sample', help='Specify the sample to process.', required=True)
-    parser.add_argument('-t', '--reference-transcripts', dest='ref_trans', choices=['ucsc', 'refseq', 'ensembl'], help='Specify the reference transcript database name.', default='ensembl', required=True)
-    parser.add_argument('-g', '--reference-genome', dest='ref_genome', choices=['hg18', 'hg19', 'hg38', 'mm9', 'mm10'], help='Specify the reference genome name.', default='hg38', required=True)
     parser.add_argument('-c', '--config', dest='config', help='Specify config file.', default="", required=True)
     parser.add_argument('--fq1', dest='fq1', help='Input read1 file for re-quantification', default="", required=False)
     parser.add_argument('--fq2', dest='fq2', help='Input read2 file for re-quantification', default="", required=False)
     parser.add_argument('--fusion_support', dest='fusion_support', help='Number of fusion tools which must predict the fusion event', default=1)
     parser.add_argument('--icam_run', dest='icam_run', help=argparse.SUPPRESS, default=False, action='store_true')
     args = parser.parse_args()
-
 
     # processing
     # 1: fusion tool parser
@@ -191,7 +188,7 @@ def main():
     # ...
     for i in range(1, int(args.fusion_support) + 1):
         proc = Fetching(args.input, args.output, args.sample, Config(args.config))
-        proc.run(args.ref_genome, args.ref_trans, i, args.fq1, args.fq2, args.icam_run)
+        proc.run(i, args.fq1, args.fq2, args.icam_run)
 
 if __name__ == '__main__':
     main()

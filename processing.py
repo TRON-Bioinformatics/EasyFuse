@@ -6,13 +6,12 @@ start data collection
 during all steps, perform slurm scheduling and process monitoring
 
 @author: Tron (PASO), BNT (URLA)
-@version: 20181126
+@version: 20190118
 """
 from __future__ import print_function
 import os
 import os.path
 import sys
-import re
 import time
 import argparse
 from shutil import copy2
@@ -48,7 +47,7 @@ class Processing(object):
         """General parameter setting, identification of fastq files and initiation of processing"""
         # Checking dependencies
         VersCont(self.cfg.get('easyfuse_helper', 'dependencies')).get_and_print_tool_versions()
-        
+        self.cfg.run_self_test()
         is_stranded = False # urla: I leave it in although it is currently not required - however, future predictions may improve from stranded libs
         is_rna_seq = True # urla: can this ever become false?!
         # urla: organism is currently not used for anything, however, this might change; is mouse processing relevant at some point?
@@ -71,6 +70,7 @@ class Processing(object):
         #       An example of an input root folder would be "/mnt/bfx/IVAC2_0/BNT/iCaM2Scheduler/data/demux_out"
         #       Only folders containing a valid (see iomethods for details) "demux_stats.csv" file can be processed atm
         # urla: the icam_run flag is probably not necessary for production usage but very convenient if novel tools/methods should be run on a bunch of existing datasets (future development / evaluations)
+        sample_list = []
         if icam_run:
             self.logger.info("Started processing of icam data; searching fastq files in \"{}\"".format(self.input_path))
             # print(len(self.samples.sample_map)) <- 0 for empty list
@@ -82,25 +82,41 @@ class Processing(object):
             self.logger.debug("{0} datasets could not be processed due problems in the fastq file localization.".format(counter_list[4]))
             for i, sample_id_key in enumerate(sorted(fastq_dict)):
                 sample_id = "_".join(sample_id_key.split("_")[:2])
+                sample_list.append(sample_id)
                 self.logger.info("Processing Sample ID: {} (paired end)".format(sample_id))
                 self.logger.info("Sample 1: {}".format(fastq_dict[sample_id_key][0]))
                 self.logger.info("Sample 2: {}".format(fastq_dict[sample_id_key][1]))
-                self.execute_pipeline(fastq_dict[sample_id_key][0], fastq_dict[sample_id_key][1], sample_id, ref_genome, ref_trans, tool_num_cutoff, filter_reads)
+                self.execute_pipeline(fastq_dict[sample_id_key][0], fastq_dict[sample_id_key][1], sample_id, ref_genome, ref_trans, tool_num_cutoff, run_qc, filter_reads, icam_run)
         else:
             left, right, sample_id = IOMethods.get_fastq_files(self.input_path, self.logger)
-            for i, fastq_file in enumerate(left):
+            sample_list = sample_id
+            for i, _ in enumerate(left):
                 if len(left) == len(right):
                     self.logger.info("Processing Sample ID: {} (paired end)".format(sample_id[i]))
                     self.logger.info("Sample 1: {}".format(left[i]))
                     self.logger.info("Sample 2: {}".format(right[i]))
-                    self.execute_pipeline(left[i], right[i], sample_id[i], ref_genome, ref_trans, tool_num_cutoff, run_qc, filter_reads)
+                    self.execute_pipeline(left[i], right[i], sample_id[i], ref_genome, ref_trans, tool_num_cutoff, run_qc, filter_reads, icam_run)
+        
+        # summarize all data if selected
+        if "Summary" in self.cfg.get('general', 'tools'):
+            dependency = [Queueing.get_jobs_by_name("Fetchdata-{}".format(sample)) for sample in sample_list]
+            icam_run_string = ""
+            if icam_run:
+                icam_run_string = " --icam_run"
+            modelling_string = ""
+            if self.cfg.get("otherFiles", "easyfuse_model"):
+                modelling_string = " --model_predictions"
+            cmd_summarize = "{0} --input {1} --config {2}{3}{4}".format(self.cfg.get('commands', 'summary_cmd'), self.working_dir, self.cfg.get_path(), icam_run_string, modelling_string)
+            self.logger.debug("Submitting slurm job: CMD - {0}; PATH - {1}; DEPS - {2}".format(cmd_summarize, self.working_dir, dependency))
+            cpu, mem = self.cfg.get("resources", "summary").split(",")
+            self.submit_job("-".join(["Summary", str(int(round(time.time())))]), cmd_summarize, cpu, mem, self.working_dir, Queueing.get_jobs_by_name("Fetchdata-{}".format(sample_id)))
 
     # Per sample, define input parameters and execution commands, create a folder tree and submit runs to slurm
-    def execute_pipeline(self, fq1, fq2, sample_id, ref_genome, ref_trans, tool_num_cutoff, run_qc, filter_reads):
+    def execute_pipeline(self, fq1, fq2, sample_id, ref_genome, ref_trans, tool_num_cutoff, run_qc, filter_reads, icam_run):
         """Create sample specific subfolder structure and run tools on fastq files"""
         self.samples.add_sample(sample_id, "NA", "R1:{0};R2:{1}".format(fq1, fq2))
 
-		 # Genome/Gene references to use
+		# Genome/Gene references to use
         genome_sizes_path = self.cfg.get("references", "{0}_genome_sizes_{1}".format(ref_trans, ref_genome))
         genome_chrs_path = self.cfg.get("references", "{0}_genome_fastadir_{1}".format(ref_trans, ref_genome))
         genes_fasta_path = self.cfg.get("references", "{0}_genes_fasta_{1}".format(ref_trans, ref_genome))
@@ -207,12 +223,10 @@ class Processing(object):
         # (x) Soapfuse
         cmd_soapfuse = "{} -c {} -q {} -i {} -o {} -g {}".format(self.cfg.get('commands', 'soapfuse_wrapper_cmd'), self.cfg.get_path(), qc_table_path, " ".join([fq1, fq2]), soapfuse_path, ref_genome)
         # (9) Data collection
-        cmd_fetchdata = "{0} -i {1} -o {2} -s {3} -c {4} -g {5} -t {6} --fq1 {7} --fq2 {8}".format(self.cfg.get('commands', 'fetchdata_cmd'), output_results_path, fetchdata_path, sample_id, self.cfg.get_path(), ref_genome, ref_trans, fq1, fq2)
+        cmd_fetchdata = "{0} -i {1} -o {2} -s {3} -c {4} --fq1 {5} --fq2 {6} --fusion_support {7} --icam_run".format(self.cfg.get('commands', 'fetchdata_cmd'), output_results_path, fetchdata_path, sample_id, self.cfg.get_path(), fq1, fq2, tool_num_cutoff)
         # (10) De novo assembly of fusion transcripts
         # urla: This is currently still under active development and has not been tested thoroughly
         cmd_denovoassembly = "{0} -i waiting_for_gene_list_input -c {1} -b {2}_Aligned.out.bam -g {3} -t {4} -o waiting_for_assembly_out_dir".format(self.cfg.get('commands', 'denovoassembly_cmd'), self.cfg.get_path(), os.path.join(filtered_reads_path, sample_id), ref_genome, ref_trans)
-        # (11) data summarization
-        cmd_summarize = "{0} -i {1} -f {2} --icam_run".format(self.cfg.get('commands', 'summary_cmd'), self.working_dir, fusiontools.split(","))
         # (X) Sample monitoring
         cmd_samples = "{0} --output-file={1} --sample-id={2} --action=append_state --state='".format(self.cfg.get('commands', 'samples_cmd'), self.samples.infile, sample_id)
 
@@ -230,8 +244,7 @@ class Processing(object):
             "Infusion", #9
             "Soapfuse", #10
             "Fetchdata", #11
-            "Assembly", #12
-            "Summarize" #13
+            "Assembly" #12
             ]
         exe_cmds = [
             " && ".join([cmd_fastqc, cmd_qc_parser, cmd_skewer]), #0
@@ -246,8 +259,7 @@ class Processing(object):
             cmd_infusion, #9
             cmd_soapfuse, #10
             cmd_fetchdata, #11
-            cmd_denovoassembly, #12
-            cmd_summarize #13
+            cmd_denovoassembly #12
             ]
         exe_path = [
             qc_path, #0
@@ -262,12 +274,13 @@ class Processing(object):
             infusion_path, #9
             soapfuse_path, #10
             fetchdata_path, #11
-            "", #12
-            self.working_dir #13
+            "" #12
             ]
 
         # create and submit slurm job if the tool is requested and hasn't been run before
         for i, tool in enumerate(exe_tools, 0):
+            if not icam_run:
+                exe_cmds[i] = exe_cmds[i].replace(" --icam_run", "")
             if tool in tools:
                 dependency = []
                 if tool == "Pizzly" and "Kallisto" not in tools and "Kallisto" not in state_tools:
@@ -299,7 +312,7 @@ class Processing(object):
                     dependency = Queueing.get_jobs_by_name("Star-{}".format(sample_id))
                 elif tool == "Fetchdata":
                     dependency = Queueing.get_jobs_by_name(sample_id)
-                elif tool == "Summarize":
+                elif tool == "Assembly":
                     dependency = Queueing.get_jobs_by_name("Fetchdata-{}".format(sample_id))
                 elif tool == "ReadFilter":
                     dependency = Queueing.get_jobs_by_name("QC-{}".format(sample_id))

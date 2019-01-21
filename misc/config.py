@@ -5,7 +5,7 @@ Reading/accessing "config.ini" file
 @version: 20190118
 """
 
-
+from __future__ import print_function
 import sys
 import os.path
 import misc.queue as Queueing
@@ -61,7 +61,7 @@ class Config(object):
     def get_keys(self, category):
         """return a list of keys belonging to a defined category"""
         return self._key_lists[category]
-    
+
     def run_self_test(self):
         """Test if set commands work and provided file/dir path exist"""
         print("Starting self test of the config file...")
@@ -89,7 +89,7 @@ class Config(object):
                 print("Checking provided commands...")
                 for command in self.get_keys(category):
                     try:
-                        Queueing.submit_nonqueue_and_get_stdout(["which", self.get(category, command)])
+                        Queueing.submit("", ["which", self.get(category, command)], "", "", "", "", "", "", sched="none")
                     except:
                         print("Error 99: The command assigned to \"{}\" could not be found in your PATH!".format(command))
                         count_errors += 1

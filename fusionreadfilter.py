@@ -147,14 +147,14 @@ class Fusionreadfilter(object):
         """print collected statistics to the log file"""
         this_time = time.time()
         time_taken = this_time - self.last_time
-        time_taken_1M = float(time_taken * 1000000) / float(self.counter[0])
+        time_taken_1m = float(time_taken * 1000000) / float(self.counter[0])
         self.last_time = this_time
         self.logger.info("Processed {0} alignments, {1} of {2} pairs remained after filtering ({3:.2%}) ({4:.2f}s / 1M alignments; {5:.2f}s in total)".format(
             self.counter[0],
             self.counter[2],
             self.counter[1],
             float(self.counter[2]) / float(self.counter[1]),
-            time_taken_1M,
+            time_taken_1m,
             time_taken))
 
         qc1 = False
