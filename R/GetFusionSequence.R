@@ -344,7 +344,7 @@ overlap = overlap_side1 %>%
 		cds_sequence = ifelse(S1_frame %in% c(0, 1, 2, 3), paste0(substr(S1_seq, S1_cds_start_rel, S1_pos_rel), substr(S2_seq, S2_pos_rel, nchar(S2_seq))), ""), #determine coding sequence 
 		cds_sequence_bp = ifelse(S1_frame %in% c(0, 1, 2, 3), S1_pos_rel - S1_cds_start_rel, NA)) %>%
 	mutate(context_sequence_100_id = make_context_id(context_sequence_100), context_sequence_id = make_context_id(context_sequence), #generate context seq ids
-		peptide_sequence = pep_translate(cds_sequence), peptide_sequence_bp = cds_sequence_bp / 3) %>% #translate cds to peptide
+		peptide_sequence = pep_translate(cds_sequence), peptide_sequence_bp = round(cds_sequence_bp / 3,1)) %>% #translate cds to peptide
 	mutate(neo_peptide_sequence = ifelse(frame == "in_frame", 
 		substr(peptide_sequence, round(peptide_sequence_bp - 13.5, 0), round(peptide_sequence_bp + 13.5, 0)),
 		substr(peptide_sequence, round(peptide_sequence_bp - 13.5, 0), nchar(peptide_sequence))), #determine sequence potentially immunogenic
@@ -369,9 +369,11 @@ write.csv2(output, out_file, row.names = FALSE, quote = FALSE)
 # dataframe of sequences for fasta file
 print("->generate fasta data")
 context_seq_data = overlap %>%
-	select(name = context_sequence_id, ft_context_sequence = context_sequence, wt1_context_sequence,wt2_context_sequence) %>%
+	transmute(name = paste0(FTID, "_", context_sequence_id), ft_context_sequence = paste0(context_sequence, "_", context_sequence_bp), 
+	  wt1_context_sequence = paste0(wt1_context_sequence, "_", wt1_context_sequence_bp), wt2_context_sequence = paste0(wt2_context_sequence,"_", wt2_context_sequence_bp)) %>%
 	gather(type, sequence, -name) %>%
-	mutate(name = paste0(name, "_", gsub("_context_sequence","",type))) %>%
+    separate(sequence, into=c("sequence","bp"), sep="_") %>%
+	mutate(name = paste0(name, "_", bp, "_", gsub("_context_sequence","",type))) %>%
 	distinct(name, sequence) %>%
 	arrange(name) 
 
@@ -381,13 +383,14 @@ writeXStringSet(seqSet, paste0(out_file, ".fasta"), append = F, format = "fasta"
 write.table(paste(length(seqSet), sum(width(seqSet)), sep = "\n"), paste(out_file, ".fasta.info", sep = ""), row.names = F, col.names = F, quote = F)
 
 transcrtipt_seq_data = overlap %>%
-	transmute(name = FTID, ft_sequence = paste0(transcript_sequence,":",transcript_sequence_bp),
-		cds_sequence = paste0(cds_sequence,":",cds_sequence_bp)) %>%
+	transmute(name = paste0(FTID,"_", context_sequence_id), ft_sequence = paste0(transcript_sequence,"_",transcript_sequence_bp),
+		cds_sequence = paste0(cds_sequence,"_",cds_sequence_bp)) %>%
 	gather(type, sequence, -name) %>%
-	separate(sequence, into=c("sequence","bp"), sep=":") %>%
+	separate(sequence, into=c("sequence","bp"), sep="_") %>%
 	mutate(name = paste0(name, "_", gsub("_sequence","",type),":",bp)) %>%
 	distinct(name, sequence) %>%
 	arrange(name)
+
 
 transcriptseqSet <- DNAStringSet(transcrtipt_seq_data$sequence)
 names(transcriptseqSet) <- transcrtipt_seq_data$name
@@ -395,7 +398,7 @@ writeXStringSet(transcriptseqSet, paste0(out_file, "_transcript.fasta"), append 
 
 
 peptide_seq_data = overlap %>%
-	transmute(name = paste0(FTID,":", context_sequence_id, ":", peptide_sequence_bp, ":", frame), 
+	transmute(name = paste0(FTID,"_", context_sequence_id, "_", peptide_sequence_bp, "_", frame), 
 		sequence = peptide_sequence) %>%
 	distinct(name, sequence)
 
