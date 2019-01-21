@@ -27,7 +27,6 @@ class Requantification(object):
 
     def quantify_read_groups(self, read_buffer, reference_base):
         """Count junction/spanning pairs on ft and wt1/2"""
-        breakpoint_pos = self.fusion_seq_dict[reference_base][0]
         anchor_ft = 0
         anchor_wt1 = 0
         anchor_wt2 = 0
@@ -45,22 +44,22 @@ class Requantification(object):
             # each processed read belongs to one of the three defined read_groups
             for read in read_buffer[read_group]:
                 if read.reference_name.endswith("ft"):
-                    junction_ft, spanning_ft, anchor_ft = self.count_junc_span(read, breakpoint_pos, junction_ft, spanning_ft, anchor_ft)
+                    junction_ft, spanning_ft, anchor_ft = self.count_junc_span(read, self.fusion_seq_dict[reference_base][0], junction_ft, spanning_ft, anchor_ft)
                 elif read.reference_name.endswith("wt1"):
-                    junction_wt1, spanning_wt1, anchor_wt1 = self.count_junc_span(read, breakpoint_pos, junction_wt1, spanning_wt1, anchor_wt1)
-                else:
-                    junction_wt2, spanning_wt2, anchor_wt2 = self.count_junc_span(read, breakpoint_pos, junction_wt2, spanning_wt2, anchor_wt2)
+                    junction_wt1, spanning_wt1, anchor_wt1 = self.count_junc_span(read, self.fusion_seq_dict[reference_base][6], junction_wt1, spanning_wt1, anchor_wt1)
+                elif read.reference_name.endswith("wt2"):
+                    junction_wt2, spanning_wt2, anchor_wt2 = self.count_junc_span(read, self.fusion_seq_dict[reference_base][12], junction_wt2, spanning_wt2, anchor_wt2)
 
             #print("stored before: {}".format(self.fusion_seq_dict[reference_base]))
             #print("jft: {}, sft: {}, jwt: {}, swt: {}".format(is_junction_ft, is_spanning_ft, is_junction_wt, is_spanning_wt))
             # update junction and spanning counts
             self.update_counts(reference_base, junction_ft, spanning_ft, 1)
-            self.update_counts(reference_base, junction_wt1, spanning_wt1, 6)
-            self.update_counts(reference_base, junction_wt2, spanning_wt2, 11)
+            self.update_counts(reference_base, junction_wt1, spanning_wt1, 7)
+            self.update_counts(reference_base, junction_wt2, spanning_wt2, 13)
         # set max anchor for this reference base
         self.fusion_seq_dict[reference_base][5] = anchor_ft
-        self.fusion_seq_dict[reference_base][10] = anchor_wt1
-        self.fusion_seq_dict[reference_base][15] = anchor_wt2
+        self.fusion_seq_dict[reference_base][11] = anchor_wt1
+        self.fusion_seq_dict[reference_base][17] = anchor_wt2
             #print("stored after: {}".format(self.fusion_seq_dict[reference_base]))
 
     def count_junc_span(self, read, breakpoint_pos, junction_count, spanning_counts, anchor):
@@ -98,26 +97,38 @@ class Requantification(object):
     def header_to_dict(self):
         """Convert bam header into a dict with keys = SN fields and values = list of breakpoint + junction/spanning counter"""
         for header_seq_id in self.in_bam.header.to_dict()["SQ"]:
-            if header_seq_id["SN"].endswith("_ft"):
-                id_split = header_seq_id["SN"].split("_")
-                # fusion dict counter
-                # [0]: breakpoint position on ft
-                # [1]: gene a counts on ft
-                # [2]: gene b counts on ft
-                # [3]: junction read count on ft
-                # [4]: spanning pairs count on ft
-                # [5]: longest anchor on ft
-                # [6]: gene a counts on wt1
-                # [7]: gene b counts on wt2
-                # [8]: junction read count on wt1
-                # [9]: spanning pairs count on wt1
-                # [10]: longest anchor on wt1
-                # [11]: gene a counts on wt2
-                # [12]: gene b counts on wt2
-                # [13]: junction read count on wt2
-                # [14]: spanning pairs count on wt2
-                # [15]: longest anchor on wt2
-                self.fusion_seq_dict["_".join(id_split[:-2])] = [int(id_split[-2]), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] # initialize with bp loc on ft as well as counter for (junction, spanning and longest anchor) each on ft, wt1 and wt2
+            # fusion dict counter
+            # [0]: breakpoint position on ft
+            # [1]: gene a counts on ft
+            # [2]: gene b counts on ft
+            # [3]: junction read count on ft
+            # [4]: spanning pairs count on ft
+            # [5]: longest anchor on ft
+            
+            # [6]: breakpoint position on wt1
+            # [7]: gene a counts on wt1
+            # [8]: gene b counts on wt2
+            # [9]: junction read count on wt1
+            # [10]: spanning pairs count on wt1
+            # [11]: longest anchor on wt1
+            
+            # [12]: breakpoint position on wt2
+            # [13]: gene a counts on wt2
+            # [14]: gene b counts on wt2
+            # [15]: junction read count on wt2
+            # [16]: spanning pairs count on wt2
+            # [17]: longest anchor on wt2
+            id_split = header_seq_id["SN"].split("_")
+            base_name = "_".join(id_split[:-2])
+            
+            if id_split[-1] == "ft":
+                 # initialize with bp loc on ft as well as counter for (junction, spanning and longest anchor) each on ft, wt1 and wt2
+                self.fusion_seq_dict[base_name] = [int(id_split[-2]), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            elif id_split[-1] == "wt1":
+                self.fusion_seq_dict[base_name][6] = int(id_split[-2])
+            elif id_split[-1] == "wt2":
+                self.fusion_seq_dict[base_name][12] = int(id_split[-2])
+
         print("Found {} potential fusion sequences".format(len(self.fusion_seq_dict)))
 
     def run(self):
