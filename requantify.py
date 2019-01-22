@@ -118,12 +118,16 @@ class Requantification(object):
             # [15]: junction read count on wt2
             # [16]: spanning pairs count on wt2
             # [17]: longest anchor on wt2
+            
+            # currently, the header is in the format: "FTID_contextSeqHash_breakpoint_{ft,wt1,wt2}"
+            # As breakpoints can be different between ft and wt, basename is everything before
             id_split = header_seq_id["SN"].split("_")
             base_name = "_".join(id_split[:-2])
-            
+            # initialize the counter list for the respective fusion context
+            if base_name not in self.fusion_seq_dict:
+                self.fusion_seq_dict[base_name] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
             if id_split[-1] == "ft":
-                 # initialize with bp loc on ft as well as counter for (junction, spanning and longest anchor) each on ft, wt1 and wt2
-                self.fusion_seq_dict[base_name] = [int(id_split[-2]), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+                self.fusion_seq_dict[base_name][0] = int(id_split[-2])
             elif id_split[-1] == "wt1":
                 self.fusion_seq_dict[base_name][6] = int(id_split[-2])
             elif id_split[-1] == "wt2":
