@@ -43,7 +43,7 @@ class Processing(object):
 
     # The run method simply greps and organises fastq input files.
     # Fastq pairs (single end input is currently not supported) are then send to "execute_pipeline"
-    def run(self, tool_num_cutoff, run_qc, filter_reads, icam_run):
+    def run(self, tool_num_cutoff, run_qc, filter_reads, icam_run, icam_tree):
         """General parameter setting, identification of fastq files and initiation of processing"""
         # Checking dependencies
         VersCont(self.cfg.get('easyfuse_helper', 'dependencies')).get_and_print_tool_versions()
@@ -71,7 +71,7 @@ class Processing(object):
         #       Only folders containing a valid (see iomethods for details) "demux_stats.csv" file can be processed atm
         # urla: the icam_run flag is probably not necessary for production usage but very convenient if novel tools/methods should be run on a bunch of existing datasets (future development / evaluations)
         sample_list = []
-        if icam_run:
+        if icam_run and icam_tree:
             self.logger.info("Started processing of icam data; searching fastq files in \"{}\"".format(self.input_path))
             # print(len(self.samples.sample_map)) <- 0 for empty list
             _, fastq_dict, counter_list = IOMethods.get_icam_reads_data(self.input_path, list(self.samples.sample_map), self.logger)
@@ -356,6 +356,7 @@ def main():
     parser.add_argument('--version', dest='version', help='Get version info')
     # hidden (not visible in the help display) arguments
     parser.add_argument('--icam_run', dest='icam_run', help=argparse.SUPPRESS, default=False, action='store_true')
+    parser.add_argument('--icam_tree', dest='icam_tree', help=argparse.SUPPRESS, default=False, action='store_true')
     parser.add_argument('--overwrite', dest='overwrite', help=argparse.SUPPRESS, default=False, action='store_true')
     args = parser.parse_args()
 
@@ -369,7 +370,7 @@ def main():
 
     print(args.run_qc, args.filter_reads)
     proc = Processing(args.config, args.input, args.output_folder, args.partitions, args.userid, args.overwrite)
-    proc.run(args.tool_support, args.run_qc, args.filter_reads, args.icam_run)
+    proc.run(args.tool_support, args.run_qc, args.filter_reads, args.icam_run, args.icam_tree)
 
 if __name__ == '__main__':
     main()
