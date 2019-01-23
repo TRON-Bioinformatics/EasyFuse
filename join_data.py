@@ -113,8 +113,8 @@ class DataJoining(object):
         # Init new columns
         for tool in fusion_tool_list:
             context_data["{}_detected".format(tool.lower())] = 0
-            context_data["{}_junc".format(tool.lower())] = "NA"
-            context_data["{}_span".format(tool.lower())] = "NA"
+            context_data["{}_junc".format(tool.lower())] = 0
+            context_data["{}_span".format(tool.lower())] = 0
         context_data["tool_count"] = 0
         context_data["tool_frac"] = 0.0
 
@@ -269,7 +269,7 @@ class DataJoining(object):
             requant_data = pd.read_table(requant_file, sep=";")
         context_data = context_data.set_index("ftid_plus").join(requant_data.set_index("ftid_plus"), how="left")
 
-        return context_data.fillna(0)
+        return context_data.fillna(0), list(context_data)
 
 
     def run(self, config, icam_run, model_predictions):
@@ -279,6 +279,10 @@ class DataJoining(object):
         print("Looking for required files...")
         # check whether output already exists
         cols_to_aggregate_on = ["FGID", "context_sequence_id", "FTID"]
+        
+#        joined_table_1 = None
+#        joined_table_2 = None
+#        joined_table_12 = None
 
         if not self.overwrite and self.check_files("{}_fusRank_1.csv".format(self.output), True):
             print("Found pre-calculated output files. If you would like to re-calculate everything, re-start with the --overwrite parameter supplied.")
@@ -287,79 +291,26 @@ class DataJoining(object):
                 joined_table_2 = pd.read_csv("{}_fusRank_2.csv".format(self.output), sep=";")
                 joined_table_12 = pd.read_csv("{}_fusRank_12.csv".format(self.output), sep=";")
         else:
-            joined_table_1 = self.create_joined_table(self.id1, fusion_tools)
+            joined_table_1, header_list_1 = self.create_joined_table(self.id1, fusion_tools)
+            
+#            print("Headerlist: {}".format(header_list_1))
+            
             joined_table_1b = joined_table_1.groupby(by=cols_to_aggregate_on, sort=False, as_index=False)
             joined_table_1b.agg(self.custom_data_aggregation).to_csv("{}_fusRank_1.csv".format(self.output), sep=";", index=False)
             if icam_run:
-                joined_table_2 = self.create_joined_table(self.id2, fusion_tools)
+                joined_table_2, _ = self.create_joined_table(self.id2, fusion_tools)
                 joined_table_2b = joined_table_2.groupby(by=cols_to_aggregate_on, sort=False, as_index=False)
                 joined_table_2b.agg(self.custom_data_aggregation).to_csv("{}_fusRank_2.csv".format(self.output), sep=";", index=False)
 
                 print("Merging data...")
-                # final columns in context data:
-                #   "*" marked columns will be dropped before merging of 1&2
-                #   "1" marked columns will be taken from sample1 only (as we perform an inner join, getting this from 1 or 2 is equivalent)
-                #   "2" marked columns will be taken from both samples an suffixed with "_1" and "_2" respectively
-                #
-                # 1 FGID
-                # * Fusion_Gene
-                # * Breakpoint1
-                # * Breakpoint2
-                # 1 FTID
-                # * context_sequence_id
-                # 1 type
-                # * exon_boundary1
-                # * exon_boundary2
-                # 1 exon_boundary
-                # 1 bp1_frame
-                # 1 bp2_frame
-                # 1 frame
-                # 1 context_sequence
-                # 1 context_sequence_bp
-                # * wt1_context_sequence
-                # * wt1_context_sequence_bp
-                # * wt2_context_sequence
-                # * wt2_context_sequence_bp
-                # 1 neo_peptide_sequence
-                # 1 neo_peptide_sequence_bp
-                # 1 transcript_sequence
-                # 2 JuncRead_Starfusion
-                # 2 SpanRead_Starfusion
-                # 2 JuncRead_Starchip
-                # 2 SpanRead_Starchip
-                # 2 JuncRead_Fusioncatcher
-                # 2 SpanRead_Fusioncatcher
-                # 2 JuncRead_Mapsplice
-                # 2 SpanRead_Mapsplice
-                # 2 JuncRead_Infusion
-                # 2 SpanRead_Infusion
-                # 2 ToolCount
-                # 2 ToolFraction
-                # * breakpoint_pos
-                # 2 JuncRead_FT
-                # 2 SpanPair_FT
-                # 2 LongAnch_FT
-                # 2 JuncRead_WT1
-                # 2 SpanPair_WT1
-                # 2 LongAnch_WT1
-                # 2 JuncRead_WT2
-                # 2 SpanPair_WT2
-                # 2 LongAnch_WT2
-                cols_to_drop = ["Breakpoint1", "Breakpoint2", "context_sequence_id", "exon_boundary1", "exon_boundary2",
-                                "wt1_context_sequence", "wt1_context_sequence_bp", "wt2_context_sequence", "wt2_context_sequence_bp", "breakpoint_pos"]
-                cols_from_one = ["Fusion_Gene", "FGID", "FTID", "type", "exon_boundary", "bp1_frame", "bp2_frame", "frame", "context_sequence",
-                                 "context_sequence_bp", "neo_peptide_sequence", "neo_peptide_sequence_bp"]
-                # create tmp copies to drop columns
-                # urla - note: this was mainly for testing purposes and could probably be removed safely by now
-                joined_table_1 = joined_table_1.drop(cols_to_drop, axis=1)
-                cols_to_drop.extend([i for i in cols_from_one if i not in cols_to_drop])
-                joined_table_2 = joined_table_2.drop(cols_to_drop, axis=1)
+#                joined_table_1 = joined_table_1.drop(cols_to_drop, axis=1)
+#                cols_to_drop.extend([i for i in cols_from_one if i not in cols_to_drop])
+                # drop columns from context seq in tab 2 as they are identical to the ones from tab 1
+                joined_table_2c = joined_table_2.drop(header_list_1, axis=1)
                 # perform an inner join of the two replicate data frames
-                joined_table_12 = joined_table_1.join(joined_table_2, lsuffix="_1", rsuffix="_2", how="inner")
-                # write data to file
-                joined_table_12 = self.create_joined_table(self.id2, fusion_tools)
-                joined_table_12 = joined_table_12.groupby(by=cols_to_aggregate_on, sort=False, as_index=False)
-                joined_table_12.agg(self.custom_data_aggregation).to_csv("{}_fusRank_12.csv".format(self.output), sep=";", index=False)
+                joined_table_12 = joined_table_1.join(joined_table_2c, lsuffix="_1", rsuffix="_2", how="inner")
+                joined_table_12b = joined_table_12.groupby(by=cols_to_aggregate_on, sort=False, as_index=False)
+                joined_table_12b.agg(self.custom_data_aggregation).to_csv("{}_fusRank_12.csv".format(self.output), sep=";", index=False)
 
                 # urla - note: the following can currently be considered as "putative developmental leftovers ^^"
     #            assembl_data1 = self.read_assembly_files(assembly_dir1)
@@ -385,6 +336,10 @@ class DataJoining(object):
                 # append prediction scores based on pre-calculated model
                 cmd_model = "{0} --fusion_summary {1} --model_file {2} --output {3}".format(model_exe, summary_file, model_path, "{}.pModelPred.csv".format(summary_file[:-4]))
                 Queueing.submit("", cmd_model.split(" "), "", "", "", "", "", "", sched="none")
+        
+#        print(joined_table_1)
+#        print(joined_table_2)
+#        print(joined_table_12)
 
         if icam_run:
             return (self.count_records(joined_table_1), self.count_records(joined_table_2), self.count_records(joined_table_12))
@@ -417,6 +372,7 @@ class DataJoining(object):
         """count different fields"""
         gene_blacklist = ["HLA", "IG", "RP", "LINC"]
         counter = []
+#        print("pdx: {}".format(list(pd_data_frame)))
         # how many fusion genes have been predicted
         counter.append(len(set(pd_data_frame["Fusion_Gene"].tolist())))
         # how many fusion genes generate NO no-frame fusion (in/out/neo frame)
