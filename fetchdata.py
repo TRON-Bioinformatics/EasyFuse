@@ -109,8 +109,8 @@ class Fetching(object):
         cmd_liftover = "{0} -i {1} -c {2}".format(self.cfg.get('commands', 'liftover_cmd'), detected_fusions_file, self.cfg.get_path)
         cmd_contextseq = "{0} --input_detected_fusions {1} --fasta_genome_dir {2} --ensembl_csv {3} --output {4}".format(self.cfg.get('commands', 'fetch_context_cmd'), detected_fusions_file, genome_fastadir_path, genes_csv_path, context_seq_file)
         cpu = 12
-        cmd_starindex = "{0} --runMode genomeGenerate --runThreadN {1} --limitGenomeGenerateRAM 30000000000 --genomeChrBinNbits waiting_for_bin_size_input --genomeSAindexNbases waiting_for_sa_idx_input --genomeDir {2} --genomeFastaFiles {3}".format(self.cfg.get('commands', 'star_cmd'), cpu, star_genome_path, "{0}{1}".format(context_seq_file, ".fasta"))
-        cmd_staralign = "{0} --genomeDir {1} --readFilesCommand zcat --readFilesIn {2} {3} --outSAMtype BAM SortedByCoordinate --outFilterMultimapNmax -1 --outSAMattributes Standard --outSAMunmapped None --outFilterMismatchNoverLmax 0.02 --runThreadN {4} --outFileNamePrefix {5} --limitBAMsortRAM 30000000000".format(self.cfg.get('commands', 'star_cmd'), star_genome_path, fq1, fq2, cpu, star_align_file)
+        cmd_starindex = "{0} --runMode genomeGenerate --runThreadN {1} --limitGenomeGenerateRAM 48000000000 --genomeChrBinNbits waiting_for_bin_size_input --genomeSAindexNbases waiting_for_sa_idx_input --genomeDir {2} --genomeFastaFiles {3}".format(self.cfg.get('commands', 'star_cmd'), cpu, star_genome_path, "{0}{1}".format(context_seq_file, ".fasta"))
+        cmd_staralign = "{0} --genomeDir {1} --readFilesCommand zcat --readFilesIn {2} {3} --outSAMtype BAM SortedByCoordinate --outFilterMultimapNmax -1 --outSAMattributes Standard --outSAMunmapped None --outFilterMismatchNoverLmax 0.02 --runThreadN {4} --outFileNamePrefix {5} --limitBAMsortRAM 48000000000".format(self.cfg.get('commands', 'star_cmd'), star_genome_path, fq1, fq2, cpu, star_align_file)
         cmd_bamindex = "{0} index {1}Aligned.sortedByCoord.out.bam".format(self.cfg.get('commands', 'samtools_cmd'), star_align_file)
         cmd_requantify = "{0} -i {1}Aligned.sortedByCoord.out.bam -o {2} -d 3".format(self.cfg.get('commands', 'classification_cmd'), star_align_file, classification_file)
 
@@ -118,7 +118,8 @@ class Fetching(object):
 
         # An icam_run must currently not be run w/o a liftover
         if icam_run:
-            tools.insert("Liftover")
+            pass
+            #tools.insert("Liftover")
 
         # set final lists of executable tools and path
         exe_tools = [
