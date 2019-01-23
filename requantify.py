@@ -179,7 +179,7 @@ class Requantification(object):
             ["ftid_plus",
              "ft_bp", "ft_a", "ft_b", "ft_junc", "ft_span", "ft_anch",
              "wt1_bp", "wt1_a", "wt1_b", "wt1_junc", "wt1_span", "wt1_anch",
-             "wt1_bp", "wt2_a", "wt2_b", "wt2_junc", "wt2_span", "wt2_anch"])
+             "wt2_bp", "wt2_a", "wt2_b", "wt2_junc", "wt2_span", "wt2_anch"])
         # write counts and normalized counts
         # for normalization, breakpoint and anchor must not be converted: list positions 0, 5, 10, 15
         no_norm = {0, 5, 6, 11, 12, 17}
