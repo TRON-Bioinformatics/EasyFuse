@@ -12,6 +12,7 @@ ref_genome_build=hg38
 sender=ivac_fusion_bot@tron-mainz.de
 receiver=your.email@test.com
 context_seq_len=400
+max_dist_proper_pair=200000
 ref_genome_build=hg38
 ref_trans_version=ensembl
 queueing_system=slurm

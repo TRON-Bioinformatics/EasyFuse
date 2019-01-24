@@ -43,7 +43,7 @@ class Processing(object):
 
     # The run method simply greps and organises fastq input files.
     # Fastq pairs (single end input is currently not supported) are then send to "execute_pipeline"
-    def run(self, tool_num_cutoff, run_qc, filter_reads, icam_run, icam_tree):
+    def run(self, tool_num_cutoff, run_qc, icam_run, icam_tree):
         """General parameter setting, identification of fastq files and initiation of processing"""
         # Checking dependencies
         VersCont(self.cfg.get('easyfuse_helper', 'dependencies')).get_and_print_tool_versions()
@@ -86,7 +86,7 @@ class Processing(object):
                 self.logger.info("Processing Sample ID: {} (paired end)".format(sample_id))
                 self.logger.info("Sample 1: {}".format(fastq_dict[sample_id_key][0]))
                 self.logger.info("Sample 2: {}".format(fastq_dict[sample_id_key][1]))
-                self.execute_pipeline(fastq_dict[sample_id_key][0], fastq_dict[sample_id_key][1], sample_id, ref_genome, ref_trans, tool_num_cutoff, run_qc, filter_reads, icam_run)
+                self.execute_pipeline(fastq_dict[sample_id_key][0], fastq_dict[sample_id_key][1], sample_id, ref_genome, ref_trans, tool_num_cutoff, run_qc, icam_run)
         else:
             left, right, sample_id = IOMethods.get_fastq_files(self.input_path, self.logger)
             sample_list = sample_id
@@ -95,7 +95,7 @@ class Processing(object):
                     self.logger.info("Processing Sample ID: {} (paired end)".format(sample_id[i]))
                     self.logger.info("Sample 1: {}".format(left[i]))
                     self.logger.info("Sample 2: {}".format(right[i]))
-                    self.execute_pipeline(left[i], right[i], sample_id[i], ref_genome, ref_trans, tool_num_cutoff, run_qc, filter_reads, icam_run)
+                    self.execute_pipeline(left[i], right[i], sample_id[i], ref_genome, ref_trans, tool_num_cutoff, run_qc, icam_run)
         
         # summarize all data if selected
         if "Summary" in self.cfg.get('general', 'tools'):
@@ -116,7 +116,7 @@ class Processing(object):
             self.submit_job("-".join(["Summary", str(int(round(time.time())))]), cmd_summarize, cpu, mem, self.working_dir, dependency)
 
     # Per sample, define input parameters and execution commands, create a folder tree and submit runs to slurm
-    def execute_pipeline(self, fq1, fq2, sample_id, ref_genome, ref_trans, tool_num_cutoff, run_qc, filter_reads, icam_run):
+    def execute_pipeline(self, fq1, fq2, sample_id, ref_genome, ref_trans, tool_num_cutoff, run_qc, icam_run):
         """Create sample specific subfolder structure and run tools on fastq files"""
         self.samples.add_sample(sample_id, "NA", "R1:{0};R2:{1}".format(fq1, fq2))
 
@@ -191,23 +191,22 @@ class Processing(object):
             tools.insert(0, "QC")
 
         # (0) Readfilter
-        cmd_star_filter = "{0} --genomeDir {1} --outFileNamePrefix {2} --readFilesCommand zcat --readFilesIn {3} {4} --outFilterMultimapNmax 100 --outSAMmultNmax 1 --chimSegmentMin 10 --chimJunctionOverhangMin 10 --alignSJDBoverhangMin 10 --alignMatesGapMax 200000 --alignIntronMax 200000 --chimSegmentReadGapMax 3 --alignSJstitchMismatchNmax 5 -1 5 5 --seedSearchStartLmax 20 --winAnchorMultimapNmax 50 --outSAMtype BAM Unsorted --chimOutType Junctions WithinBAM --outSAMunmapped Within KeepPairs --runThreadN waiting_for_cpu_number".format(self.cfg.get('commands', 'star_cmd'), star_index_path, os.path.join(filtered_reads_path, "{}_".format(sample_id)), fq1, fq2)
+        cmd_star_filter = "{0} --genomeDir {1} --outFileNamePrefix {2} --readFilesCommand zcat --readFilesIn {3} {4} --outFilterMultimapNmax 100 --outSAMmultNmax 1 --chimSegmentMin 10 --chimJunctionOverhangMin 10 --alignSJDBoverhangMin 10 --alignMatesGapMax {5} --alignIntronMax {5} --chimSegmentReadGapMax 3 --alignSJstitchMismatchNmax 5 -1 5 5 --seedSearchStartLmax 20 --winAnchorMultimapNmax 50 --outSAMtype BAM Unsorted --chimOutType Junctions WithinBAM --outSAMunmapped Within KeepPairs --runThreadN waiting_for_cpu_number".format(self.cfg.get('commands', 'star_cmd'), star_index_path, os.path.join(filtered_reads_path, "{}_".format(sample_id)), fq1, fq2, self.cfg.get('general', 'max_dist_proper_pair'))
         cmd_read_filter = "{0} --input {1}_Aligned.out.bam --output {1}_Aligned.out.filtered.bam".format(self.cfg.get('commands', 'readfilter_cmd'), os.path.join(filtered_reads_path, sample_id))
         # re-define fastq's if filtering is on
-#        fq0 = ""
-        if filter_reads:
-            fq0 = os.path.join(filtered_reads_path, os.path.basename(fq1).replace("R1", "R0").replace(".fastq.gz", "_filtered_singles.fastq.gz"))
-            fq1 = os.path.join(filtered_reads_path, os.path.basename(fq1).replace(".fastq.gz", "_filtered.fastq.gz"))
-            fq2 = os.path.join(filtered_reads_path, os.path.basename(fq2).replace(".fastq.gz", "_filtered.fastq.gz"))
-            if run_qc:
-                tools.insert(1, "Readfilter")
-            else:
-                tools.insert(0, "Readfilter")
+        #        fq0 = ""
+        fq0 = os.path.join(filtered_reads_path, os.path.basename(fq1).replace("R1", "R0").replace(".fastq.gz", "_filtered_singles.fastq.gz"))
+        fq1 = os.path.join(filtered_reads_path, os.path.basename(fq1).replace(".fastq.gz", "_filtered.fastq.gz"))
+        fq2 = os.path.join(filtered_reads_path, os.path.basename(fq2).replace(".fastq.gz", "_filtered.fastq.gz"))
+        if run_qc:
+            tools.insert(1, "Readfilter")
+        else:
+            tools.insert(0, "Readfilter")
         cmd_bam_to_fastq = "{0} fastq -0 {1} -1 {2} -2 {3} --threads waiting_for_cpu_number {4}_Aligned.out.filtered.bam".format(self.cfg.get('commands', 'samtools_cmd'), fq0, fq1, fq2, os.path.join(filtered_reads_path, sample_id))
         # (1) Kallisto expression quantification (required for pizzly)
         cmd_kallisto = "{0} quant --threads waiting_for_cpu_number --genomebam --gtf {1} --chromosomes {2} --index {3} --fusion --output-dir waiting_for_output_string {4} {5}".format(self.cfg.get('commands', 'kallisto_cmd'), genes_gtf_path, genome_sizes_path, kallisto_index_path, fq1, fq2)
         # (2) Star expression quantification (required for starfusion and starchip)
-        cmd_star = "{0} --genomeDir {1} --outFileNamePrefix waiting_for_output_string --runThreadN waiting_for_cpu_number --runMode alignReads --readFilesIn {2} {3} --readFilesCommand zcat --chimSegmentMin 10 --chimJunctionOverhangMin 10 --alignSJDBoverhangMin 10 --alignMatesGapMax 200000 --alignIntronMax 200000 --chimSegmentReadGapMax 3 --alignSJstitchMismatchNmax 5 -1 5 5 --seedSearchStartLmax 20 --winAnchorMultimapNmax 50 --outSAMtype BAM SortedByCoordinate --chimOutType Junctions SeparateSAMold".format(self.cfg.get('commands', 'star_cmd'), star_index_path, fq1, fq2)
+        cmd_star = "{0} --genomeDir {1} --outFileNamePrefix waiting_for_output_string --runThreadN waiting_for_cpu_number --runMode alignReads --readFilesIn {2} {3} --readFilesCommand zcat --chimSegmentMin 10 --chimJunctionOverhangMin 10 --alignSJDBoverhangMin 10 --alignMatesGapMax {4} --alignIntronMax {4} --chimSegmentReadGapMax 3 --alignSJstitchMismatchNmax 5 -1 5 5 --seedSearchStartLmax 20 --winAnchorMultimapNmax 50 --outSAMtype BAM SortedByCoordinate --chimOutType Junctions SeparateSAMold --chimOutJunctionFormat 1".format(self.cfg.get('commands', 'star_cmd'), star_index_path, fq1, fq2, self.cfg.get('general', 'max_dist_proper_pair'))
         # (3) Mapslice
         cmd_extr_fastq1 = "gunzip -c {0} > {1}".format(fq1, fq1[:-3])
         cmd_extr_fastq2 = "gunzip -c {0} > {1}".format(fq2, fq2[:-3])
@@ -320,8 +319,7 @@ class Processing(object):
                     dependency = Queueing.get_jobs_by_name("Fetchdata-{}".format(sample_id))
                 elif tool == "ReadFilter":
                     dependency = Queueing.get_jobs_by_name("QC-{}".format(sample_id))
-                if filter_reads:
-                    dependency.extend(Queueing.get_jobs_by_name("Readfilter-{}".format(sample_id)))
+                dependency.extend(Queueing.get_jobs_by_name("Readfilter-{}".format(sample_id)))
                 if run_qc:
                     dependency.extend(Queueing.get_jobs_by_name("QC-{}".format(sample_id)))
                 self.logger.debug("Submitting slurm job: CMD - {0}; PATH - {1}; DEPS - {2}".format(cmd, exe_path[i], dependency))
@@ -351,7 +349,6 @@ def main():
     # optional arguments
     parser.add_argument('-p', '--partitions', dest='partitions', help='Comma-separated list of partitions to use for queueing.', default='allNodes')
     parser.add_argument('--tool_support', dest='tool_support', help='The number of tools which are required to support a fusion event.', default="1")
-    parser.add_argument('--no_read_filter', dest='filter_reads', help='Run input read data filtering.', default=True, action='store_false')
     parser.add_argument('--no_qc', dest='run_qc', help='Run input read data qc.', default=True, action='store_false')
     parser.add_argument('--version', dest='version', help='Get version info')
     # hidden (not visible in the help display) arguments
@@ -368,9 +365,8 @@ def main():
     # create a local copy of the config file in the working dir folder in order to be able to re-run the script
     # urla: todo - the file permission should be set to read only after it was copied to the project folder (doesn't work for icam as "bfx" is a windows file system)
 
-    print(args.run_qc, args.filter_reads)
     proc = Processing(args.config, args.input, args.output_folder, args.partitions, args.userid, args.overwrite)
-    proc.run(args.tool_support, args.run_qc, args.filter_reads, args.icam_run, args.icam_tree)
+    proc.run(args.tool_support, args.run_qc, args.icam_run, args.icam_tree)
 
 if __name__ == '__main__':
     main()
