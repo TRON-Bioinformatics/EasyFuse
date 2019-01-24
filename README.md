@@ -30,6 +30,22 @@ EsayFuse is a pipline for fusion gene detection from RNA-seq data.
 ## Usage
 
 
+### Start Fusion Prediction Pipeline
+
+To start the fusion prediction pipeline on a specific sample the following python script has to
+be executed with the given input parameters as command-line arguments.
+
+```
+python processing.py \
+    -i <test_sample_folder> \
+    -o <working_dir> \
+    -u <account_name> \
+    -c <config_file> \
+    -p <queueing_partition> \
+    --tool_support 1 \
+```
+
+
 ### Annotate fusion breakpoints
 
 To annotate predicted breakpoints for fusion genes the following R script has to 
