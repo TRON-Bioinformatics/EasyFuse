@@ -40,7 +40,8 @@ if(is.na(opt$output) | opt$output == "") {
 
 in_file = opt$input_detected_fusions
 out_file = opt$output
-fa_path = opt$fasta_genome_dir #fa_path = paste0(getwd(), "/hg38_chroms/")
+fa_path = opt$fasta_genome_dir 
+fa_path = paste0(getwd(), "/hg38_chroms/")
 ensemble_csv_file = opt$ensembl_csv
 cis_near_distance = opt$cis_near_distance
 genomic_seq_len = opt$genomic_seq_len
@@ -337,17 +338,17 @@ overlap = overlap_side1 %>%
 		transcript_sequence = paste0(substr(S1_seq, 1, S1_pos_rel), substr(S2_seq, S2_pos_rel, nchar(S2_seq))), transcript_sequence_bp = S1_pos_rel, #combine sequence for fusion transcript
 		wt1_context_sequence = substr(S1_seq, S1_pos_rel - context_seq_len + 1, S1_pos_rel + context_seq_len), wt1_context_sequence_bp = pmin(S1_pos_rel, context_seq_len),
 		wt2_context_sequence = substr(S2_seq, S2_pos_rel - context_seq_len, S2_pos_rel + context_seq_len - 1), wt2_context_sequence_bp = pmin(S2_pos_rel, context_seq_len),
-		context_sequence_100 = paste0(substr(S1_seq, S1_pos_rel - 100, S1_pos_rel), substr(S2_seq, S2_pos_rel, S2_pos_rel + 100 - 1)), #determine context_seq_100 sequence with fixed length
-		context_sequence_100_bp = pmin(S1_pos_rel, 100 + 1),
-		context_sequence = paste0(substr(S1_seq, S1_pos_rel - context_seq_len, S1_pos_rel), substr(S2_seq, S2_pos_rel, S2_pos_rel + context_seq_len - 1)), #determine context_seq sequence
-		context_sequence_bp = pmin(S1_pos_rel, context_seq_len + 1),
+		context_sequence_100 = paste0(substr(S1_seq, S1_pos_rel - 100 + 1, S1_pos_rel), substr(S2_seq, S2_pos_rel, S2_pos_rel + 100 - 1)), #determine context_seq_100 sequence
+		context_sequence_100_bp = pmin(S1_pos_rel, 100),
+		context_sequence = paste0(substr(S1_seq, S1_pos_rel - context_seq_len + 1, S1_pos_rel), substr(S2_seq, S2_pos_rel, S2_pos_rel + context_seq_len - 1)), #determine context_seq sequence
+		context_sequence_bp = pmin(S1_pos_rel, context_seq_len),
 		cds_sequence = ifelse(S1_frame %in% c(0, 1, 2, 3), paste0(substr(S1_seq, S1_cds_start_rel, S1_pos_rel), substr(S2_seq, S2_pos_rel, nchar(S2_seq))), ""), #determine coding sequence 
-		cds_sequence_bp = ifelse(S1_frame %in% c(0, 1, 2, 3), S1_pos_rel - S1_cds_start_rel, NA)) %>%
+		cds_sequence_bp = ifelse(S1_frame %in% c(0, 1, 2, 3), S1_pos_rel - S1_cds_start_rel + 1, NA)) %>%
 	mutate(context_sequence_100_id = make_context_id(context_sequence_100), context_sequence_id = make_context_id(context_sequence), #generate context seq ids
 		peptide_sequence = pep_translate(cds_sequence), peptide_sequence_bp = round(cds_sequence_bp / 3,1)) %>% #translate cds to peptide
 	mutate(neo_peptide_sequence = ifelse(frame == "in_frame", 
-		substr(peptide_sequence, round(peptide_sequence_bp - 13.5, 0), round(peptide_sequence_bp + 13.5, 0)),
-		substr(peptide_sequence, round(peptide_sequence_bp - 13.5, 0), nchar(peptide_sequence))), #determine sequence potentially immunogenic
+		substr(peptide_sequence, round(peptide_sequence_bp - 13.5 + 1, 0), round(peptide_sequence_bp + 13.5, 0)), #R rounds down when using 0.5
+		substr(peptide_sequence, round(peptide_sequence_bp - 13.5 + 1, 0), nchar(peptide_sequence))), #determine sequence potentially immunogenic
 		neo_peptide_sequence_bp = peptide_sequence_bp - round(peptide_sequence_bp - 13.5, 0))
 
 
@@ -372,7 +373,7 @@ context_seq_data = overlap %>%
 	transmute(name = paste0(FTID, "_", context_sequence_id), ft_context_sequence = paste0(context_sequence, "_", context_sequence_bp), 
 	  wt1_context_sequence = paste0(wt1_context_sequence, "_", wt1_context_sequence_bp), wt2_context_sequence = paste0(wt2_context_sequence,"_", wt2_context_sequence_bp)) %>%
 	gather(type, sequence, -name) %>%
-    separate(sequence, into=c("sequence","bp"), sep="_") %>%
+  separate(sequence, into=c("sequence","bp"), sep="_") %>%
 	mutate(name = paste0(name, "_", bp, "_", gsub("_context_sequence","",type))) %>%
 	distinct(name, sequence) %>%
 	arrange(name) 
@@ -390,7 +391,6 @@ transcrtipt_seq_data = overlap %>%
 	mutate(name = paste0(name, "_", gsub("_sequence","",type),":",bp)) %>%
 	distinct(name, sequence) %>%
 	arrange(name)
-
 
 transcriptseqSet <- DNAStringSet(transcrtipt_seq_data$sequence)
 names(transcriptseqSet) <- transcrtipt_seq_data$name
