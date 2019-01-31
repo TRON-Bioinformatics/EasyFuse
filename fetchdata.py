@@ -115,7 +115,6 @@ class Fetching(object):
             detected_fusions_file_lifted = "{}.liftover_{}.csv".format(detected_fusions_file, ref_genome_dest)
             genome_fastadir_path = self.cfg.get('references', ref_trans + '_genome_fastadir_' + ref_genome_dest)
             genes_csv_path = self.cfg.get('references', ref_trans + '_genes_csv_' + ref_genome_dest)
-            
 
         # urla - note: tmp hack to get original star input reads for normalization
         with open(os.path.join(classification_path, "Star_org_input_reads.txt"), "w") as infile:
@@ -124,7 +123,7 @@ class Fetching(object):
         # Define cmd strings for each program
         cmd_fusiondata = "{0} -i {1} -o {2} -s {3} -t {4} -f {5} -l {6}".format(self.cfg.get('commands', 'fetch_fusiondata_cmd'), self.scratch_path, detected_fusions_path, self.sample_id, fusion_support, self.cfg.get('general', 'fusiontools'), self.logger.get_path())
         cmd_liftover = "{0} -i {1} -o {2} -c {3}".format(self.cfg.get('commands', 'liftover_cmd'), detected_fusions_file, detected_fusions_file_lifted, self.cfg.get_path)
-        cmd_contextseq = "{0} --input_detected_fusions {1} --fasta_genome_dir {2} --ensembl_csv {3} --output {4}".format(self.cfg.get('commands', 'fetch_context_cmd'), detected_fusions_file_lifted, genome_fastadir_path, genes_csv_path, context_seq_file)
+        cmd_contextseq = "{0} --input_detected_fusions {1} --fasta_genome_dir {2} --ensembl_csv {3} --output {4} --context_seq_len {5}".format(self.cfg.get('commands', 'fetch_context_cmd'), detected_fusions_file_lifted, genome_fastadir_path, genes_csv_path, context_seq_file, self.cfg.get('general', 'context_seq_len'))
         cpu = 12
         cmd_starindex = "{0} --runMode genomeGenerate --runThreadN {1} --limitGenomeGenerateRAM 48000000000 --genomeChrBinNbits waiting_for_bin_size_input --genomeSAindexNbases waiting_for_sa_idx_input --genomeDir {2} --genomeFastaFiles {3}".format(self.cfg.get('commands', 'star_cmd'), cpu, star_genome_path, "{0}{1}".format(context_seq_file, ".fasta"))
         cmd_staralign_fltr = "{0} --genomeDir {1} --readFilesCommand zcat --readFilesIn {2} {3} --outSAMtype BAM SortedByCoordinate --outFilterMultimapNmax -1 --outSAMattributes Standard --outSAMunmapped None --outFilterMismatchNoverLmax 0.02 --runThreadN {4} --outFileNamePrefix {5}fltr_ --limitBAMsortRAM 48000000000".format(self.cfg.get('commands', 'star_cmd'), star_genome_path, fq1, fq2, cpu, star_align_file)
@@ -183,7 +182,7 @@ class Fetching(object):
                         exe_cmds[i] = exe_cmds[i].replace("waiting_for_bin_size_input", star_bin)
                         exe_cmds[i] = exe_cmds[i].replace("waiting_for_sa_idx_input", star_sa)
                     self.logger.debug("Executing: {}".format(exe_cmds[i]))
-                    Queueing.submit("", exe_cmds[i].split(" "), "", "", "", "", "", "", "", "none")
+                    Queueing.submit("", exe_cmds[i].split(" "), "", "", "", "", "", "", "none")
                 else:
                     self.logger.error("Could not run {0} due to the missing dependency {1}".format(tool, exe_dependencies[i]))
                     sys.exit(1)
