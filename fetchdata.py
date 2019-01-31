@@ -182,7 +182,7 @@ class Fetching(object):
                         exe_cmds[i] = exe_cmds[i].replace("waiting_for_bin_size_input", star_bin)
                         exe_cmds[i] = exe_cmds[i].replace("waiting_for_sa_idx_input", star_sa)
                     self.logger.debug("Executing: {}".format(exe_cmds[i]))
-                    Queueing.submit("", exe_cmds[i].split(" "), "", "", "", "", "", "", "none")
+                    Queueing.submit("", exe_cmds[i].split(" "), "", "", "", "", "", "", "", "none")
                 else:
                     self.logger.error("Could not run {0} due to the missing dependency {1}".format(tool, exe_dependencies[i]))
                     sys.exit(1)
