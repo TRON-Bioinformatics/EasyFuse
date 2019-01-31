@@ -16,6 +16,7 @@ max_dist_proper_pair=200000
 ref_genome_build=hg38
 ref_trans_version=ensembl
 queueing_system=slurm
+time_limit=30-00:00:0
 
 # Define ressource usage (cpu (number of threads), mem (ram in Gb)):
 [resources]
