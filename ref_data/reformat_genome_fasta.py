@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 """
 First truncates the header of a multi fasta file to the first whitespace
 Second splits the modified file into separate fasta files
