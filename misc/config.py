@@ -91,7 +91,7 @@ class Config(object):
                 print("Checking provided commands...")
                 for command in self.get_keys(category):
                     try:
-                        Queueing.submit("", ["which", self.get(category, command)], "", "", "", "", "", "", sched="none")
+                        Queueing.submit("", ["which", self.get(category, command)], "", "", "", "", "", "", "", sched="none")
                     except:
                         print("Error 99: The command assigned to \"{}\" could not be found in your PATH!".format(command))
                         count_errors += 1

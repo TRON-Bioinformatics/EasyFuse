@@ -349,7 +349,7 @@ class Processing(object):
         """Submit job to slurm scheduling"""
         already_running = Queueing.get_jobs_by_name("-".join(uid.split("-")[0:2]))
         if not already_running:
-            Queueing.submit(uid, cmd, cores, mem_usage, output_results_folder, dependencies, self.partitions, self.userid)
+            Queueing.submit(uid, cmd, cores, mem_usage, output_results_folder, dependencies, self.partitions, self.userid, self.cfg.get('general', 'time_limit'))
             time.sleep(3)
         else:
             self.logger.error("A job with this application/sample combination is currently running. Skipping {} in order to avoid unintended data loss.".format(uid))

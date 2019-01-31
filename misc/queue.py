@@ -65,9 +65,9 @@ def get_jobs_by_name_slurm(name):
     return jobs
 
 
-def submit(job_name, cmd, cores, mem_usage, output_results_folder, dependencies, partitions, userid, sched="slurm"):
+def submit(job_name, cmd, cores, mem_usage, output_results_folder, dependencies, partitions, userid, timelimit, sched="slurm"):
     if sched == "slurm":
-        _submit_slurm(job_name, cmd, cores, mem_usage, output_results_folder, dependencies, partitions, userid)
+        _submit_slurm(job_name, cmd, cores, mem_usage, output_results_folder, dependencies, partitions, userid, timelimit)
     elif sched == "pbs":
         _submit_pbs(job_name, cmd, cores, mem_usage, output_results_folder, dependencies)
     else:
@@ -119,7 +119,7 @@ def _submit_pbs(job_name, cmd, cores, mem_usage, output_results_folder, dependen
         sys.exit(1)
 
 
-def _submit_slurm(job_name, cmd, cores, mem_usage, output_results_folder, dependencies, partitions, userid):
+def _submit_slurm(job_name, cmd, cores, mem_usage, output_results_folder, dependencies, partitions, userid, timelimit):
     """This function submits a predefined job with specific SBATCH parameters to the Slurm workload manager system."""
 
     depend = "\n"
@@ -140,7 +140,7 @@ def _submit_slurm(job_name, cmd, cores, mem_usage, output_results_folder, depend
             "#SBATCH --kill-on-invalid-dep=yes\n",
             "#SBATCH --cpus-per-task={}\n".format(cores),
             "#SBATCH --mem={}\n".format(int(mem_usage)*1000),
-            "#SBATCH --time=03:00:00\n",
+            "#SBATCH --time={}\n".format(timelimit),
             depend,
             "#SBATCH --workdir={}\n".format(output_results_folder),
             "#SBATCH --error={}\n".format(error_file),
@@ -169,6 +169,8 @@ def main():
     parser.add_argument('-m', '--memory', dest='memory', type=int, help='Specify the amount of memory to run your script with.', required=True)
     parser.add_argument('-o', '--output', dest='output', help='Select the output folder.', required=True)
     parser.add_argument('-p', '--partitions', dest='partitions', help='Select the slurm partitions for this job.', default='allNodes')
+    parser.add_argument('-u', '--userid', dest='userid', help='Select the slurm account to run the job on.', required=True)
+    parser.add_argument('-t', '--timelimit', dest='timelimit', help='Select the timelimit for the job.', default='30-00:00:0')
     args = parser.parse_args()
 
     job_name = args.job_name
@@ -177,7 +179,7 @@ def main():
     mem_usage = args.memory
     output_results_folder = args.output
     dependencies = ""
-    submit(job_name, cmd, cores, mem_usage, output_results_folder, dependencies, args.partitions)
+    submit(job_name, cmd, cores, mem_usage, output_results_folder, dependencies, args.partitions, args.userid, args.timelimit)
 
 if __name__ == '__main__':
     main()
