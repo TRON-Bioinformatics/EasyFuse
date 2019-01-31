@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 
-import sys,os,subprocess
+import sys
+import os
+import subprocess
+
 from argparse import ArgumentParser
 
 sys.path.append(os.path.join(os.path.dirname( __file__ ), '..'))

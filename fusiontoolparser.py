@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 """
 Get predicted gene fusions from tools
 Fusions are parsed into "id / fusion genes / breakpoints / supporting reads / prediction tool"

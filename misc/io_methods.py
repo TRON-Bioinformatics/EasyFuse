@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+
 """
 Input/Output method collection
 - Create folder and grant permission
@@ -8,7 +9,6 @@ Input/Output method collection
 @author: Tron (PASO), BNT (URLA)
 @version: 20181126
 """
-
 
 from __future__ import print_function
 import os

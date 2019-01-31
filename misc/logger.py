@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 """
 Process logging
 Either creates (if not existing) or appends message lines to a file
@@ -8,6 +10,7 @@ For convenience, the individual log levels can be accessed via their own methods
 @author: Tron (PASO), BNT (URLA)
 @version: 20181126
 """
+
 import time
 
 NONE = 10
