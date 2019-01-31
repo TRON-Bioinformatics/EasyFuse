@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+
 """
 Simple method collection for:
 1) Job submission to slurm workload manager (Creates an sbatch file and starts it)

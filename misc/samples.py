@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 """
 Sample file handling
 Sample processing is logged in a specific file. This class provides methods to
@@ -9,6 +11,7 @@ run on the sample and the fastq files corresponding to the sample.
 @author: Tron (PASO), BNT (URLA)
 @version: 20181126
 """
+
 from __future__ import print_function
 import os
 from argparse import ArgumentParser

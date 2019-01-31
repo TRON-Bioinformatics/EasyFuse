@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 """
 Identify and extract reads belonging to fusion events
 Run a de novo assembly on those reads with trinity

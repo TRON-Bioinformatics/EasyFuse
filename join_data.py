@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 """
 Combining of all relevant infos into a final table
 Calculations of additional metrics

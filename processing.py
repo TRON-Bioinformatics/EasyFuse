@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 """
 Read fastq files
 create per-sample (sub)folder tree

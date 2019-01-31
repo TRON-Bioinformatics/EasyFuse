@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 """
 Junction/Spanning read pair counting
 

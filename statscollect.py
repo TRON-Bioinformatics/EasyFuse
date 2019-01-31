@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 """
 Sample stats handling
 Stats are organised in a dict of dict of dicts.
@@ -11,6 +13,7 @@ The aim of this method is to preserver stats infos which may not be saved elsewh
 @author: BNT (URLA)
 @version: 20181126
 """
+
 import os
 from argparse import ArgumentParser
 

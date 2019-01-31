@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 """
 Parses an ensembl/gencode derived whole transcriptome multi fasta file
 During reading of the fasta file, the header is modified to be in the following format

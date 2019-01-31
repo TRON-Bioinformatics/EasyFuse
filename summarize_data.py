@@ -1,8 +1,10 @@
 #!/usr/bin/env python
+
 """
 @author: BNT (URLA)
 @version: 20190118
 """
+
 from __future__ import print_function
 import os
 import os.path

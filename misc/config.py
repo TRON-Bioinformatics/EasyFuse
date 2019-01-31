@@ -1,3 +1,5 @@
+#/usr/bin/env python
+
 """
 Reading/accessing "config.ini" file
 

@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 """
 Collect fusion prediction results,
 annotate fusions,

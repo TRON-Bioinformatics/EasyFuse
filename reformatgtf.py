@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 """
 Parses an ensembl/gencode derived gene annotation file (gtf)
 During reading of the gtf file, the coordinates of all "genes" are exstracted
