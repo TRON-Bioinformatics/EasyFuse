@@ -241,7 +241,8 @@ class DataJoining(object):
         # define path' to the context seq, detected fusion and re-quantification files
         context_seq_file = os.path.join(self.input_dir, "Sample_{}".format(sample_id), "fetchdata", "fd_1_tool", "fetched_contextseqs", "Context_Seqs.csv")
         detect_fusion_file = os.path.join(self.input_dir, "Sample_{}".format(sample_id), "fetchdata", "fd_1_tool", "fetched_fusions", "Detected_Fusions.csv")
-        requant_file = os.path.join(self.input_dir, "Sample_{}".format(sample_id), "fetchdata", "fd_1_tool", "classification", "classification.tdt")
+        requant_fltr_file = os.path.join(self.input_dir, "Sample_{}".format(sample_id), "fetchdata", "fd_1_tool", "classification", "classification_fltr.tdt")
+        requant_org_file = os.path.join(self.input_dir, "Sample_{}".format(sample_id), "fetchdata", "fd_1_tool", "classification", "classification_org.tdt")
 
         print("Loading data for sample {} into memory...".format(sample_id))
         if self.check_files(context_seq_file, False):
@@ -257,17 +258,22 @@ class DataJoining(object):
 
         print("Appending normalized fusion counts from {} to the data table.".format(fusion_tools))
         # read the original input read count and append CPM values from individual fusion prediction tools to context data
-        with open(os.path.join(os.path.dirname(requant_file), "Star_org_input_reads.txt"), "r") as rfile:
+        with open(os.path.join(os.path.dirname(requant_fltr_file), "Star_org_input_reads.txt"), "r") as rfile:
             self.input_read_count = int(rfile.next())
         if self.check_files(detect_fusion_file, False):
             detect_data = pd.read_csv(detect_fusion_file, sep=";")
         context_data = self.append_tool_cnts_to_context_file(context_data, detect_data, fusion_tools)
 
-        print("Appending normalized requantification counts to the data table.")
+        print("Appending normalized requantification counts from filtered and original mapping to the data table.")
+        # perform subsequent joins on ftid_plus
+        context_data.set_index("ftid_plus", inplace=True)
         # read and append requantification data to context data
-        if self.check_files(requant_file, False):
-            requant_data = pd.read_table(requant_file, sep=";")
-        context_data = context_data.set_index("ftid_plus").join(requant_data.set_index("ftid_plus"), how="left")
+        if self.check_files(requant_fltr_file, False):
+            requant_fltr_data = pd.read_table(requant_fltr_file, sep=";")
+        context_data = context_data.join(requant_fltr_data.set_index("ftid_plus"), how="left")
+        if self.check_files(requant_org_file, False):
+            requant_org_data = pd.read_table(requant_org_file, sep=";")
+        context_data = context_data.join(requant_org_data.set_index("ftid_plus"), lsuffix="_fltr", rsuffix="_org", how="left")
 
         return context_data.fillna(0), list(context_data)
 
@@ -328,14 +334,14 @@ class DataJoining(object):
     #                    fgl1.write("{}\n".format(fusion_pair.replace("_", "--")))
     #                    fgl2.write("{}\n".format(fusion_pair.replace("_", "--")))
 
-        for table in ["1", "2", "12"]:
-            summary_file = "{}_fusRank_{}.csv".format(self.output, table)
-            if model_predictions and self.check_files(summary_file, True):
-                model_exe = config.get("commands", "model_cmd")
-                model_path = config.get("otherFiles", "easyfuse_model")
+#        for table in ["1", "2", "12"]:
+#            summary_file = "{}_fusRank_{}.csv".format(self.output, table)
+#            if model_predictions and self.check_files(summary_file, True):
+#                model_exe = config.get("commands", "model_cmd")
+#                model_path = config.get("otherFiles", "easyfuse_model")
                 # append prediction scores based on pre-calculated model
-                cmd_model = "{0} --fusion_summary {1} --model_file {2} --output {3}".format(model_exe, summary_file, model_path, "{}.pModelPred.csv".format(summary_file[:-4]))
-                Queueing.submit("", cmd_model.split(" "), "", "", "", "", "", "", sched="none")
+#                cmd_model = "{0} --fusion_summary {1} --model_file {2} --output {3}".format(model_exe, summary_file, model_path, "{}.pModelPred.csv".format(summary_file[:-4]))
+#                Queueing.submit("", cmd_model.split(" "), "", "", "", "", "", "", sched="none")
         
 #        print(joined_table_1)
 #        print(joined_table_2)
