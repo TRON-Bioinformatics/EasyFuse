@@ -45,7 +45,7 @@ class Processing(object):
 
     # The run method simply greps and organises fastq input files.
     # Fastq pairs (single end input is currently not supported) are then send to "execute_pipeline"
-    def run(self, tool_num_cutoff, run_qc, icam_run, icam_tree):
+    def run(self, tool_num_cutoff, icam_run, icam_tree):
         """General parameter setting, identification of fastq files and initiation of processing"""
         # Checking dependencies
         VersCont(self.cfg.get('easyfuse_helper', 'dependencies')).get_and_print_tool_versions()
@@ -88,7 +88,7 @@ class Processing(object):
                 self.logger.info("Processing Sample ID: {} (paired end)".format(sample_id))
                 self.logger.info("Sample 1: {}".format(fastq_dict[sample_id_key][0]))
                 self.logger.info("Sample 2: {}".format(fastq_dict[sample_id_key][1]))
-                self.execute_pipeline(fastq_dict[sample_id_key][0], fastq_dict[sample_id_key][1], sample_id, ref_genome, ref_trans, tool_num_cutoff, run_qc, icam_run)
+                self.execute_pipeline(fastq_dict[sample_id_key][0], fastq_dict[sample_id_key][1], sample_id, ref_genome, ref_trans, tool_num_cutoff, icam_run)
         else:
             left, right, sample_id = IOMethods.get_fastq_files(self.input_path, self.logger)
             sample_list = sample_id
@@ -97,7 +97,7 @@ class Processing(object):
                     self.logger.info("Processing Sample ID: {} (paired end)".format(sample_id[i]))
                     self.logger.info("Sample 1: {}".format(left[i]))
                     self.logger.info("Sample 2: {}".format(right[i]))
-                    self.execute_pipeline(left[i], right[i], sample_id[i], ref_genome, ref_trans, tool_num_cutoff, run_qc, icam_run)
+                    self.execute_pipeline(left[i], right[i], sample_id[i], ref_genome, ref_trans, tool_num_cutoff, icam_run)
         
         # summarize all data if selected
         if "Summary" in self.cfg.get('general', 'tools'):
@@ -118,7 +118,7 @@ class Processing(object):
             self.submit_job("-".join(["Summary", str(int(round(time.time())))]), cmd_summarize, cpu, mem, self.working_dir, dependency)
 
     # Per sample, define input parameters and execution commands, create a folder tree and submit runs to slurm
-    def execute_pipeline(self, fq1, fq2, sample_id, ref_genome, ref_trans, tool_num_cutoff, run_qc, icam_run):
+    def execute_pipeline(self, fq1, fq2, sample_id, ref_genome, ref_trans, tool_num_cutoff, icam_run):
         """Create sample specific subfolder structure and run tools on fastq files"""
         self.samples.add_sample(sample_id, "NA", "R1:{0};R2:{1}".format(fq1, fq2))
 
@@ -131,7 +131,6 @@ class Processing(object):
         # Path' to specific indices
         bowtie_index_path = self.cfg.get("indices", "{0}_bowtie_{1}".format(ref_trans, ref_genome))
         star_index_path = self.cfg.get("indices", "{0}_star_{1}_sjdb{2}".format(ref_trans, ref_genome, 49))
-#        star_index_path = self.cfg.get("indices", "{0}_star_{1}_trans".format(ref_trans, ref_genome))
         kallisto_index_path = self.cfg.get("indices", "{0}_kallisto_{1}".format(ref_trans, ref_genome))
         pizzly_cache_path = "{}.pizzlyCache.txt".format(genes_gtf_path)
         starfusion_index_path = self.cfg.get("indices", "{0}_starfusion_{1}".format(ref_trans, ref_genome))
@@ -180,30 +179,24 @@ class Processing(object):
         # Define cmd strings for each program
         # urla: mapsplice requires gunzip'd read files and process substitutions don't seem to work in slurm scripts...
         #       process substitution do somehow not work from this script - c/p the command line to the terminal, however, works w/o issues?!
-
         cmd_fastqc = "{} --nogroup --extract -t 6 -o {} {} {}".format(self.cfg.get('commands', 'fastqc_cmd'), qc_path, fq1, fq2)
         cmd_qc_parser = "{} -i {}/*/fastqc_data.txt -q {} -o {}".format(self.cfg.get('commands', 'qc_parser_cmd'), qc_path, qc_table_path, overrepresented_path)
         cmd_skewer = "{} -q {} -m {} -i {} {} -o {} -b {}".format(self.cfg.get('commands', 'skewer_wrapper_cmd'), qc_table_path, 0.75, fq1, fq2, skewer_path, self.cfg.get('commands', 'skewer_cmd'))
 
         fq0 = ""
-        if run_qc:
+        if("QC" in tools):
             fq0 = os.path.join(skewer_path, "out_file-trimmed.fastq.gz")
             fq1 = os.path.join(skewer_path, "out_file-trimmed-pair1.fastq.gz")
             fq2 = os.path.join(skewer_path, "out_file-trimmed-pair2.fastq.gz")
-            tools.insert(0, "QC")
 
         # (0) Readfilter
         cmd_star_filter = "{0} --genomeDir {1} --outFileNamePrefix {2} --readFilesCommand zcat --readFilesIn {3} {4} --outFilterMultimapNmax 100 --outSAMmultNmax 1 --chimSegmentMin 10 --chimJunctionOverhangMin 10 --alignSJDBoverhangMin 10 --alignMatesGapMax {5} --alignIntronMax {5} --chimSegmentReadGapMax 3 --alignSJstitchMismatchNmax 5 -1 5 5 --seedSearchStartLmax 20 --winAnchorMultimapNmax 50 --outSAMtype BAM Unsorted --chimOutType Junctions WithinBAM --outSAMunmapped Within KeepPairs --runThreadN waiting_for_cpu_number".format(self.cfg.get('commands', 'star_cmd'), star_index_path, os.path.join(filtered_reads_path, "{}_".format(sample_id)), fq1, fq2, self.cfg.get('general', 'max_dist_proper_pair'))
         cmd_read_filter = "{0} --input {1}_Aligned.out.bam --output {1}_Aligned.out.filtered.bam".format(self.cfg.get('commands', 'readfilter_cmd'), os.path.join(filtered_reads_path, sample_id))
-        # re-define fastq's if filtering is on
-        #        fq0 = ""
+        # re-define fastq's if filtering is on (default)
         fq0 = os.path.join(filtered_reads_path, os.path.basename(fq1).replace("R1", "R0").replace(".fastq.gz", "_filtered_singles.fastq.gz"))
         fq1 = os.path.join(filtered_reads_path, os.path.basename(fq1).replace(".fastq.gz", "_filtered.fastq.gz"))
         fq2 = os.path.join(filtered_reads_path, os.path.basename(fq2).replace(".fastq.gz", "_filtered.fastq.gz"))
-        if run_qc:
-            tools.insert(1, "Readfilter")
-        else:
-            tools.insert(0, "Readfilter")
+
         cmd_bam_to_fastq = "{0} fastq -0 {1} -1 {2} -2 {3} --threads waiting_for_cpu_number {4}_Aligned.out.filtered.bam".format(self.cfg.get('commands', 'samtools_cmd'), fq0, fq1, fq2, os.path.join(filtered_reads_path, sample_id))
         # (1) Kallisto expression quantification (required for pizzly)
         cmd_kallisto = "{0} quant --threads waiting_for_cpu_number --genomebam --gtf {1} --chromosomes {2} --index {3} --fusion --output-dir waiting_for_output_string {4} {5}".format(self.cfg.get('commands', 'kallisto_cmd'), genes_gtf_path, genome_sizes_path, kallisto_index_path, fq1, fq2)
@@ -288,12 +281,9 @@ class Processing(object):
                 exe_cmds[i] = exe_cmds[i].replace(" --icam_run", "")
             if tool in tools:
                 dependency = []
-                if tool == "Pizzly" and "Kallisto" not in tools and "Kallisto" not in state_tools:
-                    self.logger.error("Pizzly was selected w/o Kallisto and w/o existing Kallisto data -> this does not work!")
-                    sys.exit(99)
-                elif (tool == "Starfusion" or tool == "Starchip") and "Star" not in tools and "Star" not in state_tools:
-                    self.logger.error("Starchip and/or Starfusion was selected w/o Star and w/o existing Star data -> this does not work!")
-                    sys.exit(99)
+                # check dependencies of the pipeline.
+                # Besides tool dependencies (Pizzly -> Kallisto, Starfusion/Starchip -> Star), read filtering is mandatory
+                # Processing will be skipped if a certain dependency was not found (either pre-processed data of the configs tool string are checked)
                 if tool in state_tools:
                     # urla: the primary idea behind this flag is to allow multiple fetchdata executions during processing
                     #       nevertheless, re-processing of the same data with a newer version of a tool will also be straightforward (but overwriting previous results, of course)
@@ -302,15 +292,42 @@ class Processing(object):
                     else:
                         self.logger.info("Skipping {0} as it looks like a previous run finished successfully. Results should be in {1}".format(tool, exe_path[i]))
                         continue
+                else:
+                    if tool == "Readfilter" and "Readfilter" not in tools:
+                        self.logger.error(
+                                """Error 99: Sample {} will be skipped due to missing read filtering.\n
+                                Read filtering is currently a mandatory step for the processing.\n
+                                Because you haven't run it before for this sample, you have to include \"Readfilter\" in the tool selection in your config.\n
+                                """.format(sample_id))
+                        print("Error 99: Sample {} will be skipped due to missing read filtering.".format(sample_id))
+                        return 0
+                    elif tool == "Pizzly" and "Kallisto" not in tools:
+                        self.logger.error(
+                                """Error 99: Running {0} for Sample {1} will be skipped due to a missing dependency.\n
+                                Pizzly builds on Kallisto and it is therefore mandatory to run this first.\n
+                                Because you haven't run it before for this sample, you have to include \"Kallisto\" in the tool selection in your config.\n
+                                """.format(sample_id))
+                        print("Error 99: Running {0} for Sample {1} will be skipped due to a missing dependency.".format(tool, sample_id))
+                        continue
+                    elif (tool == "Starfusion" or tool == "Starchip") and "Star" not in tools:
+                        self.logger.error(
+                                """Error 99: Running {0} for Sample {1} will be skipped due to a missing dependency.\n
+                                {0} builds on Star and it is therefore mandatory to run this first.\n
+                                Because you haven't run it before for this sample, you have to include \"Star\" in the tool selection in your config.\n
+                                """.format(sample_id))
+                        print("Error 99: Running {0} for Sample {1} will be skipped due to a missing dependency.".format(tool, sample_id))
+                        continue
+
+                # prepare slurm jobs: get ressources, create uid, set output path and check dependencies
                 self.logger.debug("Submitting {} run to slurm".format(tool))
                 cpu, mem = self.cfg.get("resources", tool.lower()).split(",")
                 uid = "-".join([tool, sample_id, str(int(round(time.time())))])
                 if tool == "Star":
-                    exe_cmds[i] = exe_cmds[i].replace("waiting_for_output_string", "{}/{}_".format(exe_path[i], sample_id)).replace("waiting_for_cpu_number", str(cpu))
+                    exe_cmds[i] = exe_cmds[i].replace("waiting_for_output_string", "{}_".format(os.path.join(exe_path[i], sample_id))).replace("waiting_for_cpu_number", str(cpu))
                 else:
                     exe_cmds[i] = exe_cmds[i].replace("waiting_for_output_string", exe_path[i]).replace("waiting_for_cpu_number", str(cpu))
                 cmd = " && ".join([exe_cmds[i], cmd_samples + uid + "'"])
-                # Managing dependencies
+                # Managing slurm dependencies
                 if tool == "Pizzly":
                     dependency = Queueing.get_jobs_by_name("Kallisto-{}".format(sample_id))
                 elif tool == "Starfusion" or tool == "Starchip":
@@ -322,8 +339,7 @@ class Processing(object):
                 elif tool == "ReadFilter":
                     dependency = Queueing.get_jobs_by_name("QC-{}".format(sample_id))
                 dependency.extend(Queueing.get_jobs_by_name("Readfilter-{}".format(sample_id)))
-                if run_qc:
-                    dependency.extend(Queueing.get_jobs_by_name("QC-{}".format(sample_id)))
+                dependency.extend(Queueing.get_jobs_by_name("QC-{}".format(sample_id)))
                 self.logger.debug("Submitting slurm job: CMD - {0}; PATH - {1}; DEPS - {2}".format(cmd, exe_path[i], dependency))
                 self.submit_job(uid, cmd, cpu, mem, exe_path[i], dependency)
             else:
@@ -331,8 +347,6 @@ class Processing(object):
 
     def submit_job(self, uid, cmd, cores, mem_usage, output_results_folder, dependencies):
         """Submit job to slurm scheduling"""
-        # pylint: disable=too-many-arguments
-        #         all arguments are required for proper resource management
         already_running = Queueing.get_jobs_by_name("-".join(uid.split("-")[0:2]))
         if not already_running:
             Queueing.submit(uid, cmd, cores, mem_usage, output_results_folder, dependencies, self.partitions, self.userid, self.cfg.get('general', 'time_limit'))
@@ -351,7 +365,6 @@ def main():
     # optional arguments
     parser.add_argument('-p', '--partitions', dest='partitions', help='Comma-separated list of partitions to use for queueing.', default='allNodes')
     parser.add_argument('--tool_support', dest='tool_support', help='The number of tools which are required to support a fusion event.', default="1")
-    parser.add_argument('--no_qc', dest='run_qc', help='Run input read data qc.', default=True, action='store_false')
     parser.add_argument('--version', dest='version', help='Get version info')
     # hidden (not visible in the help display) arguments
     parser.add_argument('--icam_run', dest='icam_run', help=argparse.SUPPRESS, default=False, action='store_true')
@@ -366,9 +379,8 @@ def main():
 
     # create a local copy of the config file in the working dir folder in order to be able to re-run the script
     # urla: todo - the file permission should be set to read only after it was copied to the project folder (doesn't work for icam as "bfx" is a windows file system)
-
     proc = Processing(args.config, args.input, args.output_folder, args.partitions, args.userid, args.overwrite)
-    proc.run(args.tool_support, args.run_qc, args.icam_run, args.icam_tree)
+    proc.run(args.tool_support, args.icam_run, args.icam_tree)
 
 if __name__ == '__main__':
     main()
