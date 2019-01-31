@@ -183,7 +183,6 @@ class Fusionreadfilter(object):
         self.logger.info("Unlikely chimeric (\"normal\" mappings): \t{} pairs (discarded)".format(self.counter[1] - self.counter[4] - self.counter[3] - self.counter[6] - self.counter[8] - self.counter[7]))
         self.logger.info("Filter QC1 (fq reads = bam alignments):\t{}".format(qc1))
         self.logger.info("Filter QC2 (QC'd alignments are chimeric):\t{}".format(qc2))
-        self.logger.info("counter list: {}".format(self.counter))
 
     def get_input_read_count_from_star(self):
         """Parses a star output log file to get input read counts from the fastq origin"""
