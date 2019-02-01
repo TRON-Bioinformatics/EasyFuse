@@ -344,7 +344,7 @@ class DataJoining(object):
                 model_path = config.get("otherFiles", "easyfuse_model")
                 # append prediction scores based on pre-calculated model
                 cmd_model = "{0} --fusion_summary {1} --model_file {2} --output {3}".format(model_exe, summary_file, model_path, "{}.pModelPred.csv".format(summary_file[:-4]))
-                Queueing.submit("", cmd_model.split(" "), "", "", "", "", "", "", "none")
+                Queueing.submit("", cmd_model.split(" "), "", "", "", "", "", "", "", "none")
         
 #        print(joined_table_1)
 #        print(joined_table_2)
