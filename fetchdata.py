@@ -86,6 +86,7 @@ class Fetching(object):
         fetchdata_current_path = os.path.join(self.fetchdata_path, "fd_{}_tool".format(fusion_support))
         detected_fusions_path = os.path.join(fetchdata_current_path, "fetched_fusions")
         detected_fusions_file = os.path.join(detected_fusions_path, "Detected_Fusions.csv")
+        detected_fusions_file_lifted = detected_fusions_file
         context_seq_path = os.path.join(fetchdata_current_path, "fetched_contextseqs")
         context_seq_file = os.path.join(context_seq_path, "Context_Seqs.csv")
         star_genome_path = os.path.join(context_seq_path, "STAR_idx")
@@ -102,14 +103,27 @@ class Fetching(object):
             ]:
             IOMethods.create_folder(folder, self.logger)
 
+        # processing steps to perform
+        tools = self.cfg.get('general', 'fd_tools').split(",")
+        # An icam_run must currently not be run w/o a liftover
+        if icam_run:
+            tools.insert("Liftover")
+        # In case of a liftover, some reference and path must be changed accordingly
+        if "Liftover" in tools:
+            crossmap_chain = self.cfg.get('liftover', 'crossmap_chain')
+            ref_genome_dest = os.path.basename(crossmap_chain).replace(".", "_").split("_")[2].lower()
+            detected_fusions_file_lifted = "{}.liftover_{}.csv".format(detected_fusions_file, ref_genome_dest)
+            genome_fastadir_path = self.cfg.get('references', ref_trans + '_genome_fastadir_' + ref_genome_dest)
+            genes_csv_path = self.cfg.get('references', ref_trans + '_genes_csv_' + ref_genome_dest)
+
         # urla - note: tmp hack to get original star input reads for normalization
         with open(os.path.join(classification_path, "Star_org_input_reads.txt"), "w") as infile:
             infile.write(str(self.get_input_read_count_from_star(os.path.join(self.scratch_path, "filtered_reads", "{}_Aligned.out.bam".format(self.sample_id)))))
 
         # Define cmd strings for each program
         cmd_fusiondata = "{0} -i {1} -o {2} -s {3} -t {4} -f {5} -l {6}".format(self.cfg.get('commands', 'fetch_fusiondata_cmd'), self.scratch_path, detected_fusions_path, self.sample_id, fusion_support, self.cfg.get('general', 'fusiontools'), self.logger.get_path())
-        cmd_liftover = "{0} -i {1} -c {2}".format(self.cfg.get('commands', 'liftover_cmd'), detected_fusions_file, self.cfg.get_path)
-        cmd_contextseq = "{0} --input_detected_fusions {1} --fasta_genome_dir {2} --ensembl_csv {3} --output {4}".format(self.cfg.get('commands', 'fetch_context_cmd'), detected_fusions_file, genome_fastadir_path, genes_csv_path, context_seq_file)
+        cmd_liftover = "{0} -i {1} -o {2} -c {3}".format(self.cfg.get('commands', 'liftover_cmd'), detected_fusions_file, detected_fusions_file_lifted, self.cfg.get_path)
+        cmd_contextseq = "{0} --input_detected_fusions {1} --fasta_genome_dir {2} --ensembl_csv {3} --output {4} --context_seq_len {5}".format(self.cfg.get('commands', 'fetch_context_cmd'), detected_fusions_file_lifted, genome_fastadir_path, genes_csv_path, context_seq_file, self.cfg.get('general', 'context_seq_len'))
         cpu = 12
         cmd_starindex = "{0} --runMode genomeGenerate --runThreadN {1} --limitGenomeGenerateRAM 48000000000 --genomeChrBinNbits waiting_for_bin_size_input --genomeSAindexNbases waiting_for_sa_idx_input --genomeDir {2} --genomeFastaFiles {3}".format(self.cfg.get('commands', 'star_cmd'), cpu, star_genome_path, "{0}{1}".format(context_seq_file, ".fasta"))
         cmd_staralign_fltr = "{0} --genomeDir {1} --readFilesCommand zcat --readFilesIn {2} {3} --outSAMtype BAM SortedByCoordinate --outFilterMultimapNmax -1 --outSAMattributes Standard --outSAMunmapped None --outFilterMismatchNoverLmax 0.02 --runThreadN {4} --outFileNamePrefix {5}fltr_ --limitBAMsortRAM 48000000000".format(self.cfg.get('commands', 'star_cmd'), star_genome_path, fq1, fq2, cpu, star_align_file)
@@ -119,13 +133,6 @@ class Fetching(object):
         cmd_staralign_org = "{0} --genomeDir {1} --readFilesCommand zcat --readFilesIn {2} {3} --outSAMtype BAM SortedByCoordinate --outFilterMultimapNmax -1 --outSAMattributes Standard --outSAMunmapped None --outFilterMismatchNoverLmax 0.02 --runThreadN {4} --outFileNamePrefix {5}org_ --limitBAMsortRAM 48000000000".format(self.cfg.get('commands', 'star_cmd'), star_genome_path, fq1, fq2, cpu, star_align_file)
         cmd_bamindex_org = "{0} index {1}org_Aligned.sortedByCoord.out.bam".format(self.cfg.get('commands', 'samtools_cmd'), star_align_file)
         cmd_requantify_org = "{0} -i {1}org_Aligned.sortedByCoord.out.bam -o {2}_org.tdt -d 10".format(self.cfg.get('commands', 'classification_cmd'), star_align_file, classification_file)
-
-        tools = self.cfg.get('general', 'fd_tools').split(",")
-
-        # An icam_run must currently not be run w/o a liftover
-        if icam_run:
-            pass
-            #tools.insert("Liftover")
 
         # set final lists of executable tools and path
         exe_tools = [

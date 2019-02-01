@@ -251,6 +251,7 @@ class DataJoining(object):
             context_data = pd.read_csv(context_seq_file, sep=";")
         # append key for later join with requant data
         context_data["ftid_plus"] = context_data["FTID"] + "_" +  context_data["context_sequence_id"]
+        redundant_header = list(context_data)
         # urla - todo: filter_annotation_problems searches fusion records where the fusion gene ids from the tool prediction do not match to the
         #              annotation in the context_seqs.csv; I'm not quite sure whether this is a bug in the prediction tools or in our
         #              pipeline
@@ -277,7 +278,7 @@ class DataJoining(object):
             requant_org_data = pd.read_table(requant_org_file, sep=";")
         context_data = context_data.join(requant_org_data.set_index("ftid_plus"), lsuffix="_fltr", rsuffix="_org", how="left")
 
-        return context_data.fillna(0), list(context_data)
+        return context_data.fillna(0), redundant_header
 
 
     def run(self, config, icam_run, model_predictions):
@@ -336,14 +337,14 @@ class DataJoining(object):
     #                    fgl1.write("{}\n".format(fusion_pair.replace("_", "--")))
     #                    fgl2.write("{}\n".format(fusion_pair.replace("_", "--")))
 
-#        for table in ["1", "2", "12"]:
-#            summary_file = "{}_fusRank_{}.csv".format(self.output, table)
-#            if model_predictions and self.check_files(summary_file, True):
-#                model_exe = config.get("commands", "model_cmd")
-#                model_path = config.get("otherFiles", "easyfuse_model")
+        for table in ["1", "2", "12"]:
+            summary_file = "{}_fusRank_{}.csv".format(self.output, table)
+            if model_predictions and self.check_files(summary_file, True):
+                model_exe = config.get("commands", "model_cmd")
+                model_path = config.get("otherFiles", "easyfuse_model")
                 # append prediction scores based on pre-calculated model
-#                cmd_model = "{0} --fusion_summary {1} --model_file {2} --output {3}".format(model_exe, summary_file, model_path, "{}.pModelPred.csv".format(summary_file[:-4]))
-#                Queueing.submit("", cmd_model.split(" "), "", "", "", "", "", "", sched="none")
+                cmd_model = "{0} --fusion_summary {1} --model_file {2} --output {3}".format(model_exe, summary_file, model_path, "{}.pModelPred.csv".format(summary_file[:-4]))
+                Queueing.submit("", cmd_model.split(" "), "", "", "", "", "", "", "none")
         
 #        print(joined_table_1)
 #        print(joined_table_2)

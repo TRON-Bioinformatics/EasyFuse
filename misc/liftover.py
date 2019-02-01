@@ -1,15 +1,11 @@
 #!/usr/bin/env python
 
 """
-Parses an ensembl/gencode derived whole transcriptome multi fasta file
-During reading of the fasta file, the header is modified to be in the following format
->"gene_symbol"_"ensembl_gene_id"_"ensembl_transcript_id"
-This method needs to be called only once because the modified fasta file will be written
-to "~.toNameHeader"
-The output of this method is required by the easyfuse_denovoassembly.py script
+Changes the coordinates from one genome annotation to another (liftover) with crossmap
+Coordinates are changed in DetectedFusions.csv; all intermediate files are preserved.
 
 @author: BNT (URLA)
-@version: 20181126
+@version: 20190131
 """
 
 from __future__ import print_function
@@ -23,8 +19,9 @@ import misc.queue as Queueing
 
 class FusionLiftover(object):
     """Select alignments belonging to putative fusions from an s/bam file"""
-    def __init__(self, in_fus_detect, config):
+    def __init__(self, in_fus_detect, out_fus_detect, config):
         self.in_fus_detect = in_fus_detect
+        self.out_fus_detect = out_fus_detect
         self.cfg = config
 
     def liftcoords(self):
@@ -36,14 +33,19 @@ class FusionLiftover(object):
         sys.path.append(crossmap_lib_path)
         print(sys.path)
         crossmap_chain = self.cfg.get('liftover', 'crossmap_chain')
-        annot_org = os.path.basename(crossmap_chain).replace(".", "_").split("_")[0]
-        annot_dest = os.path.basename(crossmap_chain).replace(".", "_").split("_")[2]
-        print("Performing liftover from {} to {} with crossmap".format(annot_org, annot_dest))
 
-        tmp_org_bed = "{}.liftover_{}.bed".format(self.in_fus_detect[:-4], annot_org)
-        tmp_dest_bed = "{}.liftover_{}.bed".format(self.in_fus_detect[:-4], annot_dest)
-        tmp_dest_bed_unmap = "{}.liftover_{}.bed.unmap".format(self.in_fus_detect[:-4], annot_dest)
-        out_fus_detect = "{}.liftover_{}.csv".format(self.in_fus_detect[:-4], annot_dest)
+        # check whether annotations and references are set, existing and matching
+        ref_genome_org = os.path.basename(crossmap_chain).replace(".", "_").split("_")[0]
+        ref_genome_dest = os.path.basename(crossmap_chain).replace(".", "_").split("_")[2]
+        if not ref_genome_org.lower() == self.cfg.get('general', 'ref_genome_build').lower():
+            print("Error 99: Mismatch between set genome version and chain file. Please verify that you have the correct chain file was supplied!")
+            sys.exit(99)
+
+        print("Performing liftover from {} to {} with crossmap".format(ref_genome_org, ref_genome_dest))
+        tmp_org_bed = "{}.liftover_{}.bed".format(self.in_fus_detect[:-4], ref_genome_org)
+        tmp_dest_bed = "{}.liftover_{}.bed".format(self.in_fus_detect[:-4], ref_genome_dest)
+        tmp_dest_bed_unmap = "{}.liftover_{}.bed.unmap".format(self.in_fus_detect[:-4], ref_genome_dest)
+#        out_fus_detect = "{}.liftover_{}.csv".format(self.in_fus_detect[:-4], ref_genome_dest)
 
         # read detected fusions and create bed file from bp coords
         # urla - note: I store the input data in a pandas df as the lifted data can be easily integrated, checks be performed and results written
@@ -75,7 +77,7 @@ class FusionLiftover(object):
         # and save them in the additional columns
         # urla - note: probably not the fastest way, but the safest :)
         with open(tmp_dest_bed, "r") as liftout:
-            for count_lines, line in enumerate(liftout):
+            for line in liftout:
                 line_splitter = line.rstrip("\n").split("\t")
                 if line_splitter[4] == "1":
                     in_fus_detect_pddf.loc[in_fus_detect_pddf["FGID"] == line_splitter[5], "bp1_lifted"] = ":".join([line_splitter[0], line_splitter[1], line_splitter[3]])
@@ -91,13 +93,14 @@ class FusionLiftover(object):
             in_fus_detect_pddf.loc[i, "Breakpoint2"] = in_fus_detect_pddf.loc[i, "bp2_lifted"]
         # finally, drop the added columns again and write to disk
         in_fus_detect_pddf.drop(labels=["bp1_lifted", "bp2_lifted"], axis=1, inplace=True)
-        in_fus_detect_pddf.to_csv(out_fus_detect, sep=";", index=False)
+        in_fus_detect_pddf.to_csv(self.out_fus_detect, sep=";", index=False)
         # urla - note: one could also drop the old cols, rename the new ones and reorder the df, but I find this much more fail-save
 
 def main():
     """Parse command line arguments and start script"""
     parser = ArgumentParser(description="Generate mapping stats for fusion detection")
     parser.add_argument('-i', '--input', dest='input', help='Detected fusions file', required=True)
+    parser.add_argument('-o', '--output', dest='output', help='Lifted detected fusions file', required=True)
     parser.add_argument('-c', '--config', dest='config', help='Main config file', required=True)
     args = parser.parse_args()
 
