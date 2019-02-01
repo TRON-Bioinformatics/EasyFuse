@@ -1,3 +1,5 @@
+#!/usr/bin/env Rscript
+
 #load libraries
 #print(.libPaths())
 # urla: R doesn't look in the correct path for the icui libs when run from anaconda.

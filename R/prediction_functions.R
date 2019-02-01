@@ -1,3 +1,5 @@
+#!/usr/bin/env Rscript
+
 # load required packages
 require(tidyverse)
 require(randomForest)
