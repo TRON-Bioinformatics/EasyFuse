@@ -5,11 +5,8 @@
 library(optparse)
 library(tidyverse)
 library(randomForest)
-library(caret)
 
 # Load functions ---------------------------------------------------------------
-#source("R/flat_table.R")
-#source("R/prediction_functions.R")
 
 # Parse commandline arguments --------------------------------------------------
 options(stringsAsFactors = FALSE)
@@ -42,9 +39,13 @@ fusion_data <- read_delim(opt$fusion_summary,
                           delim = ";"
                           ) %>%
   # convert character vectors into factors
-  mutate_at(
-    .funs = as.factor,
-    .vars = c("type", "exon_boundary", "frame")
+  mutate(
+    type = factor(type, levels = c("cis_near", "cis_inv", "cis_far", 
+                                   "cis_trans", "trans", "trans_inv")),
+    exon_boundary = factor(exon_boundary, levels = c("none", "3prime", 
+                                                     "5prime", "both")),
+    frame = factor(frame, levels = c("no_frame", "in_frame", "out_frame", 
+                                     "neo_frame"))
   )
 
 # Add predictions --------------------------------------------------------------
@@ -80,7 +81,7 @@ add_prediction <- function(flat_data, model, threshold){
 model <- readr::read_rds(opt$model_file)
 
 # add predictions
-fusion_data <- add_prediction(fusion_data, model, 0.5)
+fusion_data <- add_prediction(fusion_data, model, 0.75)
 
 # Write fusions to output file -------------------------------------------------
 write_excel_csv2(fusion_data, opt$output)
