@@ -1,11 +1,24 @@
 #load libraries
-library(dplyr)
-library(tidyr)
+library("dplyr")
+library("tidyr")
+library("optparse")
 
 options(stringsAsFactors = FALSE)
 
-#testing
-setwd("../get_fusion_seq_test")
+argument_list <- list(
+  make_option(c("-i", "--input_ensembl_gtf"), default="", help="Input list of detected fusions"), 
+  make_option(c("-o", "--output_csv"), default="", help="Output file of context sequences")
+)
+opt <- parse_args(OptionParser(option_list=argument_list))
+
+# check mandatory arguments
+if(is.na(opt$input_ensembl_gtf) | opt$input_ensembl_gtf == "") {
+  print("Mandatory parameter \"input ensembl gtf\" missing. Aborting...")
+}
+if(is.na(opt$output_csv) | opt$output_csv == "") {
+  opt$output_csv <- paste0(tools::file_path_sans_ext(opt$input_ensembl_gtf),".csv")
+}
+
 
 #custome function to transform gtf
 GTFtoCSV <- function(path){
@@ -61,12 +74,6 @@ GTFtoCSV <- function(path){
 	return(ensemble_csv)
 }
 
-
-
 #generate tables with sequences
-ensemble_csv = GTFtoCSV(path = "Homo_sapiens.GRCh37.85.gtf")
-write.csv2(ensemble_csv, "GRCh37.85_cdna_all.csv", row.names=FALSE)
-
-#generate tables with mouse sequences
-#ensemble_csv = GTFtoCSV(path = "Mus_musculus.GRCm38.84.gtf")
-#write.csv2(ensemble_csv, "GRCm38.84_cdna_all.csv", row.names=FALSE)
+ensemble_csv = GTFtoCSV(path = opt$input_ensembl_gtf)
+write.csv2(ensemble_csv, opt$output_csv, row.names=FALSE)
