@@ -1,3 +1,5 @@
+#!/usr/bin/env Rscript
+
 #load libraries
 #print(.libPaths())
 # urla: R doesn't look in the correct path for the icui libs when run from anaconda.
@@ -41,7 +43,7 @@ if(is.na(opt$output) | opt$output == "") {
 in_file = opt$input_detected_fusions
 out_file = opt$output
 fa_path = opt$fasta_genome_dir 
-fa_path = paste0(getwd(), "/hg38_chroms/")
+#fa_path = paste0(getwd(), "/hg38_chroms/")
 ensemble_csv_file = opt$ensembl_csv
 cis_near_distance = opt$cis_near_distance
 genomic_seq_len = opt$genomic_seq_len

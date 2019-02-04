@@ -4,9 +4,9 @@
 # 3) Which reference data shall be used (ref_trans_version & ref_genome_build)
 # 4) To whom shall slurm mails be sent to (receiver)
 [general]
-tools=Mapsplice,Fusioncatcher,Star,Starfusion,Infusion,Soapfuse,Fetchdata
+tools=Mapsplice,Fusioncatcher,Star,Starfusion,Infusion,Soapfuse,Fetchdata,Summary
 fusiontools=Mapsplice,Fusioncatcher,Starfusion,Starchip,Infusion
-fd_tools=Fusiongrep,Contextseq,Starindex,Staralign,Bamindex,Requantify
+fd_tools=Fusiongrep,Contextseq,Starindex,StaralignFltr,BamindexFltr,RequantifyFltr,StaralignOrg,BamindexOrg,RequantifyOrg
 ref_trans_version=ensembl
 ref_genome_build=hg38
 sender=ivac_fusion_bot@tron-mainz.de
@@ -33,6 +33,7 @@ soapfuse=8,20
 pizzly=6,10
 classification=1,16
 fetchdata=12,64
+summary=1,10
 
 # execution command for individual programs (what you write here should be identical to what is typed in the console)
 [commands]
@@ -60,6 +61,9 @@ fetch_fusiondata_cmd=/path/to/repo/fusiontoolparser.py
 fetch_context_cmd=/path/to/repo/R/GetFusionSequence.R
 classification_cmd=/path/to/repo/requant.py
 denovoassembly_cmd=/path/to/repo/easyfuse_denovoassembly
+# for prediction model
+summary_cmd=/path/to/repo/summarize_data.py
+model_cmd=/path/to/repo/R/R_model_prediction.R
 # for processing and fetch data
 star_cmd=/path/to/star_bin
 samtools_cmd=/path/to/samtools_bin
@@ -92,6 +96,7 @@ ensembl_starchip_param_hg38=/path/to/starchip.param
 ensembl_infusion_cfg_hg38=/path/to/infusion.cfg
 ensembl_soapfuse_cfg_hg38=/path/to/soapfuse_human.cfg
 ensembl_soapfuse_cfg_mm10=/path/to/soapfuse_mouse.cfg
+easyfuse_model=/path/to/repo/data/model/model.rds
 
 [easyfuse_helper]
 dependencies=/path/to/repo/dependency_versions_tron.txt
