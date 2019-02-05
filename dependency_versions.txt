@@ -11,10 +11,10 @@ star	2.6.1a	STAR --version	STAR	shell
 samtools	1.9	samtools --version	samtools	shell
 htslib	1.9	samtools --version	htslib	shell
 trinity	2.5.1	Trinity --version	Trinity version	shell
-blastn	2.7.1+	blastn -version	blastn	shell
-pysam	0.14.1	pysam.__version__	NA	python
-biopython	1.6.8	Bio.__version__	NA	python
-matplotlib	2.2.2	matplolib.__version__	NA	python
-pandas	0.23.3	pandas.__version__	NA	python
+blastn	2.5.0+	blastn -version	blastn	shell
+pysam	0.15.2	pysam.__version__	NA	python
+biopython	1.73	Bio.__version__	NA	python
+matplotlib	2.2.3	matplolib.__version__	NA	python
+pandas	0.24.0	pandas.__version__	NA	python
 seaborn	0.9.0	seaborn.__version__	NA	python
 skewer	0.2.2	skewer --version	NA	shell
