@@ -13,8 +13,6 @@ Input/Output method collection
 from __future__ import print_function
 import os
 import sys
-import pwd
-import grp
 import stat
 import re
 import ntpath
