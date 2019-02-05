@@ -272,10 +272,10 @@ class DataJoining(object):
         context_data.set_index("ftid_plus", inplace=True)
         # read and append requantification data to context data
         if self.check_files(requant_fltr_file, False):
-            requant_fltr_data = pd.read_table(requant_fltr_file, sep=";")
+            requant_fltr_data = pd.read_csv(requant_fltr_file, sep=";")
         context_data = context_data.join(requant_fltr_data.set_index("ftid_plus"), how="left")
         if self.check_files(requant_org_file, False):
-            requant_org_data = pd.read_table(requant_org_file, sep=";")
+            requant_org_data = pd.read_csv(requant_org_file, sep=";")
         context_data = context_data.join(requant_org_data.set_index("ftid_plus"), lsuffix="_fltr", rsuffix="_org", how="left")
 
         return context_data.fillna(0), redundant_header
