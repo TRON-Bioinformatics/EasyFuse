@@ -37,7 +37,7 @@ class VersCont(object):
                 raise IOError
             output = stdoutdata
         except IOError:
-            print("Error 99: The was a problem calling \"pip freeze\". Is pip installed? Trying to get versions from conda...")
+            print("Error 99: There was a problem calling \"pip freeze\". Is pip installed? Trying to get versions from conda...")
             self.load_py_dict(False)
 
         for py_line in stdoutdata.split("\n"):
