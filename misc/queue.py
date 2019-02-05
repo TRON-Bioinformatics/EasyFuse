@@ -65,9 +65,9 @@ def get_jobs_by_name_slurm(name):
     return jobs
 
 
-def submit(job_name, cmd, cores, mem_usage, output_results_folder, dependencies, partitions, userid, timelimit, sched="slurm"):
+def submit(job_name, cmd, cores, mem_usage, output_results_folder, dependencies, partitions, userid, timelimit, mail, sched="slurm"):
     if sched == "slurm":
-        _submit_slurm(job_name, cmd, cores, mem_usage, output_results_folder, dependencies, partitions, userid, timelimit)
+        _submit_slurm(job_name, cmd, cores, mem_usage, output_results_folder, dependencies, partitions, userid, timelimit, mail)
     elif sched == "pbs":
         _submit_pbs(job_name, cmd, cores, mem_usage, output_results_folder, dependencies)
     else:
@@ -119,12 +119,19 @@ def _submit_pbs(job_name, cmd, cores, mem_usage, output_results_folder, dependen
         sys.exit(1)
 
 
-def _submit_slurm(job_name, cmd, cores, mem_usage, output_results_folder, dependencies, partitions, userid, timelimit):
+def _submit_slurm(job_name, cmd, cores, mem_usage, output_results_folder, dependencies, partitions, userid, timelimit, mail):
     """This function submits a predefined job with specific SBATCH parameters to the Slurm workload manager system."""
-
+    # add dependencies if necessary
     depend = "\n"
-    if len(dependencies) != 0:
+    if dependencies:
         depend = "#SBATCH --dependency=afterok:{}\n".format(":".join(dependencies))
+    # add mail delivery
+    mail_type = "\n"
+    mail_user = "\n"
+    if mail:
+        mail_type = "#SBATCH --mail-type=END,FAIL,TIME_LIMIT_80\n"
+        mail_user = "#SBATCH --mail-user={}\n".format(mail)
+    # save stderr and stdout in different files
     error_file = os.path.join(output_results_folder, "error.log")
     output_file = os.path.join(output_results_folder, "output.log")
 
@@ -132,7 +139,6 @@ def _submit_slurm(job_name, cmd, cores, mem_usage, output_results_folder, depend
     slurm_script = os.path.join(output_results_folder, job_name + ".sbatch")
     with open(slurm_script, "w") as sbatch:
         sbatch.writelines([
-
             "#!/bin/bash\n",
             "#SBATCH -J {}\n".format(job_name),
             "#SBATCH -p {}\n".format(partitions),
@@ -146,11 +152,11 @@ def _submit_slurm(job_name, cmd, cores, mem_usage, output_results_folder, depend
             "#SBATCH --error={}\n".format(error_file),
             "#SBATCH --output={}\n".format(output_file),
 #            "#SBATCH --requeue\n",
-            "\n",
+            mail_type,
+            mail_user,
             "set -eo pipefail -o nounset\n",
             "srun {}\n".format(cmd)
         ])
-
     # and run it
     try:
         output = subprocess.check_output(["sbatch", slurm_script])
