@@ -34,6 +34,7 @@ class DataJoining(object):
         self.overwrite = overwrite
         pd.options.mode.chained_assignment = None
         self.input_read_count = 0
+        self.easyfuse_path = os.path.dirname(os.path.realpath(__file__))
 
     @staticmethod
     def read_assembly_files(blast_assembly_dir):
@@ -340,11 +341,10 @@ class DataJoining(object):
         for table in ["1", "2", "12"]:
             summary_file = "{}_fusRank_{}.csv".format(self.output, table)
             if model_predictions and self.check_files(summary_file, True):
-                model_exe = config.get("commands", "model_cmd")
                 model_path = config.get("otherFiles", "easyfuse_model")
                 # append prediction scores based on pre-calculated model
-                cmd_model = "{0} --fusion_summary {1} --model_file {2} --output {3}".format(model_exe, summary_file, model_path, "{}.pModelPred.csv".format(summary_file[:-4]))
-                Queueing.submit("", cmd_model.split(" "), "", "", "", "", "", "", "", "none")
+                cmd_model = "{0} --fusion_summary {1} --model_file {2} --output {3}".format(os.path.join(self.easyfuse_path, "R", "R_model_prediction.R"), summary_file, model_path, "{}.pModelPred.csv".format(summary_file[:-4]))
+                Queueing.submit("", cmd_model.split(" "), "", "", "", "", "", "", "", "", "none")
         
 #        print(joined_table_1)
 #        print(joined_table_2)

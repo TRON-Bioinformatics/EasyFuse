@@ -36,6 +36,7 @@ class Fetching(object):
         #self.tools = Samples(os.path.join(scratch_path, os.path.pardir, os.path.pardir, "samples.csv")).get_tool_list_from_state(self.sample_id)
         self.sample = Samples(os.path.join(scratch_path, os.path.pardir, os.path.pardir, "samples.csv"))
         self.logger = Logger(os.path.join(self.fetchdata_path, "fetchdata_" + str(int(round(time.time()))) + ".log"))
+        self.easyfuse_path = os.path.dirname(os.path.realpath(__file__))
 
     def get_pseudo_genome_adjustments_for_star(self, num_len_file): # wrong pylint error due to long name => pylint: disable=C0103
         """Return the genome size of an associated fasta file calculated by urla_GetFusionSequence_latest.R"""
@@ -118,20 +119,19 @@ class Fetching(object):
         # urla - note: tmp hack to get original star input reads for normalization
         with open(os.path.join(classification_path, "Star_org_input_reads.txt"), "w") as infile:
             infile.write(str(self.get_input_read_count_from_star(os.path.join(self.scratch_path, "filtered_reads", "{}_Aligned.out.bam".format(self.sample_id)))))
-
         # Define cmd strings for each program
-        cmd_fusiondata = "{0} -i {1} -o {2} -s {3} -t {4} -f {5} -l {6}".format(self.cfg.get('commands', 'fetch_fusiondata_cmd'), self.scratch_path, detected_fusions_path, self.sample_id, fusion_support, self.cfg.get('general', 'fusiontools'), self.logger.get_path())
-        cmd_liftover = "{0} -i {1} -c {2} -l {3}".format(self.cfg.get('commands', 'liftover_cmd'), detected_fusions_file, self.cfg.get_path(), self.logger.get_path())
-        cmd_contextseq = "{0} --input_detected_fusions {1} --fasta_genome_dir {2} --ensembl_csv {3} --output {4} --context_seq_len {5}".format(self.cfg.get('commands', 'fetch_context_cmd'), detected_fusions_file, genome_fastadir_path, genes_csv_path, context_seq_file, self.cfg.get('general', 'context_seq_len'))
+        cmd_fusiondata = "{0} -i {1} -o {2} -s {3} -t {4} -f {5} -l {6}".format(os.path.join(self.easyfuse_path, "fusiontoolparser.py"), self.scratch_path, detected_fusions_path, self.sample_id, fusion_support, self.cfg.get('general', 'fusiontools'), self.logger.get_path())
+        cmd_liftover = "{0} -i {1} -c {2} -l {3}".format(os.path.join(self.easyfuse_path, "misc", "liftover.py"), detected_fusions_file, self.cfg.get_path(), self.logger.get_path())
+        cmd_contextseq = "{0} --input_detected_fusions {1} --fasta_genome_dir {2} --ensembl_csv {3} --output {4} --context_seq_len {5}".format(os.path.join(self.easyfuse_path, "R", "GetFusionSequence.R"), detected_fusions_file, genome_fastadir_path, genes_csv_path, context_seq_file, self.cfg.get('general', 'context_seq_len'))
         cpu = 12
         cmd_starindex = "{0} --runMode genomeGenerate --runThreadN {1} --limitGenomeGenerateRAM 48000000000 --genomeChrBinNbits waiting_for_bin_size_input --genomeSAindexNbases waiting_for_sa_idx_input --genomeDir {2} --genomeFastaFiles {3}".format(self.cfg.get('commands', 'star_cmd'), cpu, star_genome_path, "{0}{1}".format(context_seq_file, ".fasta"))
         cmd_staralign_fltr = "{0} --genomeDir {1} --readFilesCommand zcat --readFilesIn {2} {3} --outSAMtype BAM SortedByCoordinate --outFilterMultimapNmax -1 --outSAMattributes Standard --outSAMunmapped None --outFilterMismatchNoverLmax 0.02 --runThreadN {4} --outFileNamePrefix {5}fltr_ --limitBAMsortRAM 48000000000".format(self.cfg.get('commands', 'star_cmd'), star_genome_path, fq1, fq2, cpu, star_align_file)
         cmd_bamindex_fltr = "{0} index {1}fltr_Aligned.sortedByCoord.out.bam".format(self.cfg.get('commands', 'samtools_cmd'), star_align_file)
-        cmd_requantify_fltr = "{0} -i {1}fltr_Aligned.sortedByCoord.out.bam -o {2}_fltr.tdt -d 10".format(self.cfg.get('commands', 'classification_cmd'), star_align_file, classification_file)
+        cmd_requantify_fltr = "{0} -i {1}fltr_Aligned.sortedByCoord.out.bam -o {2}_fltr.tdt -d 10".format(os.path.join(self.easyfuse_path, "requantify.py"), star_align_file, classification_file)
         (fq1, fq2) = self.sample.get_fastq_files(self.sample_id)
         cmd_staralign_org = "{0} --genomeDir {1} --readFilesCommand zcat --readFilesIn {2} {3} --outSAMtype BAM SortedByCoordinate --outFilterMultimapNmax -1 --outSAMattributes Standard --outSAMunmapped None --outFilterMismatchNoverLmax 0.02 --runThreadN {4} --outFileNamePrefix {5}org_ --limitBAMsortRAM 48000000000".format(self.cfg.get('commands', 'star_cmd'), star_genome_path, fq1, fq2, cpu, star_align_file)
         cmd_bamindex_org = "{0} index {1}org_Aligned.sortedByCoord.out.bam".format(self.cfg.get('commands', 'samtools_cmd'), star_align_file)
-        cmd_requantify_org = "{0} -i {1}org_Aligned.sortedByCoord.out.bam -o {2}_org.tdt -d 10".format(self.cfg.get('commands', 'classification_cmd'), star_align_file, classification_file)
+        cmd_requantify_org = "{0} -i {1}org_Aligned.sortedByCoord.out.bam -o {2}_org.tdt -d 10".format(os.path.join(self.easyfuse_path, "requantify.py"), star_align_file, classification_file)
 
         # set final lists of executable tools and path
         exe_tools = [
@@ -181,7 +181,7 @@ class Fetching(object):
                         exe_cmds[i] = exe_cmds[i].replace("waiting_for_bin_size_input", star_bin)
                         exe_cmds[i] = exe_cmds[i].replace("waiting_for_sa_idx_input", star_sa)
                     self.logger.debug("Executing: {}".format(exe_cmds[i]))
-                    Queueing.submit("", exe_cmds[i].split(" "), "", "", "", "", "", "", "", "none")
+                    Queueing.submit("", exe_cmds[i].split(" "), "", "", "", "", "", "", "", "", "none")
                 else:
                     self.logger.error("Could not run {0} due to the missing dependency {1}".format(tool, exe_dependencies[i]))
                     sys.exit(1)

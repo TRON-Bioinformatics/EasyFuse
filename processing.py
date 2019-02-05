@@ -42,6 +42,7 @@ class Processing(object):
         self.partitions = partitions
         self.userid = userid
         self.overwrite = overwrite
+        self.easyfuse_path = os.path.dirname(os.path.realpath(__file__))
 
     # The run method simply greps and organises fastq input files.
     # Fastq pairs (single end input is currently not supported) are then send to "execute_pipeline"
@@ -112,10 +113,10 @@ class Processing(object):
             modelling_string = ""
             if self.cfg.get("otherFiles", "easyfuse_model"):
                 modelling_string = " --model_predictions"
-            cmd_summarize = "{0} --input {1} --config {2}{3}{4}".format(self.cfg.get('commands', 'summary_cmd'), self.working_dir, self.cfg.get_path(), icam_run_string, modelling_string)
+            cmd_summarize = "python {0} --input {1} --config {2}{3}{4}".format(os.path.join(self.easyfuse_path, "summarize_data.py"), self.working_dir, self.cfg.get_path(), icam_run_string, modelling_string)
             self.logger.debug("Submitting slurm job: CMD - {0}; PATH - {1}; DEPS - {2}".format(cmd_summarize, self.working_dir, dependency))
             cpu, mem = self.cfg.get("resources", "summary").split(",")
-            self.submit_job("-".join(["Summary", str(int(round(time.time())))]), cmd_summarize, cpu, mem, self.working_dir, dependency)
+            self.submit_job("-".join(["Summary", str(int(round(time.time())))]), cmd_summarize, cpu, mem, self.working_dir, dependency, self.cfg.get('general', 'receiver'))
 
     # Per sample, define input parameters and execution commands, create a folder tree and submit runs to slurm
     def execute_pipeline(self, fq1, fq2, sample_id, ref_genome, ref_trans, tool_num_cutoff, icam_run):
@@ -191,7 +192,7 @@ class Processing(object):
 
         # (0) Readfilter
         cmd_star_filter = "{0} --genomeDir {1} --outFileNamePrefix {2} --readFilesCommand zcat --readFilesIn {3} {4} --outFilterMultimapNmax 100 --outSAMmultNmax 1 --chimSegmentMin 10 --chimJunctionOverhangMin 10 --alignSJDBoverhangMin 10 --alignMatesGapMax {5} --alignIntronMax {5} --chimSegmentReadGapMax 3 --alignSJstitchMismatchNmax 5 -1 5 5 --seedSearchStartLmax 20 --winAnchorMultimapNmax 50 --outSAMtype BAM Unsorted --chimOutType Junctions WithinBAM --outSAMunmapped Within KeepPairs --runThreadN waiting_for_cpu_number".format(self.cfg.get('commands', 'star_cmd'), star_index_path, os.path.join(filtered_reads_path, "{}_".format(sample_id)), fq1, fq2, self.cfg.get('general', 'max_dist_proper_pair'))
-        cmd_read_filter = "{0} --input {1}_Aligned.out.bam --output {1}_Aligned.out.filtered.bam".format(self.cfg.get('commands', 'readfilter_cmd'), os.path.join(filtered_reads_path, sample_id))
+        cmd_read_filter = "{0} --input {1}_Aligned.out.bam --output {1}_Aligned.out.filtered.bam".format(os.path.join(self.easyfuse_path, "fusionreadfilter.py"), os.path.join(filtered_reads_path, sample_id))
         # re-define fastq's if filtering is on (default)
         fq0 = os.path.join(filtered_reads_path, os.path.basename(fq1).replace("R1", "R0").replace(".fastq.gz", "_filtered_singles.fastq.gz"))
         fq1 = os.path.join(filtered_reads_path, os.path.basename(fq1).replace(".fastq.gz", "_filtered.fastq.gz"))
@@ -209,7 +210,7 @@ class Processing(object):
         cmd_mapsplice = "python {0} --chromosome-dir {1} -x {2} -1 {3} -2 {4} --threads waiting_for_cpu_number --output {5} --qual-scale phred33 --bam --seglen 20 --min-map-len 40 --gene-gtf {6} --fusion".format(self.cfg.get('commands', 'mapsplice_cmd'), genome_chrs_path, bowtie_index_path, fq1[:-3], fq2[:-3], mapsplice_path, genes_gtf_path)
         # (4) Fusiocatcher
         cmd_fusioncatcher = "{0} --input {1} --output {2} -p waiting_for_cpu_number".format(self.cfg.get('commands', 'fusioncatcher_cmd'), ",".join([fq1, fq2]), fusioncatcher_path)
-        # star-fusion and star-chip can be run upon a previous star run (this is MUST NOT be the star_filter run, but the star_expression run)
+        # star-fusion and star-chip can be run upon a previous star run (this MUST NOT be the star_filter run, but the star_expression run)
         # (5)
         cmd_starfusion = "{0} --chimeric_junction {1} --genome_lib_dir {2} --CPU waiting_for_cpu_number --output_dir {3}".format(self.cfg.get('commands', 'starfusion_cmd'), "{}_Chimeric.out.junction".format(os.path.join(star_path, sample_id)), starfusion_index_path, starfusion_path)
         # (7)
@@ -220,14 +221,14 @@ class Processing(object):
         # (8) Infusion
         cmd_infusion = "{0} -1 {1} -2 {2} --skip-finished --min-unique-alignment-rate 0 --min-unique-split-reads 0 --allow-non-coding --out-dir {3} {4}".format(self.cfg.get("commands", "infusion_cmd"), fq1, fq2, infusion_path, infusion_cfg_path)
         # (x) Soapfuse
-        cmd_soapfuse = "{} -c {} -q {} -i {} -o {} -g {}".format(self.cfg.get('commands', 'soapfuse_wrapper_cmd'), self.cfg.get_path(), qc_table_path, " ".join([fq1, fq2]), soapfuse_path, ref_genome)
+        cmd_soapfuse = "{0} -c {1} -q {2} -i {3} -o {4} -g {5}".format(self.cfg.get('commands', 'soapfuse_wrapper_cmd'), self.cfg.get_path(), qc_table_path, " ".join([fq1, fq2]), soapfuse_path, ref_genome)
         # (9) Data collection
-        cmd_fetchdata = "{0} -i {1} -o {2} -s {3} -c {4} --fq1 {5} --fq2 {6} --fusion_support {7} --icam_run".format(self.cfg.get('commands', 'fetchdata_cmd'), output_results_path, fetchdata_path, sample_id, self.cfg.get_path(), fq1, fq2, tool_num_cutoff)
+        cmd_fetchdata = "{0} -i {1} -o {2} -s {3} -c {4} --fq1 {5} --fq2 {6} --fusion_support {7} --icam_run".format(os.path.join(self.easyfuse_path, "fetchdata.py"), output_results_path, fetchdata_path, sample_id, self.cfg.get_path(), fq1, fq2, tool_num_cutoff)
         # (10) De novo assembly of fusion transcripts
         # urla: This is currently still under active development and has not been tested thoroughly
-        cmd_denovoassembly = "{0} -i waiting_for_gene_list_input -c {1} -b {2}_Aligned.out.bam -g {3} -t {4} -o waiting_for_assembly_out_dir".format(self.cfg.get('commands', 'denovoassembly_cmd'), self.cfg.get_path(), os.path.join(filtered_reads_path, sample_id), ref_genome, ref_trans)
+        cmd_denovoassembly = "{0} -i waiting_for_gene_list_input -c {1} -b {2}_Aligned.out.bam -g {3} -t {4} -o waiting_for_assembly_out_dir".format(os.path.join(self.easyfuse_path, "denovoassembly.py"), self.cfg.get_path(), os.path.join(filtered_reads_path, sample_id), ref_genome, ref_trans)
         # (X) Sample monitoring
-        cmd_samples = "{0} --output-file={1} --sample-id={2} --action=append_state --state='".format(self.cfg.get('commands', 'samples_cmd'), self.samples.infile, sample_id)
+        cmd_samples = "{0} --output-file={1} --sample-id={2} --action=append_state --state='".format(os.path.join(self.easyfuse_path, "misc", "samples.py"), self.samples.infile, sample_id)
 
         # set final lists of executable tools and path
         exe_tools = [
@@ -342,15 +343,15 @@ class Processing(object):
                 dependency.extend(Queueing.get_jobs_by_name("Readfilter-{}".format(sample_id)))
                 dependency.extend(Queueing.get_jobs_by_name("QC-{}".format(sample_id)))
                 self.logger.debug("Submitting slurm job: CMD - {0}; PATH - {1}; DEPS - {2}".format(cmd, exe_path[i], dependency))
-                self.submit_job(uid, cmd, cpu, mem, exe_path[i], dependency)
+                self.submit_job(uid, cmd, cpu, mem, exe_path[i], dependency, "")
             else:
                 self.logger.info("Skipping {0} as it is not selected for execution (Selected are: {1})".format(tool, tools))
 
-    def submit_job(self, uid, cmd, cores, mem_usage, output_results_folder, dependencies):
+    def submit_job(self, uid, cmd, cores, mem_usage, output_results_folder, dependencies, mail):
         """Submit job to slurm scheduling"""
         already_running = Queueing.get_jobs_by_name("-".join(uid.split("-")[0:2]))
         if not already_running:
-            Queueing.submit(uid, cmd, cores, mem_usage, output_results_folder, dependencies, self.partitions, self.userid, self.cfg.get('general', 'time_limit'))
+            Queueing.submit(uid, cmd, cores, mem_usage, output_results_folder, dependencies, self.partitions, self.userid, self.cfg.get('general', 'time_limit'), mail)
             time.sleep(3)
         else:
             self.logger.error("A job with this application/sample combination is currently running. Skipping {} in order to avoid unintended data loss.".format(uid))
