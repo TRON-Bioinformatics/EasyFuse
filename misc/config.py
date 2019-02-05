@@ -10,7 +10,7 @@ Reading/accessing "config.ini" file
 from __future__ import print_function
 import sys
 import os.path
-import queue as Queueing
+from distutils.spawn import find_executable
 
 class Config(object):
     """Class to access all required parameter information about a run"""
@@ -91,9 +91,9 @@ class Config(object):
                 print("Checking provided commands...")
                 for command in self.get_keys(category):
                     try:
-                        Queueing.submit("", ["which", self.get(category, command)], "", "", "", "", "", "", "", sched="none")
+                        print("Found \"{0}\" at \"{1}\".".format(command, os.path.realpath(find_executable(self.get(category, command)))))
                     except:
-                        print("Error 99: The command assigned to \"{}\" could not be found in your PATH!".format(command))
+                        print("Error 99: The command assigned to \"{}\" could not be found!".format(command))
                         count_errors += 1
             else:
                 print("Checking provided path in \"{}\"".format(category))
