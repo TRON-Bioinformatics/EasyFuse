@@ -14,6 +14,7 @@ options(stringsAsFactors = FALSE)
 argument_list <- list(
 	make_option(c("-i", "--fusion_summary"), default="", help="Input list of detected fusions"), 
 	make_option(c("-m", "--model_file"), default="", help="Path to .rds file containing the machine learning model"),
+	make_option(c("-t", "--prediction_threshold"), default=0.75, help="Prediction score threshold above which a fusion is called positive"),
 	make_option(c("-o", "--output"), default="", help="Final Output file for predicted fusion genes")
 )
 opt <- parse_args(OptionParser(option_list=argument_list))
@@ -81,7 +82,7 @@ add_prediction <- function(flat_data, model, threshold){
 model <- readr::read_rds(opt$model_file)
 
 # add predictions
-fusion_data <- add_prediction(fusion_data, model, 0.75)
+fusion_data <- add_prediction(fusion_data, model, opt$prediction_threshold)
 
 # Write fusions to output file -------------------------------------------------
 write_excel_csv2(fusion_data, opt$output)

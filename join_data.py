@@ -141,8 +141,9 @@ class DataJoining(object):
             summary_file = "{}_fusRank_{}.csv".format(self.output, table)
             if model_predictions and self.check_files(summary_file, True):
                 model_path = config.get("otherFiles", "easyfuse_model")
+                model_threshold = config.get("general", "model_pred_threshold")
                 # append prediction scores based on pre-calculated model
-                cmd_model = "{0} --fusion_summary {1} --model_file {2} --output {3}".format(os.path.join(self.easyfuse_path, "R", "R_model_prediction.R"), summary_file, model_path, "{}.pModelPred.csv".format(summary_file[:-4]))
+                cmd_model = "{0} --fusion_summary {1} --model_file {2} --prediction_threshold {3} --output {4}".format(os.path.join(self.easyfuse_path, "R", "R_model_prediction.R"), summary_file, model_path, model_threshold, "{}.pModelPred.csv".format(summary_file[:-4]))
                 Queueing.submit("", cmd_model.split(" "), "", "", "", "", "", "", "", "", "none")
 
         if icam_run:
