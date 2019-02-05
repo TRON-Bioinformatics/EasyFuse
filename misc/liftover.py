@@ -13,6 +13,7 @@ from argparse import ArgumentParser
 import sys
 import os.path
 import pandas as pd
+from shutil import copy2
 import queue as Queueing
 from config import Config
 from logger import Logger
@@ -23,6 +24,7 @@ class FusionLiftover(object):
         self.in_fus_detect = in_fus_detect
         self.cfg = config
         self.logger = Logger(logger)
+        copy2(in_fus_detect, "{}.bak".format(in_fus_detect))
 
     def liftcoords(self):
         """Parse ensembl transcriptome fasta file and modify header"""

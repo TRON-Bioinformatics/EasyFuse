@@ -17,7 +17,6 @@ import os.path
 import time
 import math
 import argparse
-from shutil import copy2
 import misc.queue as Queueing
 from misc.config import Config
 from misc.samples import Samples
@@ -113,7 +112,6 @@ class Fetching(object):
             crossmap_chain = self.cfg.get('liftover', 'crossmap_chain')
             ref_genome_dest = os.path.basename(crossmap_chain).replace(".", "_").split("_")[2].lower()
             self.logger.debug("Creating a copy of the detected fusions file due to selection of liftover. Old ({0}) data will be kept in \"{1}.bak\"".format(ref_genome, detected_fusions_file))
-            copy2(detected_fusions_file, "{}.bak".format(detected_fusions_file))
             genome_fastadir_path = self.cfg.get('references', ref_trans + '_genome_fastadir_' + ref_genome_dest)
             genes_csv_path = self.cfg.get('references', ref_trans + '_genes_csv_' + ref_genome_dest)
 
