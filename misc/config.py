@@ -10,7 +10,7 @@ Reading/accessing "config.ini" file
 from __future__ import print_function
 import sys
 import os.path
-import misc.queue as Queueing
+import queue as Queueing
 
 class Config(object):
     """Class to access all required parameter information about a run"""
