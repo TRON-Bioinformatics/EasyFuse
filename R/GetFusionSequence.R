@@ -206,6 +206,40 @@ make_context_id <- function(context_sequence){
 
 
 
+#custome function to determine which exons code for neo peptide sequence and return there genomic positions
+get_neopeptide_exons <- function(exon_bp_rel, neo_peptide_sequence_length, neo_peptide_sequence_bp, exon_starts, exon_ends, exon_starts_rel, exon_ends_rel){
+  
+  tmp_data = data.frame(id = 1:length(exon_bp_rel), exon_bp_rel, neo_peptide_sequence_length, neo_peptide_sequence_bp, exon_starts, exon_ends, exon_starts_rel, exon_ends_rel, element="1*2")
+  
+  #for testing 
+  #tmp_data = overlap %>% 
+  #  filter(FTID=="ADAP1_7:919968:-_ENST00000446141_PRKAR1B_7:607452:-_ENST00000360274") %>%
+  #  mutate(id = 1:length(exon_bp_rel), neo_peptide_sequence_length = nchar(neo_peptide_sequence), element = "1*2") %>%
+  #  select(id, exon_bp_rel, neo_peptide_sequence_length, neo_peptide_sequence_bp, exon_starts, exon_ends, exon_starts_rel, exon_ends_rel, element)
+  
+  tmp_data2 = tmp_data %>%
+    unnest(exon_starts = strsplit(exon_starts, "\\*"), exon_ends = strsplit(exon_ends, "\\*"),
+      exon_starts_rel = strsplit(exon_starts_rel, "\\*"), exon_ends_rel = strsplit(exon_ends_rel, "\\*"),
+      exon_bp_rel = strsplit(exon_bp_rel, "\\*"), element = strsplit(element, "\\*")) %>%
+    unnest(exon_starts = strsplit(exon_starts, "\\|"), exon_ends = strsplit(exon_ends, "\\|"),
+      exon_starts_rel = strsplit(exon_starts_rel, "\\|"), exon_ends_rel = strsplit(exon_ends_rel, "\\|")) %>%
+    filter((as.numeric(exon_ends_rel) >= as.numeric(exon_bp_rel) - 3 * neo_peptide_sequence_bp & as.numeric(exon_starts_rel) < as.numeric(exon_bp_rel) & element == 1) |
+      (as.numeric(exon_starts_rel) <= as.numeric(exon_bp_rel) + neo_peptide_sequence_length * 3 - neo_peptide_sequence_bp * 3 & as.numeric(exon_ends_rel) > as.numeric(exon_bp_rel) & element == 2)) %>%
+    group_by(id, element) %>%
+    summarize(exon_starts = paste0(exon_starts, collapse="|"), exon_ends = paste0(exon_ends, collapse="|")) %>%
+    group_by(id) %>%
+    summarize(element = paste0(element, collapse="*"), exon_starts = paste0(exon_starts, collapse="*"), exon_ends = paste0(exon_ends, collapse="*"))
+    
+    tmp_data = tmp_data %>%
+      select(id, element) %>%
+      left_join(tmp_data2, by = c("id", "element"))
+    
+    return(paste0(tmp_data$exon_starts, "_", tmp_data$exon_ends))
+}
+
+
+
+
 ########################################################
 ###### procesing of detected fusions starts here #######
 ########################################################
@@ -243,7 +277,7 @@ ensemble_csv = breakpoints %>%
 #identify overlapping elements on genome coordinates
 print("->identify overlapping elements")
 genomic_overlap = breakpoints %>% 
-  #filter(FGID == "C1ORF100_chr1:244363704:+_SNAP47_chr1:227735499:+") %>%
+	#filter(FGID == "C1ORF100_chr1:244363704:+_SNAP47_chr1:227735499:+") %>%
 	inner_join(ensemble_csv, by = c("chr","strand")) %>%   # <- huge memory usage ???
 	filter(pos >= gene_start, pos <= gene_end) %>% #filter overlapping genes
 	unnest(start2 = strsplit(start, "\\|"), end2 = strsplit(end, "\\|"), bp_element = strsplit(number, "\\|"), bp_type = strsplit(type, "\\|")) %>% #unnest bp_elements of overlapping genes
@@ -264,18 +298,6 @@ genomic_overlap = breakpoints %>%
 
 
 
-#load sequence for all elements
-print(paste0("->generate transcript sequences from: ", fa_path))
-transcript_seq = genomic_overlap %>%
-  distinct(FGID, transcript_id, chr, start, end, strand, number) %>%
-  arrange(chr, transcript_id, number) %>% #reorder to reduce loading and ensure correct assembly of exon sequences to transcript
-	mutate(seq = read_genome_seq(chr, start, end, strand)) %>% #determine sequence of all elements
-	group_by(FGID, transcript_id) %>%
-	summarize(seq = paste0(seq, collapse = ""), exon_nr = n(), exon_starts = paste0(start, collapse="|"), exon_ends = paste0(end, collapse="|")) %>%
-	ungroup()
-
-
-
 #calculate relative positions of elements/exons on transcript
 print("->calculate relative positions on transcript")
 transcript_overlap_elements = genomic_overlap %>%	
@@ -286,6 +308,19 @@ transcript_overlap_elements = genomic_overlap %>%
   ungroup() %>%
   mutate(start_rel = end_rel - size)
 
+
+
+#load sequence for all elements
+print(paste0("->generate transcript sequences from: ", fa_path))
+transcript_seq = genomic_overlap %>%
+  inner_join(transcript_overlap_elements, by = c("FGID", "transcript_id", "number", "size")) %>%
+  distinct(FGID, transcript_id, chr, start, end, strand, number, start_rel, end_rel) %>%
+  arrange(chr, transcript_id, number) %>% #reorder to reduce loading and ensure correct assembly of exon sequences to transcript
+	mutate(seq = read_genome_seq(chr, start, end, strand)) %>% #determine sequence of all elements
+	group_by(FGID, transcript_id) %>%
+	summarize(seq = paste0(seq, collapse = ""), exon_nr = n(), exon_starts = paste0(start, collapse="|"), exon_ends = paste0(end, collapse="|"),
+	  exon_starts_rel = paste0(start_rel, collapse="|"), exon_ends_rel = paste0(end_rel, collapse="|")) %>%
+	ungroup()
 
 
 	
@@ -336,7 +371,9 @@ overlap = overlap_side1 %>%
 		exon_boundary = ifelse(S1_bp_type == "boundary", ifelse(S2_bp_type == "boundary", "both", "5prime"), ifelse(S2_bp_type == "boundary", "3prime", "none")), #determine if bp matches with known exon_boundaries
 		bp1_frame = S1_frame, bp2_frame = S2_frame,	frame = determine_frame(S1_frame, S2_frame),
 		#wt1_sequence = S1_seq, wt1_sequence_bp = S1_pos_rel, wt2_sequence = S2_seq, wt2_sequence_bp = S2_pos_rel, #determine wildtype transcripts and breakpoint positions
-		exon_nr = S1_exon_nr + S2_exon_nr, exon_starts = paste0(S1_exon_starts, "|", S2_exon_starts), exon_ends = paste0(S1_exon_ends, "|", S2_exon_ends), #combine exon positions
+		exon_nr = S1_exon_nr + S2_exon_nr, exon_starts = paste0(S1_exon_starts, "*", S2_exon_starts), exon_ends = paste0(S1_exon_ends, "*", S2_exon_ends), #combine relative exon positions
+		exon_starts_rel = paste0(S1_exon_starts_rel, "*", S2_exon_starts_rel), exon_ends_rel = paste0(S1_exon_ends_rel, "*", S2_exon_ends_rel), #combine exon positions
+		exon_bp_rel = paste0(S1_pos_rel, "*", S2_pos_rel), #relative breakpoints within transcript
 		transcript_sequence = paste0(substr(S1_seq, 1, S1_pos_rel), substr(S2_seq, S2_pos_rel, nchar(S2_seq))), transcript_sequence_bp = S1_pos_rel, #combine sequence for fusion transcript
 		wt1_context_sequence = substr(S1_seq, S1_pos_rel - context_seq_len + 1, S1_pos_rel + context_seq_len), wt1_context_sequence_bp = pmin(S1_pos_rel, context_seq_len),
 		wt2_context_sequence = substr(S2_seq, S2_pos_rel - context_seq_len, S2_pos_rel + context_seq_len - 1), wt2_context_sequence_bp = pmin(S2_pos_rel, context_seq_len),
@@ -351,15 +388,17 @@ overlap = overlap_side1 %>%
 	mutate(neo_peptide_sequence = ifelse(frame == "in_frame", 
 		substr(peptide_sequence, round(peptide_sequence_bp - 13.5 + 1, 0), round(peptide_sequence_bp + 13.5, 0)), #R rounds down when using 0.5
 		substr(peptide_sequence, round(peptide_sequence_bp - 13.5 + 1, 0), nchar(peptide_sequence))), #determine sequence potentially immunogenic
-		neo_peptide_sequence_bp = peptide_sequence_bp - round(peptide_sequence_bp - 13.5, 0))
+		neo_peptide_sequence_bp = peptide_sequence_bp - round(peptide_sequence_bp - 13.5, 0)) %>%
+	mutate(neo_peptide_exons = get_neopeptide_exons(exon_bp_rel, nchar(neo_peptide_sequence), neo_peptide_sequence_bp, exon_starts, exon_ends, exon_starts_rel, exon_ends_rel)) %>% #identify exon positions involved in neopeptide
+	separate(neo_peptide_exons, sep = "_", into=c("neo_peptide_exons_starts", "neo_peptide_exons_ends"))
 
 
 
 # select relevant columns for context_seq.csv
 output = overlap %>%
 	select(FGID, Fusion_Gene, Breakpoint1, Breakpoint2, FTID, context_sequence_id, context_sequence_100_id,
-		type, exon_nr, exon_starts, exon_ends, exon_boundary1, exon_boundary2, exon_boundary, bp1_frame, bp2_frame, frame, 
-		context_sequence, context_sequence_bp, neo_peptide_sequence, neo_peptide_sequence_bp)
+		type, exon_nr, exon_starts = neo_peptide_exons_starts, exon_ends = neo_peptide_exons_ends, exon_boundary1, exon_boundary2, exon_boundary, bp1_frame, bp2_frame, frame, 
+		context_sequence, context_sequence_bp, neo_peptide_sequence, neo_peptide_sequence_bp, neo_peptide_exons_starts, neo_peptide_exons_ends)
 
 write.csv2(output, out_file, row.names = FALSE, quote = FALSE)
 
