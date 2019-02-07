@@ -11,7 +11,6 @@ Prediction tools that have been implemented and tested within EasyFuse are liste
 that are also listed.\
 For simplicity we provide in the following an installation instruction for EasyFuse together with STAR-Fusion (ref) and Fusioncatcher (ref).
 
-
 ### Tools
 
  - star-fusion (1.5.0)
