@@ -7,8 +7,8 @@ The pipeline is mainly written in python with some scripts being R.
 ## Installation
 
 Fusion breakpoint prediction itself is currently not implemented in EasyFuse and the pipeline therefore depends on external fusion prediction tools.\
-Prediction tools that have been implemented and tested within EasyFuse are listed under Tools. These tools might require different alignment tools
-that are also listed.\
+Prediction tools that have been implemented and tested within EasyFuse are listed under Tools. EasyFuse requires star for alignment, additional alignment
+tools might be required depending on the external fusion prediction tools.
 For simplicity we provide in the following an installation instruction for EasyFuse together with STAR-Fusion (ref) and Fusioncatcher (ref).
 
 ### Tools
@@ -19,8 +19,6 @@ For simplicity we provide in the following an installation instruction for EasyF
  - infusion (0.8)
  - SOAPfuse (1.2.7)
  - pizzly (0.37.3)
-
- - star (2.6.1d) 
  - bowtie2 (2.3.4.3)
  - kallisto (0.44.0)
  - skewer (0.2.2)
@@ -29,6 +27,7 @@ For simplicity we provide in the following an installation instruction for EasyF
 
  - samtools (1.9)
  - htslib (1.9)
+ - star (2.6.1d) 
  - Python (2.7.15)
  - Python modules:
     - pandas (0.24.0)
