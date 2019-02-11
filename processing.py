@@ -204,8 +204,9 @@ class Processing(object):
         # (2) Star expression quantification (required for starfusion and starchip)
         cmd_star = "{0} --genomeDir {1} --outFileNamePrefix waiting_for_output_string --runThreadN waiting_for_cpu_number --runMode alignReads --readFilesIn {2} {3} --readFilesCommand zcat --chimSegmentMin 10 --chimJunctionOverhangMin 10 --alignSJDBoverhangMin 10 --alignMatesGapMax {4} --alignIntronMax {4} --chimSegmentReadGapMax 3 --alignSJstitchMismatchNmax 5 -1 5 5 --seedSearchStartLmax 20 --winAnchorMultimapNmax 50 --outSAMtype BAM SortedByCoordinate --chimOutType Junctions SeparateSAMold --chimOutJunctionFormat 1".format(self.cfg.get('commands', 'star_cmd'), star_index_path, fq1, fq2, self.cfg.get('general', 'max_dist_proper_pair'))
         # (3) Mapslice
-        cmd_extr_fastq1 = "gunzip -c {0} > {1}".format(fq1, fq1[:-3])
-        cmd_extr_fastq2 = "gunzip -c {0} > {1}".format(fq2, fq2[:-3])
+        # urla: the "keep" parameter requires gunzip >= 1.6
+        cmd_extr_fastq1 = "gunzip {0} --keep".format(fq1)
+        cmd_extr_fastq2 = "gunzip {0} --keep".format(fq2)
         # Added python interpreter to circumvent external hardcoded shell script
         cmd_mapsplice = "python {0} --chromosome-dir {1} -x {2} -1 {3} -2 {4} --threads waiting_for_cpu_number --output {5} --qual-scale phred33 --bam --seglen 20 --min-map-len 40 --gene-gtf {6} --fusion".format(self.cfg.get('commands', 'mapsplice_cmd'), genome_chrs_path, bowtie_index_path, fq1[:-3], fq2[:-3], mapsplice_path, genes_gtf_path)
         # (4) Fusiocatcher
@@ -228,7 +229,7 @@ class Processing(object):
         # urla: This is currently still under active development and has not been tested thoroughly
         cmd_denovoassembly = "{0} -i waiting_for_gene_list_input -c {1} -b {2}_Aligned.out.bam -g {3} -t {4} -o waiting_for_assembly_out_dir".format(os.path.join(self.easyfuse_path, "denovoassembly.py"), self.cfg.get_path(), os.path.join(filtered_reads_path, sample_id), ref_genome, ref_trans)
         # (X) Sample monitoring
-        cmd_samples = "{0} --output-file={1} --sample-id={2} --action=append_state --state='".format(os.path.join(self.easyfuse_path, "misc", "samples.py"), self.samples.infile, sample_id)
+        cmd_samples = "{0} --output-file={1} --sample-id={2} --action=append_state --state=".format(os.path.join(self.easyfuse_path, "misc", "samples.py"), self.samples.infile, sample_id)
 
         # set final lists of executable tools and path
         exe_tools = [
@@ -328,7 +329,7 @@ class Processing(object):
                     exe_cmds[i] = exe_cmds[i].replace("waiting_for_output_string", "{}_".format(os.path.join(exe_path[i], sample_id))).replace("waiting_for_cpu_number", str(cpu))
                 else:
                     exe_cmds[i] = exe_cmds[i].replace("waiting_for_output_string", exe_path[i]).replace("waiting_for_cpu_number", str(cpu))
-                cmd = " && ".join([exe_cmds[i], cmd_samples + uid + "'"])
+                cmd = " && ".join([exe_cmds[i], cmd_samples + uid])
                 # Managing slurm dependencies
                 if tool == "Pizzly":
                     dependency = Queueing.get_jobs_by_name("Kallisto-{}".format(sample_id))
@@ -351,8 +352,15 @@ class Processing(object):
         """Submit job to slurm scheduling"""
         already_running = Queueing.get_jobs_by_name("-".join(uid.split("-")[0:2]))
         if not already_running:
-            Queueing.submit(uid, cmd, cores, mem_usage, output_results_folder, dependencies, self.partitions, self.userid, self.cfg.get('general', 'time_limit'), mail)
-            time.sleep(3)
+            # urla: for compatibility reasons (and to be independent of shell commands), concatenated commands are splitted again,
+            #       dependencies within the splitted groups updated and everything submitted sequentially to the queueing system
+            que_sys = self.cfg.get('general', 'queueing_system')
+            for i, cmd_split in enumerate(cmd.split(" && ")):
+                if not que_sys == "slurm" and not que_sys == "pbs":
+                    cmd_split = cmd_split.split(" ")
+                dependencies.extend(Queueing.get_jobs_by_name("{0}_CMD{1}".format(uid, i - 1)))
+                Queueing.submit("{0}_CMD{1}".format(uid, i), cmd_split, cores, mem_usage, output_results_folder, dependencies, self.partitions, self.userid, self.cfg.get('general', 'time_limit'), mail, que_sys)
+                time.sleep(3)
         else:
             self.logger.error("A job with this application/sample combination is currently running. Skipping {} in order to avoid unintended data loss.".format(uid))
 
@@ -362,9 +370,9 @@ def main():
     # required arguments
     parser.add_argument('-i', '--input', dest='input', help='Specify the fastq folder(s) or fastq file(s) to process.', required=True)
     parser.add_argument('-o', '--output-folder', dest='output_folder', help='Specify the folder to save the results into.', required=True)
-    parser.add_argument('-u', '--userid', dest='userid', help='User identifier used for slurm and timing', required=True)
     parser.add_argument('-c', '--config', dest='config', help='Specify config file.', required=True)
     # optional arguments
+    parser.add_argument('-u', '--userid', dest='userid', help='User identifier used for scheduling and timing')
     parser.add_argument('-p', '--partitions', dest='partitions', help='Comma-separated list of partitions to use for queueing.', default='allNodes')
     parser.add_argument('--tool_support', dest='tool_support', help='The number of tools which are required to support a fusion event.', default="1")
     parser.add_argument('--version', dest='version', help='Get version info')
