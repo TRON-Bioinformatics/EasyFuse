@@ -25,8 +25,8 @@ For simplicity we provide in the following an installation instruction for EasyF
 
 ### Dependencies
 
+ - gzip (>=1.6) (if mapsplice shall be used)
  - samtools (1.9)
- - htslib (1.9)
  - star (2.6.1d) 
  - Python (2.7.15)
  - Python modules:
