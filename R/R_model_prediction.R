@@ -36,9 +36,7 @@ if(is.na(opt$output) | opt$output == "") {
 # Read fusions -----------------------------------------------------------------
 
 # read fusion with annotation and requantification to single table
-fusion_data <- read_delim(opt$fusion_summary, 
-                          delim = ";"
-                          ) %>%
+fusion_data <- read_csv2(opt$fusion_summary) %>%
   # convert character vectors into factors
   mutate(
     type = factor(type, levels = c("cis_near", "cis_inv", "cis_far", 
@@ -85,5 +83,5 @@ model <- readr::read_rds(opt$model_file)
 fusion_data <- add_prediction(fusion_data, model, opt$prediction_threshold)
 
 # Write fusions to output file -------------------------------------------------
-write_excel_csv2(fusion_data, opt$output)
+write.csv2(fusion_data, opt$output)
 
