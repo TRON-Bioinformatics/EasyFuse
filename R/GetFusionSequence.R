@@ -400,7 +400,9 @@ output = overlap %>%
 		type, exon_nr, exon_starts = neo_peptide_exons_starts, exon_ends = neo_peptide_exons_ends, exon_boundary1, exon_boundary2, exon_boundary, bp1_frame, bp2_frame, frame, 
 		context_sequence, context_sequence_bp, neo_peptide_sequence, neo_peptide_sequence_bp, neo_peptide_exons_starts, neo_peptide_exons_ends)
 
-write.csv2(output, out_file, row.names = FALSE, quote = FALSE)
+#write.csv2(output, out_file, row.names = FALSE, quote = FALSE)
+#consistently use dec="." for python and R
+write.table(output, out_file,  sep=";", dec=".", row.names = FALSE, quote = FALSE)
 
 
 
