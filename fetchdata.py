@@ -106,8 +106,8 @@ class Fetching(object):
         # processing steps to perform
         tools = self.cfg.get('general', 'fd_tools').split(",")
         # An icam_run must currently not be run w/o a liftover
-        if icam_run:
-            tools.insert("Liftover")
+        if icam_run and "Liftover" not in tools:
+            tools.insert(1, "Liftover")
         # In case of a liftover, some reference and path must be changed accordingly
         if "Liftover" in tools:
             crossmap_chain = self.cfg.get('liftover', 'crossmap_chain')

@@ -108,7 +108,7 @@ class DataJoining(object):
         print("Looking for required files...")
         # check whether output already exists
         cols_to_aggregate_on = ["FGID", "context_sequence_id", "FTID"]
-
+        
         if not self.overwrite and self.check_files("{}_fusRank_1.csv".format(self.output), True):
             print("Found pre-calculated output files. If you would like to re-calculate everything, re-start with the --overwrite parameter supplied.")
             joined_table_1 = pd.read_csv("{}_fusRank_1.csv".format(self.output), sep=";")
@@ -131,13 +131,13 @@ class DataJoining(object):
 #                joined_table_1 = joined_table_1.drop(cols_to_drop, axis=1)
 #                cols_to_drop.extend([i for i in cols_from_one if i not in cols_to_drop])
                 # drop columns from context seq in tab 2 as they are identical to the ones from tab 1
-                joined_table_2c = joined_table_2.drop(header_list_1, axis=1)
+                joined_table_2c = joined_table_2.drop(header_list_1, axis=1, errors="ignore")
                 # perform an inner join of the two replicate data frames
                 joined_table_12 = joined_table_1.join(joined_table_2c, lsuffix="_1", rsuffix="_2", how="inner")
                 joined_table_12b = joined_table_12.groupby(by=cols_to_aggregate_on, sort=False, as_index=False)
                 joined_table_12b.agg(self.custom_data_aggregation).to_csv("{}_fusRank_12.csv".format(self.output), sep=";", index=False)
 
-        for table in ["1", "2", "12"]:
+        for table in ["1", "2"]:
             summary_file = "{}_fusRank_{}.csv".format(self.output, table)
             if model_predictions and self.check_files(summary_file, True):
                 model_path = config.get("otherFiles", "easyfuse_model")

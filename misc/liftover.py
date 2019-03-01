@@ -25,6 +25,13 @@ class FusionLiftover(object):
         self.cfg = config
         self.logger = Logger(logger)
         copy2(in_fus_detect, "{}.bak".format(in_fus_detect))
+        self.chr_list = [
+            "1", "2", "3", "4", "5",
+            "6", "7", "8", "9", "10",
+            "11", "12", "13", "14", "15",
+            "16", "17", "18", "19", "20",
+            "21", "22", "X", "Y", "MT"
+            ]
 
     def liftcoords(self):
         """Parse ensembl transcriptome fasta file and modify header"""
@@ -80,7 +87,19 @@ class FusionLiftover(object):
                 elif line_splitter[4] == "2":
                     in_fus_detect_pddf.loc[in_fus_detect_pddf["FGID"] == line_splitter[5], "bp2_lifted"] = ":".join([line_splitter[0], line_splitter[1], line_splitter[3]])
 
+        in_fus_detect_pddf["lo_check"] = "Keep"
         for i in in_fus_detect_pddf.index:
+            # skip fusions mapping to "strange" chromosomes
+            if not in_fus_detect_pddf.loc[i, "bp1_lifted"] or not in_fus_detect_pddf.loc[i, "bp2_lifted"]:
+                self.logger.error("Skipping wrong liftover for {0} and/or {1}".format(in_fus_detect_pddf.loc[i, "bp1_lifted"], in_fus_detect_pddf.loc[i, "bp2_lifted"]))
+                in_fus_detect_pddf.loc[i, "lo_check"] = "Remove"
+                continue
+            chrom1, _, _ = in_fus_detect_pddf.loc[i, "bp1_lifted"].split(":")
+            chrom2, _, _ = in_fus_detect_pddf.loc[i, "bp2_lifted"].split(":")
+            if chrom1 not in self.chr_list or chrom2 not in self.chr_list:
+                self.logger.error("Skipping un-annotatable chromosomes {0} and/or {1}".format(chrom1, chrom2))
+                in_fus_detect_pddf.loc[i, "lo_check"] = "Remove"
+                continue
             # replace the old breakpoints, with the new ones in the FGID
             in_fus_detect_pddf.loc[i, "FGID"] = in_fus_detect_pddf.loc[i, "FGID"].replace(in_fus_detect_pddf.loc[i, "Breakpoint1"], in_fus_detect_pddf.loc[i, "bp1_lifted"])
             in_fus_detect_pddf.loc[i, "FGID"] = in_fus_detect_pddf.loc[i, "FGID"].replace(in_fus_detect_pddf.loc[i, "Breakpoint2"], in_fus_detect_pddf.loc[i, "bp2_lifted"])
@@ -88,7 +107,8 @@ class FusionLiftover(object):
             in_fus_detect_pddf.loc[i, "Breakpoint1"] = in_fus_detect_pddf.loc[i, "bp1_lifted"]
             in_fus_detect_pddf.loc[i, "Breakpoint2"] = in_fus_detect_pddf.loc[i, "bp2_lifted"]
         # finally, drop the added columns again and write to disk
-        in_fus_detect_pddf.drop(labels=["bp1_lifted", "bp2_lifted"], axis=1, inplace=True)
+        in_fus_detect_pddf.drop(in_fus_detect_pddf[in_fus_detect_pddf.lo_check == "Remove"].index, inplace = True)
+        in_fus_detect_pddf.drop(labels=["bp1_lifted", "bp2_lifted", "lo_check"], axis=1, inplace=True)
         in_fus_detect_pddf.to_csv(self.in_fus_detect, sep=";", index=False)
         # urla - note: one could also drop the old cols, rename the new ones and reorder the df, but I find this much more fail-save
 
