@@ -24,14 +24,6 @@ class FusionLiftover(object):
         self.in_fus_detect = in_fus_detect
         self.cfg = config
         self.logger = Logger(logger)
-        self.chr_list = [
-            "1", "2", "3", "4", "5",
-            "6", "7", "8", "9", "10",
-            "11", "12", "13", "14", "15",
-            "16", "17", "18", "19", "20",
-            "21", "22", "X", "Y", "MT"
-        ]
-
         copy2(in_fus_detect, "{}.bak".format(in_fus_detect))
         self.chr_list = [
             "1", "2", "3", "4", "5",
@@ -87,16 +79,13 @@ class FusionLiftover(object):
         # re-construct the breakpoint string
         # and save them in the additional columns
         # urla - note: probably not the fastest way, but the safest :)
-
         with open(tmp_dest_bed, "r") as liftout:
             for line in liftout:
-#                print(line.rstrip())
                 line_splitter = line.rstrip("\n").split("\t")
-                if line_splitter[0] in self.chr_list:
-                    if line_splitter[4] == "1":
-                        in_fus_detect_pddf.loc[in_fus_detect_pddf["FGID"] == line_splitter[5], "bp1_lifted"] = ":".join([line_splitter[0], line_splitter[1], line_splitter[3]])
-                    elif line_splitter[4] == "2":
-                        in_fus_detect_pddf.loc[in_fus_detect_pddf["FGID"] == line_splitter[5], "bp2_lifted"] = ":".join([line_splitter[0], line_splitter[1], line_splitter[3]])
+                if line_splitter[4] == "1":
+                    in_fus_detect_pddf.loc[in_fus_detect_pddf["FGID"] == line_splitter[5], "bp1_lifted"] = ":".join([line_splitter[0], line_splitter[1], line_splitter[3]])
+                elif line_splitter[4] == "2":
+                    in_fus_detect_pddf.loc[in_fus_detect_pddf["FGID"] == line_splitter[5], "bp2_lifted"] = ":".join([line_splitter[0], line_splitter[1], line_splitter[3]])
 
         in_fus_detect_pddf["lo_check"] = "Keep"
         for i in in_fus_detect_pddf.index:
@@ -112,14 +101,11 @@ class FusionLiftover(object):
                 in_fus_detect_pddf.loc[i, "lo_check"] = "Remove"
                 continue
             # replace the old breakpoints, with the new ones in the FGID
-            if in_fus_detect_pddf.loc[i, "bp1_lifted"] and in_fus_detect_pddf.loc[i, "bp2_lifted"]:
-#                print(in_fus_detect_pddf.loc[i, "bp1_lifted"])
-#                print(in_fus_detect_pddf.loc[i, "bp2_lifted"])
-                in_fus_detect_pddf.loc[i, "FGID"] = in_fus_detect_pddf.loc[i, "FGID"].replace(in_fus_detect_pddf.loc[i, "Breakpoint1"], in_fus_detect_pddf.loc[i, "bp1_lifted"])
-                in_fus_detect_pddf.loc[i, "FGID"] = in_fus_detect_pddf.loc[i, "FGID"].replace(in_fus_detect_pddf.loc[i, "Breakpoint2"], in_fus_detect_pddf.loc[i, "bp2_lifted"])
-                # then overwrite the old breakpoints
-                in_fus_detect_pddf.loc[i, "Breakpoint1"] = in_fus_detect_pddf.loc[i, "bp1_lifted"]
-                in_fus_detect_pddf.loc[i, "Breakpoint2"] = in_fus_detect_pddf.loc[i, "bp2_lifted"]
+            in_fus_detect_pddf.loc[i, "FGID"] = in_fus_detect_pddf.loc[i, "FGID"].replace(in_fus_detect_pddf.loc[i, "Breakpoint1"], in_fus_detect_pddf.loc[i, "bp1_lifted"])
+            in_fus_detect_pddf.loc[i, "FGID"] = in_fus_detect_pddf.loc[i, "FGID"].replace(in_fus_detect_pddf.loc[i, "Breakpoint2"], in_fus_detect_pddf.loc[i, "bp2_lifted"])
+            # then overwrite the old breakpoints
+            in_fus_detect_pddf.loc[i, "Breakpoint1"] = in_fus_detect_pddf.loc[i, "bp1_lifted"]
+            in_fus_detect_pddf.loc[i, "Breakpoint2"] = in_fus_detect_pddf.loc[i, "bp2_lifted"]
         # finally, drop the added columns again and write to disk
         in_fus_detect_pddf.drop(in_fus_detect_pddf[in_fus_detect_pddf.lo_check == "Remove"].index, inplace = True)
         in_fus_detect_pddf.drop(labels=["bp1_lifted", "bp2_lifted", "lo_check"], axis=1, inplace=True)
