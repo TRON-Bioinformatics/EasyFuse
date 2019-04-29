@@ -33,12 +33,16 @@ class VersCont(object):
                 output = subprocess.Popen(["conda", "list"], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
             (stdoutdata, stderrdata) = output.communicate()
             
-            if stderrdata:
+            if with_pip_not_conda and stderrdata and not stdoutdata:
+                print(stderrdata)
                 raise IOError
             output = stdoutdata
         except IOError:
-            print("Error 99: There was a problem calling \"pip freeze\". Is pip installed? Trying to get versions from conda...")
+            print("Warning: There was a problem calling \"pip freeze\". Is pip installed? Trying to get versions from conda...")
             self.load_py_dict(False)
+        except OSError:
+            print("Error 99: There were problems calling \"pip freeze\" and/or \"conda list\". Please check your installation.")
+            sys.exit(99)
 
         for py_line in stdoutdata.split("\n"):
             if py_line and not py_line.startswith("#"):
