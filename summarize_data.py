@@ -12,6 +12,8 @@ from datetime import datetime
 import time
 #import numpy as np
 import argparse
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 import pandas as pd
@@ -165,28 +167,30 @@ class IcamSummary(object):
         """bkla"""
         freq_df = pd.DataFrame.from_dict(fusion_frequency_dict, orient="index", columns=["Frequency"])
         freq_df["Fusion_Gene"] = freq_df.index
-        plt.figure(len(self.figure_list) + 1)
-#        ax = plt.axes()
-        plt.title(chart_title)
-        ax = sns.barplot(x="Fusion_Gene", y="Frequency", data=freq_df)
-#        new_x_ticks = []
-#        for i in freq_df.index:
-#            if freq_df.loc[i, "Frequency"] == label_cutoff:
-#                new_x_ticks.append("")
-#            else:
-#                new_x_ticks.append(freq_df.loc[i, "Fusion_Gene"])
-        new_x_ticks = []
-        for i in freq_df.index:
-            if freq_df.loc[i, "Frequency"] == label_cutoff:
-                new_x_ticks.append("")
-            else:
-                new_x_ticks.append(freq_df.loc[i, "Fusion_Gene"])
-#        for tick in ax.get_xticklabels():
-#            tick.set_rotation(90)
-        ax.set_xticklabels(new_x_ticks, rotation=90)
-        plt.tight_layout()
-        self.figure_list.append(ax.figure)
-
+        try:
+            plt.figure(len(self.figure_list) + 1)
+    #        ax = plt.axes()
+            plt.title(chart_title)
+            ax = sns.barplot(x="Fusion_Gene", y="Frequency", data=freq_df)
+    #        new_x_ticks = []
+    #        for i in freq_df.index:
+    #            if freq_df.loc[i, "Frequency"] == label_cutoff:
+    #                new_x_ticks.append("")
+    #            else:
+    #                new_x_ticks.append(freq_df.loc[i, "Fusion_Gene"])
+            new_x_ticks = []
+            for i in freq_df.index:
+                if freq_df.loc[i, "Frequency"] == label_cutoff:
+                    new_x_ticks.append("")
+                else:
+                    new_x_ticks.append(freq_df.loc[i, "Fusion_Gene"])
+    #        for tick in ax.get_xticklabels():
+    #            tick.set_rotation(90)
+            ax.set_xticklabels(new_x_ticks, rotation=90)
+            plt.tight_layout()
+            self.figure_list.append(ax.figure)
+        except ValueError:
+            print("No fusion genes predicted, i.e. nothing to plot...")
         return freq_df
 
     def plot_boxswarm(self, data_dict, group_names, column_names, chart_title):
@@ -200,16 +204,19 @@ class IcamSummary(object):
                 list_of_data_lists.append([data_dict_key, group_names[i], list_record])
         # plot data as box plot (plus swarmplot overlay)
         pd_df = pd.DataFrame(list_of_data_lists, columns=column_names)
-        plt.figure(len(self.figure_list) + 1)
-        ax = plt.axes()
-        plt.title(chart_title)
-        sns.boxplot(data=pd_df, ax=ax, x=column_names[1], y=column_names[2], hue=column_names[1], dodge=False)
-        sns.swarmplot(data=pd_df, ax=ax, x=column_names[1], y=column_names[2], color=(0.8, 0.8, 0.8), alpha=0.5)
-        ax.legend_.remove()
-        for tick in ax.get_xticklabels():
-            tick.set_rotation(90)
-        plt.tight_layout()
-        self.figure_list.append(ax.figure)
+        try:
+            plt.figure(len(self.figure_list) + 1)
+            ax = plt.axes()
+            plt.title(chart_title)
+            sns.boxplot(data=pd_df, ax=ax, x=column_names[1], y=column_names[2], hue=column_names[1], dodge=False)
+            sns.swarmplot(data=pd_df, ax=ax, x=column_names[1], y=column_names[2], color=(0.8, 0.8, 0.8), alpha=0.5)
+            ax.legend_.remove()
+            for tick in ax.get_xticklabels():
+                tick.set_rotation(90)
+            plt.tight_layout()
+            self.figure_list.append(ax.figure)
+        except ValueError:
+            print("No fusion genes predicted, i.e. nothing to plot...")
 
         # get min/max/median for all categories and return them in a list to print
         mmm_list = []

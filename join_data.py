@@ -71,6 +71,8 @@ class DataJoining(object):
         detect_fusion_file = os.path.join(self.input_dir, "Sample_{}".format(sample_id), "fetchdata", "fd_1_tool", "fetched_fusions", "Detected_Fusions.csv")
         requant_fltr_file = os.path.join(self.input_dir, "Sample_{}".format(sample_id), "fetchdata", "fd_1_tool", "classification", "classification_fltr.tdt")
         requant_org_file = os.path.join(self.input_dir, "Sample_{}".format(sample_id), "fetchdata", "fd_1_tool", "classification", "classification_org.tdt")
+        requant_cnt_fltr_file = os.path.join(self.input_dir, "Sample_{}".format(sample_id), "fetchdata", "fd_1_tool", "classification", "classification_fltr.tdt.counts")
+        requant_cnt_org_file = os.path.join(self.input_dir, "Sample_{}".format(sample_id), "fetchdata", "fd_1_tool", "classification", "classification_org.tdt.counts")
 
         print("Loading data for sample {} into memory...".format(sample_id))
         if self.check_files(context_seq_file, False):
@@ -87,16 +89,23 @@ class DataJoining(object):
             detect_data = pd.read_csv(detect_fusion_file, sep=";")
         context_data = self.append_tool_cnts_to_context_file(context_data, detect_data, fusion_tools)
 
-        print("Appending normalized requantification counts from filtered and original mapping to the data table.")
+        print("Appending (normalized) requantification counts from filtered and original mapping to the data table.")
         # perform subsequent joins on ftid_plus
         context_data.set_index("ftid_plus", inplace=True)
-        # read and append requantification data to context data
+        # read and append requantification data (cpm) to context data
         if self.check_files(requant_fltr_file, False):
             requant_fltr_data = pd.read_csv(requant_fltr_file, sep=";")
         context_data = context_data.join(requant_fltr_data.set_index("ftid_plus"), how="left")
         if self.check_files(requant_org_file, False):
             requant_org_data = pd.read_csv(requant_org_file, sep=";")
         context_data = context_data.join(requant_org_data.set_index("ftid_plus"), lsuffix="_fltr", rsuffix="_org", how="left")
+        # read and append requantification data (count) to context data
+        if self.check_files(requant_cnt_fltr_file, False):
+            requant_cnt_fltr_data = pd.read_csv(requant_cnt_fltr_file, sep=";")
+        context_data = context_data.join(requant_cnt_fltr_data.set_index("ftid_plus"), how="left")
+        if self.check_files(requant_cnt_org_file, False):
+            requant_cnt_org_data = pd.read_csv(requant_cnt_org_file, sep=";")
+        context_data = context_data.join(requant_cnt_org_data.set_index("ftid_plus"), lsuffix="_cnt_fltr", rsuffix="_cnt_org", how="left")
 
         return context_data.fillna(0), redundant_header
 
