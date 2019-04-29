@@ -57,7 +57,7 @@ class FusionLiftover(object):
             for i in in_fus_detect_pddf.index:
                 chrom, pos, strand = in_fus_detect_pddf.loc[i, "Breakpoint1"].split(":")
                 fusout.write("{0}\t{1}\t{2}\t{3}\t1\t{4}\n".format(chrom, pos, (int(pos) + 1), strand, in_fus_detect_pddf.loc[i, "FGID"]))
-                chrom, pos, _ = in_fus_detect_pddf.loc[i, "Breakpoint2"].split(":")
+                chrom, pos, strand = in_fus_detect_pddf.loc[i, "Breakpoint2"].split(":")
                 fusout.write("{0}\t{1}\t{2}\t{3}\t2\t{4}\n".format(chrom, pos, (int(pos) + 1), strand, in_fus_detect_pddf.loc[i, "FGID"]))
 
         # run crossmap to perform liftover
