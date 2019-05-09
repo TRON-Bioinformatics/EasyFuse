@@ -110,10 +110,9 @@ class DataJoining(object):
         return context_data.fillna(0), redundant_header
 
 
-    def run(self, config, icam_run, model_predictions):
+    def run(self, config, model_predictions):
         """run the data concatenation"""
         fusion_tools = config.get("general", "fusiontools").split(",")
-        # urla - note: with icam_run set to True, two results from technical replicates are expected as input
         print("Looking for required files...")
         # check whether output already exists
         cols_to_aggregate_on = ["FGID", "context_sequence_id", "FTID"]
@@ -121,9 +120,6 @@ class DataJoining(object):
         if not self.overwrite and self.check_files("{}_fusRank_1.csv".format(self.output), True):
             print("Found pre-calculated output files. If you would like to re-calculate everything, re-start with the --overwrite parameter supplied.")
             joined_table_1 = pd.read_csv("{}_fusRank_1.csv".format(self.output), sep=";")
-            if icam_run and self.check_files("{}_fusRank_2.csv".format(self.output), True) and self.check_files("{}_fusRank_12.csv".format(self.output), True):
-                joined_table_2 = pd.read_csv("{}_fusRank_2.csv".format(self.output), sep=";")
-                joined_table_12 = pd.read_csv("{}_fusRank_12.csv".format(self.output), sep=";")
         else:
             joined_table_1, header_list_1 = self.create_joined_table(self.id1, fusion_tools)
 
@@ -131,21 +127,8 @@ class DataJoining(object):
 
             joined_table_1b = joined_table_1.groupby(by=cols_to_aggregate_on, sort=False, as_index=False)
             joined_table_1b.agg(self.custom_data_aggregation).to_csv("{}_fusRank_1.csv".format(self.output), sep=";", index=False)
-            if icam_run:
-                joined_table_2, _ = self.create_joined_table(self.id2, fusion_tools)
-                joined_table_2b = joined_table_2.groupby(by=cols_to_aggregate_on, sort=False, as_index=False)
-                joined_table_2b.agg(self.custom_data_aggregation).to_csv("{}_fusRank_2.csv".format(self.output), sep=";", index=False)
 
-                print("Merging data...")
-#                joined_table_1 = joined_table_1.drop(cols_to_drop, axis=1)
-#                cols_to_drop.extend([i for i in cols_from_one if i not in cols_to_drop])
-                # drop columns from context seq in tab 2 as they are identical to the ones from tab 1
-                joined_table_2c = joined_table_2.drop(header_list_1, axis=1, errors="ignore")
-                # perform an inner join of the two replicate data frames
-                joined_table_12 = joined_table_1.join(joined_table_2c, lsuffix="_1", rsuffix="_2", how="inner")
-                joined_table_12b = joined_table_12.groupby(by=cols_to_aggregate_on, sort=False, as_index=False)
-                joined_table_12b.agg(self.custom_data_aggregation).to_csv("{}_fusRank_12.csv".format(self.output), sep=";", index=False)
-
+        module_file = config.get("commands", "module_file")
         for table in ["1", "2"]:
             summary_file = "{}_fusRank_{}.csv".format(self.output, table)
             if model_predictions and self.check_files(summary_file, True):
@@ -153,10 +136,8 @@ class DataJoining(object):
                 model_threshold = config.get("general", "model_pred_threshold")
                 # append prediction scores based on pre-calculated model
                 cmd_model = "{0} --fusion_summary {1} --model_file {2} --prediction_threshold {3} --output {4}".format(os.path.join(self.easyfuse_path, "R", "R_model_prediction.R"), summary_file, model_path, model_threshold, "{}.pModelPred.csv".format(summary_file[:-4]))
-                Queueing.submit("", cmd_model.split(" "), "", "", "", "", "", "", "", "", "none")
+                Queueing.submit("", cmd_model.split(" "), "", "", "", "", "", "", "", "", module_file, "none")
 
-        if icam_run:
-            return (self.count_records(joined_table_1), self.count_records(joined_table_2), self.count_records(joined_table_12))
         return self.count_records(joined_table_1)
 
     @staticmethod
@@ -214,11 +195,10 @@ def main():
     parser.add_argument('-c', '--config', dest='output', help='Specify output file prefix', required=True)
     parser.add_argument('-f', '--fus_tool', dest='fustool', help='List of fusion tools to consider')
     parser.add_argument('--overwrite', dest='overwrite', help=argparse.SUPPRESS, default=False, action='store_true')
-    parser.add_argument('--icam_run', dest='overwrite', help=argparse.SUPPRESS, default=False, action='store_true')
     args = parser.parse_args()
 
     fusrank = DataJoining(args.input_dir, args.id1, args.id2, args.output, args.overwrite)
-    fusrank.run(args.fustool, args.icam_run, args.model_predictions)
+    fusrank.run(args.fustool, args.model_predictions)
 
 if __name__ == '__main__':
     main()

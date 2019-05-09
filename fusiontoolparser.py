@@ -404,7 +404,7 @@ class FusionParser(object):
         fusion_map = {}
         with open(soapfuse_predict) as prediction:
             next(prediction) # skip header line
-            for line in enumerate(prediction):
+            for line in prediction:
                 elements = line.rstrip().split("\t")
                 # Currently relevant fields (marked *) in the output file are:
                 # * elements[0] ~ up_gene
@@ -424,11 +424,11 @@ class FusionParser(object):
                 fusion_gene = (elements[0] + "_" + elements[5]).upper()
 
                 # element[1/6] = chr num, [3/8] = breakpoints, [2/7] = strands
-                up_gene_id = elements[1].replace("chr", "") + ":" + elements[3] + ":" + elements[2]
-                dn_gene_id = elements[6].replace("chr", "") + ":" + elements[8] + ":" + elements[7]
+                up_gene_id = elements[1] + ":" + elements[3] + ":" + elements[2]
+                dn_gene_id = elements[6] + ":" + elements[8] + ":" + elements[7]
 
                 # check whether fusion gene is not on primary chr
-                if elements[1].replace("chr", "") not in self.chr_list or elements[4].replace("chr", "") not in self.chr_list:
+                if elements[1] not in self.chr_list or elements[6] not in self.chr_list:
                     continue
                 fgid = fusion_gene.split("_")[0] + "_" + up_gene_id + "_" + fusion_gene.split("_")[1] + "_" + dn_gene_id
 

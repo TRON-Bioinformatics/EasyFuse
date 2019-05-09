@@ -3,7 +3,7 @@
 import sys
 import os
 import subprocess
-
+from shutil import copyfile
 from argparse import ArgumentParser
 
 sys.path.append(os.path.join(os.path.dirname( __file__ ), '..'))
@@ -32,7 +32,7 @@ def main():
                 remaining_len = remaining
 
     if remaining_len != read_len and remaining_len >= (min_rl_perc * read_len):
-        cmd = "{} -l {} -q 28 -m pe -t 6 -k 5 -z -o out_file {}".format(args.skewer_bin, remaining_len, " ".join(args.input))
+        cmd = "{} -l {} -q 28 -m pe -t 6 -k 5 -z -o {} {}".format(args.skewer_bin, remaining_len, os.path.join(args.output, "out_file"), " ".join(args.input))
 
         proc = subprocess.Popen(cmd, shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
         (stdoutdata, stderrdata) = proc.communicate()
@@ -41,11 +41,6 @@ def main():
             sys.stderr.write("Error within skewer\n")
             sys.stderr.write(stderrdata)
             sys.exit(1)
-#        else:
-#            for line in stdoutdata:
-#                sys.stdout.write(line)
-#            for line in stderrdata:
-#                print line
 
     elif remaining_len < min_rl_perc * read_len:
         sys.stderr.write("Trim length too long. Discarding fastqs ({}).".format(args.input))
@@ -55,22 +50,24 @@ def main():
         if len(args.input) == 2:
             out_1 = os.path.join(args.output, "out_file-trimmed-pair1.fastq.gz")
             out_2 = os.path.join(args.output, "out_file-trimmed-pair2.fastq.gz")
-            sys.stdout.write("Nothing to trim. Creating symlinks\n")
-            sys.stdout.write("ln -s {} {}\n".format(args.input[0], out_1))
-            sys.stdout.write("ln -s {} {}\n".format(args.input[1], out_2))
+            sys.stdout.write("Nothing to trim. Copying FASTQs\n")
+            sys.stdout.write("cp {} {}\n".format(args.input[0], out_1))
+            sys.stdout.write("cp {} {}\n".format(args.input[1], out_2))
             try:
-                os.symlink(args.input[0], out_1)
+                copyfile(args.input[0], out_1)
+#                os.symlink(args.input[0], out_1)
             except OSError:
-                print("Symlink {} already exists".format(out_1))
+                print("Copy of {} already exists".format(out_1))
             try:
-                os.symlink(args.input[1], out_2)
+                copyfile(args.input[1], out_2)
+#                os.symlink(args.input[1], out_2)
             except OSError:
-                print("Symlink {} already exists".format(out_2))
-        else:
-            out = os.path.join(args.output, "out_file-trimmed.fastq.gz")
-            sys.stdout.write("Nothing to trim. Creating symlink\n")
-            sys.stdout.write("ln -s {} {}\n".format(args.input[0], out))
-            os.symlink(args.input[0], out)
+                print("Copy of {} already exists".format(out_2))
+#        else:
+#            out = os.path.join(args.output, "out_file-trimmed.fastq.gz")
+#            sys.stdout.write("Nothing to trim. Creating symlink\n")
+#            sys.stdout.write("ln -s {} {}\n".format(args.input[0], out))
+#            os.symlink(args.input[0], out)
 
 
 if __name__ == '__main__':

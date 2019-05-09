@@ -65,17 +65,21 @@ def get_jobs_by_name_slurm(name):
     return jobs
 
 
-def submit(job_name, cmd, cores, mem_usage, output_results_folder, dependencies, partitions, userid, timelimit, mail, sched="slurm"):
+def submit(job_name, cmd, cores, mem_usage, output_results_folder, dependencies, partitions, userid, timelimit, mail, module_file, sched="slurm"):
     if sched == "slurm":
-        _submit_slurm(job_name, cmd, cores, mem_usage, output_results_folder, dependencies, partitions, userid, timelimit, mail)
+        _submit_slurm(job_name, cmd, cores, mem_usage, output_results_folder, dependencies, partitions, userid, timelimit, mail, module_file)
     elif sched == "pbs":
-        _submit_pbs(job_name, cmd, cores, mem_usage, output_results_folder, dependencies)
+        _submit_pbs(job_name, cmd, cores, mem_usage, output_results_folder, dependencies, module_file)
     else:
-        _submit_nonqueue(cmd)
+        _submit_nonqueue(cmd, module_file)
     
-def _submit_nonqueue(cmd):
+def _submit_nonqueue(cmd, module_file=""):
+#    if module_file:
+#        cmd = " && ".join(["source " + module_file, " ".join(cmd)]).split(" ")
+#    print(cmd)
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=False)
     (stdoutdata, stderrdata) = p.communicate()
+    print(stdoutdata)
     r = p.returncode
     if r != 0:
         print("Error: Command \"{}\" returned non-zero exit status".format(cmd))
@@ -119,7 +123,7 @@ def _submit_pbs(job_name, cmd, cores, mem_usage, output_results_folder, dependen
         sys.exit(1)
 
 
-def _submit_slurm(job_name, cmd, cores, mem_usage, output_results_folder, dependencies, partitions, userid, timelimit, mail):
+def _submit_slurm(job_name, cmd, cores, mem_usage, output_results_folder, dependencies, partitions, userid, timelimit, mail, module_file):
     """This function submits a predefined job with specific SBATCH parameters to the Slurm workload manager system."""
     # add dependencies if necessary
     depend = "\n"
@@ -155,6 +159,7 @@ def _submit_slurm(job_name, cmd, cores, mem_usage, output_results_folder, depend
             mail_type,
             mail_user,
             "set -eo pipefail -o nounset\n",
+	    ". {}\n".format(module_file),
             "srun {}\n".format(cmd)
         ])
     # and run it

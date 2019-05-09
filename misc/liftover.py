@@ -62,7 +62,8 @@ class FusionLiftover(object):
 
         # run crossmap to perform liftover
         cmd_crossmap = "{0} bed {1} {2} {3}".format(self.cfg.get('commands', 'crossmap_cmd'), crossmap_chain, tmp_org_bed, tmp_dest_bed)
-        Queueing.submit("", cmd_crossmap.split(" "), "", "", "", "", "", "", "", "", "none")
+        module_file = self.cfg.get('commands', 'module_file')
+        Queueing.submit("", cmd_crossmap.split(" "), "", "", "", "", "", "", "", "", module_file, "none")
         # check whether some coords were unmapped and print which those are (i.e. which fusion will be lost)
         if os.stat(tmp_dest_bed_unmap).st_size == 0:
             self.logger.info("Liftover was successful for all fusion breakpoints! Creating a new DetectedFusions table...")

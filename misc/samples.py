@@ -2,119 +2,142 @@
 
 """
 Sample file handling
-Sample processing is logged in a specific file. This class provides methods to
-create and work on this file. Concerning data structures: All data is stored
-in a dict with sample identifiers as keys and data as value. Data itself is
-are 2-tuples of lists, currently including an identifier of the tools that have been
-run on the sample and the fastq files corresponding to the sample.
+Sample processing is logged in a sqlite3 database. This class provides methods to
+create and work on this DB. Concerning data structures: All data is stored
+in a samples table including sample_id, list of performed analyses as well as the corresponding FASTQ file location.
+Data itself can be modified using wrapped SQL queries.
 
 @author: Tron (PASO), BNT (URLA)
-@version: 20181126
+@version: 20190429
 """
 
-from __future__ import print_function
-import os
+
 from argparse import ArgumentParser
 
-# pylint: disable=line-too-long
-#         urla: yes they are partially, but I do not consider this to be relevant here
-class Samples(object):
-    """Create and interact with the sample monitoring file"""
-    def __init__(self, infile):
-        """Parameter initialization"""
-        self.infile = infile
-        if not os.path.exists(self.infile):
-            open(self.infile, "a").close()
-        self.sample_map = self.read_file()
+import sqlite3
 
-    # read and write sample file
-    def read_file(self):
-        """Read a sample file and return a dictionary (sample_id; (state, fastq files))"""
-        sample_map = {}
-        with open(self.infile) as sample_file:
-            for line in sample_file:
-                elements = line.rstrip().split("\t")
-                if len(elements) > 0 and not elements[0].startswith("#"):  # elements is an array, not a str => pylint: disable=len-as-condition
-                    try:
-                        sample_id = elements[0]
-                        state = elements[1]
-                        fastq = elements[2]
-                        sample_map[sample_id] = (state, fastq)
-                    except IndexError as idx_err:
-                        print(idx_err)
-                        print(line)
-        return sample_map
+class SamplesDB(object):
+    """Create and interact with the sample DB"""
+    def __init__(self, db_path):
+        """Parameter initialization and connection to database"""
+        self.db_path = db_path
+        self.conn = sqlite3.connect(db_path)
+        self.cursor = self.conn.cursor()
+        self.create_table()
 
-    def write_file(self):
-        """Write a sample file to disk"""
-        with open(self.infile, "w") as outf:
-            outf.write("{0}\t{1}\t{2}\n".format("#Sample ID", "Performed analyses", "Corresponding fastq files"))
-            for key in self.sample_map.iterkeys():
-                outf.write("{0}\t{1}\t{2}\n".format(key, self.sample_map[key][0], self.sample_map[key][1]))
+    def create_table(self):
+        """Creation of samples table if non-existent"""
+        self.cursor.execute("""CREATE TABLE IF NOT EXISTS samples (sample_id text, analysis text, fq1 text, fq2 text)""")
+        self.commit_changes()
 
-    # getter and setter methods
-    def get_state_string(self, sample_id):
-        """Get the state of a sample based on its id"""
-        state = ""
-        if sample_id in self.sample_map:
-            state = self.sample_map[sample_id][0]
-        return state
+    def add_sample(self, sample_id, analysis, fq1, fq2):
+        """Add sample to DB if not exists"""
+        if self.get_sample(sample_id):
+            return
+        else:
+            self.cursor.execute("INSERT INTO samples VALUES ('{}','{}','{}','{}')".format(sample_id, analysis, fq1, fq2))
+            self.commit_changes()
+
+    def get_sample(self, sample_id):
+        """Get sample entry from DB"""
+        self.cursor.execute("SELECT * FROM samples WHERE sample_id = '{}'".format(sample_id))
+        sample_id = self.cursor.fetchone()
+        if sample_id:
+            return sample_id[0]
+        else:
+            return None
 
     def get_tool_list_from_state(self, sample_id):
-        """Get a list of tools that have been successfully run on a sample based on its id"""
-        state = self.get_state_string(sample_id)
-        tools = []
-        if ", " in state:
-            for tool in state.split(", "):
-                tools.append(tool.split("-")[0])
-        else:
-            tools = state.split("-")[0]
-        return tools
+        """Get list of performed analyses from sample"""
+        self.cursor.execute("SELECT analysis FROM samples WHERE sample_id = '{}'".format(sample_id))
+        tool_list = self.cursor.fetchone()[0].split(",")
+        return tool_list
 
     def get_fastq_files(self, sample_id):
-        """Get a tuple of fastq file strings"""
-        fastq = ""
-        if sample_id in self.sample_map:
-            fastq = self.sample_map[sample_id][1]
-            if "R2" in fastq:
-                return (fastq.split(";")[0][3:], fastq.split(";")[1][3:])
-            return fastq[3:]
-        return fastq
+        """Get fastq files from sample"""
+        self.cursor.execute("SELECT fq1, fq2 FROM samples WHERE sample_id = '{}'".format(sample_id))
+        (fq1, fq2) = self.cursor.fetchone()
+        return (fq1, fq2)
 
-    def add_sample(self, sample_id, state, fastq):
-        """Add a sample plus corresponding state and fastq file(s) to a sample file"""
-        if not sample_id in self.sample_map:
-            self.sample_map[sample_id] = (state, fastq)
-        self.write_file()
+    def get_sample_ids(self):
+        """Get all sample_ids from DB"""
+        sample_ids = []
+        for row in self.cursor.execute("SELECT sample_id FROM samples"):
+            sample_ids.append(row[0])
+        return sample_ids
 
-    def set_state(self, sample_id, state):
-        """Update, that is override, a sample plus corresponding state to a sample file"""
-        if sample_id in self.sample_map:
-            self.sample_map[sample_id] = (state, self.sample_map[sample_id][1])
-        self.write_file()
+    def get_samples(self):
+        """Get all existing samples in DB"""
+        self.cursor.execute("SELECT * FROM samples")
+        return self.cursor.fetchall()
 
-    def append_state(self, sample_id, state):
-        """Append something to an existing state or use update"""
-        if sample_id in self.sample_map:
-            if self.get_state_string(sample_id) == 'NA':
-                self.set_state(sample_id, state)
-            elif state not in self.get_state_string(sample_id):
-                self.sample_map[sample_id] = ("{0}, {1}".format(self.get_state_string(sample_id), state), self.sample_map[sample_id][1])
-        self.write_file()
+    def print_db(self):
+        """Print sample progress"""
+        completed = 0
+        total = 0
+        for row in self.cursor.execute("SELECT * FROM samples"):
+            print("Sample ID:", str(row[0]))
+            print("Performed Analyses:", str(row[1]))
+            print("FQ1:", str(row[2]))
+            print("FQ2:", str(row[3]))
+            if "Fetchdata" in row[1]:
+                print("Status: Complete")
+                completed += 1
+            else:
+                print("Status: Incomplete")
+            total += 1
+            print
+        print("Overall: {:.2f}% complete.".format(completed*100.0/total))
+
+    def append_state(self, sample_id, analysis):
+        """Add analysis to list of performed analyses within sample"""
+        curr_analysis = self.get_tool_list_from_state(sample_id)
+        if analysis in curr_analysis:
+            return
+        if curr_analysis[0] == "NA":
+            analyses = analysis
+        else:
+            analyses = "{},{}".format(",".join(curr_analysis), analysis)
+        self.cursor.execute("UPDATE samples SET analysis = '{}' WHERE sample_id = '{}'".format(analyses, sample_id))
+        self.commit_changes()
+
+    def commit_changes(self):
+        """Commit changes to DB connection"""
+        self.conn.commit()
+
+    def close_connection(self):
+        """Close DB connection"""
+        self.conn.close()
 
 def main():
     """Main method, parameter handling"""
     parser = ArgumentParser(description='Handle sample db operations')
 
     parser.add_argument('-i', '--sample-id', dest='sample_id', help='Specify the sample id to process.', required=True)
-    parser.add_argument('-o', '--output-file', dest='output_file', help='Specify the file to save the changes into.', required=True)
-    parser.add_argument('-g', '--state', dest='state', help='Specify the new state of your sample id.', required=True)
+    parser.add_argument('-d', '--db_path', dest='db_path', help='Specify the file to save the changes into.', required=True)
+    parser.add_argument('-t', '--tool', dest='tool', help='The tools name to add to your sample id.', required=True)
     parser.add_argument('-l', '--action', dest='action', choices=['append_state'], help='Select the action to do with the sample id.', required=True)
     args = parser.parse_args()
+    
+    db = SamplesDB(args.db_path)
 
-    samples = Samples(args.output_file)
     if args.action == "append_state":
-        samples.append_state(args.sample_id, args.state)
+        db.append_state(args.sample_id, args.tool)
+    db.close_connection()
 
-if __name__ == '__main__':
+#    for i in range(100):
+#        db.add_sample("Sample_{}".format(i), "NA", "Sample_{}_R1.fastq.gz".format(i), "Sample_{}_R2.fastq.gz".format(i))
+        
+#    print(db.get_fastq_files("Sample_20"))
+#    print(db.get_tool_list_from_state("Sample_20"))
+#    db.append_state("Sample_20", "QC")
+#    db.append_state("Sample_20", "STAR")
+#    db.append_state("Sample_20", "STAR-Fusion")
+#    print(db.get_tool_list_from_state(args.sample_id))
+#    db.add_sample("Sample_20", "NA", "", "")
+#    print(db.get_sample_ids())
+#    db.close_connection()
+
+
+if __name__ == "__main__":
     main()

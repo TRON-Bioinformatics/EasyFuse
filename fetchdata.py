@@ -14,12 +14,11 @@ from __future__ import print_function
 import sys
 import os
 import os.path
-import time
 import math
 import argparse
 import misc.queue as Queueing
 from misc.config import Config
-from misc.samples import Samples
+from misc.samples import SamplesDB
 from misc.logger import Logger
 import misc.io_methods as IOMethods
 
@@ -34,8 +33,8 @@ class Fetching(object):
         self.fetchdata_path = fetchdata_path
         self.sample_id = sample_id
         #self.tools = Samples(os.path.join(scratch_path, os.path.pardir, os.path.pardir, "samples.csv")).get_tool_list_from_state(self.sample_id)
-        self.sample = Samples(os.path.join(scratch_path, os.path.pardir, os.path.pardir, "samples.csv"))
-        self.logger = Logger(os.path.join(self.fetchdata_path, "fetchdata_" + str(int(round(time.time()))) + ".log"))
+        self.samples = SamplesDB(os.path.join(scratch_path, os.path.pardir, os.path.pardir, "samples.db"))
+        self.logger = Logger(os.path.join(self.fetchdata_path, "fetchdata.log"))
         self.easyfuse_path = os.path.dirname(os.path.realpath(__file__))
 
     def get_pseudo_genome_adjustments_for_star(self, num_len_file): # wrong pylint error due to long name => pylint: disable=C0103
@@ -61,7 +60,7 @@ class Fetching(object):
                     return int(line.split("|")[1].strip())
         return -1
 
-    def run(self, fusion_support, fq1, fq2, icam_run):
+    def run(self, fusion_support, fq1, fq2):
         """Identification of fastq files and initiation of processing"""
         # print sample id
         # execute processing pipe
@@ -69,13 +68,13 @@ class Fetching(object):
         self.logger.info("Fetching in sample {}".format(self.sample_id))
         if not fq1 or not fq2:
             self.logger.debug("Either ReadFile 1 or 2 or both are missing, trying to get original files from samples.csv")
-            (fq1, fq2) = self.sample.get_fastq_files(self.sample_id)
-        self.execute_pipeline((fq1, fq2), fusion_support, icam_run)
+            (fq1, fq2) = self.samples.get_fastq_files(self.sample_id)
+        self.execute_pipeline((fq1, fq2), fusion_support)
 
     # urla: there are a lot of local variables declarated in the following method.
     #       Although this could be reduced quite strongly, readability would be strongly reduced as well
     #       pylint:disable=R0914
-    def execute_pipeline(self, (fq1, fq2), fusion_support, icam_run):
+    def execute_pipeline(self, (fq1, fq2), fusion_support):
         """Create sample specific subfolder structuge and run tools on fastq files"""
 
 		# Genome/Gene references to use
@@ -105,9 +104,6 @@ class Fetching(object):
 
         # processing steps to perform
         tools = self.cfg.get('general', 'fd_tools').split(",")
-        # An icam_run must currently not be run w/o a liftover
-        if icam_run and "Liftover" not in tools:
-            tools.insert(1, "Liftover")
         # In case of a liftover, some reference and path must be changed accordingly
         if "Liftover" in tools:
             crossmap_chain = self.cfg.get('liftover', 'crossmap_chain')
@@ -128,7 +124,7 @@ class Fetching(object):
         cmd_staralign_fltr = "{0} --genomeDir {1} --readFilesCommand zcat --readFilesIn {2} {3} --outSAMtype BAM SortedByCoordinate --outFilterMultimapNmax -1 --outSAMattributes Standard --outSAMunmapped None --outFilterMismatchNoverLmax 0.02 --runThreadN {4} --outFileNamePrefix {5}fltr_ --limitBAMsortRAM 48000000000".format(self.cfg.get('commands', 'star_cmd'), star_genome_path, fq1, fq2, cpu, star_align_file)
         cmd_bamindex_fltr = "{0} index {1}fltr_Aligned.sortedByCoord.out.bam".format(self.cfg.get('commands', 'samtools_cmd'), star_align_file)
         cmd_requantify_fltr = "{0} -i {1}fltr_Aligned.sortedByCoord.out.bam -o {2}_fltr.tdt -d 10".format(os.path.join(self.easyfuse_path, "requantify.py"), star_align_file, classification_file)
-        (fq1, fq2) = self.sample.get_fastq_files(self.sample_id)
+        (fq1, fq2) = self.samples.get_fastq_files(self.sample_id)
         cmd_staralign_org = "{0} --genomeDir {1} --readFilesCommand zcat --readFilesIn {2} {3} --outSAMtype BAM SortedByCoordinate --outFilterMultimapNmax -1 --outSAMattributes Standard --outSAMunmapped None --outFilterMismatchNoverLmax 0.02 --runThreadN {4} --outFileNamePrefix {5}org_ --limitBAMsortRAM 48000000000".format(self.cfg.get('commands', 'star_cmd'), star_genome_path, fq1, fq2, cpu, star_align_file)
         cmd_bamindex_org = "{0} index {1}org_Aligned.sortedByCoord.out.bam".format(self.cfg.get('commands', 'samtools_cmd'), star_align_file)
         cmd_requantify_org = "{0} -i {1}org_Aligned.sortedByCoord.out.bam -o {2}_org.tdt -d 10".format(os.path.join(self.easyfuse_path, "requantify.py"), star_align_file, classification_file)
@@ -172,6 +168,7 @@ class Fetching(object):
             ]
 
         # create and submit slurm job if the tool is requested and hasn't been run before
+        module_file = self.cfg.get('commands', 'module_file')
         for i, tool in enumerate(exe_tools, 0):
             if tool in tools:
                 if not exe_dependencies[i] or os.path.exists(exe_dependencies[i]):
@@ -181,7 +178,7 @@ class Fetching(object):
                         exe_cmds[i] = exe_cmds[i].replace("waiting_for_bin_size_input", star_bin)
                         exe_cmds[i] = exe_cmds[i].replace("waiting_for_sa_idx_input", star_sa)
                     self.logger.debug("Executing: {}".format(exe_cmds[i]))
-                    Queueing.submit("", exe_cmds[i].split(" "), "", "", "", "", "", "", "", "", "none")
+                    Queueing.submit("", exe_cmds[i].split(" "), "", "", "", "", "", "", "", "", module_file, "none")
                 else:
                     self.logger.error("Could not run {0} due to the missing dependency {1}".format(tool, exe_dependencies[i]))
                     sys.exit(1)
@@ -199,7 +196,6 @@ def main():
     parser.add_argument('--fq1', dest='fq1', help='Input read1 file for re-quantification', default="", required=False)
     parser.add_argument('--fq2', dest='fq2', help='Input read2 file for re-quantification', default="", required=False)
     parser.add_argument('--fusion_support', dest='fusion_support', help='Number of fusion tools which must predict the fusion event', default=1)
-    parser.add_argument('--icam_run', dest='icam_run', help=argparse.SUPPRESS, default=False, action='store_true')
     args = parser.parse_args()
 
     # processing
@@ -210,7 +206,7 @@ def main():
     # ...
     for i in range(1, int(args.fusion_support) + 1):
         proc = Fetching(args.input, args.output, args.sample, Config(args.config))
-        proc.run(i, args.fq1, args.fq2, args.icam_run)
+        proc.run(i, args.fq1, args.fq2)
 
 if __name__ == '__main__':
     main()

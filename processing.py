@@ -19,7 +19,7 @@ import argparse
 from shutil import copy2
 import misc.queue as Queueing
 from misc.config import Config
-from misc.samples import Samples
+from misc.samples import SamplesDB
 from misc.logger import Logger
 import misc.io_methods as IOMethods
 from misc.versioncontrol import VersCont
@@ -29,16 +29,16 @@ import misc.version as eav
 #         yes they are partially, but I do not consider this to be relevant here
 class Processing(object):
     """Run, monitor and schedule fastq processing for fusion gene prediction"""
-    def __init__(self, config, input_path, working_dir, partitions, userid, overwrite):
+    def __init__(self, cmd, config, input_path, working_dir, partitions, userid, overwrite):
         """Parameter initiation and work folder creation. Start of progress logging."""
         self.working_dir = working_dir.rstrip("/")
-        self.logger = Logger(os.path.join(self.working_dir, "easyfuse_processing_{}.log".format(str(int(round(time.time()))))))
+        self.logger = Logger(os.path.join(self.working_dir, "easyfuse_processing.log"))
         IOMethods.create_folder(self.working_dir, self.logger)
         copy2(config, working_dir)
         self.cfg = Config(os.path.join(self.working_dir, IOMethods.path_leaf(config)))
-        self.logger.info("Starting easyfuse")
+        self.logger.info("Starting easyfuse: CMD - {}".format(cmd))
         self.input_path = input_path
-        self.samples = Samples(os.path.join(self.working_dir, "samples.csv"))
+        self.samples = SamplesDB(os.path.join(self.working_dir, "samples.db"))
         self.partitions = partitions
         self.userid = userid
         self.overwrite = overwrite
@@ -46,7 +46,7 @@ class Processing(object):
 
     # The run method simply greps and organises fastq input files.
     # Fastq pairs (single end input is currently not supported) are then send to "execute_pipeline"
-    def run(self, tool_num_cutoff, icam_run, icam_tree):
+    def run(self, tool_num_cutoff):
         """General parameter setting, identification of fastq files and initiation of processing"""
         # Checking dependencies
         VersCont(self.cfg.get('easyfuse_helper', 'dependencies')).get_and_print_tool_versions()
@@ -68,37 +68,17 @@ class Processing(object):
             self.logger.info("")
             self.logger.info("#############################################################################")
 
-        # get fastq files
-        # urla: the icam_run flag starts a file walker which searches fastq files in a dir-tree containing icam-flowcell folders
-        #       An example of an input root folder would be "/mnt/bfx/IVAC2_0/BNT/iCaM2Scheduler/data/demux_out"
-        #       Only folders containing a valid (see iomethods for details) "demux_stats.csv" file can be processed atm
-        # urla: the icam_run flag is probably not necessary for production usage but very convenient if novel tools/methods should be run on a bunch of existing datasets (future development / evaluations)
+
         sample_list = []
-        if icam_run and icam_tree:
-            self.logger.info("Started processing of icam data; searching fastq files in \"{}\"".format(self.input_path))
-            # print(len(self.samples.sample_map)) <- 0 for empty list
-            _, fastq_dict, counter_list = IOMethods.get_icam_reads_data(self.input_path, list(self.samples.sample_map), self.logger)
-            count_all = sum(counter_list)
-            self.logger.debug("Found a total of {0} datasets in the specified folder, {1} have been processed previously, {2} are new.".format(count_all, counter_list[0], counter_list[1]))
-            self.logger.debug("{0} datasets could not be processed due to an unexpected format of the demux_stats.csv file.".format(counter_list[2]))
-            self.logger.debug("{0} datasets were not be processed because their read count was below 75M.".format(counter_list[3]))
-            self.logger.debug("{0} datasets could not be processed due problems in the fastq file localization.".format(counter_list[4]))
-            for i, sample_id_key in enumerate(sorted(fastq_dict)):
-                sample_id = "_".join(sample_id_key.split("_")[:2])
-                sample_list.append(sample_id)
-                self.logger.info("Processing Sample ID: {} (paired end)".format(sample_id))
-                self.logger.info("Sample 1: {}".format(fastq_dict[sample_id_key][0]))
-                self.logger.info("Sample 2: {}".format(fastq_dict[sample_id_key][1]))
-                self.execute_pipeline(fastq_dict[sample_id_key][0], fastq_dict[sample_id_key][1], sample_id, ref_genome, ref_trans, tool_num_cutoff, icam_run)
-        else:
-            left, right, sample_id = IOMethods.get_fastq_files(self.input_path, self.logger)
-            sample_list = sample_id
-            for i, _ in enumerate(left):
-                if len(left) == len(right):
-                    self.logger.info("Processing Sample ID: {} (paired end)".format(sample_id[i]))
-                    self.logger.info("Sample 1: {}".format(left[i]))
-                    self.logger.info("Sample 2: {}".format(right[i]))
-                    self.execute_pipeline(left[i], right[i], sample_id[i], ref_genome, ref_trans, tool_num_cutoff, icam_run)
+        # get fastq files
+        left, right, sample_id = IOMethods.get_fastq_files(self.input_path, self.logger)
+        sample_list = sample_id
+        for i, _ in enumerate(left):
+            if len(left) == len(right):
+                self.logger.info("Processing Sample ID: {} (paired end)".format(sample_id[i]))
+                self.logger.info("Sample 1: {}".format(left[i]))
+                self.logger.info("Sample 2: {}".format(right[i]))
+                self.execute_pipeline(left[i], right[i], sample_id[i], ref_genome, ref_trans, tool_num_cutoff)
         
         # summarize all data if selected
         if "Summary" in self.cfg.get('general', 'tools'):
@@ -107,21 +87,18 @@ class Processing(object):
             dependency = []
             for sample in sample_list:
                 dependency.extend(Queueing.get_jobs_by_name("Fetchdata-{}".format(sample)))
-            icam_run_string = ""
-            if icam_run:
-                icam_run_string = " --icam_run"
             modelling_string = ""
             if self.cfg.get("otherFiles", "easyfuse_model"):
                 modelling_string = " --model_predictions"
-            cmd_summarize = "python {0} --input {1} --config {2}{3}{4}".format(os.path.join(self.easyfuse_path, "summarize_data.py"), self.working_dir, self.cfg.get_path(), icam_run_string, modelling_string)
+            cmd_summarize = "python {0} --input {1} --config {2}{3}".format(os.path.join(self.easyfuse_path, "summarize_data.py"), self.working_dir, self.cfg.get_path(), modelling_string)
             self.logger.debug("Submitting slurm job: CMD - {0}; PATH - {1}; DEPS - {2}".format(cmd_summarize, self.working_dir, dependency))
             cpu, mem = self.cfg.get("resources", "summary").split(",")
             self.submit_job("-".join(["Summary", str(int(round(time.time())))]), cmd_summarize, cpu, mem, self.working_dir, dependency, self.cfg.get('general', 'receiver'))
 
     # Per sample, define input parameters and execution commands, create a folder tree and submit runs to slurm
-    def execute_pipeline(self, fq1, fq2, sample_id, ref_genome, ref_trans, tool_num_cutoff, icam_run):
+    def execute_pipeline(self, fq1, fq2, sample_id, ref_genome, ref_trans, tool_num_cutoff):
         """Create sample specific subfolder structure and run tools on fastq files"""
-        self.samples.add_sample(sample_id, "NA", "R1:{0};R2:{1}".format(fq1, fq2))
+        self.samples.add_sample(sample_id, "NA", fq1, fq2)
 
 		# Genome/Gene references to use
         genome_sizes_path = self.cfg.get("references", "{0}_genome_sizes_{1}".format(ref_trans, ref_genome))
@@ -168,7 +145,7 @@ class Processing(object):
             ]:
             IOMethods.create_folder(folder, self.logger)
 
-        # get a list of tools from the samples.csv file that have been run previously on this sample
+        # get a list of tools from the samples.db file that have been run previously on this sample
         state_tools = self.samples.get_tool_list_from_state(sample_id)
         # get a list of tools from the config file which shall be run on this sample
         tools = []
@@ -191,7 +168,7 @@ class Processing(object):
             fq2 = os.path.join(skewer_path, "out_file-trimmed-pair2.fastq.gz")
 
         # (0) Readfilter
-        cmd_star_filter = "{0} --genomeDir {1} --outFileNamePrefix {2} --readFilesCommand zcat --readFilesIn {3} {4} --outFilterMultimapNmax 100 --outSAMmultNmax 1 --chimSegmentMin 10 --chimJunctionOverhangMin 10 --alignSJDBoverhangMin 10 --alignMatesGapMax {5} --alignIntronMax {5} --chimSegmentReadGapMax 3 --alignSJstitchMismatchNmax 5 -1 5 5 --seedSearchStartLmax 20 --winAnchorMultimapNmax 50 --outSAMtype BAM Unsorted --chimOutType Junctions WithinBAM --outSAMunmapped Within KeepPairs --runThreadN waiting_for_cpu_number".format(self.cfg.get('commands', 'star_cmd'), star_index_path, os.path.join(filtered_reads_path, "{}_".format(sample_id)), fq1, fq2, self.cfg.get('general', 'max_dist_proper_pair'))
+        cmd_star_filter = "{0} --genomeDir {1} --outFileNamePrefix {2}_ --readFilesCommand zcat --readFilesIn {3} {4} --outFilterMultimapNmax 100 --outSAMmultNmax 1 --chimSegmentMin 10 --chimJunctionOverhangMin 10 --alignSJDBoverhangMin 10 --alignMatesGapMax {5} --alignIntronMax {5} --chimSegmentReadGapMax 3 --alignSJstitchMismatchNmax 5 -1 5 5 --seedSearchStartLmax 20 --winAnchorMultimapNmax 50 --outSAMtype BAM Unsorted --chimOutType Junctions WithinBAM --outSAMunmapped Within KeepPairs --runThreadN waiting_for_cpu_number".format(self.cfg.get('commands', 'star_cmd'), star_index_path, os.path.join(filtered_reads_path, sample_id), fq1, fq2, self.cfg.get('general', 'max_dist_proper_pair'))
         cmd_read_filter = "{0} --input {1}_Aligned.out.bam --output {1}_Aligned.out.filtered.bam".format(os.path.join(self.easyfuse_path, "fusionreadfilter.py"), os.path.join(filtered_reads_path, sample_id))
         # re-define fastq's if filtering is on (default)
         fq0 = os.path.join(filtered_reads_path, os.path.basename(fq1).replace("R1", "R0").replace(".fastq.gz", "_filtered_singles.fastq.gz"))
@@ -224,12 +201,12 @@ class Processing(object):
         # (x) Soapfuse
         cmd_soapfuse = "{0} -c {1} -q {2} -i {3} -o {4} -g {5}".format(self.cfg.get('commands', 'soapfuse_wrapper_cmd'), self.cfg.get_path(), qc_table_path, " ".join([fq1, fq2]), soapfuse_path, ref_genome)
         # (9) Data collection
-        cmd_fetchdata = "{0} -i {1} -o {2} -s {3} -c {4} --fq1 {5} --fq2 {6} --fusion_support {7} --icam_run".format(os.path.join(self.easyfuse_path, "fetchdata.py"), output_results_path, fetchdata_path, sample_id, self.cfg.get_path(), fq1, fq2, tool_num_cutoff)
+        cmd_fetchdata = "{0} -i {1} -o {2} -s {3} -c {4} --fq1 {5} --fq2 {6} --fusion_support {7}".format(os.path.join(self.easyfuse_path, "fetchdata.py"), output_results_path, fetchdata_path, sample_id, self.cfg.get_path(), fq1, fq2, tool_num_cutoff)
         # (10) De novo assembly of fusion transcripts
         # urla: This is currently still under active development and has not been tested thoroughly
         cmd_denovoassembly = "{0} -i waiting_for_gene_list_input -c {1} -b {2}_Aligned.out.bam -g {3} -t {4} -o waiting_for_assembly_out_dir".format(os.path.join(self.easyfuse_path, "denovoassembly.py"), self.cfg.get_path(), os.path.join(filtered_reads_path, sample_id), ref_genome, ref_trans)
         # (X) Sample monitoring
-        cmd_samples = "{0} --output-file={1} --sample-id={2} --action=append_state --state=".format(os.path.join(self.easyfuse_path, "misc", "samples.py"), self.samples.infile, sample_id)
+        cmd_samples = "{0} --db_path={1} --sample-id={2} --action=append_state --tool=".format(os.path.join(self.easyfuse_path, "misc", "samples.py"), self.samples.db_path, sample_id)
 
         # set final lists of executable tools and path
         exe_tools = [
@@ -280,8 +257,6 @@ class Processing(object):
 
         # create and submit slurm job if the tool is requested and hasn't been run before
         for i, tool in enumerate(exe_tools, 0):
-            if not icam_run:
-                exe_cmds[i] = exe_cmds[i].replace(" --icam_run", "")
             if tool in tools:
                 dependency = []
                 # check dependencies of the pipeline.
@@ -324,25 +299,26 @@ class Processing(object):
                 # prepare slurm jobs: get ressources, create uid, set output path and check dependencies
                 self.logger.debug("Submitting {} run to slurm".format(tool))
                 cpu, mem = self.cfg.get("resources", tool.lower()).split(",")
-                uid = "-".join([tool, sample_id, str(int(round(time.time())))])
+                uid = "-".join([tool, sample_id])
                 if tool == "Star":
                     exe_cmds[i] = exe_cmds[i].replace("waiting_for_output_string", "{}_".format(os.path.join(exe_path[i], sample_id))).replace("waiting_for_cpu_number", str(cpu))
                 else:
                     exe_cmds[i] = exe_cmds[i].replace("waiting_for_output_string", exe_path[i]).replace("waiting_for_cpu_number", str(cpu))
-                cmd = " && ".join([exe_cmds[i], cmd_samples + uid])
+                cmd = " && ".join([exe_cmds[i], cmd_samples + tool])
                 # Managing slurm dependencies
                 if tool == "Pizzly":
-                    dependency = Queueing.get_jobs_by_name("Kallisto-{}".format(sample_id))
+                    dependency = Queueing.get_jobs_by_name("Kallisto-{0}".format(sample_id))
                 elif tool == "Starfusion" or tool == "Starchip":
-                    dependency = Queueing.get_jobs_by_name("Star-{}".format(sample_id))
+                    dependency = Queueing.get_jobs_by_name("Star-{0}".format(sample_id))
                 elif tool == "Fetchdata":
                     dependency = Queueing.get_jobs_by_name(sample_id)
                 elif tool == "Assembly":
-                    dependency = Queueing.get_jobs_by_name("Fetchdata-{}".format(sample_id))
+                    dependency = Queueing.get_jobs_by_name("Fetchdata-{0}".format(sample_id))
                 elif tool == "ReadFilter":
-                    dependency = Queueing.get_jobs_by_name("QC-{}".format(sample_id))
-                dependency.extend(Queueing.get_jobs_by_name("Readfilter-{}".format(sample_id)))
-                dependency.extend(Queueing.get_jobs_by_name("QC-{}".format(sample_id)))
+                    dependency = Queueing.get_jobs_by_name("QC-{0}".format(sample_id))
+                #                else:
+                dependency.extend(Queueing.get_jobs_by_name("Readfilter-{0}".format(sample_id)))
+                dependency.extend(Queueing.get_jobs_by_name("QC-{0}".format(sample_id)))
                 self.logger.debug("Submitting slurm job: CMD - {0}; PATH - {1}; DEPS - {2}".format(cmd, exe_path[i], dependency))
                 self.submit_job(uid, cmd, cpu, mem, exe_path[i], dependency, "")
             else:
@@ -350,17 +326,18 @@ class Processing(object):
 
     def submit_job(self, uid, cmd, cores, mem_usage, output_results_folder, dependencies, mail):
         """Submit job to slurm scheduling"""
-        already_running = Queueing.get_jobs_by_name("-".join(uid.split("-")[0:2]))
+        already_running = Queueing.get_jobs_by_name(uid)
         if not already_running:
             # urla: for compatibility reasons (and to be independent of shell commands), concatenated commands are splitted again,
             #       dependencies within the splitted groups updated and everything submitted sequentially to the queueing system
+            module_file = self.cfg.get('commands', 'module_file')
             que_sys = self.cfg.get('general', 'queueing_system')
             for i, cmd_split in enumerate(cmd.split(" && ")):
                 if not que_sys == "slurm" and not que_sys == "pbs":
                     cmd_split = cmd_split.split(" ")
                 dependencies.extend(Queueing.get_jobs_by_name("{0}_CMD{1}".format(uid, i - 1)))
-                Queueing.submit("{0}_CMD{1}".format(uid, i), cmd_split, cores, mem_usage, output_results_folder, dependencies, self.partitions, self.userid, self.cfg.get('general', 'time_limit'), mail, que_sys)
-                time.sleep(3)
+                Queueing.submit("{0}_CMD{1}".format(uid, i), cmd_split, cores, mem_usage, output_results_folder, dependencies, self.partitions, self.userid, self.cfg.get('general', 'time_limit'), mail, module_file, que_sys)
+                time.sleep(0.5)
         else:
             self.logger.error("A job with this application/sample combination is currently running. Skipping {} in order to avoid unintended data loss.".format(uid))
 
@@ -368,17 +345,15 @@ def main():
     """Parse command line arguments and start script"""
     parser = argparse.ArgumentParser(description='Processing of demultiplexed FASTQs')
     # required arguments
-    parser.add_argument('-i', '--input', dest='input', help='Specify the fastq folder(s) or fastq file(s) to process.', required=True)
-    parser.add_argument('-o', '--output-folder', dest='output_folder', help='Specify the folder to save the results into.', required=True)
-    parser.add_argument('-c', '--config', dest='config', help='Specify config file.', required=True)
+    parser.add_argument('-i', '--input', dest='input', help='Specify full path of the fastq folder to process.', required=True)
+    parser.add_argument('-o', '--output-folder', dest='output_folder', help='Specify full path of the folder to save the results into.', required=True)
+    parser.add_argument('-c', '--config', dest='config', help='Specify full path of config file.', required=True)
     # optional arguments
     parser.add_argument('-u', '--userid', dest='userid', help='User identifier used for scheduling and timing')
     parser.add_argument('-p', '--partitions', dest='partitions', help='Comma-separated list of partitions to use for queueing.', default='allNodes')
     parser.add_argument('--tool_support', dest='tool_support', help='The number of tools which are required to support a fusion event.', default="1")
     parser.add_argument('--version', dest='version', help='Get version info')
     # hidden (not visible in the help display) arguments
-    parser.add_argument('--icam_run', dest='icam_run', help=argparse.SUPPRESS, default=False, action='store_true')
-    parser.add_argument('--icam_tree', dest='icam_tree', help=argparse.SUPPRESS, default=False, action='store_true')
     parser.add_argument('--overwrite', dest='overwrite', help=argparse.SUPPRESS, default=False, action='store_true')
     args = parser.parse_args()
 
@@ -387,10 +362,19 @@ def main():
         print(eav.__version__)
         sys.exit(0)
 
+    script_call = "python {} {}".format(os.path.realpath(__file__), " ".join(sys.argv[1:]))
+
     # create a local copy of the config file in the working dir folder in order to be able to re-run the script
     # urla: todo - the file permission should be set to read only after it was copied to the project folder (doesn't work for icam as "bfx" is a windows file system)
-    proc = Processing(args.config, args.input, args.output_folder, args.partitions, args.userid, args.overwrite)
-    proc.run(args.tool_support, args.icam_run, args.icam_tree)
+    proc = Processing(script_call, args.config, args.input, args.output_folder, args.partitions, args.userid, args.overwrite)
+
+
+    outf = open(os.path.join(args.output_folder, "process.sh"), "w")
+    outf.write("#!/bin/sh\n\n")
+    outf.write(script_call)
+    outf.close()
+
+    proc.run(args.tool_support)
 
 if __name__ == '__main__':
     main()
