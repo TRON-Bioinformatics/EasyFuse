@@ -22,8 +22,10 @@ argument_list <- list(
 	make_option(c("-o", "--output"), default="context_seqs.csv", help="Output file of context sequences"), 
 	make_option("--cis_near_distance", type="integer", default=1000000, help="Distance to call fusion cis near or far"), 
 	make_option("--genomic_seq_len", type="integer", default=1000, help="no idea"), 
-	make_option("--context_seq_len", type="integer", default=100, help="Length of the context sequence")
+	make_option("--context_seq_len", type="integer", default=100, help="Length of the context sequence"),
+	make_option("--max_tsl", type="integer", default=NA, help="maximal transcript support level 1-5, when NA keep all")
 )
+
 opt <- parse_args(OptionParser(option_list=argument_list))
 
 # check mandatory arguments
@@ -48,7 +50,7 @@ ensemble_csv_file = opt$ensembl_csv
 cis_near_distance = opt$cis_near_distance
 genomic_seq_len = opt$genomic_seq_len
 context_seq_len = opt$context_seq_len
-
+max_tsl = opt$max_tsl
 
 # select optimal type of matching transcript
 select_type <- function(var1){
@@ -206,7 +208,7 @@ make_context_id <- function(context_sequence){
 
 
 
-#custome function to determine which exons code for neo peptide sequence and return there genomic positions
+#custome function to determine which exons code for neo peptide sequence and return their genomic positions
 get_neopeptide_exons <- function(exon_bp_rel, neo_peptide_sequence_length, neo_peptide_sequence_bp, exon_starts, exon_ends, exon_starts_rel, exon_ends_rel){
   
   tmp_data = data.frame(id = 1:length(exon_bp_rel), exon_bp_rel, neo_peptide_sequence_length, neo_peptide_sequence_bp, exon_starts, exon_ends, exon_starts_rel, exon_ends_rel, element="1*2")
@@ -266,13 +268,17 @@ ensemble_csv = breakpoints %>%
 	transmute(chr = chr,
 		gene_start = pos - genomic_seq_len, gene_end = pos + genomic_seq_len,
 		strand = strand, transcript_id = paste0("intergenic_", chr, ":", pos, ":", strand), symbol = "intergenic",
-		cds_start = NA, cds_end = NA, 
+		cds_start = NA, cds_end = NA, tsl = NA, orf = NA,
 		start = ifelse(element == 1, paste0(pos - genomic_seq_len, "|", pos + 1), paste0(pos - genomic_seq_len, "|", pos)),
 		end = ifelse(element == 1, paste0(pos, "|", pos + genomic_seq_len), paste0(pos - 1, "|", pos + genomic_seq_len)),
 		number = ifelse(strand == "+", "1|2", "2|1"), type = "intergenic|intergenic") %>% #create 2000bp "intergenic genes" for each breakpoint with two 1000bp elements, as alternative when no gene is found
 	rbind(read.csv2(ensemble_csv_file))
 
-
+#filter according to transcript support level -> when filtering, some breakpoints in Detected_fusions.csv might not exist in context_seq.csv
+if (!is.na(max_tsl)){
+	ensemble_csv = ensemble_csv %>%
+		filter(tsl <= max_tsl)
+}
 
 #identify overlapping elements on genome coordinates
 print("->identify overlapping elements")
@@ -290,7 +296,7 @@ genomic_overlap = breakpoints %>%
 	arrange() %>%
   ungroup() %>%
   distinct(FGID, Fusion_Gene, side, element, chr, pos, strand, bp_type, bp_element, transcript_id, symbol, 
-		gene_start, gene_end, cds_start, cds_end, start, end, number, type) %>%
+		gene_start, gene_end, cds_start, cds_end, tsl, orf, start, end, number, type) %>%
 	unnest(start = strsplit(start, "\\|"), end = strsplit(end, "\\|"), number = strsplit(number, "\\|"), type = strsplit(type, "\\|")) %>%
 	mutate(start = as.numeric(start), end = as.numeric(end), number = as.numeric(number)) %>%
 	filter(type != "intron" | number == bp_element) %>% #keep only exons and introns and intergenic elements with breakpoints
@@ -362,7 +368,7 @@ print("->combine all information")
 overlap = overlap_side1 %>%
 	full_join(overlap_side2, by = c("FGID", "Fusion_Gene")) %>%
 	distinct() %>%
-	transmute(FGID = FGID, Fusion_Gene, 
+	transmutate(FGID = FGID, Fusion_Gene, 
 		Breakpoint1 = paste0(S1_chr, ":", S1_pos, ":", S1_strand), Breakpoint2 = paste0(S2_chr, ":", S2_pos, ":", S2_strand), #determine breakpoints
 		FTID = paste0(S1_symbol, "_", S1_chr, ":", S1_pos, ":", S1_strand,"_", S1_transcript_id,  "_", S2_symbol, "_", S2_chr, ":", S2_pos, ":", S2_strand, "_", S2_transcript_id), #old style FTID
 		#FTID = paste0(S1_symbol, "_", S1_transcript_id, "_", S1_chr, ":", S1_pos, ":", S1_strand, "_", S2_symbol, "_", S2_transcript_id, "_", S2_chr, ":", S2_pos, ":", S2_strand), #calculate fusion transcript ID
@@ -382,7 +388,8 @@ overlap = overlap_side1 %>%
 		context_sequence = paste0(substr(S1_seq, S1_pos_rel - context_seq_len + 1, S1_pos_rel), substr(S2_seq, S2_pos_rel, S2_pos_rel + context_seq_len - 1)), #determine context_seq sequence
 		context_sequence_bp = pmin(S1_pos_rel, context_seq_len),
 		cds_sequence = ifelse(S1_frame %in% c(0, 1, 2, 3), paste0(substr(S1_seq, S1_cds_start_rel, S1_pos_rel), substr(S2_seq, S2_pos_rel, nchar(S2_seq))), ""), #determine coding sequence 
-		cds_sequence_bp = ifelse(S1_frame %in% c(0, 1, 2, 3), S1_pos_rel - S1_cds_start_rel + 1, NA)) %>%
+		cds_sequence_bp = ifelse(S1_frame %in% c(0, 1, 2, 3), S1_pos_rel - S1_cds_start_rel + 1, NA),
+		tsl = pmax(S1_tsl, S2_tsl), orf1 = S1_orf, orf2 = S2_orf) %>%
 	mutate(context_sequence_100_id = make_context_id(context_sequence_100), context_sequence_id = make_context_id(context_sequence), #generate context seq ids
 		peptide_sequence = pep_translate(cds_sequence), peptide_sequence_bp = round(cds_sequence_bp / 3,1)) %>% #translate cds to peptide
 	mutate(neo_peptide_sequence = ifelse(frame == "in_frame", 
@@ -398,8 +405,10 @@ overlap = overlap_side1 %>%
 output = overlap %>%
 	select(FGID, Fusion_Gene, Breakpoint1, Breakpoint2, FTID, context_sequence_id, context_sequence_100_id,
 		type, exon_nr, exon_starts = neo_peptide_exons_starts, exon_ends = neo_peptide_exons_ends, exon_boundary1, exon_boundary2, exon_boundary, bp1_frame, bp2_frame, frame, 
-		context_sequence, context_sequence_bp, neo_peptide_sequence, neo_peptide_sequence_bp, neo_peptide_exons_starts, neo_peptide_exons_ends)
+		context_sequence, context_sequence_bp, neo_peptide_sequence, neo_peptide_sequence_bp, neo_peptide_exons_starts, neo_peptide_exons_ends, tsl, orf1, orf2)
 
+
+		
 #write.csv2(output, out_file, row.names = FALSE, quote = FALSE)
 #consistently use dec="." for python and R
 write.table(output, out_file,  sep=";", dec=".", row.names = FALSE, quote = FALSE)
