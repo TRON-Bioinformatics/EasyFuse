@@ -43,33 +43,26 @@ def grant_permissions(path, mode):
             os.chmod(file, mode)
 
 
-def get_fastq_files(input_path, logger=None):
+def get_fastq_files(input_paths, logger=None):
     """Load fastq files, check file name consistency and return tuple of left/right pairs"""
     # load fastq files from the provide path to a list
     fastqs = []
-    if os.path.isdir(input_path):
-        files = os.listdir(input_path)
-        for filename in files:
-            file_path = os.path.join(input_path, filename)
-            if os.path.isfile(file_path) and filename.endswith((".fastq.gz", ".fq.gz", ".fq", ".fastq")):
-                if not filename.endswith(".gz"):
-                    if logger:
+    for path in input_paths:
+        if os.path.isdir(path):
+            files = os.listdir(path)
+            for filename in files:
+                file_path = os.path.join(path, filename)
+                if os.path.isfile(file_path) and filename.endswith((".fastq.gz", ".fq.gz", ".fq", ".fastq")):
+                    if not filename.endswith(".gz"):
                         logger.info("Warning: Fastq files are supposed to be gzipped! Skipping record {}!".format(file))
-                    else:
-                        print("Warning: Fastq files are supposed to be gzipped! Skipping record {}!".format(file))
-                    continue
-                fastqs.append(file_path)
-            elif os.path.isdir(file_path):
-                if logger:
-                    logger.info("Not following detected nested dir \"{0}\" within fastq path input \"{1}\"".format(file_path, input_path))
-                else:
-                    print("Not following detected nested dir \"{0}\" within fastq path input \"{1}\"".format(file_path, input_path))
-    elif os.path.isfile(input_path):
-        if logger:
-            logger.error("Error 99: File input is not supported, please provide a directory containing fastq files to process!")
-        print("Error 99: File input is not supported, please provide a directory containing fastq files to process!")
-        sys.exit(99)
-                        
+                        continue
+                    fastqs.append(file_path)
+                elif os.path.isdir(file_path):
+                    fastqs_tmp = get_fastq_files([file_path])
+                    fastqs.extend(fastqs_tmp)
+        elif os.path.isfile(path) and path.endswith((".fastq.gz", ".fq.gz", ".fq", ".fastq")):
+            fastqs.append(path)
+
     left = []
     right = []
     sample_id = []

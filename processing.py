@@ -162,18 +162,22 @@ class Processing(object):
         cmd_skewer = "{} -q {} -m {} -i {} {} -o {} -b {}".format(self.cfg.get('commands', 'skewer_wrapper_cmd'), qc_table_path, 0.75, fq1, fq2, skewer_path, self.cfg.get('commands', 'skewer_cmd'))
 
         fq0 = ""
-        if("QC" in tools):
+        if "QC" in tools:
             fq0 = os.path.join(skewer_path, "out_file-trimmed.fastq.gz")
             fq1 = os.path.join(skewer_path, "out_file-trimmed-pair1.fastq.gz")
             fq2 = os.path.join(skewer_path, "out_file-trimmed-pair2.fastq.gz")
+        else:
+            qc_table_path = "None"
 
         # (0) Readfilter
         cmd_star_filter = "{0} --genomeDir {1} --outFileNamePrefix {2}_ --readFilesCommand zcat --readFilesIn {3} {4} --outFilterMultimapNmax 100 --outSAMmultNmax 1 --chimSegmentMin 10 --chimJunctionOverhangMin 10 --alignSJDBoverhangMin 10 --alignMatesGapMax {5} --alignIntronMax {5} --chimSegmentReadGapMax 3 --alignSJstitchMismatchNmax 5 -1 5 5 --seedSearchStartLmax 20 --winAnchorMultimapNmax 50 --outSAMtype BAM Unsorted --chimOutType Junctions WithinBAM --outSAMunmapped Within KeepPairs --runThreadN waiting_for_cpu_number".format(self.cfg.get('commands', 'star_cmd'), star_index_path, os.path.join(filtered_reads_path, sample_id), fq1, fq2, self.cfg.get('general', 'max_dist_proper_pair'))
         cmd_read_filter = "{0} --input {1}_Aligned.out.bam --output {1}_Aligned.out.filtered.bam".format(os.path.join(self.easyfuse_path, "fusionreadfilter.py"), os.path.join(filtered_reads_path, sample_id))
         # re-define fastq's if filtering is on (default)
-        fq0 = os.path.join(filtered_reads_path, os.path.basename(fq1).replace("R1", "R0").replace(".fastq.gz", "_filtered_singles.fastq.gz"))
-        fq1 = os.path.join(filtered_reads_path, os.path.basename(fq1).replace(".fastq.gz", "_filtered.fastq.gz"))
-        fq2 = os.path.join(filtered_reads_path, os.path.basename(fq2).replace(".fastq.gz", "_filtered.fastq.gz"))
+        fq0 = ""
+        if "Readfilter" in tools:
+            fq0 = os.path.join(filtered_reads_path, os.path.basename(fq1).replace("R1", "R0").replace(".fastq.gz", "_filtered_singles.fastq.gz"))
+            fq1 = os.path.join(filtered_reads_path, os.path.basename(fq1).replace(".fastq.gz", "_filtered.fastq.gz"))
+            fq2 = os.path.join(filtered_reads_path, os.path.basename(fq2).replace(".fastq.gz", "_filtered.fastq.gz"))
 
         cmd_bam_to_fastq = "{0} fastq -0 {1} -1 {2} -2 {3} --threads waiting_for_cpu_number {4}_Aligned.out.filtered.bam".format(self.cfg.get('commands', 'samtools_cmd'), fq0, fq1, fq2, os.path.join(filtered_reads_path, sample_id))
         # (1) Kallisto expression quantification (required for pizzly)
@@ -206,7 +210,7 @@ class Processing(object):
         # urla: This is currently still under active development and has not been tested thoroughly
         cmd_denovoassembly = "{0} -i waiting_for_gene_list_input -c {1} -b {2}_Aligned.out.bam -g {3} -t {4} -o waiting_for_assembly_out_dir".format(os.path.join(self.easyfuse_path, "denovoassembly.py"), self.cfg.get_path(), os.path.join(filtered_reads_path, sample_id), ref_genome, ref_trans)
         # (X) Sample monitoring
-        cmd_samples = "{0} --db_path={1} --sample-id={2} --action=append_state --tool=".format(os.path.join(self.easyfuse_path, "misc", "samples.py"), self.samples.db_path, sample_id)
+        cmd_samples = "{0} --db_path={1} --sample_id={2} --action=append_state --tool=".format(os.path.join(self.easyfuse_path, "misc", "samples.py"), self.samples.db_path, sample_id)
 
         # set final lists of executable tools and path
         exe_tools = [
@@ -333,7 +337,7 @@ class Processing(object):
             module_file = self.cfg.get('commands', 'module_file')
             que_sys = self.cfg.get('general', 'queueing_system')
             for i, cmd_split in enumerate(cmd.split(" && ")):
-                if not que_sys == "slurm" and not que_sys == "pbs":
+                if not que_sys in ["slurm", "pbs"]:
                     cmd_split = cmd_split.split(" ")
                 dependencies.extend(Queueing.get_jobs_by_name("{0}_CMD{1}".format(uid, i - 1)))
                 Queueing.submit("{0}_CMD{1}".format(uid, i), cmd_split, cores, mem_usage, output_results_folder, dependencies, self.partitions, self.userid, self.cfg.get('general', 'time_limit'), mail, module_file, que_sys)
@@ -345,7 +349,7 @@ def main():
     """Parse command line arguments and start script"""
     parser = argparse.ArgumentParser(description='Processing of demultiplexed FASTQs')
     # required arguments
-    parser.add_argument('-i', '--input', dest='input', help='Specify full path of the fastq folder to process.', required=True)
+    parser.add_argument('-i', '--input', dest='input', nargs='+', help='Specify full path of the fastq folder to process.', required=True)
     parser.add_argument('-o', '--output-folder', dest='output_folder', help='Specify full path of the folder to save the results into.', required=True)
     parser.add_argument('-c', '--config', dest='config', help='Specify full path of config file.', required=True)
     # optional arguments

@@ -113,7 +113,7 @@ def main():
     """Main method, parameter handling"""
     parser = ArgumentParser(description='Handle sample db operations')
 
-    parser.add_argument('-i', '--sample-id', dest='sample_id', help='Specify the sample id to process.', required=True)
+    parser.add_argument('-i', '--sample_id', dest='sample_id', help='Specify the sample id to process.', required=True)
     parser.add_argument('-d', '--db_path', dest='db_path', help='Specify the file to save the changes into.', required=True)
     parser.add_argument('-t', '--tool', dest='tool', help='The tools name to add to your sample id.', required=True)
     parser.add_argument('-l', '--action', dest='action', choices=['append_state'], help='Select the action to do with the sample id.', required=True)
@@ -124,20 +124,6 @@ def main():
     if args.action == "append_state":
         db.append_state(args.sample_id, args.tool)
     db.close_connection()
-
-#    for i in range(100):
-#        db.add_sample("Sample_{}".format(i), "NA", "Sample_{}_R1.fastq.gz".format(i), "Sample_{}_R2.fastq.gz".format(i))
-        
-#    print(db.get_fastq_files("Sample_20"))
-#    print(db.get_tool_list_from_state("Sample_20"))
-#    db.append_state("Sample_20", "QC")
-#    db.append_state("Sample_20", "STAR")
-#    db.append_state("Sample_20", "STAR-Fusion")
-#    print(db.get_tool_list_from_state(args.sample_id))
-#    db.add_sample("Sample_20", "NA", "", "")
-#    print(db.get_sample_ids())
-#    db.close_connection()
-
 
 if __name__ == "__main__":
     main()
