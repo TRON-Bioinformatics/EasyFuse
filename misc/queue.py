@@ -65,15 +65,15 @@ def get_jobs_by_name_slurm(name):
     return jobs
 
 
-def submit(job_name, cmd, cores, mem_usage, output_results_folder, dependencies, partitions, userid, timelimit, mail, sched="slurm"):
+def submit(job_name, cmd, cores, mem_usage, output_results_folder, dependencies, partitions, userid, timelimit, mail, module_file, sched="slurm"):
     if sched == "slurm":
-        _submit_slurm(job_name, cmd, cores, mem_usage, output_results_folder, dependencies, partitions, userid, timelimit, mail)
+        _submit_slurm(job_name, cmd, cores, mem_usage, output_results_folder, dependencies, partitions, userid, timelimit, mail, module_file)
     elif sched == "pbs":
-        _submit_pbs(job_name, cmd, cores, mem_usage, output_results_folder, dependencies)
+        _submit_pbs(job_name, cmd, cores, mem_usage, output_results_folder, dependencies, module_file)
     else:
-        _submit_nonqueue(cmd)
+        _submit_nonqueue(cmd, module_file)
     
-def _submit_nonqueue(cmd):
+def _submit_nonqueue(cmd, module_file=""):
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=False)
     (stdoutdata, stderrdata) = p.communicate()
     r = p.returncode
@@ -84,7 +84,7 @@ def _submit_nonqueue(cmd):
     return stdoutdata
 
 
-def _submit_pbs(job_name, cmd, cores, mem_usage, output_results_folder, dependencies):
+def _submit_pbs(job_name, cmd, cores, mem_usage, output_results_folder, dependencies, module_file):
     """This function submits a predefined job with specific PBS parameters to the Portable Batch System (PBS)."""
 
     depend = "\n"
@@ -106,6 +106,7 @@ def _submit_pbs(job_name, cmd, cores, mem_usage, output_results_folder, dependen
             "#PBS -d {}\n".format(output_results_folder),
             "#PBS -e {}\n".format(error_file),
             "#PBS -o {}\n".format(output_file),
+            ". {}\n".format(module_file),
             "{}".format(cmd)
         ])
 
@@ -119,7 +120,7 @@ def _submit_pbs(job_name, cmd, cores, mem_usage, output_results_folder, dependen
         sys.exit(1)
 
 
-def _submit_slurm(job_name, cmd, cores, mem_usage, output_results_folder, dependencies, partitions, userid, timelimit, mail):
+def _submit_slurm(job_name, cmd, cores, mem_usage, output_results_folder, dependencies, partitions, userid, timelimit, mail, module_file):
     """This function submits a predefined job with specific SBATCH parameters to the Slurm workload manager system."""
     # add dependencies if necessary
     depend = "\n"
@@ -155,6 +156,7 @@ def _submit_slurm(job_name, cmd, cores, mem_usage, output_results_folder, depend
             mail_type,
             mail_user,
             "set -eo pipefail -o nounset\n",
+            ". {}\n".format(module_file),
             "srun {}\n".format(cmd)
         ])
     # and run it

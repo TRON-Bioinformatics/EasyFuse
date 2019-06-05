@@ -354,12 +354,13 @@ class Processing(object):
         if not already_running:
             # urla: for compatibility reasons (and to be independent of shell commands), concatenated commands are splitted again,
             #       dependencies within the splitted groups updated and everything submitted sequentially to the queueing system
+            module_file = self.cfg.get('commands', 'module_file')
             que_sys = self.cfg.get('general', 'queueing_system')
             for i, cmd_split in enumerate(cmd.split(" && ")):
                 if not que_sys == "slurm" and not que_sys == "pbs":
                     cmd_split = cmd_split.split(" ")
                 dependencies.extend(Queueing.get_jobs_by_name("{0}_CMD{1}".format(uid, i - 1)))
-                Queueing.submit("{0}_CMD{1}".format(uid, i), cmd_split, cores, mem_usage, output_results_folder, dependencies, self.partitions, self.userid, self.cfg.get('general', 'time_limit'), mail, que_sys)
+                Queueing.submit("{0}_CMD{1}".format(uid, i), cmd_split, cores, mem_usage, output_results_folder, dependencies, self.partitions, self.userid, self.cfg.get('general', 'time_limit'), mail, module_file, que_sys)
                 time.sleep(3)
         else:
             self.logger.error("A job with this application/sample combination is currently running. Skipping {} in order to avoid unintended data loss.".format(uid))

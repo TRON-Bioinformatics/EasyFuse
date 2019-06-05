@@ -1,0 +1,12 @@
+#!/bin/bash
+
+PERL5LIB=$PERL5LIB:/path/to/perl_modules; export PERL5LIB
+PYTHONPATH=/path/to/python_modules/
+export LD_LIBRARY_PATH=/path/to/Atlas_lib:$LD_LIBRARY_PATH
+export PATH=$PATH:/path/to/ncbi_blast_bin/
+
+module load anaconda/2/2018
+module load bioinf/star/2.6.1d
+module load bioinf/samtools/1.9
+module load R/3.5.1
+module load java/11.0.1

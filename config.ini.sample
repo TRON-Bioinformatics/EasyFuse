@@ -37,6 +37,8 @@ summary=1,10
 
 # execution command for individual programs (what you write here should be identical to what is typed in the console)
 [commands]
+# module loading
+module_file=/path/to/build_env.sh
 # for qc
 fastqc_cmd=/path/to/fastqc_bin
 qc_parser_cmd=/path/to/repo/misc/qc_parser.py
