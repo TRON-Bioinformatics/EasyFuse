@@ -152,7 +152,7 @@ def _submit_slurm(job_name, cmd, cores, mem_usage, output_results_folder, depend
             "#SBATCH --mem={}\n".format(int(mem_usage)*1000),
             "#SBATCH --time={}\n".format(timelimit),
             depend,
-            "#SBATCH --workdir={}\n".format(output_results_folder),
+            "#SBATCH -D {}\n".format(output_results_folder),
             "#SBATCH --error={}\n".format(error_file),
             "#SBATCH --output={}\n".format(output_file),
 #            "#SBATCH --requeue\n",
