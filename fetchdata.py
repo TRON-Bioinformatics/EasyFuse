@@ -34,7 +34,7 @@ class Fetching(object):
         self.fetchdata_path = fetchdata_path
         self.sample_id = sample_id
         #self.tools = Samples(os.path.join(scratch_path, os.path.pardir, os.path.pardir, "samples.csv")).get_tool_list_from_state(self.sample_id)
-        self.sample = Samples(os.path.join(scratch_path, os.path.pardir, os.path.pardir, "samples.csv"))
+        self.sample = Samples(os.path.join(scratch_path, os.path.pardir, os.path.pardir, "samples.db"))
         self.logger = Logger(os.path.join(self.fetchdata_path, "fetchdata_" + str(int(round(time.time()))) + ".log"))
         self.easyfuse_path = os.path.dirname(os.path.realpath(__file__))
 
@@ -68,7 +68,7 @@ class Fetching(object):
         # sampleID = ...
         self.logger.info("Fetching in sample {}".format(self.sample_id))
         if not fq1 or not fq2:
-            self.logger.debug("Either ReadFile 1 or 2 or both are missing, trying to get original files from samples.csv")
+            self.logger.debug("Either ReadFile 1 or 2 or both are missing, trying to get original files from samples.db")
             (fq1, fq2) = self.sample.get_fastq_files(self.sample_id)
         self.execute_pipeline((fq1, fq2), fusion_support, icam_run)
 
@@ -124,7 +124,7 @@ class Fetching(object):
         cmd_liftover = "{0} -i {1} -c {2} -l {3}".format(os.path.join(self.easyfuse_path, "misc", "liftover.py"), detected_fusions_file, self.cfg.get_path(), self.logger.get_path())
         cmd_contextseq = "{0} --input_detected_fusions {1} --fasta_genome_dir {2} --ensembl_csv {3} --output {4} --context_seq_len {5}".format(os.path.join(self.easyfuse_path, "R", "GetFusionSequence.R"), detected_fusions_file, genome_fastadir_path, genes_csv_path, context_seq_file, self.cfg.get('general', 'context_seq_len'))
         cpu = 12
-        cmd_starindex = "{0} --runMode genomeGenerate --runThreadN {1} --limitGenomeGenerateRAM 48000000000 --genomeChrBinNbits waiting_for_bin_size_input --genomeSAindexNbases waiting_for_sa_idx_input --genomeDir {2} --genomeFastaFiles {3}".format(self.cfg.get('commands', 'star_cmd'), cpu, star_genome_path, "{0}{1}".format(context_seq_file, ".fasta"))
+        cmd_starindex = "{0} --runMode genomeGenerate --runThreadN {1} --limitGenomeGenerateRAM 48000000000 --genomeChrBinNbits waiting_for_bin_size_input --genomeSAindexNbases waiting_for_sa_idx_input --genomeDir {2} --outFileNamePrefix {2}/ --genomeFastaFiles {3}".format(self.cfg.get('commands', 'star_cmd'), cpu, star_genome_path, "{0}{1}".format(context_seq_file, ".fasta"))
         cmd_staralign_fltr = "{0} --genomeDir {1} --readFilesCommand zcat --readFilesIn {2} {3} --outSAMtype BAM SortedByCoordinate --outFilterMultimapNmax -1 --outSAMattributes Standard --outSAMunmapped None --outFilterMismatchNoverLmax 0.02 --runThreadN {4} --outFileNamePrefix {5}fltr_ --limitBAMsortRAM 48000000000".format(self.cfg.get('commands', 'star_cmd'), star_genome_path, fq1, fq2, cpu, star_align_file)
         cmd_bamindex_fltr = "{0} index {1}fltr_Aligned.sortedByCoord.out.bam".format(self.cfg.get('commands', 'samtools_cmd'), star_align_file)
         cmd_requantify_fltr = "{0} -i {1}fltr_Aligned.sortedByCoord.out.bam -o {2}_fltr.tdt -d 10".format(os.path.join(self.easyfuse_path, "requantify.py"), star_align_file, classification_file)
