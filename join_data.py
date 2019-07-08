@@ -142,7 +142,7 @@ class DataJoining(object):
                 model_threshold = config.get("general", "model_pred_threshold")
                 # append prediction scores based on pre-calculated model
                 cmd_model = "{0} --fusion_summary {1} --model_file {2} --prediction_threshold {3} --output {4}".format(os.path.join(self.easyfuse_path, "R", "R_model_prediction.R"), summary_file, model_path, model_threshold, "{}.pModelPred.csv".format(summary_file[:-4]))
-                Queueing.submit("", cmd_model.split(" "), "", "", "", "", "", "", "", "", "none")
+                Queueing.submit("", cmd_model.split(" "), "", "", "", "", "", "", "", "", "", "none")
         # re-read the table with prediction for filter counting
         model_table_1 = pd.read_csv("{}_fusRank_1.pModelPred.csv".format(self.output), sep=";")
 
