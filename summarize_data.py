@@ -27,7 +27,7 @@ class IcamSummary(object):
     """Collect stats of the run and write them to file"""
     def __init__(self, input_path, config_path):
         self.input_path = input_path
-        self.sample = Samples(os.path.join(input_path, "samples.csv"))
+        self.samples = Samples(os.path.join(input_path, "samples.db"))
         self.cfg = Config(config_path)
         self.figure_list = []
 
@@ -48,9 +48,15 @@ class IcamSummary(object):
         filtering_data_1 = {}
         filtering_data_2 = {}
         filtering_data_12 = {}
-        colnames_filtering = ["all fusions", "in/out/neo frame", "both on exon boundary", "with neo peptide", "not black-listed", "all together"]
+        # 0:type; 1:boundary; 2:frame; 3:pepseq; 4:counts; 5:blacklist; 6:prediction;
+        # 7:exonError; 8:unfiltered; 9:allFilter; 10:allButPredFilter
+        colnames_filtering = [
+                "cis_near_no", "exon_bound_both", "no_frame_no", "pep_seq_yes", "counts_yes", "blacklist_no", "pred_pos",
+                "exon_err_no", "unfiltered", "all_fltr", "all_fltr_but_pred"
+                ]
         # get sorted list of sample ids
-        sid_list = sorted(list(self.sample.sample_map.keys()))
+        sid_list = sorted(self.samples.get_sample_id_list())
+#        sid_list = sid_list[:10]
         current_base = ""
         sample1 = ""
         sample2 = ""
@@ -63,13 +69,13 @@ class IcamSummary(object):
         sample_toolCnt_dict = {}
         for i, sample in enumerate(sid_list, 1):
             try:
-                sample_date_dict[sample] = self.sample.get_fastq_files(sample)[0].split("/")[8].split("_")[0]
+                sample_date_dict[sample] = self.samples.get_fastq_files(sample)[0].split("/")[8].split("_")[0]
             except IndexError:
                 print("Warning: Could not retrieve sample date for {}".format(sample))
                 sample_date_dict[sample] = "NA"
             # count the numbers of fusion tools that have been run on this sample
-            sample_toolCnt_dict[sample] = len([tool for tool in fusion_tools if tool in self.sample.get_tool_list_from_state(sample)])
-            if "Fetchdata" in self.sample.get_tool_list_from_state(sample):
+            sample_toolCnt_dict[sample] = len([tool for tool in fusion_tools if tool in self.samples.get_tool_list_from_state(sample)])
+            if "Fetchdata" in self.samples.get_tool_list_from_state(sample):
                 count_valid_sample += 1
             if icam_run:
                 if "Rep1" in sample:
@@ -83,9 +89,9 @@ class IcamSummary(object):
                     else:
                         sample_date_dict[current_base] = sample_date_dict[sample1] + "_" + sample_date_dict[sample2]
                     # count the numbers of fusion tools that have been run on either sample1 or sample2
-                    current_base_fus_set = set(self.sample.get_tool_list_from_state(sample1) + self.sample.get_tool_list_from_state(sample2))
+                    current_base_fus_set = set(map(str, self.samples.get_tool_list_from_state(sample1)) + map(str, self.samples.get_tool_list_from_state(sample2)))
                     sample_toolCnt_dict[current_base] = len([tool for tool in fusion_tools if tool in current_base_fus_set])
-                    if "Fetchdata" in self.sample.get_tool_list_from_state(sample1) and "Fetchdata" in self.sample.get_tool_list_from_state(sample2):
+                    if "Fetchdata" in self.samples.get_tool_list_from_state(sample1) and "Fetchdata" in self.samples.get_tool_list_from_state(sample2):
                         count_valid_pairs += 1
         if icam_run:
             print("Found {0} (partially) processed samples (from {1} patients) in {2}. Data will be collected from {3} patient samples for which fetchdata has been run on both replicates.".format(i, count_pairs, self.input_path, count_valid_pairs))
@@ -106,7 +112,7 @@ class IcamSummary(object):
                     #if ("S4" in sample or "S6" in sample) and current_base == sample.split("_")[0]:
                         sample2 = sample
                         #call fusionranking
-                        if "Fetchdata" in self.sample.get_tool_list_from_state(sample1) and "Fetchdata" in self.sample.get_tool_list_from_state(sample2):
+                        if "Fetchdata" in self.samples.get_tool_list_from_state(sample1) and "Fetchdata" in self.samples.get_tool_list_from_state(sample2):
                             count_processed += 1
                             print("Processing patient ID {0} (dataset {1}/{2})".format(current_base, count_processed, count_valid_pairs))
                             start_time = time.time()
@@ -129,7 +135,7 @@ class IcamSummary(object):
                             estimated_end = average_time * (count_valid_pairs - count_processed)
                             print("done. Processing time: {0:.2f}s; Average processing time: {1:.2f}s; Estimated end of processing in {2:.2f}s)".format(time_taken, average_time, estimated_end))
                 else:
-                    if "Fetchdata" in self.sample.get_tool_list_from_state(sample):
+                    if "Fetchdata" in self.samples.get_tool_list_from_state(sample):
                         count_processed += 1
                         print("Processing sample {0} (dataset {1}/{2})".format(sample, count_processed, len(sid_list)))
                         start_time = time.time()
@@ -143,7 +149,6 @@ class IcamSummary(object):
                         average_time = (average_time * (count_processed-1) + time_taken) / count_processed
                         estimated_end = average_time * (count_valid_sample - count_processed)
                         print("done. Processing time: {0:.2f}s; Average processing time: {1:.2f}s; Estimated end of processing in {2:.2f}s)".format(time_taken, average_time, estimated_end))
-
 
             pddfall = self.plot_barchart(fusion_frequency_all, "Fusion gene recurrency in single samples", 1)
             pddfall.to_csv(data_out_path_freq_all, sep="\t", index=False)
@@ -236,6 +241,64 @@ class IcamSummary(object):
                 fusion_dict[fus_gene] = 0
             fusion_dict[fus_gene] += 1
         return fusion_dict
+    
+    def icam_filter(self, inputfile1, inputfile2, outputfile):
+        """ apply filtering as defined in the icam pipeline """
+        # test id 'AGO2_8:141557567:-_ENST00000220592_PTK2_8:141749206:-_ENST00000340930'
+        fusion_filter_dict = {}
+        id_filter_list = []
+        selected_cols = ["FTID", "Fusion_Gene", "Breakpoint1", "Breakpoint2", "type", "exon_starts", "exon_ends", "exon_boundary",
+                         "frame", "context_sequence", "neo_peptide_sequence", "neo_peptide_sequence_bp", "ft_junc_cnt_org", "ft_span_cnt_org",
+                         "wt1_junc_cnt_org", "wt1_span_cnt_org", "wt2_junc_cnt_org", "wt2_span_cnt_org", "prediction_prob", "prediction_class",
+                         "n_replicates"]
+        cols_dict = dict(zip(selected_cols, range(0, 21)))
+        
+        for inputfile in [inputfile1, inputfile2]:
+            # load required data from easyfuse output into pd dataframe and append column for replicate counting
+            df_rep = pd.read_csv(inputfile, sep = ";")
+            df_rep = df_rep[selected_cols[:-1]]
+            #df_rep[str(selected_cols[-1])] = 0
+            
+            # iterate over rows in the df
+            for i in df_rep.index:
+                ftid = df_rep.loc[i, "FTID"]
+                if ftid not in fusion_filter_dict:
+                    fusion_filter_dict[ftid] = df_rep.loc[i].tolist() + [1]
+                    if fusion_filter_dict[ftid][cols_dict["prediction_class"]].lower() == "positive":
+                        fusion_filter_dict[ftid][cols_dict["prediction_class"]] = 1
+                    else:
+                        fusion_filter_dict[ftid][cols_dict["prediction_class"]] = 0
+                    id_filter_list.append(ftid)
+                else:
+                    for target_read_cnt in ["ft_junc_cnt_org", "ft_span_cnt_org", "wt1_junc_cnt_org", "wt1_span_cnt_org", "wt2_junc_cnt_org", "wt2_span_cnt_org"]:
+                        fusion_filter_dict[ftid][cols_dict[target_read_cnt]] += df_rep.loc[i, target_read_cnt]
+                    if df_rep.loc[i, "prediction_class"].lower() == "positive":
+                        fusion_filter_dict[ftid][cols_dict["prediction_class"]] += 1
+                    fusion_filter_dict[ftid][cols_dict["prediction_prob"]] = max(fusion_filter_dict[ftid][cols_dict["prediction_prob"]], df_rep.loc[i, "prediction_prob"])
+                    fusion_filter_dict[ftid][cols_dict["n_replicates"]] += 1
+        # filter records from the dict
+        id_passing_filter_list = []
+        min_replicates = 2
+        blacklisted = ["HLA", "IG"]
+        for ftid in id_filter_list:
+            if(
+                    fusion_filter_dict[ftid][cols_dict["frame"]] != "no_frame" and # exclude no frame fusions
+                    fusion_filter_dict[ftid][cols_dict["exon_boundary"]] == "both" and # allow only fusions where the breakpoints are on exon boundaries in BOTH fusion partners
+                    fusion_filter_dict[ftid][cols_dict["prediction_class"]] >= 1 and # the random forrest model must have classified this at least once as "posititve"
+                    fusion_filter_dict[ftid][cols_dict["ft_junc_cnt_org"]] + fusion_filter_dict[ftid][cols_dict["ft_span_cnt_org"]] > 0 and # at least 1 junction or spanning counts on the fusion transcript
+                    all([not x.startswith(tuple(blacklisted)) for x in fusion_filter_dict[ftid][cols_dict["Fusion_Gene"]].split("_")]) and # both fusion partners are not allowed to start with everything mentioned in the "blacklisted" list
+                    fusion_filter_dict[ftid][cols_dict["n_replicates"]] >= min_replicates and # number of input samples (i.e. files) with the same ftid (urla: this is not unique and should be ftid+context_sequence_100_id!)
+                    fusion_filter_dict[ftid][cols_dict["neo_peptide_sequence"]].isalpha() and # the neo peptide sequence must be an alphabetic sequence of at least length 1
+                    fusion_filter_dict[ftid][cols_dict["type"]] != "cis_near" and # exclude cis near events as they are likely read through
+                    fusion_filter_dict[ftid][cols_dict["exon_starts"]] != "0" and # tmp hack to exclude valid ftids with missing exon numbers (bug in GetFusionSequence.R?)
+                    fusion_filter_dict[ftid][cols_dict["exon_ends"]] != "0" # see before
+                    ):
+                id_passing_filter_list.append(ftid)
+        # write filtered records to file
+        with open(outputfile, "w") as outfile:
+            outfile.write("{}\n".format("\t".join(selected_cols)))
+            for ftid in id_passing_filter_list:
+                outfile.write("{}\n".format("\t".join([str(x) for x in fusion_filter_dict[ftid]])))
 
 def main():
     """Command line argument parsing and app start"""
