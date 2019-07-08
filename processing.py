@@ -118,7 +118,7 @@ class Processing(object):
             
             # append "done" to main log for compatibility with icam
             final_process_id = "-".join(["TheEnd", str(int(round(time.time())))])
-            self.submit_job(final_process_id, "python {0} --logger {1}".format(os.path.join(self.easyfuse_path, "misc", "all_done.py"), self.logger.get_path()), "1", "1", self.working_dir, [summary_process_id], self.cfg.get('general', 'receiver'))
+            self.submit_job(final_process_id, "python {0} --logger {1}".format(os.path.join(self.easyfuse_path, "misc", "all_done.py"), self.logger.get_path()), "1", "1", self.working_dir, Queueing.get_jobs_by_name(summary_process_id), self.cfg.get('general', 'receiver'))
 
     # Per sample, define input parameters and execution commands, create a folder tree and submit runs to slurm
     def execute_pipeline(self, fq1, fq2, sample_id, ref_genome, ref_trans, tool_num_cutoff, icam_run):
