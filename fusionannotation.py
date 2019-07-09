@@ -624,7 +624,7 @@ class FusionAnnotation(object):
                 
                 # count context data for star
                 # we perform tsl exclusion for the context seqs, but keep everything for the debugging data
-                if not (result_list[header_dict["wt1_TSL"]] in ["4", "5"] or result_list[header_dict["wt2_TSL"]] in ["4", "5"]):
+                if not (result_list[header_dict["wt1_TSL"]] in ["4", "5", "NA"] or result_list[header_dict["wt2_TSL"]] in ["4", "5", "NA"]):
                     count_context_seqs += 3
                     summed_context_seqs_len += sum(map(len, [
                             result_list[header_dict["context_sequence"]],
@@ -660,7 +660,7 @@ class FusionAnnotation(object):
             outfile.write("{}\n".format(";".join(short_header)))
             for result_line in results_lists:
                 # filter all fusions with transcripts which have a TSL of 4 or 5 (keeping 1-3, 6(liftover), NA)
-                if result_line[header_dict["wt1_TSL"]] in ["4", "5"] or result_line[header_dict["wt2_TSL"]] in ["4", "5"]:
+                if result_line[header_dict["wt1_TSL"]] in ["4", "5", "NA"] or result_line[header_dict["wt2_TSL"]] in ["4", "5", "NA"]:
                     continue
                 outfile.write("{}\n".format(";".join([str(result_line[header_dict[col_name]]) for col_name in short_header])))
 
