@@ -16,6 +16,7 @@ import sys
 import stat
 import re
 import ntpath
+import sqlite3
 
 
 def create_folder(path, logger=None):
@@ -113,7 +114,8 @@ def get_fastq_files(input_path, logger=None):
     return (left, right, sample_id)
                     
 
-def get_icam_reads_data(root_path, sample_file_keys, logger):
+# the following method is deprecated because the file walks take far too long with increasing sample numbers
+def get_icam_reads_data_old(root_path, sample_file_keys, logger):
     """Return tuple of lists of demultiplexing stats, and fastq dirs"""
     #root_path = "/mnt/bfx/IVAC2_0/BNT/iCaM2Scheduler/data/demux_out"
     # grep -A4 "Patient ID" /mnt/bfx/IVAC2_0/BNT/iCaM2Scheduler/data/demux_out/*/demux_stats.csv | cut -d";" -f-3 > demuxStats.txt
@@ -180,6 +182,120 @@ def get_icam_reads_data(root_path, sample_file_keys, logger):
                             #print("read files? {}".format(files2))
     return (sample_readcnt_dict, sample_fastq_dict, counter_list)
 
+def get_icam_reads_data(patients_file, sample_file_keys, limit_input, logger):
+    """Return tuple of fastq dict containing path to rna seq reads as well as processing counter"""
+    # p_file = "/mnt/bfx/IVAC2_0/BNT/iCaM2Scheduler/data/patients.csv"
+    sample_fastq_dict = {}
+    counter_list = [0, 0, 0, 0, 0] # 0:old, 1:new, 2:some error, 3:run within icam, 4:line_counter
+    
+    # read patients file and collect relevant information for processing
+    with open(patients_file, "r") as p_file:
+        for line_counter, line in enumerate(p_file):
+            line_splitter = line.strip().split("\t")
+            # create unique id from patient abb and flowcell id
+            icam_sample_id = "_".join([line_splitter[0], line_splitter[2].rsplit("_", 1)[1]])
+            
+            # check whether sample successfully passed icam and was not run before
+            if line_splitter[7] != "VCFBot_COMPLETE":
+                logger.debug("VCFBot did not complete for sample {} with the message: {}.".format(icam_sample_id, line_splitter[7]))
+                counter_list[2] += 1
+                continue
+            else:
+                if icam_sample_id in sample_file_keys:
+                    counter_list[0] += 1
+                    continue
+
+            # grepping from the state file should be better
+#            rna_seq_files = line_splitter[3].split(";")[2].split(",")
+#            sample_fastq_dict["{}_Rep1".format(icam_sample_id)] = (rna_seq_files[0], rna_seq_files[1])
+#            sample_fastq_dict["{}_Rep2".format(icam_sample_id)] = (rna_seq_files[2], rna_seq_files[3])
+            
+            # try to open state file for this run to get relevant data
+            rev_sample_id = "_".join(icam_sample_id.split("_")[::-1])
+            state_file = os.path.join(os.path.dirname(patients_file), "iCaM2Bot_out", rev_sample_id, "{}.state.txt".format(rev_sample_id))
+            if not os.path.exists(state_file):
+                logger.debug("Could not find state file for sample {}. Trying with id[1:] version.".format(icam_sample_id, line_splitter[7]))
+                rev_sample_id = "_".join(icam_sample_id[1:].split("_")[::-1])
+                state_file = os.path.join(os.path.dirname(patients_file), "iCaM2Bot_out", rev_sample_id, "{}.state.txt".format(rev_sample_id))
+            try:
+                state_data = load_icam_state_data(state_file)
+            except IOError:
+                logger.debug("Could still not find state file for sample {}.".format(icam_sample_id, line_splitter[7]))
+                counter_list[2] += 1
+                continue
+            
+            # check whether a previous easyfuse run has been run from within icam with this sample
+            if "easyfuse" in state_data and state_data["easyfuse"]["done"] == True:
+                logger.debug("Looks like easyfuse has been run from within icam for sample {rev_sample_id}. Skipping this record.".format(rev_sample_id))
+                counter_list[3] += 1
+                continue
+            else:
+                # all samples here are new and data is available
+                counter_list[1] += 1
+                if limit_input > 0 and counter_list[1] > limit_input:
+                    break
+                rna_seq_files = state_data["input"]["RNA_fastq"].split(",")
+                sample_fastq_dict["{}_Rep1".format(icam_sample_id)] = (rna_seq_files[0], rna_seq_files[1])
+                sample_fastq_dict["{}_Rep2".format(icam_sample_id)] = (rna_seq_files[2], rna_seq_files[3])
+        counter_list[4] = line_counter
+    return (sample_fastq_dict, counter_list)
+
+def get_icam_reads_from_patient_tracker(tracker_db, sample_file_keys, limit_input, logger):
+    """Return tuple of fastq dict containing path to rna seq reads as well as processing counter"""
+    sample_fastq_dict = {}
+    counter_list = [0, 0, 0, 0] # 0:already_in_easyfuse, 1:available_samples_in_tracker, 2:samples_to_processes, 3:samples_sent_to_processing
+    counter_list[0] = len(sample_file_keys)
+    
+    # get relevant records from patient tracker db
+    db_con = sqlite3.connect(tracker_db)
+    db_cursor = db_con.cursor()
+    ids = db_cursor.execute(
+            """
+            SELECT patient_id, flowcell_id, rep_count, rna_seq_files
+            FROM icamTracker
+            WHERE latest_dataset = "latest"
+            """
+            ).fetchall()
+    counter_list[1] = len(ids)
+    # convert db output into a dict with sample ids as keys and fastq file path as values
+    # furthermore, select only those records, which have not been processed before (i.e. are not in sample_file_keys)
+    for (pid, fid, rc, files) in ids:
+        sample_id = "{}_{}_Rep{}".format(pid, fid, rc)
+        if not sample_id in sample_file_keys:
+            if rc == 1:
+                sample_fastq_dict[sample_id] = tuple(map(str, files.split(",")[0:2]))
+            else:
+                sample_fastq_dict[sample_id] = tuple(map(str, files.split(",")[2:4]))
+    #sample_fastq_dict = {"{}_{}_Rep{}".format(pid,fid,rc):tuple(files.split(",")) for (pid, fid, rc, files) in ids if not "{}_{}_Rep{}".format(pid, fid, rc) in sample_file_keys}
+    counter_list[2] = len(sample_fastq_dict)
+    # if requested, limit the input
+    if limit_input > 0:
+        sample_fastq_dict = {k: sample_fastq_dict[k] for k in sample_fastq_dict.keys()[:limit_input]}
+    counter_list[3] = len(sample_fastq_dict)
+    
+    return (sample_fastq_dict, counter_list)
+
+
+def load_icam_state_data(state_file_string):
+    """Load the data from the icam state file into a dict of dicts with sections as main keys and values as dicts and assignments as K,V pairs"""
+    icam_state_data = {}
+    with open(state_file_string, "r") as in_file:
+        for line in in_file:
+            line = line.strip()
+            # a new section header is surrounded by square brackets
+            if line.startswith("[") and line.endswith("]"):
+                section_dict = {}
+                section_name = line[1:-1]
+            elif line == "":
+                icam_state_data[section_name] = section_dict
+            else:
+                try:
+                    # valid key value pairs are separated by an equal sign, everything else is ignored
+                    section_dict[line.split("=")[0]] = line.split("=")[1]
+                except IndexError:
+                    print("Line {} not parsable. Skipping this entry...".format(line))
+                    pass
+    return icam_state_data
 
 # urla: this method is currently not used anywhere, but provide useful info in later releases
 #       e.g. if the tumor content is rather low, it is more difficult to identify the fusion event in the wildtyp background;
