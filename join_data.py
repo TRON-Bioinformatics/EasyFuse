@@ -179,41 +179,6 @@ class DataJoining(object):
         return True
 
     @staticmethod
-    def count_records_old(pd_data_frame):
-        """ the old count records method """
-        #gene_blacklist = ["HLA", "IG", "RP", "LINC"]
-        gene_blacklist = ["HLA", "IG"]
-        counter = []
-#        print("pdx: {}".format(list(pd_data_frame)))
-        # how many fusion genes have been predicted
-#        counter.append(len(set(pd_data_frame["Fusion_Gene"].tolist())))
-        counter.append(pd_data_frame["Fusion_Gene"].nunique())
-        # how many fusion genes generate NO no-frame fusion (in/out/neo frame)
-#        counter.append(len(set(pd_data_frame.loc[pd_data_frame["frame"] != "no_frame"]["Fusion_Gene"].tolist())))
-        counter.append(pd_data_frame[pd_data_frame["frame"] != "no_frame"]["Fusion_Gene"].nunique())
-        # how many fusion genes are fused on exon boundaries (both fusion genes must be on the boundary)
-        counter.append(pd_data_frame[pd_data_frame["exon_boundary"] == "both"]["Fusion_Gene"].nunique())
-        # how many fusion genes have a predicted neo peptide sequence
-        counter.append(pd_data_frame[(pd_data_frame["neo_peptide_sequence"].notna()) & (pd_data_frame["neo_peptide_sequence"] != "0")]["Fusion_Gene"].nunique())
-        # how many fusion genes do NOT belong to either HLA/IGx/MT/Ribosomal gene families
-        counter.append(pd_data_frame[~pd_data_frame["Fusion_Gene"].str.contains("|".join(gene_blacklist), na=False)]["Fusion_Gene"].nunique())
-        # how many fusions got at least 1 spanning or junction read on the ft during requanification
-        testdf = pd_data_frame[["Fusion_Gene", "ft_junc_cnt_org", "ft_span_cnt_org"]].groupby(by="Fusion_Gene")
-        counter.append(((testdf["ft_junc_cnt_org"].max() > 0) | (testdf["ft_span_cnt_org"].max() > 0)).sum())
-        # how many fusions with at least one positive transcript according to the random forrest model
-        counter.append(int((pd_data_frame[["Fusion_Gene","prediction_prob"]].groupby(['Fusion_Gene']).max() >= 0.75).sum()))
-        
-        counter.append(pd_data_frame[~pd_data_frame["Fusion_Gene"].str.contains("|".join(gene_blacklist), na=False)]["Fusion_Gene"].nunique())
-        counter.append(pd_data_frame[~pd_data_frame["Fusion_Gene"].str.contains("|".join(gene_blacklist), na=False)]["Fusion_Gene"].nunique())
-        counter.append(pd_data_frame[~pd_data_frame["Fusion_Gene"].str.contains("|".join(gene_blacklist), na=False)]["Fusion_Gene"].nunique())
-        # how many fusion genes have been predicted by at least 2 tools
-        #counter.append(len(set(pd_data_frame.loc[pd_data_frame["ToolCount"] >= 2]["Fusion_Gene"].tolist())))
-        # how many fusion genes fulfill all of the previously mentioned criteria
-        hq_fus_candidates = set(pd_data_frame.loc[(pd_data_frame["frame"] != "no_frame") & (pd_data_frame["exon_boundary"] == "both") & (pd_data_frame["neo_peptide_sequence"].notna()) & (~pd_data_frame["Fusion_Gene"].str.contains("|".join(gene_blacklist), na=False))]["Fusion_Gene"].tolist())
-        counter.append(len(hq_fus_candidates))
-        return (counter, hq_fus_candidates)
-    
-    @staticmethod
     def count_records(pd_data_frame, is_merged, name):
         """ stub """
         print("Processing: {}".format(name))
@@ -278,25 +243,6 @@ class DataJoining(object):
         fusion_gene_set_list.append(fusion_gene_filter_wo_pred)
 
         return (map(len, fusion_gene_set_list), fusion_gene_filter_all)
-        # orginal implementation of the above which is much slower, less flexible, less pandas-style and more error prone
-        # kept for testing only
-#        for ftid in ftid_dict:
-#            record2test = df_rep[df_rep["FTID"] == ftid]
-#            # check whether one of the filtering criteria applies to this ftid
-#            if(
-#                    any(record2test["type"] == "cis_near") or
-#                    any(record2test["exon_boundary"] != "both") or
-#                    any(record2test["frame"] == "no_frame") or
-#                    not all(record2test["neo_peptide_sequence"].str.isalpha()) or
-#                    any(record2test["ft_junc_cnt_org"] + record2test["ft_span_cnt_org"] == 0) or
-#                    any([x.startswith(tuple(gene_blacklist)) for x in record2test["Fusion_Gene"].values[0].split("_")]) or
-#                    any(record2test["prediction_class"] == "negative") or
-#                    any(record2test["exon_starts"] == "0") or
-#                    any(record2test["exon_ends"] == "0") # see before
-#                    ):
-#                df_rep.drop(labels=record2test.index, inplace=True)
-#        unfiltered_fg = set(ftid_dict.values())
-#        filtered_fg = unfiltered_fg.intersection(set(df_rep["Fusion_Gene"]))
 
     @staticmethod
     def mimic_icam_implementation(inputfile1, inputfile2, outputfile):

@@ -241,64 +241,6 @@ class IcamSummary(object):
                 fusion_dict[fus_gene] = 0
             fusion_dict[fus_gene] += 1
         return fusion_dict
-    
-    def icam_filter(self, inputfile1, inputfile2, outputfile):
-        """ apply filtering as defined in the icam pipeline """
-        # test id 'AGO2_8:141557567:-_ENST00000220592_PTK2_8:141749206:-_ENST00000340930'
-        fusion_filter_dict = {}
-        id_filter_list = []
-        selected_cols = ["FTID", "Fusion_Gene", "Breakpoint1", "Breakpoint2", "type", "exon_starts", "exon_ends", "exon_boundary",
-                         "frame", "context_sequence", "neo_peptide_sequence", "neo_peptide_sequence_bp", "ft_junc_cnt_org", "ft_span_cnt_org",
-                         "wt1_junc_cnt_org", "wt1_span_cnt_org", "wt2_junc_cnt_org", "wt2_span_cnt_org", "prediction_prob", "prediction_class",
-                         "n_replicates"]
-        cols_dict = dict(zip(selected_cols, range(0, 21)))
-        
-        for inputfile in [inputfile1, inputfile2]:
-            # load required data from easyfuse output into pd dataframe and append column for replicate counting
-            df_rep = pd.read_csv(inputfile, sep = ";")
-            df_rep = df_rep[selected_cols[:-1]]
-            #df_rep[str(selected_cols[-1])] = 0
-            
-            # iterate over rows in the df
-            for i in df_rep.index:
-                ftid = df_rep.loc[i, "FTID"]
-                if ftid not in fusion_filter_dict:
-                    fusion_filter_dict[ftid] = df_rep.loc[i].tolist() + [1]
-                    if fusion_filter_dict[ftid][cols_dict["prediction_class"]].lower() == "positive":
-                        fusion_filter_dict[ftid][cols_dict["prediction_class"]] = 1
-                    else:
-                        fusion_filter_dict[ftid][cols_dict["prediction_class"]] = 0
-                    id_filter_list.append(ftid)
-                else:
-                    for target_read_cnt in ["ft_junc_cnt_org", "ft_span_cnt_org", "wt1_junc_cnt_org", "wt1_span_cnt_org", "wt2_junc_cnt_org", "wt2_span_cnt_org"]:
-                        fusion_filter_dict[ftid][cols_dict[target_read_cnt]] += df_rep.loc[i, target_read_cnt]
-                    if df_rep.loc[i, "prediction_class"].lower() == "positive":
-                        fusion_filter_dict[ftid][cols_dict["prediction_class"]] += 1
-                    fusion_filter_dict[ftid][cols_dict["prediction_prob"]] = max(fusion_filter_dict[ftid][cols_dict["prediction_prob"]], df_rep.loc[i, "prediction_prob"])
-                    fusion_filter_dict[ftid][cols_dict["n_replicates"]] += 1
-        # filter records from the dict
-        id_passing_filter_list = []
-        min_replicates = 2
-        blacklisted = ["HLA", "IG"]
-        for ftid in id_filter_list:
-            if(
-                    fusion_filter_dict[ftid][cols_dict["frame"]] != "no_frame" and # exclude no frame fusions
-                    fusion_filter_dict[ftid][cols_dict["exon_boundary"]] == "both" and # allow only fusions where the breakpoints are on exon boundaries in BOTH fusion partners
-                    fusion_filter_dict[ftid][cols_dict["prediction_class"]] >= 1 and # the random forrest model must have classified this at least once as "posititve"
-                    fusion_filter_dict[ftid][cols_dict["ft_junc_cnt_org"]] + fusion_filter_dict[ftid][cols_dict["ft_span_cnt_org"]] > 0 and # at least 1 junction or spanning counts on the fusion transcript
-                    all([not x.startswith(tuple(blacklisted)) for x in fusion_filter_dict[ftid][cols_dict["Fusion_Gene"]].split("_")]) and # both fusion partners are not allowed to start with everything mentioned in the "blacklisted" list
-                    fusion_filter_dict[ftid][cols_dict["n_replicates"]] >= min_replicates and # number of input samples (i.e. files) with the same ftid (urla: this is not unique and should be ftid+context_sequence_100_id!)
-                    fusion_filter_dict[ftid][cols_dict["neo_peptide_sequence"]].isalpha() and # the neo peptide sequence must be an alphabetic sequence of at least length 1
-                    fusion_filter_dict[ftid][cols_dict["type"]] != "cis_near" and # exclude cis near events as they are likely read through
-                    fusion_filter_dict[ftid][cols_dict["exon_starts"]] != "0" and # tmp hack to exclude valid ftids with missing exon numbers (bug in GetFusionSequence.R?)
-                    fusion_filter_dict[ftid][cols_dict["exon_ends"]] != "0" # see before
-                    ):
-                id_passing_filter_list.append(ftid)
-        # write filtered records to file
-        with open(outputfile, "w") as outfile:
-            outfile.write("{}\n".format("\t".join(selected_cols)))
-            for ftid in id_passing_filter_list:
-                outfile.write("{}\n".format("\t".join([str(x) for x in fusion_filter_dict[ftid]])))
 
 def main():
     """Command line argument parsing and app start"""
