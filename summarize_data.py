@@ -121,10 +121,15 @@ class IcamSummary(object):
                             fusion_frequency_all = self.add_to_fus_dict(fusion_data_summary[0][1], fusion_frequency_all)
                             fusion_frequency_all = self.add_to_fus_dict(fusion_data_summary[1][1], fusion_frequency_all)
                             fusion_frequency_12 = self.add_to_fus_dict(fusion_data_summary[2][1], fusion_frequency_12)
-
+                            
                             filtering_data_1[sample1] = fusion_data_summary[0][0]
                             filtering_data_2[sample2] = fusion_data_summary[1][0]
                             filtering_data_12[current_base] = fusion_data_summary[2][0]
+                            
+                            # append filtering plots per sample
+                            self.plot_boxswarm({sample1:fusion_data_summary[0][0]}, colnames_filtering, ["Sample", "Filter", "Data"], "Filter counts of distinct fusion genes for sample {} - Rep1's".format(sample1))
+                            self.plot_boxswarm({sample2:fusion_data_summary[1][0]}, colnames_filtering, ["Sample", "Filter", "Data"], "Filter counts of distinct fusion genes for sample {} - Rep2's".format(sample2))
+                            self.plot_boxswarm({current_base:fusion_data_summary[2][0]}, colnames_filtering, ["Sample", "Filter", "Data"], "Filter counts of distinct fusion genes for sample {} - Merged".format(current_base))
 
                             fltr_out.write(sample1 + "\t" + str(sample_date_dict[sample1]) + "\t" + str(sample_toolCnt_dict[sample1]) + "\t" + "\t".join(map(str, fusion_data_summary[0][0])) + "\n")
                             fltr_out.write(sample2 + "\t" + str(sample_date_dict[sample2]) + "\t" + str(sample_toolCnt_dict[sample2]) + "\t" + "\t".join(map(str, fusion_data_summary[1][0])) + "\n")
@@ -143,6 +148,8 @@ class IcamSummary(object):
 
                         fusion_frequency_all = self.add_to_fus_dict(fusion_data_summary[1], fusion_frequency_all)
                         filtering_data_1[sample] = fusion_data_summary[0]
+                        self.plot_boxswarm({sample:fusion_data_summary[0]}, colnames_filtering, ["Sample", "Filter", "Data"], "Filter counts of distinct fusion genes for sample {}".format(sample))
+                        
                         fltr_out.write(sample + "\t" + str(sample_date_dict[sample]) + "\t" + str(sample_toolCnt_dict[sample]) + "\t" + "\t".join(map(str, fusion_data_summary[0])) + "\n")
 
                         time_taken = time.time() - start_time
