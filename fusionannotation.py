@@ -155,6 +155,14 @@ class FusionAnnotation(object):
             else:
                 if boundary1 == "left_boundary" and boundary2 == "right_boundary":
                     return "both"
+        
+        # the "and not" checks in the following ifs should be superficial, because the only way the check
+        # could be unintendently true is if one of the boundaries is on the wrong site of the exon
+        # If this can be excluded to 100%, the previous if/else should also be simplified strongly!
+        if "boundary" in boundary1 and not "boundary" in boundary2:
+            return "5prime"
+        if "boundary" in boundary2 and not "boundary" in boundary1:
+            return "3prime"
         return "no_match"
 
     def get_parents(self, efeature):
@@ -370,7 +378,8 @@ class FusionAnnotation(object):
                 "ft2_exon_transcripts", "wt1_cds_transcripts", "wt2_cds_transcripts", "ft1_cds_transcripts", "ft2_cds_transcripts", "wt1_peptide",
                 "wt2_peptide", "fusion_transcript", "fusion_peptide", "wt1_is_good_transcript", "wt2_is_good_transcript", "wt1_trans_biotype",
                 "wt2_trans_biotype", "wt1_gene_biotype", "wt2_gene_biotype", "wt1_description", "wt2_description", "wt1_frame_at_start", "wt2_frame_at_start",
-                "wt1_TSL", "wt2_TSL", "wt1_exon_no", "wt2_exon_no", "ft1_exon_no", "ft2_exon_no", "wt1_cds_no", "wt2_cds_no", "ft1_cds_no", "ft2_cds_no"
+                "wt1_TSL", "wt2_TSL", "wt1_exon_no", "wt2_exon_no", "ft1_exon_no", "ft2_exon_no", "wt1_cds_no", "wt2_cds_no", "ft1_cds_no", "ft2_cds_no",
+                "wt1_start_stop", "wt2_start_stop"
                 ]
 
         header_idx = range(len(header))
@@ -480,7 +489,8 @@ class FusionAnnotation(object):
                             "ft2_exon_transcripts", "wt1_cds_transcripts", "wt2_cds_transcripts", "ft1_cds_transcripts", "ft2_cds_transcripts", "wt1_peptide",
                             "wt2_peptide", "fusion_transcript", "fusion_peptide", wt1_is_good_transcript, wt2_is_good_transcript, wt1_trans_biotype,
                             wt2_trans_biotype, wt1_gene_biotype, wt2_gene_biotype, wt1_description, wt2_description, wt1_frame_at_start, wt2_frame_at_start,
-                            wt1_tsl, wt2_tsl, len(wt1_exon_pos_list), len(wt2_exon_pos_list), len(ft1_exon_pos_list), len(ft2_exon_pos_list), len(wt1_cds_pos_list), len(wt2_cds_pos_list), len(ft1_cds_pos_list), len(ft2_cds_pos_list)
+                            wt1_tsl, wt2_tsl, len(wt1_exon_pos_list), len(wt2_exon_pos_list), len(ft1_exon_pos_list), len(ft2_exon_pos_list), len(wt1_cds_pos_list), len(wt2_cds_pos_list), len(ft1_cds_pos_list), len(ft2_cds_pos_list),
+                            "{}:{}:{}".format(bp1_chr, wt1_exon_pos_list[0][0], wt1_exon_pos_list[-1][1]), "{}:{}:{}".format(bp2_chr, wt2_exon_pos_list[0][0], wt2_exon_pos_list[-1][1])
                             ])
 
         # grep chromosomes and extract cds sequences from the @cds_seq_dict
