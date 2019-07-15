@@ -156,7 +156,7 @@ def _submit_slurm(job_name, cmd, cores, mem_usage, output_results_folder, depend
             mail_type,
             mail_user,
             "set -eo pipefail -o nounset\n",
-            ". {}\n".format(module_file),
+#            ". {}\n".format(module_file),
             "srun {}\n".format(cmd)
         ])
     # and run it
