@@ -10,7 +10,6 @@ Filtering of the final data table
 """
 
 from __future__ import print_function, division
-import argparse
 import os
 import sys
 import pandas as pd
@@ -64,15 +63,12 @@ class DataJoining(object):
             return count
         return count / self.input_read_count * 1000000
 
-    def create_joined_table(self, sample_id, fusion_tools):
+    def create_joined_table(self, sample_id, fusion_tools, requant_mode):
         """Join the three data tables context_seq, detected_fusions and requantification"""
         # define path' to the context seq, detected fusion and re-quantification files
         context_seq_file = os.path.join(self.input_dir, "Sample_{}".format(sample_id), "fetchdata", "fd_1_tool", "fetched_contextseqs", "Context_Seqs.csv")
         detect_fusion_file = os.path.join(self.input_dir, "Sample_{}".format(sample_id), "fetchdata", "fd_1_tool", "fetched_fusions", "Detected_Fusions.csv")
-        requant_fltr_file = os.path.join(self.input_dir, "Sample_{}".format(sample_id), "fetchdata", "fd_1_tool", "classification", "classification_fltr.tdt")
-        requant_org_file = os.path.join(self.input_dir, "Sample_{}".format(sample_id), "fetchdata", "fd_1_tool", "classification", "classification_org.tdt")
-        requant_cnt_fltr_file = os.path.join(self.input_dir, "Sample_{}".format(sample_id), "fetchdata", "fd_1_tool", "classification", "classification_fltr.tdt.counts")
-        requant_cnt_org_file = os.path.join(self.input_dir, "Sample_{}".format(sample_id), "fetchdata", "fd_1_tool", "classification", "classification_org.tdt.counts")
+        input_read_file = os.path.join(self.input_dir, "Sample_{}".format(sample_id), "fetchdata", "fd_1_tool", "classification", "Star_org_input_reads.txt")
 
         print("Loading data for sample {} into memory...".format(sample_id))
         if self.check_files(context_seq_file, False):
@@ -83,8 +79,9 @@ class DataJoining(object):
 
         print("Appending normalized fusion counts from {} to the data table.".format(fusion_tools))
         # read the original input read count and append CPM values from individual fusion prediction tools to context data
-        with open(os.path.join(os.path.dirname(requant_fltr_file), "Star_org_input_reads.txt"), "r") as rfile:
-            self.input_read_count = int(rfile.next())
+        if self.check_files(input_read_file, False):
+            with open(input_read_file, "r") as rfile:
+                self.input_read_count = int(rfile.next())
         if self.check_files(detect_fusion_file, False):
             detect_data = pd.read_csv(detect_fusion_file, sep=";")
         context_data = self.append_tool_cnts_to_context_file(context_data, detect_data, fusion_tools)
@@ -92,27 +89,21 @@ class DataJoining(object):
         print("Appending (normalized) requantification counts from filtered and original mapping to the data table.")
         # perform subsequent joins on ftid_plus
         context_data.set_index("ftid_plus", inplace=True)
-        # read and append requantification data (cpm) to context data
-        if self.check_files(requant_fltr_file, False):
-            requant_fltr_data = pd.read_csv(requant_fltr_file, sep=";")
-        context_data = context_data.join(requant_fltr_data.set_index("ftid_plus"), how="left")
-        if self.check_files(requant_org_file, False):
-            requant_org_data = pd.read_csv(requant_org_file, sep=";")
-        context_data = context_data.join(requant_org_data.set_index("ftid_plus"), lsuffix="_fltr", rsuffix="_org", how="left")
-        # read and append requantification data (count) to context data
-        if self.check_files(requant_cnt_fltr_file, False):
-            requant_cnt_fltr_data = pd.read_csv(requant_cnt_fltr_file, sep=";")
-        context_data = context_data.join(requant_cnt_fltr_data.set_index("ftid_plus"), how="left")
-        if self.check_files(requant_cnt_org_file, False):
-            requant_cnt_org_data = pd.read_csv(requant_cnt_org_file, sep=";")
-        context_data = context_data.join(requant_cnt_org_data.set_index("ftid_plus"), lsuffix="_cnt_fltr", rsuffix="_cnt_org", how="left")
+        # read and append normalized (cpm) and raw (counts) requantification data to context data
+        for mode in requant_mode:
+            requant_cpm_file = os.path.join(self.input_dir, "Sample_{}".format(sample_id), "fetchdata", "fd_1_tool", "classification", "classification_{}.tdt".format(mode))
+            requant_cnt_file = os.path.join(self.input_dir, "Sample_{}".format(sample_id), "fetchdata", "fd_1_tool", "classification", "classification_{}.tdt.counts".format(mode))
+            requant_cpm_data = pd.read_csv(requant_cpm_file, sep=";")
+            context_data = context_data.join(requant_cpm_data.set_index("ftid_plus"), how="left")
+            requant_cnt_data = pd.read_csv(requant_cnt_file, sep=";")
+            context_data = context_data.join(requant_cnt_data.set_index("ftid_plus"), lsuffix="_{}".format(mode), rsuffix="_cnt_{}".format(mode), how="left")
 
         return context_data.fillna(0), redundant_header
-
 
     def run(self, config, icam_run, model_predictions):
         """run the data concatenation"""
         fusion_tools = config.get("general", "fusiontools").split(",")
+        requant_mode = config.get("general", "requant_mode").split(",")
         # urla - note: with icam_run set to True, two results from technical replicates are expected as input
         print("Looking for required files...")
         # check whether output already exists
@@ -120,11 +111,11 @@ class DataJoining(object):
         
         # in comparison to the previous implementation, pre-existing results will always be overwritten as it turned out that the
         # previous implementation is to error prone...
-        joined_table_1, header_list_1 = self.create_joined_table(self.id1, fusion_tools)
+        joined_table_1, header_list_1 = self.create_joined_table(self.id1, fusion_tools, requant_mode)
         joined_table_1b = joined_table_1.groupby(by=cols_to_aggregate_on, sort=False, as_index=False)
         joined_table_1b.agg(self.custom_data_aggregation).to_csv("{}_fusRank_1.csv".format(self.output), sep=";", index=False)
         if icam_run:
-            joined_table_2, _ = self.create_joined_table(self.id2, fusion_tools)
+            joined_table_2, _ = self.create_joined_table(self.id2, fusion_tools, requant_mode)
             joined_table_2b = joined_table_2.groupby(by=cols_to_aggregate_on, sort=False, as_index=False)
             joined_table_2b.agg(self.custom_data_aggregation).to_csv("{}_fusRank_2.csv".format(self.output), sep=";", index=False)
             print("Merging data...")
@@ -178,41 +169,6 @@ class DataJoining(object):
             print("Found {}".format(file_path))
         return True
 
-    @staticmethod
-    def count_records_old(pd_data_frame):
-        """ the old count records method """
-        #gene_blacklist = ["HLA", "IG", "RP", "LINC"]
-        gene_blacklist = ["HLA", "IG"]
-        counter = []
-#        print("pdx: {}".format(list(pd_data_frame)))
-        # how many fusion genes have been predicted
-#        counter.append(len(set(pd_data_frame["Fusion_Gene"].tolist())))
-        counter.append(pd_data_frame["Fusion_Gene"].nunique())
-        # how many fusion genes generate NO no-frame fusion (in/out/neo frame)
-#        counter.append(len(set(pd_data_frame.loc[pd_data_frame["frame"] != "no_frame"]["Fusion_Gene"].tolist())))
-        counter.append(pd_data_frame[pd_data_frame["frame"] != "no_frame"]["Fusion_Gene"].nunique())
-        # how many fusion genes are fused on exon boundaries (both fusion genes must be on the boundary)
-        counter.append(pd_data_frame[pd_data_frame["exon_boundary"] == "both"]["Fusion_Gene"].nunique())
-        # how many fusion genes have a predicted neo peptide sequence
-        counter.append(pd_data_frame[(pd_data_frame["neo_peptide_sequence"].notna()) & (pd_data_frame["neo_peptide_sequence"] != "0")]["Fusion_Gene"].nunique())
-        # how many fusion genes do NOT belong to either HLA/IGx/MT/Ribosomal gene families
-        counter.append(pd_data_frame[~pd_data_frame["Fusion_Gene"].str.contains("|".join(gene_blacklist), na=False)]["Fusion_Gene"].nunique())
-        # how many fusions got at least 1 spanning or junction read on the ft during requanification
-        testdf = pd_data_frame[["Fusion_Gene", "ft_junc_cnt_org", "ft_span_cnt_org"]].groupby(by="Fusion_Gene")
-        counter.append(((testdf["ft_junc_cnt_org"].max() > 0) | (testdf["ft_span_cnt_org"].max() > 0)).sum())
-        # how many fusions with at least one positive transcript according to the random forrest model
-        counter.append(int((pd_data_frame[["Fusion_Gene","prediction_prob"]].groupby(['Fusion_Gene']).max() >= 0.75).sum()))
-        
-        counter.append(pd_data_frame[~pd_data_frame["Fusion_Gene"].str.contains("|".join(gene_blacklist), na=False)]["Fusion_Gene"].nunique())
-        counter.append(pd_data_frame[~pd_data_frame["Fusion_Gene"].str.contains("|".join(gene_blacklist), na=False)]["Fusion_Gene"].nunique())
-        counter.append(pd_data_frame[~pd_data_frame["Fusion_Gene"].str.contains("|".join(gene_blacklist), na=False)]["Fusion_Gene"].nunique())
-        # how many fusion genes have been predicted by at least 2 tools
-        #counter.append(len(set(pd_data_frame.loc[pd_data_frame["ToolCount"] >= 2]["Fusion_Gene"].tolist())))
-        # how many fusion genes fulfill all of the previously mentioned criteria
-        hq_fus_candidates = set(pd_data_frame.loc[(pd_data_frame["frame"] != "no_frame") & (pd_data_frame["exon_boundary"] == "both") & (pd_data_frame["neo_peptide_sequence"].notna()) & (~pd_data_frame["Fusion_Gene"].str.contains("|".join(gene_blacklist), na=False))]["Fusion_Gene"].tolist())
-        counter.append(len(hq_fus_candidates))
-        return (counter, hq_fus_candidates)
-    
     @staticmethod
     def count_records(pd_data_frame, is_merged, name):
         """ stub """
@@ -278,25 +234,6 @@ class DataJoining(object):
         fusion_gene_set_list.append(fusion_gene_filter_wo_pred)
 
         return (map(len, fusion_gene_set_list), fusion_gene_filter_all)
-        # orginal implementation of the above which is much slower, less flexible, less pandas-style and more error prone
-        # kept for testing only
-#        for ftid in ftid_dict:
-#            record2test = df_rep[df_rep["FTID"] == ftid]
-#            # check whether one of the filtering criteria applies to this ftid
-#            if(
-#                    any(record2test["type"] == "cis_near") or
-#                    any(record2test["exon_boundary"] != "both") or
-#                    any(record2test["frame"] == "no_frame") or
-#                    not all(record2test["neo_peptide_sequence"].str.isalpha()) or
-#                    any(record2test["ft_junc_cnt_org"] + record2test["ft_span_cnt_org"] == 0) or
-#                    any([x.startswith(tuple(gene_blacklist)) for x in record2test["Fusion_Gene"].values[0].split("_")]) or
-#                    any(record2test["prediction_class"] == "negative") or
-#                    any(record2test["exon_starts"] == "0") or
-#                    any(record2test["exon_ends"] == "0") # see before
-#                    ):
-#                df_rep.drop(labels=record2test.index, inplace=True)
-#        unfiltered_fg = set(ftid_dict.values())
-#        filtered_fg = unfiltered_fg.intersection(set(df_rep["Fusion_Gene"]))
 
     @staticmethod
     def mimic_icam_implementation(inputfile1, inputfile2, outputfile):
@@ -355,22 +292,3 @@ class DataJoining(object):
             outfile.write("{}\n".format("\t".join(selected_cols)))
             for ftid in id_passing_filter_list:
                 outfile.write("{}\n".format("\t".join([str(x) for x in fusion_filter_dict[ftid]])))
-
-def main():
-    """Parse command line arguments and start script"""
-    parser = argparse.ArgumentParser(description="Generate mapping stats for fusion detection")
-    parser.add_argument('-i', '--input_dir', dest='input_dir', help='Input root directory containing the sample file directories', required=True)
-    parser.add_argument('--id1', dest='id1', help='Identifier of the first sample replicate', required=True)
-    parser.add_argument('--id2', dest='id2', help='Identifier of the second sample replicate', required=True)
-    parser.add_argument('-o', '--output_prefix', dest='output', help='Specify output file prefix', required=True)
-    parser.add_argument('-c', '--config', dest='output', help='Specify output file prefix', required=True)
-    parser.add_argument('-f', '--fus_tool', dest='fustool', help='List of fusion tools to consider')
-    parser.add_argument('--overwrite', dest='overwrite', help=argparse.SUPPRESS, default=False, action='store_true')
-    parser.add_argument('--icam_run', dest='overwrite', help=argparse.SUPPRESS, default=False, action='store_true')
-    args = parser.parse_args()
-
-    fusrank = DataJoining(args.input_dir, args.id1, args.id2, args.output, args.overwrite)
-    fusrank.run(args.fustool, args.icam_run, args.model_predictions)
-
-if __name__ == '__main__':
-    main()
