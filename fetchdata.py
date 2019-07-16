@@ -112,6 +112,10 @@ class Fetching(object):
             tools.insert(1, "Liftover")
         # In case of a liftover, some reference and path must be changed accordingly
         if "Liftover" in tools:
+            tools.insert(1, "ContextSeqBak")
+            # for read grepping, we need the original reference on which the first mapping was performed
+            cmd_contextseq_org = "python {0} --detected_fusions {1}.bak --annotation_db {2} --out_csv {3}.bak --genome_fasta {4} --tsl_info {5} --cis_near_dist {6} --context_seq_len {7} --tsl_filter_level {8}".format(os.path.join(self.easyfuse_path, "fusionannotation.py"), detected_fusions_file,  genes_adb_path, context_seq_file, genome_fasta_path, genes_tsl_path, self.cfg.get('general', 'cis_near_distance'), self.cfg.get('general', 'context_seq_len'), self.cfg.get('general', 'tsl_filter'))
+            # now, references need to be updated according to the target liftover
             crossmap_chain = self.cfg.get('liftover', 'crossmap_chain')
             ref_genome_dest = os.path.basename(crossmap_chain).replace(".", "_").split("_")[2].lower()
             self.logger.debug("Creating a copy of the detected fusions file due to selection of liftover. Old ({0}) data will be kept in \"{1}.bak\"".format(ref_genome, detected_fusions_file))
@@ -137,19 +141,20 @@ class Fetching(object):
         cmd_requantify_org = "{0} -i {1}org_Aligned.sortedByCoord.out.bam -o {2}_org.tdt -d 10".format(os.path.join(self.easyfuse_path, "requantify.py"), star_align_file, classification_file)
         
         # for testing, based on debug. should be removed if merged to original
-        cmd_read_filter2 = "{0} --input {1}_Aligned.out.bam --input2 {2}.debug --output {1}_Aligned.out.filtered2.bam".format(os.path.join(self.easyfuse_path, "getRequantReads.py"), os.path.join(filtered_reads_path, self.sample_id), context_seq_file)
+        cmd_read_filter2 = "{0} --input {1}_Aligned.out.bam --input2 {2}.bak.debug --output {1}_Aligned.out.filtered2.bam".format(os.path.join(self.easyfuse_path, "getRequantReads.py"), os.path.join(filtered_reads_path, self.sample_id), context_seq_file)
         # re-define fastq's if filtering is on (default)
         fq0 = os.path.join(filtered_reads_path, os.path.basename(fq1).replace("R1", "R0").replace(".fastq.gz", "_filtered2_singles.fastq.gz"))
         fq1 = os.path.join(filtered_reads_path, os.path.basename(fq1).replace(".fastq.gz", "_filtered2.fastq.gz"))
         fq2 = os.path.join(filtered_reads_path, os.path.basename(fq2).replace(".fastq.gz", "_filtered2.fastq.gz"))
         cmd_bam_to_fastq = "{0} fastq -0 {1} -1 {2} -2 {3} --threads {5} {4}_Aligned.out.filtered2.bam".format(self.cfg.get('commands', 'samtools_cmd'), fq0, fq1, fq2, os.path.join(filtered_reads_path, self.sample_id), cpu)
-        cmd_staralign_test = "{0} --genomeDir {1} --readFilesCommand zcat --readFilesIn {2} {3} --outSAMtype BAM SortedByCoordinate --outFilterMultimapNmax -1 --outSAMattributes Standard --outSAMunmapped None --outFilterMismatchNoverLmax 0.02 --runThreadN {4} --outFileNamePrefix {5}test_ --limitBAMsortRAM 48000000000".format(self.cfg.get('commands', 'star_cmd'), star_genome_path, fq1, fq2, cpu, star_align_file)
-        cmd_bamindex_test = "{0} index {1}test_Aligned.sortedByCoord.out.bam".format(self.cfg.get('commands', 'samtools_cmd'), star_align_file)
-        cmd_requantify_test = "{0} -i {1}test_Aligned.sortedByCoord.out.bam -o {2}_test.tdt -d 10".format(os.path.join(self.easyfuse_path, "requantify.py"), star_align_file, classification_file)
+        cmd_staralign_best = "{0} --genomeDir {1} --readFilesCommand zcat --readFilesIn {2} {3} --outSAMtype BAM SortedByCoordinate --outFilterMultimapNmax -1 --outSAMattributes Standard --outSAMunmapped None --outFilterMismatchNoverLmax 0.02 --runThreadN {4} --outFileNamePrefix {5}best_ --limitBAMsortRAM 48000000000".format(self.cfg.get('commands', 'star_cmd'), star_genome_path, fq1, fq2, cpu, star_align_file)
+        cmd_bamindex_best = "{0} index {1}best_Aligned.sortedByCoord.out.bam".format(self.cfg.get('commands', 'samtools_cmd'), star_align_file)
+        cmd_requantify_best = "{0} -i {1}best_Aligned.sortedByCoord.out.bam -o {2}_best.tdt -d 10".format(os.path.join(self.easyfuse_path, "requantify.py"), star_align_file, classification_file)
 
         # set final lists of executable tools and path
         exe_tools = [
             "Fusiongrep", #1
+            "ContextSeqBak",
             "Liftover", #2
             "Contextseq", #3
             "Starindex", #4
@@ -161,12 +166,13 @@ class Fetching(object):
             "RequantifyOrg", #10
             "ReadFilter2", #11
             "ReadFilter2b", #12
-            "StaralignTest", #13
-            "BamindexTest", #14
-            "RequantifyTest" #15
+            "StaralignBest", #13
+            "BamindexBest", #14
+            "RequantifyBest" #15
             ]
         exe_cmds = [
             cmd_fusiondata, #1
+            cmd_contextseq_org,
             cmd_liftover, #2
             cmd_contextseq, #3
             cmd_starindex, #4
@@ -178,12 +184,13 @@ class Fetching(object):
             cmd_requantify_org, #10
             cmd_read_filter2, #11
             cmd_bam_to_fastq, #12
-            cmd_staralign_test, #13
-            cmd_bamindex_test, #14
-            cmd_requantify_test #15
+            cmd_staralign_best, #13
+            cmd_bamindex_best, #14
+            cmd_requantify_best #15
             ]
         exe_dependencies = [
             "", #1
+            detected_fusions_file,
             detected_fusions_file, #2
             detected_fusions_file, #3
             "{0}{1}".format(context_seq_file, ".fasta.info"), #4
@@ -196,7 +203,7 @@ class Fetching(object):
             "", #11
             "", #12
             star_genome_path, #13
-            "{}test_Aligned.sortedByCoord.out.bam".format(star_align_file), #14
+            "{}best_Aligned.sortedByCoord.out.bam".format(star_align_file), #14
             "" #15
             ]
 
