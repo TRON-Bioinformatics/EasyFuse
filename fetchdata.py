@@ -46,7 +46,7 @@ class Fetching(object):
             seq_num = int(lfile.next())
             genome_size = int(lfile.next())
         star_genome_chr_bin_n_bits = min(18, int(math.log(genome_size / seq_num, 2)))
-        star_genome_sa_index_n_bases = min(14, int(math.log(genome_size, 2) / 2 - 1))
+        star_genome_sa_index_n_bases = min(14, int(math.log(genome_size, 2) / 2 - 1)) - 2
         self.logger.debug("Custom genome sequence number: {0} => {1} will be used as bin size parameter for genome storage".format(seq_num, star_genome_chr_bin_n_bits))
         self.logger.debug("Custom Genome Size: {0} bp => {1} will be used as length parameter for SA pre-indexing".format(genome_size, star_genome_sa_index_n_bases))
         return(str(star_genome_chr_bin_n_bits), str(star_genome_sa_index_n_bases))
@@ -112,7 +112,7 @@ class Fetching(object):
             tools.insert(1, "Liftover")
         # In case of a liftover, some reference and path must be changed accordingly
         if "Liftover" in tools:
-            tools.insert(1, "ContextSeqBak")
+            tools.insert(2, "ContextSeqBak")
             # for read grepping, we need the original reference on which the first mapping was performed
             cmd_contextseq_org = "python {0} --detected_fusions {1}.bak --annotation_db {2} --out_csv {3}.bak --genome_fasta {4} --tsl_info {5} --cis_near_dist {6} --context_seq_len {7} --tsl_filter_level {8}".format(os.path.join(self.easyfuse_path, "fusionannotation.py"), detected_fusions_file,  genes_adb_path, context_seq_file, genome_fasta_path, genes_tsl_path, self.cfg.get('general', 'cis_near_distance'), self.cfg.get('general', 'context_seq_len'), self.cfg.get('general', 'tsl_filter'))
             # now, references need to be updated according to the target liftover
@@ -154,8 +154,8 @@ class Fetching(object):
         # set final lists of executable tools and path
         exe_tools = [
             "Fusiongrep", #1
-            "ContextSeqBak",
             "Liftover", #2
+            "ContextSeqBak",
             "Contextseq", #3
             "Starindex", #4
             "StaralignFltr", #5
@@ -172,8 +172,8 @@ class Fetching(object):
             ]
         exe_cmds = [
             cmd_fusiondata, #1
-            cmd_contextseq_org,
             cmd_liftover, #2
+            cmd_contextseq_org,
             cmd_contextseq, #3
             cmd_starindex, #4
             cmd_staralign_fltr, #5
@@ -190,8 +190,8 @@ class Fetching(object):
             ]
         exe_dependencies = [
             "", #1
-            detected_fusions_file,
             detected_fusions_file, #2
+            detected_fusions_file,
             detected_fusions_file, #3
             "{0}{1}".format(context_seq_file, ".fasta.info"), #4
             star_genome_path, #5
