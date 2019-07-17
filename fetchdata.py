@@ -80,8 +80,9 @@ class Fetching(object):
 		# Genome/Gene references to use
         ref_trans = self.cfg.get('general', 'ref_trans_version')
         ref_genome = self.cfg.get('general', 'ref_genome_build')
-        genome_fastadir_path = self.cfg.get('references', ref_trans + '_genome_fastadir_' + ref_genome)
-        genes_csv_path = self.cfg.get('references', ref_trans + '_genes_csv_' + ref_genome)
+        genome_fasta_path = self.cfg.get('references', ref_trans + '_genome_fasta_' + ref_genome)
+        genes_adb_path = self.cfg.get('references', ref_trans + '_genes_adb_' + ref_genome)
+        genes_tsl_path = self.cfg.get('references', ref_trans + '_genes_tsl_' + ref_genome)
 
         fetchdata_current_path = os.path.join(self.fetchdata_path, "fd_{}_tool".format(fusion_support))
         detected_fusions_path = os.path.join(fetchdata_current_path, "fetched_fusions")
@@ -109,8 +110,8 @@ class Fetching(object):
             crossmap_chain = self.cfg.get('liftover', 'crossmap_chain')
             ref_genome_dest = os.path.basename(crossmap_chain).replace(".", "_").split("_")[2].lower()
             self.logger.debug("Creating a copy of the detected fusions file due to selection of liftover. Old ({0}) data will be kept in \"{1}.bak\"".format(ref_genome, detected_fusions_file))
-            genome_fastadir_path = self.cfg.get('references', ref_trans + '_genome_fastadir_' + ref_genome_dest)
-            genes_csv_path = self.cfg.get('references', ref_trans + '_genes_csv_' + ref_genome_dest)
+            genome_fasta_path = self.cfg.get('references', ref_trans + '_genome_fasta_' + ref_genome_dest)
+            genes_adb_path = self.cfg.get('references', ref_trans + '_genes_adb_' + ref_genome_dest)
 
         # urla - note: tmp hack to get original star input reads for normalization
         with open(os.path.join(classification_path, "Star_org_input_reads.txt"), "w") as infile:
@@ -118,7 +119,7 @@ class Fetching(object):
         # Define cmd strings for each program
         cmd_fusiondata = "{0} -i {1} -o {2} -s {3} -t {4} -f {5} -l {6}".format(os.path.join(self.easyfuse_path, "fusiontoolparser.py"), self.scratch_path, detected_fusions_path, self.sample_id, fusion_support, self.cfg.get('general', 'fusiontools'), self.logger.get_path())
         cmd_liftover = "{0} -i {1} -c {2} -l {3}".format(os.path.join(self.easyfuse_path, "misc", "liftover.py"), detected_fusions_file, self.cfg.get_path(), self.logger.get_path())
-        cmd_contextseq = "{0} --input_detected_fusions {1} --fasta_genome_dir {2} --ensembl_csv {3} --output {4} --context_seq_len {5}".format(os.path.join(self.easyfuse_path, "R", "GetFusionSequence.R"), detected_fusions_file, genome_fastadir_path, genes_csv_path, context_seq_file, self.cfg.get('general', 'context_seq_len'))
+        cmd_contextseq = "{0} --detected_fusions {1} --annotation_db {2} --out_csv {3} --genome_fasta {4} --tsl_info {5} --cis_near_dist {6} --context_seq_len {7}".format(os.path.join(self.easyfuse_path, "fusionannotation.py"), detected_fusions_file, genes_adb_path, context_seq_file, genome_fasta_path, genes_tsl_path, self.cfg.get('general', 'cis_near_distance'), self.cfg.get('general', 'context_seq_len'))
         cpu = 12
         cmd_starindex = "{0} --runMode genomeGenerate --runThreadN {1} --limitGenomeGenerateRAM 48000000000 --genomeChrBinNbits waiting_for_bin_size_input --genomeSAindexNbases waiting_for_sa_idx_input --genomeDir {2} --genomeFastaFiles {3}".format(self.cfg.get('commands', 'star_cmd'), cpu, star_genome_path, "{0}{1}".format(context_seq_file, ".fasta"))
         cmd_staralign_fltr = "{0} --genomeDir {1} --readFilesCommand zcat --readFilesIn {2} {3} --outSAMtype BAM SortedByCoordinate --outFilterMultimapNmax -1 --outSAMattributes Standard --outSAMunmapped None --outFilterMismatchNoverLmax 0.02 --runThreadN {4} --outFileNamePrefix {5}fltr_ --limitBAMsortRAM 48000000000".format(self.cfg.get('commands', 'star_cmd'), star_genome_path, fq1, fq2, cpu, star_align_file)
