@@ -19,13 +19,13 @@ import misc.queue as Queueing
 #         yes they are partially, but I do not consider this to be relevant here
 class DataJoining(object):
     """Select alignments belonging to putative fusions from an s/bam file"""
-    def __init__(self, input_dir, id1, id2, output, overwrite):
+    def __init__(self, input_dir, id1, id2, output, model_predictions):
         """Parameter initialization"""
         self.input_dir = input_dir
         self.id1 = id1
         self.id2 = id2
         self.output = output
-        self.overwrite = overwrite
+        self.model_predictions = model_predictions
         pd.options.mode.chained_assignment = None
         self.input_read_count = 0
         self.easyfuse_path = os.path.dirname(os.path.realpath(__file__))
@@ -100,7 +100,7 @@ class DataJoining(object):
 
         return context_data.fillna(0), redundant_header
 
-    def run(self, config, icam_run, model_predictions):
+    def run(self, config, icam_run):
         """run the data concatenation"""
         fusion_tools = config.get("general", "fusiontools").split(",")
         requant_mode = config.get("general", "requant_mode").split(",")
@@ -118,34 +118,38 @@ class DataJoining(object):
             joined_table_2, _ = self.create_joined_table(self.id2, fusion_tools, requant_mode)
             joined_table_2b = joined_table_2.groupby(by=cols_to_aggregate_on, sort=False, as_index=False)
             joined_table_2b.agg(self.custom_data_aggregation).to_csv("{}_fusRank_2.csv".format(self.output), sep=";", index=False)
-            print("Merging data...")
-            # drop columns from context seq in tab 2 as they are identical to the ones from tab 1
-            joined_table_2c = joined_table_2.drop(header_list_1, axis=1, errors="ignore")
-            # perform an inner join of the two replicate data frames
-            joined_table_12 = joined_table_1.join(joined_table_2c, lsuffix="_1", rsuffix="_2", how="inner")
-            joined_table_12b = joined_table_12.groupby(by=cols_to_aggregate_on, sort=False, as_index=False)
-            joined_table_12b.agg(self.custom_data_aggregation).to_csv("{}_fusRank_12.csv".format(self.output), sep=";", index=False)
 
         for table in ["1", "2"]:
             summary_file = "{}_fusRank_{}.csv".format(self.output, table)
-            if model_predictions and self.check_files(summary_file, True):
+            if self.model_predictions and self.check_files(summary_file, True):
                 model_path = config.get("otherFiles", "easyfuse_model")
                 model_threshold = config.get("general", "model_pred_threshold")
                 # append prediction scores based on pre-calculated model
                 cmd_model = "{0} --fusion_summary {1} --model_file {2} --prediction_threshold {3} --output {4}".format(os.path.join(self.easyfuse_path, "R", "R_model_prediction.R"), summary_file, model_path, model_threshold, "{}.pModelPred.csv".format(summary_file[:-4]))
                 Queueing.submit("", cmd_model.split(" "), "", "", "", "", "", "", "", "", "", "none")
-        # re-read the table with prediction for filter counting
-        model_table_1 = pd.read_csv("{}_fusRank_1.pModelPred.csv".format(self.output), sep=";")
+                # re-read the table with prediction for filter counting
+                # urla - note: there is probably a more elegant way using getattr/setattr but I'm not at all familiar with its pros/cons
+                if table == "1":
+                    joined_table_1 = pd.read_csv("{}_fusRank_1.pModelPred.csv".format(self.output), sep=";")
+                else:
+                    joined_table_2 = pd.read_csv("{}_fusRank_2.pModelPred.csv".format(self.output), sep=";")
 
         if icam_run:
-            model_table_2 = pd.read_csv("{}_fusRank_2.pModelPred.csv".format(self.output), sep=";")
+            print("Merging data...")
+            # drop columns from context seq in tab 2 as they are identical to the ones from tab 1 and
+            # perform an inner join of the two replicate data frames
+            joined_table_12 = joined_table_1.join(joined_table_2.drop(header_list_1, axis=1, errors="ignore"), lsuffix="_1", rsuffix="_2", how="inner")
+            joined_table_12b = joined_table_12.groupby(by=cols_to_aggregate_on, sort=False, as_index=False)
+            joined_table_12b.agg(self.custom_data_aggregation).to_csv("{}_fusRank_12.csv".format(self.output), sep=";", index=False)
+            #model_table_2 = pd.read_csv("{}_fusRank_2.pModelPred.csv".format(self.output), sep=";")
             #model_table_2.drop(header_list_1, axis=1, errors="ignore", inplace=True)
-            model_table_12 = model_table_1.join(model_table_2.drop(header_list_1, axis=1, errors="ignore"), lsuffix="_1", rsuffix="_2", how="inner")
-            model_table_12b = model_table_12.groupby(by=cols_to_aggregate_on, sort=False, as_index=False)
-            model_table_12b.agg(self.custom_data_aggregation).to_csv("{}_fusRank_12.pModelPred.csv".format(self.output), sep=";", index=False)
-            model_table_12 = pd.read_csv("{}_fusRank_12.pModelPred.csv".format(self.output), sep=";")
-            return (self.count_records(model_table_1, False, "F1"), self.count_records(model_table_2, False, "F2"), self.count_records(model_table_12, True, "F12"))
-        return self.count_records(model_table_1, False, "F1N")
+            merged_file = "{}_fusRank_12.csv".format(self.output)
+            if self.model_predictions:
+                merged_file = "{}_fusRank_12.pModelPred.csv".format(self.output)
+            joined_table_12b.agg(self.custom_data_aggregation).to_csv(merged_file, sep=";", index=False)
+            joined_table_12 = pd.read_csv(merged_file, sep=";")
+            return (self.count_records(joined_table_1, False, "F1"), self.count_records(joined_table_2, False, "F2"), self.count_records(joined_table_12, True, "F12"))
+        return self.count_records(joined_table_1, False, "F1N")
 
     @staticmethod
     def custom_data_aggregation(pd_series):
@@ -169,11 +173,9 @@ class DataJoining(object):
             print("Found {}".format(file_path))
         return True
 
-    @staticmethod
-    def count_records(pd_data_frame, is_merged, name):
+    def count_records(self, pd_data_frame, is_merged, name):
         """ stub """
         print("Processing: {}".format(name))
-        print("Header: {}".format(list(pd_data_frame)))
         gene_blacklist = ["HLA", "IG"]
         # list of sets to store (un)filtered fusion gene names
         # 0:type; 1:boundary; 2:frame; 3:pepseq; 4:counts; 5:blacklist; 6:prediction;
@@ -210,16 +212,18 @@ class DataJoining(object):
         fusion_gene_set_list.append(set([ftid_dict[x] for x in df_rep[df_rep["type"] != "cis_near"]["FTID"]])) # exclude cis near events as they are likely read through
         fusion_gene_set_list.append(set([ftid_dict[x] for x in df_rep[df_rep["exon_boundary"] == "both"]["FTID"]])) # allow only fusions where the breakpoints are on exon boundaries in BOTH fusion partners
         fusion_gene_set_list.append(set([ftid_dict[x] for x in df_rep[df_rep["frame"] != "no_frame"]["FTID"]])) # exclude no frame fusions
-        fusion_gene_set_list.append(set([ftid_dict[x] for x in df_rep[df_rep["neo_peptide_sequence"].str.isalpha()]["FTID"]])) # the neo peptide sequence must be an alphabetic sequence of at least length 1
+        # urla - note: I'm not 100% why str.isalpha is working everywhere I tested, but not on our dev servers... This way, it works, although I thought the pandas str method would this already...
+        fusion_gene_set_list.append(set([ftid_dict[x] for x in df_rep[df_rep["neo_peptide_sequence"].astype(str).str.isalpha()]["FTID"]])) # the neo peptide sequence must be an alphabetic sequence of at least length 1
         if is_merged:
             fusion_gene_set_list.append(set([ftid_dict[x] for x in df_rep[df_rep["ft_junc_cnt_org_1"] + df_rep["ft_span_cnt_org_1"] + df_rep["ft_junc_cnt_org_2"] + df_rep["ft_span_cnt_org_2"] > 0]["FTID"]])) # at least 1 junction or spanning counts on the fusion transcript in either replicate
         else:
             fusion_gene_set_list.append(set([ftid_dict[x] for x in df_rep[df_rep["ft_junc_cnt_org"] + df_rep["ft_span_cnt_org"] > 0]["FTID"]])) # at least 1 junction or spanning counts on the fusion transcript
         fusion_gene_set_list.append(set([ftid_dict[z] for z in df_rep[[all([not y.startswith(tuple(gene_blacklist)) for y in x]) for x in df_rep["Fusion_Gene"].str.split("_")]]["FTID"]])) # both fusion partners are not allowed to start with anything mentioned in the "blacklisted" list
-        if is_merged:
-            fusion_gene_set_list.append(set([ftid_dict[x] for x in df_rep[(df_rep["prediction_class_1"] == "positive") | (df_rep["prediction_class_2"] == "positive")]["FTID"]])) # the random forrest model must have classified this at least once as "posititve" in either replicate
-        else:
-            fusion_gene_set_list.append(set([ftid_dict[x] for x in df_rep[df_rep["prediction_class"] == "positive"]["FTID"]])) # the random forrest model must have classified this at least once as "posititve"
+        if self.model_predictions:
+            if is_merged:
+                fusion_gene_set_list.append(set([ftid_dict[x] for x in df_rep[(df_rep["prediction_class_1"] == "positive") | (df_rep["prediction_class_2"] == "positive")]["FTID"]])) # the random forrest model must have classified this at least once as "posititve" in either replicate
+            else:
+                fusion_gene_set_list.append(set([ftid_dict[x] for x in df_rep[df_rep["prediction_class"] == "positive"]["FTID"]])) # the random forrest model must have classified this at least once as "posititve"
         fusion_gene_set_list.append(set([ftid_dict[x] for x in df_rep[(df_rep["exon_starts"] != "0") & (df_rep["exon_ends"] != "0")]["FTID"]])) # tmp hack to exclude valid ftids with missing exon numbers (bug in GetFusionSequence.R?)
         
         fusion_gene_filter_all = set(ftid_dict.values())
