@@ -29,6 +29,7 @@ class DataJoining(object):
         pd.options.mode.chained_assignment = None
         self.input_read_count = 0
         self.easyfuse_path = os.path.dirname(os.path.realpath(__file__))
+        self.blacklist = []
 
     def append_tool_cnts_to_context_file(self, context_data, detected_fusions, fusion_tool_list):
         """Add data to context seq table"""
@@ -104,11 +105,12 @@ class DataJoining(object):
         """run the data concatenation"""
         fusion_tools = config.get("general", "fusiontools").split(",")
         requant_mode = config.get("general", "requant_mode").split(",")
+        self.load_blacklist(config.get("easyfuse_helper", "blacklist"))
         # urla - note: with icam_run set to True, two results from technical replicates are expected as input
         print("Looking for required files...")
         # check whether output already exists
         cols_to_aggregate_on = ["FGID", "context_sequence_id", "FTID"]
-        
+
         # in comparison to the previous implementation, pre-existing results will always be overwritten as it turned out that the
         # previous implementation is to error prone...
         joined_table_1, header_list_1 = self.create_joined_table(self.id1, fusion_tools, requant_mode)
@@ -119,6 +121,8 @@ class DataJoining(object):
             joined_table_2b = joined_table_2.groupby(by=cols_to_aggregate_on, sort=False, as_index=False)
             joined_table_2b.agg(self.custom_data_aggregation).to_csv("{}_fusRank_2.csv".format(self.output), sep=";", index=False)
 
+        joined_table_1 = pd.read_csv("{}_fusRank_1.csv".format(self.output), sep=";")
+        joined_table_2 = pd.read_csv("{}_fusRank_2.csv".format(self.output), sep=";")
         for table in ["1", "2"]:
             summary_file = "{}_fusRank_{}.csv".format(self.output, table)
             if self.model_predictions and self.check_files(summary_file, True):
@@ -133,20 +137,18 @@ class DataJoining(object):
                     joined_table_1 = pd.read_csv("{}_fusRank_1.pModelPred.csv".format(self.output), sep=";")
                 else:
                     joined_table_2 = pd.read_csv("{}_fusRank_2.pModelPred.csv".format(self.output), sep=";")
+        joined_table_1.set_index(keys=cols_to_aggregate_on, drop=False, inplace=True)
+        joined_table_2.set_index(keys=cols_to_aggregate_on, drop=False, inplace=True)
 
         if icam_run:
             print("Merging data...")
             # drop columns from context seq in tab 2 as they are identical to the ones from tab 1 and
             # perform an inner join of the two replicate data frames
             joined_table_12 = joined_table_1.join(joined_table_2.drop(header_list_1, axis=1, errors="ignore"), lsuffix="_1", rsuffix="_2", how="inner")
-            joined_table_12b = joined_table_12.groupby(by=cols_to_aggregate_on, sort=False, as_index=False)
-            joined_table_12b.agg(self.custom_data_aggregation).to_csv("{}_fusRank_12.csv".format(self.output), sep=";", index=False)
-            #model_table_2 = pd.read_csv("{}_fusRank_2.pModelPred.csv".format(self.output), sep=";")
-            #model_table_2.drop(header_list_1, axis=1, errors="ignore", inplace=True)
             merged_file = "{}_fusRank_12.csv".format(self.output)
             if self.model_predictions:
                 merged_file = "{}_fusRank_12.pModelPred.csv".format(self.output)
-            joined_table_12b.agg(self.custom_data_aggregation).to_csv(merged_file, sep=";", index=False)
+            joined_table_12.to_csv(merged_file, sep=";", index=False)
             joined_table_12 = pd.read_csv(merged_file, sep=";")
             return (self.count_records(joined_table_1, False, "F1"), self.count_records(joined_table_2, False, "F2"), self.count_records(joined_table_12, True, "F12"))
         return self.count_records(joined_table_1, False, "F1N")
@@ -173,14 +175,27 @@ class DataJoining(object):
             print("Found {}".format(file_path))
         return True
 
+    def load_blacklist(self, blacklist_file):
+        """ Read blacklist data from file """
+        with open(blacklist_file, "r") as bl_file:
+            for line in bl_file:
+                if line.startswith("#"):
+                    continue
+                self.blacklist.append(line.strip())
+
     def count_records(self, pd_data_frame, is_merged, name):
         """ stub """
         print("Processing: {}".format(name))
-        gene_blacklist = ["HLA", "IG"]
+#        blacklist = ["HLA", "IG"]
         # list of sets to store (un)filtered fusion gene names
-        # 0:type; 1:boundary; 2:frame; 3:pepseq; 4:counts; 5:blacklist; 6:prediction;
-        # 7:exonError; 8:unfiltered; 9:allFilter; 10:allButPredFilter
-        fusion_gene_set_list = []
+        # 0:unfiltered; 1:type; 2:boundary; 3:frame; 4:pepseq; 5:counts;
+        # 6:blacklist; 7:prediction; 8:allFilter; 9:allButPredFilter
+        # this list is initialized with empty sets which are either replaced with data or stay empty
+        # this guarantees that filters are always at the same position in the list, even if they are empty
+        fusion_gene_set_list = [set() for i in range(10)]
+        # the dataframe may be empty if (a) no fusions were predicted or (b) no fusion remained after replicate merging
+        if pd_data_frame.empty:
+            return (map(len, fusion_gene_set_list), set())
         df_rep = pd_data_frame
         # try to correct annotation issues
         ftid_dict = {}
@@ -190,7 +205,7 @@ class DataJoining(object):
                 ftid_dict[ftid] = [df_rep.loc[i, "Fusion_Gene"]]
             else:
                 ftid_dict[ftid].append(df_rep.loc[i, "Fusion_Gene"])
-        
+
         for ftid in ftid_dict:
             # check if multiple fusion_gene strings are associated with the ftid
             if len(ftid_dict[ftid]) > 1:
@@ -209,35 +224,47 @@ class DataJoining(object):
                 ftid_dict[ftid] = ftid_dict[ftid][0]
 
         # create sets of fusion gene names according to different fiters
-        fusion_gene_set_list.append(set([ftid_dict[x] for x in df_rep[df_rep["type"] != "cis_near"]["FTID"]])) # exclude cis near events as they are likely read through
-        fusion_gene_set_list.append(set([ftid_dict[x] for x in df_rep[df_rep["exon_boundary"] == "both"]["FTID"]])) # allow only fusions where the breakpoints are on exon boundaries in BOTH fusion partners
-        fusion_gene_set_list.append(set([ftid_dict[x] for x in df_rep[df_rep["frame"] != "no_frame"]["FTID"]])) # exclude no frame fusions
+        fusion_gene_set_list[1] = set([ftid_dict[x] for x in df_rep[df_rep["type"] != "cis_near"]["FTID"]]) # exclude cis near events as they are likely read through
+        fusion_gene_set_list[2] = set([ftid_dict[x] for x in df_rep[df_rep["exon_boundary"] == "both"]["FTID"]]) # allow only fusions where the breakpoints are on exon boundaries in BOTH fusion partners
+        fusion_gene_set_list[3] = set([ftid_dict[x] for x in df_rep[df_rep["frame"] != "no_frame"]["FTID"]]) # exclude no frame fusions
         # urla - note: I'm not 100% why str.isalpha is working everywhere I tested, but not on our dev servers... This way, it works, although I thought the pandas str method would this already...
-        fusion_gene_set_list.append(set([ftid_dict[x] for x in df_rep[df_rep["neo_peptide_sequence"].astype(str).str.isalpha()]["FTID"]])) # the neo peptide sequence must be an alphabetic sequence of at least length 1
+        fusion_gene_set_list[4] = set([ftid_dict[x] for x in df_rep[df_rep["neo_peptide_sequence"].astype(str).str.isalpha()]["FTID"]]) # the neo peptide sequence must be an alphabetic sequence of at least length 1
         if is_merged:
-            fusion_gene_set_list.append(set([ftid_dict[x] for x in df_rep[df_rep["ft_junc_cnt_org_1"] + df_rep["ft_span_cnt_org_1"] + df_rep["ft_junc_cnt_org_2"] + df_rep["ft_span_cnt_org_2"] > 0]["FTID"]])) # at least 1 junction or spanning counts on the fusion transcript in either replicate
+            junc_cnt_col = "ft_junc_cnt_org_1"
+            if not junc_cnt_col in list(df_rep):
+                junc_cnt_col = "ft_junc_cnt_best_1"
+                if not junc_cnt_col in list(df_rep):
+                    junc_cnt_col = "ft_junc_cnt_fltr_1"
+            fusion_gene_set_list[5] = set([ftid_dict[x] for x in df_rep[df_rep[junc_cnt_col] + df_rep[junc_cnt_col.replace("junc", "span")] + df_rep[junc_cnt_col.replace("_1", "_2")] + df_rep[junc_cnt_col.replace("junc", "span").replace("_1", "_2")] > 0]["FTID"]]) # at least 1 junction or spanning counts on the fusion transcript in either replicate
         else:
-            fusion_gene_set_list.append(set([ftid_dict[x] for x in df_rep[df_rep["ft_junc_cnt_org"] + df_rep["ft_span_cnt_org"] > 0]["FTID"]])) # at least 1 junction or spanning counts on the fusion transcript
-        fusion_gene_set_list.append(set([ftid_dict[z] for z in df_rep[[all([not y.startswith(tuple(gene_blacklist)) for y in x]) for x in df_rep["Fusion_Gene"].str.split("_")]]["FTID"]])) # both fusion partners are not allowed to start with anything mentioned in the "blacklisted" list
+            junc_cnt_col = "ft_junc_cnt_org"
+            if not junc_cnt_col in list(df_rep):
+                junc_cnt_col = "ft_junc_cnt_best"
+                if not junc_cnt_col in list(df_rep):
+                    junc_cnt_col = "ft_junc_cnt_fltr"
+            fusion_gene_set_list[5] = set([ftid_dict[x] for x in df_rep[df_rep[junc_cnt_col] + df_rep[junc_cnt_col.replace("junc", "span")] > 0]["FTID"]]) # at least 1 junction or spanning counts on the fusion transcript
+        # both fusion partners are not allowed to start with anything mentioned in the "blacklisted" list (single gene/gene family exclusion)
+        # and the fusion gene is not allowed to be identical to a string in the blacklist (gene pair exclusion)
+        fusion_gene_set_list[6] = set([ftid_dict[z] for z in df_rep[[all([not (y.startswith(tuple(self.blacklist)) or "_".join(x) in self.blacklist) for y in x]) for x in df_rep["Fusion_Gene"].str.split("_")]]["FTID"]])
         if self.model_predictions:
             if is_merged:
-                fusion_gene_set_list.append(set([ftid_dict[x] for x in df_rep[(df_rep["prediction_class_1"] == "positive") | (df_rep["prediction_class_2"] == "positive")]["FTID"]])) # the random forrest model must have classified this at least once as "posititve" in either replicate
+                fusion_gene_set_list[7] = set([ftid_dict[x] for x in df_rep[(df_rep["prediction_class_1"] == "positive") | (df_rep["prediction_class_2"] == "positive")]["FTID"]]) # the random forrest model must have classified this at least once as "posititve" in either replicate
             else:
-                fusion_gene_set_list.append(set([ftid_dict[x] for x in df_rep[df_rep["prediction_class"] == "positive"]["FTID"]])) # the random forrest model must have classified this at least once as "posititve"
-        fusion_gene_set_list.append(set([ftid_dict[x] for x in df_rep[(df_rep["exon_starts"] != "0") & (df_rep["exon_ends"] != "0")]["FTID"]])) # tmp hack to exclude valid ftids with missing exon numbers (bug in GetFusionSequence.R?)
-        
-        fusion_gene_filter_all = set(ftid_dict.values())
-        fusion_gene_filter_wo_pred = set(ftid_dict.values())
-        for i in range(len(fusion_gene_set_list)):
-            fusion_gene_filter_all = fusion_gene_filter_all.intersection(fusion_gene_set_list[i])
-            if i != 6:
-                fusion_gene_filter_wo_pred = fusion_gene_filter_wo_pred.intersection(fusion_gene_set_list[i])
-        
-        fusion_gene_set_list.append(set(ftid_dict.values()))
-        fusion_gene_set_list.append(fusion_gene_filter_all)
-        fusion_gene_set_list.append(fusion_gene_filter_wo_pred)
+                fusion_gene_set_list[7] = set([ftid_dict[x] for x in df_rep[df_rep["prediction_class"] == "positive"]["FTID"]]) # the random forrest model must have classified this at least once as "posititve"
 
-        return (map(len, fusion_gene_set_list), fusion_gene_filter_all)
+        fusion_gene_filter_wo_pred = set(ftid_dict.values())
+        # intersect with all but predictions
+        for i in range(1, 7):
+            fusion_gene_filter_wo_pred = fusion_gene_filter_wo_pred.intersection(fusion_gene_set_list[i])
+        fusion_gene_filter_all = fusion_gene_filter_wo_pred.intersection(fusion_gene_set_list[7])
+
+        fusion_gene_set_list[0] = set(ftid_dict.values())
+        fusion_gene_set_list[8] = fusion_gene_filter_all
+        fusion_gene_set_list[9] = fusion_gene_filter_wo_pred
+
+        if self.model_predictions:
+            return (map(len, fusion_gene_set_list), fusion_gene_filter_all)
+        return (map(len, fusion_gene_set_list), fusion_gene_filter_wo_pred)
 
     @staticmethod
     def mimic_icam_implementation(inputfile1, inputfile2, outputfile):
@@ -249,13 +276,13 @@ class DataJoining(object):
                          "wt1_junc_cnt_org", "wt1_span_cnt_org", "wt2_junc_cnt_org", "wt2_span_cnt_org", "prediction_prob", "prediction_class",
                          "n_replicates"]
         cols_dict = dict(zip(selected_cols, range(0, 21)))
-        
+
         for inputfile in [inputfile1, inputfile2]:
             # load required data from easyfuse output into pd dataframe and append column for replicate counting
             df_rep = pd.read_csv(inputfile, sep = ";")
             df_rep = df_rep[selected_cols[:-1]]
             #df_rep[str(selected_cols[-1])] = 0
-            
+
             # iterate over rows in the df
             for i in df_rep.index:
                 ftid = df_rep.loc[i, "FTID"]
