@@ -224,9 +224,9 @@ class DataJoining(object):
                 ftid_dict[ftid] = ftid_dict[ftid][0]
 
         # create sets of fusion gene names according to different fiters
-        fusion_gene_set_list[1] = set([ftid_dict[x] for x in df_rep[df_rep["type"] != "cis_near"]["FTID"]]) # exclude cis near events as they are likely read through
-        fusion_gene_set_list[2] = set([ftid_dict[x] for x in df_rep[df_rep["exon_boundary"] == "both"]["FTID"]]) # allow only fusions where the breakpoints are on exon boundaries in BOTH fusion partners
-        fusion_gene_set_list[3] = set([ftid_dict[x] for x in df_rep[df_rep["frame"] != "no_frame"]["FTID"]]) # exclude no frame fusions
+        fusion_gene_set_list[1] = set([ftid_dict[x] for x in df_rep[df_rep["type"].astype(str) != "cis_near"]["FTID"]]) # exclude cis near events as they are likely read through
+        fusion_gene_set_list[2] = set([ftid_dict[x] for x in df_rep[df_rep["exon_boundary"].astype(str) == "both"]["FTID"]]) # allow only fusions where the breakpoints are on exon boundaries in BOTH fusion partners
+        fusion_gene_set_list[3] = set([ftid_dict[x] for x in df_rep[df_rep["frame"].astype(str) != "no_frame"]["FTID"]]) # exclude no frame fusions
         # urla - note: I'm not 100% why str.isalpha is working everywhere I tested, but not on our dev servers... This way, it works, although I thought the pandas str method would this already...
         fusion_gene_set_list[4] = set([ftid_dict[x] for x in df_rep[df_rep["neo_peptide_sequence"].astype(str).str.isalpha()]["FTID"]]) # the neo peptide sequence must be an alphabetic sequence of at least length 1
         if is_merged:
@@ -248,9 +248,9 @@ class DataJoining(object):
         fusion_gene_set_list[6] = set([ftid_dict[z] for z in df_rep[[all([not (y.startswith(tuple(self.blacklist)) or "_".join(x) in self.blacklist) for y in x]) for x in df_rep["Fusion_Gene"].str.split("_")]]["FTID"]])
         if self.model_predictions:
             if is_merged:
-                fusion_gene_set_list[7] = set([ftid_dict[x] for x in df_rep[(df_rep["prediction_class_1"] == "positive") | (df_rep["prediction_class_2"] == "positive")]["FTID"]]) # the random forrest model must have classified this at least once as "posititve" in either replicate
+                fusion_gene_set_list[7] = set([ftid_dict[x] for x in df_rep[(df_rep["prediction_class_1"].astype(str) == "positive") | (df_rep["prediction_class_2"].astype(str) == "positive")]["FTID"]]) # the random forrest model must have classified this at least once as "posititve" in either replicate
             else:
-                fusion_gene_set_list[7] = set([ftid_dict[x] for x in df_rep[df_rep["prediction_class"] == "positive"]["FTID"]]) # the random forrest model must have classified this at least once as "posititve"
+                fusion_gene_set_list[7] = set([ftid_dict[x] for x in df_rep[df_rep["prediction_class"].astype(str) == "positive"]["FTID"]]) # the random forrest model must have classified this at least once as "posititve"
 
         fusion_gene_filter_wo_pred = set(ftid_dict.values())
         # intersect with all but predictions
