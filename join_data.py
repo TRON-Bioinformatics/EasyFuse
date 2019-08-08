@@ -120,9 +120,10 @@ class DataJoining(object):
             joined_table_2, _ = self.create_joined_table(self.id2, fusion_tools, requant_mode)
             joined_table_2b = joined_table_2.groupby(by=cols_to_aggregate_on, sort=False, as_index=False)
             joined_table_2b.agg(self.custom_data_aggregation).to_csv("{}_fusRank_2.csv".format(self.output), sep=";", index=False)
+            joined_table_2 = pd.read_csv("{}_fusRank_2.csv".format(self.output), sep=";")
 
         joined_table_1 = pd.read_csv("{}_fusRank_1.csv".format(self.output), sep=";")
-        joined_table_2 = pd.read_csv("{}_fusRank_2.csv".format(self.output), sep=";")
+
         for table in ["1", "2"]:
             summary_file = "{}_fusRank_{}.csv".format(self.output, table)
             if self.model_predictions and self.check_files(summary_file, True):
@@ -138,10 +139,10 @@ class DataJoining(object):
                 else:
                     joined_table_2 = pd.read_csv("{}_fusRank_2.pModelPred.csv".format(self.output), sep=";")
         joined_table_1.set_index(keys=cols_to_aggregate_on, drop=False, inplace=True)
-        joined_table_2.set_index(keys=cols_to_aggregate_on, drop=False, inplace=True)
 
         if icam_run:
             print("Merging data...")
+            joined_table_2.set_index(keys=cols_to_aggregate_on, drop=False, inplace=True)
             # drop columns from context seq in tab 2 as they are identical to the ones from tab 1 and
             # perform an inner join of the two replicate data frames
             joined_table_12 = joined_table_1.join(joined_table_2.drop(header_list_1, axis=1, errors="ignore"), lsuffix="_1", rsuffix="_2", how="inner")
@@ -211,10 +212,13 @@ class DataJoining(object):
             if len(ftid_dict[ftid]) > 1:
                 # check if there is one of the multiple fusion_gene records where both partners correspond to the ftid
                 for fusion_gene in ftid_dict[ftid]:
-                    left_fusion, right_fusion = fusion_gene.split("_")
-                    if left_fusion in ftid and right_fusion in ftid:
-                        ftid_dict[ftid] = fusion_gene
-                        break
+                    try:
+                        left_fusion, right_fusion = fusion_gene.split("_")
+                        if left_fusion in ftid and right_fusion in ftid:
+                            ftid_dict[ftid] = fusion_gene
+                            break
+                    except ValueError:
+                        print("Warning: Fusion gene is in an unexpected format (If you have gene names containing underscores, please contact the authors!)")
                 # if none of the fusion_gene records fit to the ftid, take the shortest and print a warning
                 if type(ftid_dict[ftid]) == list:
                     print("Warning: Unresolvable annotation bias detected between ftid \"{0}\" and fusion_gene records \"{1}\"".format(ftid, ftid_dict[ftid]))
