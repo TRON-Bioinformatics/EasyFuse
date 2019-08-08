@@ -78,10 +78,12 @@ class IcamSummary(object):
             if "Fetchdata" in self.samples.get_tool_list_from_state(sample):
                 count_valid_sample += 1
             if icam_run:
-                if "Rep1" in sample:
+                rep1_ids = self.cfg.get("general", "rep1_ids").split(",")
+                rep2_ids = self.cfg.get("general", "rep2_ids").split(",")
+                if any([True if x in sample else False for x in rep1_ids]):
                     current_base = sample.split("_")[0]
                     sample1 = sample
-                if "Rep2" in sample and current_base == sample.split("_")[0]:
+                if any([True if x in sample else False for x in rep2_ids]) and current_base == sample.split("_")[0]:
                     sample2 = sample
                     count_pairs += 1
                     if sample_date_dict[sample1] == sample_date_dict[sample2]:
@@ -105,12 +107,10 @@ class IcamSummary(object):
                 fltr_out.write("SampleID\tSampleDate\tFusionToolCnt\t" + "\t".join(colnames_filtering) + "\n")
                 for sample in sid_list:
                     if icam_run:
-                        if "Rep1" in sample:
-                        #if "S3" in sample or "S5" in sample:
+                        if any([True if x in sample else False for x in rep1_ids]):
                             current_base = sample.split("_")[0]
                             sample1 = sample
-                        if "Rep2" in sample and current_base == sample.split("_")[0]:
-                        #if ("S4" in sample or "S6" in sample) and current_base == sample.split("_")[0]:
+                        if any([True if x in sample else False for x in rep2_ids]) and current_base == sample.split("_")[0]:
                             sample2 = sample
                             #call fusionranking
                             if "Fetchdata" in self.samples.get_tool_list_from_state(sample1) and "Fetchdata" in self.samples.get_tool_list_from_state(sample2):
@@ -161,6 +161,8 @@ class IcamSummary(object):
                             average_time = (average_time * (count_processed-1) + time_taken) / count_processed
                             estimated_end = average_time * (count_valid_sample - count_processed)
                             print("done. Processing time: {0:.2f}s; Average processing time: {1:.2f}s; Estimated end of processing in {2:.2f}s)".format(time_taken, average_time, estimated_end))
+                    # close all open plots
+                    plt.close('all')
 
                 pddfall, fig = self.plot_barchart(fusion_frequency_all, "Fusion gene recurrency in single samples", 1)
                 pdf.savefig(fig)
@@ -181,63 +183,57 @@ class IcamSummary(object):
                     fltr_out.write("Rep2's MinMaxMed\tNA\tNA\t" + "\t".join(map(str, mmm2)) + "\n")
                     fltr_out.write("Merged MinMaxMed\tNA\tNA\t" + "\t".join(map(str, mmm12)) + "\n")
 
-                # close all open plots
-                plt.close('all')
+        # close all open plots
+        plt.close('all')
 
     def plot_barchart(self, fusion_frequency_dict, chart_title, label_cutoff):
-        """bkla"""
+        """ Plot the detected fusion gene frequencies in a bar blot """
         freq_df = pd.DataFrame.from_dict(fusion_frequency_dict, orient="index", columns=["Frequency"])
         freq_df["Fusion_Gene"] = freq_df.index
+
+        # create the figure scaffold
+        plt.figure()
+        ax = plt.axes()
+        plt.title(chart_title)
         try:
-            plt.figure()
-#            plt.figure(len(self.figure_list) + 1)
-    #        ax = plt.axes()
-            plt.title(chart_title)
-            ax = sns.barplot(x="Fusion_Gene", y="Frequency", data=freq_df)
-    #        new_x_ticks = []
-    #        for i in freq_df.index:
-    #            if freq_df.loc[i, "Frequency"] == label_cutoff:
-    #                new_x_ticks.append("")
-    #            else:
-    #                new_x_ticks.append(freq_df.loc[i, "Fusion_Gene"])
+            # create a bar plot from the frequency counts
+            sns.barplot(x="Fusion_Gene", y="Frequency", data=freq_df)
+            # create a list of new x labels, i.e. fusion gene names and rotate them by 90 degree
+            # a fusion gene name will only be printed if it occurrs more often the set label_cutoff
             new_x_ticks = []
             for i in freq_df.index:
-                if freq_df.loc[i, "Frequency"] == label_cutoff:
+                if freq_df.loc[i, "Frequency"] <= label_cutoff:
                     new_x_ticks.append("")
                 else:
                     new_x_ticks.append(freq_df.loc[i, "Fusion_Gene"])
-    #        for tick in ax.get_xticklabels():
-    #            tick.set_rotation(90)
             ax.set_xticklabels(new_x_ticks, rotation=90)
+            # wrap the figure in the tight layout to avoid to large margins
             plt.tight_layout()
-#            self.figure_list.append(ax.figure)
         except ValueError:
             print("No fusion genes predicted, i.e. nothing to plot...")
+        # return the pd dataframe and the figure; the figure contains an empty plotting area and the correct title in case no fusions genes were predicted
         return freq_df, ax.figure
 
     def plot_boxswarm(self, data_dict, group_names, column_names, chart_title):
-        """Create a pandas dataframe from a dictionary and plot the data table as a heatmap.
-        Summarize the data furthermore in a boxplot with swarmplot overlay"""
-#        print(data_dict)
-#        print(group_names)
+        """Create a pandas dataframe from a dictionary and summarize the data in a boxplot with swarmplot overlay"""
         list_of_data_lists = []
         for data_dict_key in data_dict:
             for i, list_record in enumerate(data_dict[data_dict_key]):
                 list_of_data_lists.append([data_dict_key, group_names[i], list_record])
         # plot data as box plot (plus swarmplot overlay)
         pd_df = pd.DataFrame(list_of_data_lists, columns=column_names)
+
+        # create the figure scaffold
+        plt.figure()
+        ax = plt.axes()
+        plt.title(chart_title)
         try:
-            plt.figure()
-#            plt.figure(len(self.figure_list) + 1)
-            ax = plt.axes()
-            plt.title(chart_title)
             sns.boxplot(data=pd_df, ax=ax, x=column_names[1], y=column_names[2], hue=column_names[1], dodge=False)
             sns.swarmplot(data=pd_df, ax=ax, x=column_names[1], y=column_names[2], color=(0.8, 0.8, 0.8), alpha=0.5)
             ax.legend_.remove()
             for tick in ax.get_xticklabels():
                 tick.set_rotation(90)
             plt.tight_layout()
-#            self.figure_list.append(ax.figure)
         except ValueError:
             print("No fusion genes predicted, i.e. nothing to plot...")
 
