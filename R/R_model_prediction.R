@@ -3,7 +3,9 @@
 # load libraries ---------------------------------------------------------------
 
 library(optparse)
-library(tidyverse)
+require(dplyr)
+require(readr)
+require(magrittr)
 library(randomForest)
 
 # Load functions ---------------------------------------------------------------
@@ -30,13 +32,11 @@ if(is.na(opt$output) | opt$output == "") {
   stop("Mandatory parameter \"output file\" missing. Aborting...")
 }
 
-# #parameter in opt structure 
-# opt$detected_fusions
 
 # Read fusions -----------------------------------------------------------------
 
 # read fusion with annotation and requantification to single table
-fusion_data <- read.delim(opt$fusion_summary, sep=";") %>%
+fusion_data <- read_delim(opt$fusion_summary, delim = ";") %>%
   # convert character vectors into factors
   mutate(
     type = factor(type, levels = c("cis_near", "cis_inv", "cis_far", 
@@ -47,7 +47,6 @@ fusion_data <- read.delim(opt$fusion_summary, sep=";") %>%
                                      "neo_frame"))
   )
 
-# Add predictions --------------------------------------------------------------
 #' Function to add prediction columns according to imput model
 #'
 #' @param flat_data A data.frame with fusions.
@@ -61,17 +60,32 @@ fusion_data <- read.delim(opt$fusion_summary, sep=";") %>%
 #'   
 add_prediction <- function(flat_data, model, threshold){
   
-  # get prediction probabilites
-  pred_matrix <- predict(model, newdata = flat_data, type = "prob")
-  pred_prob <- pred_matrix[, "positive"]
+  # test if all features from the model are contained in the input data
+  model_features <- rownames(model$importanceSD)
+  model_features_contained <- all(model_features %in% names(flat_data))
   
-  # add columns
-  flat_data <- flat_data %>% 
-    mutate(
-      prediction_prob = pred_prob,
-      prediction_class = ifelse(pred_prob >= threshold, "positive", "negative")
-    )
-  
+  # if not all featrues appear in data, add only NAs
+  if (! model_features_contained) {
+    flat_data <- flat_data %>% 
+      mutate(
+        prediction_prob = NA,
+        prediction_class = NA
+      )
+    
+  # if all featrues appear in data add predictions
+  } else {
+    
+    # get prediction probabilites
+    pred_matrix <- predict(model, newdata = flat_data, type = "prob")
+    pred_prob <- pred_matrix[, "positive"]
+    
+    # add columns
+    flat_data <- flat_data %>% 
+      mutate(
+        prediction_prob = pred_prob,
+        prediction_class = ifelse(pred_prob >= threshold, "positive", "negative")
+      )
+  }
   return(flat_data)
 }
 
