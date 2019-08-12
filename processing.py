@@ -16,7 +16,7 @@ import os.path
 import sys
 import time
 import argparse
-from shutil import copy2
+from shutil import copyfile
 import misc.queue as Queueing
 from misc.config import Config
 from misc.samples import Samples
@@ -34,7 +34,7 @@ class Processing(object):
         self.working_dir = working_dir.rstrip("/")
         self.logger = Logger(os.path.join(self.working_dir, "easyfuse_processing_{}.log".format(str(int(round(time.time()))))))
         IOMethods.create_folder(self.working_dir, self.logger)
-        copy2(config, working_dir)
+        copyfile(config, os.path.join(self.working_dir, IOMethods.path_leaf(config)))
         self.cfg = Config(os.path.join(self.working_dir, IOMethods.path_leaf(config)))
         self.logger.info("Starting easyfuse")
         self.input_path = input_path
@@ -108,8 +108,8 @@ class Processing(object):
             if icam_run:
                 icam_run_string = " --icam_run"
             modelling_string = ""
-            if self.cfg.get("otherFiles", "easyfuse_model"):
-                modelling_string = " --model_predictions"
+#            if self.cfg.get("otherFiles", "easyfuse_model"):
+#                modelling_string = " --model_predictions"
             cmd_summarize = "python {0} --input {1} --config {2}{3}{4}".format(os.path.join(self.easyfuse_path, "summarize_data.py"), self.working_dir, self.cfg.get_path(), icam_run_string, modelling_string)
             self.logger.debug("Submitting slurm job: CMD - {0}; PATH - {1}; DEPS - {2}".format(cmd_summarize, self.working_dir, dependency))
             cpu, mem = self.cfg.get("resources", "summary").split(",")

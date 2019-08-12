@@ -13,7 +13,7 @@ from argparse import ArgumentParser
 import sys
 import os.path
 import pandas as pd
-from shutil import copy2
+from shutil import copyfile
 import queue as Queueing
 from config import Config
 from logger import Logger
@@ -24,7 +24,7 @@ class FusionLiftover(object):
         self.in_fus_detect = in_fus_detect
         self.cfg = config
         self.logger = Logger(logger)
-        copy2(in_fus_detect, "{}.bak".format(in_fus_detect))
+        copyfile(in_fus_detect, "{}.bak".format(in_fus_detect))
         self.chr_list = [
             "1", "2", "3", "4", "5",
             "6", "7", "8", "9", "10",
