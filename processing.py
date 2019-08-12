@@ -108,8 +108,8 @@ class Processing(object):
             if icam_run:
                 icam_run_string = " --icam_run"
             modelling_string = ""
-#            if self.cfg.get("otherFiles", "easyfuse_model"):
-#                modelling_string = " --model_predictions"
+            if self.cfg.get("otherFiles", "easyfuse_model"):
+                modelling_string = " --model_predictions"
             cmd_summarize = "python {0} --input {1} --config {2}{3}{4}".format(os.path.join(self.easyfuse_path, "summarize_data.py"), self.working_dir, self.cfg.get_path(), icam_run_string, modelling_string)
             self.logger.debug("Submitting slurm job: CMD - {0}; PATH - {1}; DEPS - {2}".format(cmd_summarize, self.working_dir, dependency))
             cpu, mem = self.cfg.get("resources", "summary").split(",")
