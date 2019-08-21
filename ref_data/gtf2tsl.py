@@ -44,8 +44,8 @@ class Gtf2Tsl(object):
 
                     print("{}_{}_{}_{}".format(transcript_id, trans_biotype, gene_biotype, tsl))
                     # check again, that what we have is what we expect
-                    if not transcript_id[0:4] == "ENST":
-                        print("This is not valid enseml transcript id: {}. Is this a valid ensembl gtf line: {}?".format(transcript_id, line))
+                    if not (transcript_id[0:3] == "ENS" or transcript_id[0:4] == "MGP_"):
+                        print("This does not look like a valid ensembl id: {}. Is this a valid ensembl gtf line: {}?".format(transcript_id, line))
                         sys.exit(99)
                     if not transcript_id in tsl_dict:
                         tsl_dict[transcript_id] = [trans_biotype, gene_biotype, tsl]
