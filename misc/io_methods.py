@@ -10,7 +10,6 @@ Input/Output method collection
 @version: 20181126
 """
 
-from __future__ import print_function
 import os
 import sys
 import stat

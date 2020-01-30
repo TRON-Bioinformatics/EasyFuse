@@ -6,20 +6,19 @@ import subprocess
 from shutil import copyfile
 from argparse import ArgumentParser
 
-sys.path.append(os.path.join(os.path.dirname( __file__ ), '..'))
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
-from misc.config import Config
+import config as cfg
+
 
 def main():
-    parser = ArgumentParser(description='Wrapper around skewer.')
-    parser.add_argument('-q', '--qc-table', dest='qc_table', help='Specify input QC table', required=True)
-    parser.add_argument('-i', '--input', dest='input', nargs='+', help='Specify input FASTQ files', required=True)
-    parser.add_argument('-o', '--output', dest='output', help='Specify output folder', default='.')
-    parser.add_argument('-b', '--skewer-bin', dest='skewer_bin', help='Specify path to skewer binary', default="skewer")
-    parser.add_argument('-m', '--min-read-length-perc', dest='min_read_length_perc', type=float, help='Specify minimum read length percentage', default=0.75)
+    parser = ArgumentParser(description="Wrapper around skewer.")
+    parser.add_argument("-q", "--qc-table", dest="qc_table", help="Specify input QC table", required=True)
+    parser.add_argument("-i", "--input", dest="input", nargs="+", help="Specify input FASTQ files", required=True)
+    parser.add_argument("-o", "--output", dest="output", help="Specify output folder", default=".")
     args = parser.parse_args()
 
-    min_rl_perc = args.min_read_length_perc
+    min_rl_perc = cfg.min_read_len_perc
     remaining_len = 1000
     read_len = 0
     with open(args.qc_table) as inf:
@@ -32,7 +31,7 @@ def main():
                 remaining_len = remaining
 
     if remaining_len != read_len and remaining_len >= (min_rl_perc * read_len):
-        cmd = "{} -l {} -q 28 -m pe -t 6 -k 5 -z -o {} {}".format(args.skewer_bin, remaining_len, os.path.join(args.output, "out_file"), " ".join(args.input))
+        cmd = "{} -l {} -q 28 -m pe -t 6 -k 5 -z -o {} {}".format(cfg.commands["skewer"], remaining_len, os.path.join(args.output, "out_file"), " ".join(args.input))
 
         proc = subprocess.Popen(cmd, shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
         (stdoutdata, stderrdata) = proc.communicate()
@@ -44,7 +43,7 @@ def main():
 
     elif remaining_len < min_rl_perc * read_len:
         sys.stderr.write("Trim length too long. Discarding fastqs ({}).".format(args.input))
-        open(os.path.join(args.output, "to_be_discarded"), 'a').close()
+        open(os.path.join(args.output, "to_be_discarded"), "a").close()
         sys.exit(1)
     elif remaining_len == read_len:
         if len(args.input) == 2:
@@ -70,5 +69,5 @@ def main():
 #            os.symlink(args.input[0], out)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

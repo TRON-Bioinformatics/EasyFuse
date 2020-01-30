@@ -28,10 +28,12 @@ class VersCont(object):
         output = ""
         try:
             if with_pip_not_conda:
-                output = subprocess.Popen(["pip", "freeze"], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+                output = subprocess.Popen(["pip", "freeze"], stdout = subprocess.PIPE, stderr = subprocess.PIPE, encoding = "utf-8")
             else:
-                output = subprocess.Popen(["conda", "list"], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+                output = subprocess.Popen(["conda", "list"], stdout = subprocess.PIPE, stderr = subprocess.PIPE, encoding = "utf-8")
             (stdoutdata, stderrdata) = output.communicate()
+#            print(stderrdata)
+#            print(stdoutdata)
             
             if with_pip_not_conda and stderrdata and not stdoutdata:
                 print(stderrdata)
@@ -47,9 +49,13 @@ class VersCont(object):
         for py_line in stdoutdata.split("\n"):
             if py_line and not py_line.startswith("#"):
                 if with_pip_not_conda:
-                    self.py_dict[py_line.split("==")[0]] = py_line.split("==")[1]
+                    keyval = py_line.split("==")
+                    if len(keyval) == 2:
+                        self.py_dict[keyval[0]] = keyval[1]
                 else:
-                    self.py_dict[py_line.split()[0]] = py_line.split()[1]
+                    keyval = py_line.split()
+                    if len(keyval) == 2:
+                        self.py_dict[keyval[0]] = keyval[1]
 
     def get_and_print_tool_versions(self):
         """For each tool in the dep list, try to identify the installed version and compare against the tested"""
@@ -82,7 +88,7 @@ class VersCont(object):
         """Return version string from program call on shell"""
         output = ""
         try:
-            output = subprocess.Popen(cmd.split(" "), stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+            output = subprocess.Popen(cmd.split(" "), stdout = subprocess.PIPE, stderr = subprocess.PIPE, encoding = "utf-8")
             (stdoutdata, stderrdata) = output.communicate()
             if stdoutdata and not stderrdata:
                 output = stdoutdata

@@ -3,7 +3,7 @@
 """
 Just the version
 
-@author: BNT (URLA)
+@author: TRON (PASO), BNT (URLA)
 @version: 20181126
 """
-__version__ = "easyfuse v1.0"
+__version__ = "easyfuse v1.3.1"
