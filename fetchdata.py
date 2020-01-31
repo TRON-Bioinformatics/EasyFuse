@@ -72,11 +72,17 @@ class Fetching(object):
         # sampleID = ...
         self.logger.info("Fetching in sample {}".format(self.sample_id))
         if not fq1 or not fq2:
+<<<<<<< HEAD
             self.logger.debug("Either ReadFile 1 or 2 or both are missing, trying to get original files from samples.csv")
             self.logger.debug(self.sample_id)
             self.logger.debug(self.samples.db_path)
             (fq1, fq2) = self.samples.get_fastq_files(self.sample_id)
         self.execute_pipeline(fq1, fq2, fusion_support)
+=======
+            self.logger.debug("Either ReadFile 1 or 2 or both are missing, trying to get original files from samples.db")
+            (fq1, fq2) = self.sample.get_fastq_files(self.sample_id)
+        self.execute_pipeline((fq1, fq2), fusion_support, icam_run)
+>>>>>>> 55fa52a168eebc0ae4f190e4019c00a654ba9fa0
 
     # urla: there are a lot of local variables declarated in the following method.
     #       Although this could be reduced quite strongly, readability would be strongly reduced as well
@@ -85,11 +91,19 @@ class Fetching(object):
         """Create sample specific subfolder structuge and run tools on fastq files"""
 
 		# Genome/Gene references to use
+<<<<<<< HEAD
         ref_trans = cfg.ref_trans_version
         ref_genome = cfg.ref_genome_build
         genome_fasta_path = cfg.references["genome_fasta"]
         genes_adb_path = cfg.references["genes_adb"]
         genes_tsl_path = cfg.references["genes_tsl"]
+=======
+        ref_trans = self.cfg.get('general', 'ref_trans_version')
+        ref_genome = self.cfg.get('general', 'ref_genome_build')
+        genome_fasta_path = self.cfg.get('references', ref_trans + '_genome_fasta_' + ref_genome)
+        genes_adb_path = self.cfg.get('references', ref_trans + '_genes_adb_' + ref_genome)
+        genes_tsl_path = self.cfg.get('references', ref_trans + '_genes_tsl_' + ref_genome)
+>>>>>>> 55fa52a168eebc0ae4f190e4019c00a654ba9fa0
 
         fetchdata_current_path = os.path.join(self.fetchdata_path, "fd_{}_tool".format(fusion_support))
         detected_fusions_path = os.path.join(fetchdata_current_path, "fetched_fusions")
@@ -128,8 +142,13 @@ class Fetching(object):
             crossmap_chain = cfg.liftover["crossmap_chain"]
             ref_genome_dest = os.path.basename(crossmap_chain).replace(".", "_").split("_")[2].lower()
             self.logger.debug("Creating a copy of the detected fusions file due to selection of liftover. Old ({0}) data will be kept in \"{1}.bak\"".format(ref_genome, detected_fusions_file))
+<<<<<<< HEAD
             genome_fasta_path = cfg.references["genome_fasta_hg37"]
             genes_adb_path = cfg.references["genes_adb_hg37"]
+=======
+            genome_fasta_path = self.cfg.get('references', ref_trans + '_genome_fasta_' + ref_genome_dest)
+            genes_adb_path = self.cfg.get('references', ref_trans + '_genes_adb_' + ref_genome_dest)
+>>>>>>> 55fa52a168eebc0ae4f190e4019c00a654ba9fa0
 
         # urla - note: tmp hack to get original star input reads for normalization
         with open(os.path.join(classification_path, "Star_org_input_reads.txt"), "w") as infile:
@@ -138,6 +157,7 @@ class Fetching(object):
                 read_count = self.get_input_read_count_from_fastq(fq1)
             infile.write(str(read_count))
         # Define cmd strings for each program
+<<<<<<< HEAD
         cmd_fusiondata = "{0} -i {1} -o {2} -s {3} -t {4} -f {5} -l {6}".format(os.path.join(module_dir, "fusiontoolparser.py"), self.scratch_path, detected_fusions_path, self.sample_id, fusion_support, ",".join(cfg.fusiontools), self.logger.get_path())
         cmd_liftover = "{0} -i {1} -l {2}".format(os.path.join(module_dir, "misc", "liftover.py"), detected_fusions_file, self.logger.get_path())
         cmd_contextseq = "{0} --detected_fusions {1} --annotation_db {2} --out_csv {3} --genome_fasta {4} --tsl_info {5} --cis_near_dist {6} --context_seq_len {7} --tsl_filter_level {8}".format(os.path.join(module_dir, "fusionannotation.py"), detected_fusions_file, genes_adb_path, context_seq_file, genome_fasta_path, genes_tsl_path, cfg.cis_near_distance, cfg.context_seq_len, cfg.tsl_filter)
@@ -166,6 +186,20 @@ class Fetching(object):
         cmd_requantify_best = "{0} -i {1}best_Aligned.sortedByCoord.out.bam -o {2}_best.tdt -d 10".format(os.path.join(module_dir, "requantify.py"), star_align_file, classification_file)
 
                                                                                 
+=======
+        cmd_fusiondata = "{0} -i {1} -o {2} -s {3} -t {4} -f {5} -l {6}".format(os.path.join(self.easyfuse_path, "fusiontoolparser.py"), self.scratch_path, detected_fusions_path, self.sample_id, fusion_support, self.cfg.get('general', 'fusiontools'), self.logger.get_path())
+        cmd_liftover = "{0} -i {1} -c {2} -l {3}".format(os.path.join(self.easyfuse_path, "misc", "liftover.py"), detected_fusions_file, self.cfg.get_path(), self.logger.get_path())
+        cmd_contextseq = "python {0} --detected_fusions {1} --annotation_db {2} --out_csv {3} --genome_fasta {4} --tsl_info {5} --cis_near_dist {6} --context_seq_len {7}".format(os.path.join(self.easyfuse_path, "fusionannotation.py"), detected_fusions_file,  genes_adb_path, context_seq_file, genome_fasta_path, genes_tsl_path, self.cfg.get('general', 'cis_near_distance'), self.cfg.get('general', 'context_seq_len'))
+        cpu, _ = self.cfg.get("resources", "fetchdata").split(",")
+        cmd_starindex = "{0} --runMode genomeGenerate --runThreadN {1} --limitGenomeGenerateRAM 48000000000 --genomeChrBinNbits waiting_for_bin_size_input --genomeSAindexNbases waiting_for_sa_idx_input --genomeDir {2} --outFileNamePrefix {2}/ --genomeFastaFiles {3}".format(self.cfg.get('commands', 'star_cmd'), cpu, star_genome_path, "{0}{1}".format(context_seq_file, ".fasta"))
+        cmd_staralign_fltr = "{0} --genomeDir {1} --readFilesCommand zcat --readFilesIn {2} {3} --outSAMtype BAM SortedByCoordinate --outFilterMultimapNmax -1 --outSAMattributes Standard --outSAMunmapped None --outFilterMismatchNoverLmax 0.02 --runThreadN {4} --outFileNamePrefix {5}fltr_ --limitBAMsortRAM 48000000000".format(self.cfg.get('commands', 'star_cmd'), star_genome_path, fq1, fq2, cpu, star_align_file)
+        cmd_bamindex_fltr = "{0} index {1}fltr_Aligned.sortedByCoord.out.bam".format(self.cfg.get('commands', 'samtools_cmd'), star_align_file)
+        cmd_requantify_fltr = "{0} -i {1}fltr_Aligned.sortedByCoord.out.bam -o {2}_fltr.tdt -d 10".format(os.path.join(self.easyfuse_path, "requantify.py"), star_align_file, classification_file)
+        (fq1, fq2) = self.sample.get_fastq_files(self.sample_id)
+        cmd_staralign_org = "{0} --genomeDir {1} --readFilesCommand zcat --readFilesIn {2} {3} --outSAMtype BAM SortedByCoordinate --outFilterMultimapNmax -1 --outSAMattributes Standard --outSAMunmapped None --outFilterMismatchNoverLmax 0.02 --runThreadN {4} --outFileNamePrefix {5}org_ --limitBAMsortRAM 48000000000".format(self.cfg.get('commands', 'star_cmd'), star_genome_path, fq1, fq2, cpu, star_align_file)
+        cmd_bamindex_org = "{0} index {1}org_Aligned.sortedByCoord.out.bam".format(self.cfg.get('commands', 'samtools_cmd'), star_align_file)
+        cmd_requantify_org = "{0} -i {1}org_Aligned.sortedByCoord.out.bam -o {2}_org.tdt -d 10".format(os.path.join(self.easyfuse_path, "requantify.py"), star_align_file, classification_file)
+>>>>>>> 55fa52a168eebc0ae4f190e4019c00a654ba9fa0
 
         # set final lists of executable tools and path
         exe_tools = [

@@ -38,12 +38,24 @@ class Processing(object):
         copy(os.path.join(cfg.module_dir, "config.py"), working_dir)
         self.logger.info("Starting easyfuse: CMD - {}".format(cmd))
         self.input_path = input_path
+<<<<<<< HEAD
         self.samples = SamplesDB(os.path.join(self.working_dir, "samples.db"))
 #        self.overwrite = overwrite
 
     # The run method simply greps and organises fastq input files.
     # Fastq pairs (single end input is currently not supported) are then send to "execute_pipeline"
     def run(self, tool_num_cutoff):
+=======
+        self.samples = Samples(os.path.join(self.working_dir, "samples.db"))
+        self.partitions = partitions
+        self.userid = userid
+        self.overwrite = overwrite
+        self.easyfuse_path = os.path.dirname(os.path.realpath(__file__))
+
+    # The run method simply greps and organises fastq input files.
+    # Fastq pairs (single end input is currently not supported) are then send to "execute_pipeline"
+    def run(self, tool_num_cutoff, icam_run, icam_tree, icam_tree_n_limit):
+>>>>>>> 55fa52a168eebc0ae4f190e4019c00a654ba9fa0
         """General parameter setting, identification of fastq files and initiation of processing"""
         self.logger.info("Pipeline Version: {}".format(cfg.version))
         # Checking dependencies
@@ -63,6 +75,7 @@ class Processing(object):
 
 
         sample_list = []
+<<<<<<< HEAD
         # get fastq files
         left, right, sample_id = IOMethods.get_fastq_files(self.input_path, self.logger)
         sample_list = sample_id
@@ -72,6 +85,30 @@ class Processing(object):
                 self.logger.info("Sample 1: {}".format(left[i]))
                 self.logger.info("Sample 2: {}".format(right[i]))
                 self.execute_pipeline(left[i], right[i], sample_id[i], ref_genome, ref_trans, tool_num_cutoff)
+=======
+        if icam_run and icam_tree:
+            self.logger.info("Started processing of icam data; searching fastq files in \"{}\"".format(self.input_path))
+            # print(len(self.samples.sample_map)) <- 0 for empty list
+            fastq_dict, counter_list = IOMethods.get_icam_reads_from_patient_tracker(self.input_path, self.samples.get_sample_id_list(), icam_tree_n_limit, self.logger)
+            self.logger.debug("Input data counter: {} (0:already_in_easyfuse, 1:available_samples_in_tracker, 2:samples_to_processes, 3:samples_sent_to_processing)".format(counter_list))
+            for i, sample_id in enumerate(sorted(fastq_dict)):
+                #sample_id = "_".join(sample_id_key.split("_")[:2])
+                sample_list.append(sample_id)
+                print("****** Started processing sample {0} with ID: {1} (paired end)".format(i, sample_id))
+                self.logger.info("****** Started processing sample {0} with ID: {1} (paired end)".format(i, sample_id))
+                self.logger.info("Read 1: {}".format(fastq_dict[sample_id][0]))
+                self.logger.info("Read 2: {}".format(fastq_dict[sample_id][1]))
+                self.execute_pipeline(fastq_dict[sample_id][0], fastq_dict[sample_id][1], sample_id, ref_genome, ref_trans, tool_num_cutoff, icam_run)
+        else:
+            left, right, sample_id = IOMethods.get_fastq_files(self.input_path, self.logger)
+            sample_list = sample_id
+            for i, _ in enumerate(left):
+                if len(left) == len(right):
+                    self.logger.info("Processing Sample ID: {} (paired end)".format(sample_id[i]))
+                    self.logger.info("Read 1: {}".format(left[i]))
+                    self.logger.info("Read 2: {}".format(right[i]))
+                    self.execute_pipeline(left[i], right[i], sample_id[i], ref_genome, ref_trans, tool_num_cutoff, icam_run)
+>>>>>>> 55fa52a168eebc0ae4f190e4019c00a654ba9fa0
         
         # summarize all data if selected
         if "Summary" in cfg.tools:
@@ -85,9 +122,19 @@ class Processing(object):
                 modelling_string = " --model_predictions"
             cmd_summarize = "python {0} --input {1}{2}".format(os.path.join(cfg.module_dir, "summarize_data.py"), self.working_dir, modelling_string)
             self.logger.debug("Submitting slurm job: CMD - {0}; PATH - {1}; DEPS - {2}".format(cmd_summarize, self.working_dir, dependency))
+<<<<<<< HEAD
             cpu = cfg.resources["summary"]["cpu"]
             mem = cfg.resources["summary"]["mem"]
             self.submit_job("-".join([cfg.pipeline_name, "Summary", str(int(round(time.time())))]), cmd_summarize, cpu, mem, self.working_dir, dependency, cfg.receiver)
+=======
+            cpu, mem = self.cfg.get("resources", "summary").split(",")
+            summary_process_id = "-".join(["Summary", str(int(round(time.time())))])
+            self.submit_job(summary_process_id, cmd_summarize, cpu, mem, self.working_dir, dependency, "")
+            
+            # append "done" to main log for compatibility with icam
+            final_process_id = "-".join(["TheEnd", str(int(round(time.time())))])
+            self.submit_job(final_process_id, "python {0} --logger {1}".format(os.path.join(self.easyfuse_path, "misc", "all_done.py"), self.logger.get_path()), "1", "1", self.working_dir, Queueing.get_jobs_by_name(summary_process_id), self.cfg.get('general', 'receiver'))
+>>>>>>> 55fa52a168eebc0ae4f190e4019c00a654ba9fa0
 
     # Per sample, define input parameters and execution commands, create a folder tree and submit runs to slurm
     def execute_pipeline(self, fq1, fq2, sample_id, ref_genome, ref_trans, tool_num_cutoff):
@@ -364,7 +411,14 @@ def main():
     parser.add_argument('--tool_support', dest='tool_support', help='The number of tools which are required to support a fusion event.', default="1")
     parser.add_argument('--version', dest='version', help='Get version info')
     # hidden (not visible in the help display) arguments
+<<<<<<< HEAD
 #    parser.add_argument('--overwrite', dest='overwrite', help=argparse.SUPPRESS, default=False, action='store_true')
+=======
+    parser.add_argument('--icam_run', dest='icam_run', help=argparse.SUPPRESS, default=False, action='store_true')
+    parser.add_argument('--icam_tree', dest='icam_tree', help=argparse.SUPPRESS, default=False, action='store_true')
+    parser.add_argument('--icam_tree_n_limit', dest='icam_tree_n_limit', type=int, help=argparse.SUPPRESS, default=0)
+    parser.add_argument('--overwrite', dest='overwrite', help=argparse.SUPPRESS, default=False, action='store_true')
+>>>>>>> 55fa52a168eebc0ae4f190e4019c00a654ba9fa0
     args = parser.parse_args()
 
     # if version is request, print it and exit
@@ -377,11 +431,16 @@ def main():
 
     # create a local copy of the config file in the working dir folder in order to be able to re-run the script
     # urla: todo - the file permission should be set to read only after it was copied to the project folder (doesn't work for icam as "bfx" is a windows file system)
+<<<<<<< HEAD
     proc = Processing(script_call, args.input, args.output_folder)
     proc.run(args.tool_support)
 
     with open(os.path.join(args.output_folder, "process.sh"), "w") as outf:
         outf.write("#!/bin/sh\n\n{}".format(script_call))
+=======
+    proc = Processing(args.config, args.input, args.output_folder, args.partitions, args.userid, args.overwrite)
+    proc.run(args.tool_support, args.icam_run, args.icam_tree, args.icam_tree_n_limit)
+>>>>>>> 55fa52a168eebc0ae4f190e4019c00a654ba9fa0
 
 if __name__ == '__main__':
     main()

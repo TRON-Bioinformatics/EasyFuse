@@ -7,6 +7,7 @@ Annotate predicted fusion genes. This involves:
     3) Reconstruct possible fusion transcripts as well as the respective wildtype background
     4) Translate transcripts
     5) Select regions of interest for neopeptide searches
+<<<<<<< HEAD
     6) Collect information on the kind of fusion which might be relevant for downstream
        selection processes
     7) Filter likely artifacts based on the quality of the annotated transcripts
@@ -80,8 +81,17 @@ class FusionAnnotation(object):
             return "6"
         return self.tsl_dict[trans_id]
 
+<<<<<<< HEAD
     @staticmethod
     def define_type(cis_near_distance, bp1_chr, bp1_pos, bp1_strand, bp2_chr, bp2_pos, bp2_strand):
+=======
+    def fgid2fusiongene(self, fgid):
+        """ Create the fusion gene string from the fgid """
+        fg1, _, fg2, _ = fgid.split("_")
+        return "_".join([fg1, fg2])
+
+    def define_type(self, cis_near_distance, bp1_chr, bp1_pos, bp1_strand, bp2_chr, bp2_pos, bp2_strand):
+>>>>>>> 55fa52a168eebc0ae4f190e4019c00a654ba9fa0
         """ Define the fusion type based on the location and orientation of the fusion partners """
         # Fusion type:
         # -	"trans" (bp of fusion partners on different chromosomes, but with same strand)
@@ -114,7 +124,11 @@ class FusionAnnotation(object):
         """ Get two lists with breakpoint overlapping exons and cds from the database """
         bp_exons = []
         bp_cds = []
+<<<<<<< HEAD
         for efeature in self.db.region(region="{}:{}-{}".format(bp_chr, bp_pos - 1, bp_pos + 1), completely_within=False, featuretype=("exon", "CDS")):
+=======
+        for efeature in self.db.region(region="{}:{}-{}".format(bp_chr, bp_pos - 1, bp_pos + 1), completely_within=False, featuretype = ("exon", "CDS")):
+>>>>>>> 55fa52a168eebc0ae4f190e4019c00a654ba9fa0
             if efeature.featuretype == "exon":
                 bp_exons.append(efeature)
             elif efeature.featuretype == "CDS":
@@ -126,8 +140,12 @@ class FusionAnnotation(object):
         bp_cds = [bp_cds[cds_transcripts.index(x)] if x in cds_transcripts else "" for x in exon_transcripts]
         return bp_exons, bp_cds
 
+<<<<<<< HEAD
     @staticmethod
     def get_boundary(bp_pos, efeature):
+=======
+    def get_boundary(self, bp_pos, efeature):
+>>>>>>> 55fa52a168eebc0ae4f190e4019c00a654ba9fa0
         """ Check whether the breakpoint position is on an exon or CDS boundary """
         if efeature == "":
             return "NA"
@@ -139,8 +157,12 @@ class FusionAnnotation(object):
             return "within"
         return "outside"
 
+<<<<<<< HEAD
     @staticmethod
     def get_boundary2(boundary1, boundary2, strand1, strand2):
+=======
+    def get_boundary2(self, boundary1, boundary2, strand1, strand2):
+>>>>>>> 55fa52a168eebc0ae4f190e4019c00a654ba9fa0
         """ Check whether boundaries of both fusion partners are in the correct orientation """
         # urla - note: "both" is returned to be compatible with the existing pipeline although the name is not very meaningful here
         if strand1 == "+":
@@ -178,6 +200,8 @@ class FusionAnnotation(object):
         count_parents = 0
         for count_parents, parent in enumerate(self.db.parents(efeature.id), 1):
             if parent.id.startswith("transcript:"):
+        for count_parents, parent in enumerate(self.db.parents(efeature.id), 1):
+            if parent.id.startswith("transcript:"):
                 trans_id = parent.id
                 trans_biotype = parent.attributes["biotype"][0]
             elif parent.id.startswith("gene:"):
@@ -185,19 +209,33 @@ class FusionAnnotation(object):
                 gene_name = parent.attributes["Name"][0]
                 gene_biotype = parent.attributes["biotype"][0]
                 try:
+<<<<<<< HEAD
                     description = parent.attributes["description"][0].replace(";", " ")
                 except KeyError:
                     description = "NA"
         if count_parents > 2:
             print("Warning: {0} has more than two parents. Please check that gene_id {1} and trans_id {2} are correct for the exon at position {3}-{4}.".format(efeature.id, gene_id, trans_id, efeature.start, efeature.stop))
         return trans_id, trans_biotype, gene_name, gene_biotype, description
+=======
+                    description = parent.attributes["description"][0].replace(";"," ")
+                except KeyError:
+                    description = "NA"
+        if count_parents > 2:
+            print("Warning: {0} has more than two parents. Please check that gene_id {1} and trans_id {2} are correct for the exon at position {3}-{4}.".format(
+                    efeature.id, gene_id, trans_id, efeature.start, efeature.stop))
+        return trans_id, trans_biotype, gene_id, gene_name, gene_biotype, description
+>>>>>>> 55fa52a168eebc0ae4f190e4019c00a654ba9fa0
 
     def get_wt_codings(self, trans_id):
         """ Get matched exons and cds region per transcript id """
         exon_pos_list = []
         cds_pos_list = []
         cds_frame_list = []
+<<<<<<< HEAD
         for feature in self.db.children(trans_id, featuretype=("exon", "CDS"), order_by="start", reverse=False):
+=======
+        for feature in self.db.children(trans_id, featuretype = ("exon", "CDS"), order_by = "start", reverse = False):
+>>>>>>> 55fa52a168eebc0ae4f190e4019c00a654ba9fa0
             if feature.featuretype == "exon":
                 exon_pos_list.append((feature.start, feature.stop))
             elif feature.featuretype == "CDS":
@@ -222,8 +260,12 @@ class FusionAnnotation(object):
                 cds_frame_list2.append("NA")
         return exon_pos_list, cds_pos_list2, cds_frame_list2
 
+<<<<<<< HEAD
     @staticmethod
     def check_exon_overlap(wt1_exon_pos_list, wt2_exon_pos_list, fusion_type):
+=======
+    def check_exon_overlap(self, wt1_exon_pos_list, wt2_exon_pos_list, fusion_type):
+>>>>>>> 55fa52a168eebc0ae4f190e4019c00a654ba9fa0
         """ Returns true if exons overlap and false otherwise """
         # exon position lists are always sorted and we therefore don't need any information on the strand
         # gene on different chromosomes
@@ -234,49 +276,99 @@ class FusionAnnotation(object):
             return False
         return True
 
+<<<<<<< HEAD
     @staticmethod
     def get_frame(bp_pos, cds_pos_list, cds_frame_list, strand):
+=======
+    def get_frame(self, bp_pos, cds_pos_list, cds_frame_list, strand):
+>>>>>>> 55fa52a168eebc0ae4f190e4019c00a654ba9fa0
         """ Get/Calculate the frame at the start of the cds and at the breakpoint """
         # urla - note: the frame annotation is imho a little confusing in ensembl and defined as follows:
         #              0: The next full codon (i.e. 3bp codon) starts 0 bases from the current position => this is the first (0) base of a codon
         #              1: The next full codon (i.e. 3bp codon) starts 1 base from the current position => this is the third (2) base of a codon
         #              2: The next full codon (i.e. 3bp codon) starts 2 bases from the current position => this is the second (1) base of a codon
+<<<<<<< HEAD
         frame_idx = [0, 2, 1, 0, 2, 1]
+=======
+        pos_frame_idx = [0, 2, 1, 0, 2, 1]
+#        neg_frame_idx = [2, 0, 1, 2, 0, 1]
+
+>>>>>>> 55fa52a168eebc0ae4f190e4019c00a654ba9fa0
         # if the frame at bp is non-determinable, it is set to -1
         frame_at_start = -1
         frame_at_bp = -1
         # zip pos and frame while excluding NAs
+<<<<<<< HEAD
         pos_frame_list = [(x, int(y)) for x, y in zip(cds_pos_list, cds_frame_list) if not x == "NA"]
         # find breakpoint cds and get the frame at the breakpoint
         for cds_pos, cds_frame in pos_frame_list:
             tmp_frame_idx = frame_idx[frame_idx.index(cds_frame):frame_idx.index(cds_frame)+3]
             # on pos strand
             if strand == "+":
+=======
+        pos_frame_list = [(x,int(y)) for x,y in zip(cds_pos_list, cds_frame_list) if not x == "NA"]
+        # find breakpoint cds and get the frame at the breakpoint
+        for cds_pos, cds_frame in pos_frame_list:
+
+#            if cds_pos[0] <= bp_pos <= cds_pos[1]:
+#                tmp_frame_idx = pos_frame_idx[pos_frame_idx.index(cds_frame):pos_frame_idx.index(cds_frame)+3]
+#                frame_at_bp = tmp_frame_idx[(bp_pos - (cds_pos[0] - 1)) % 3]
+#                break
+
+            tmp_frame_idx = pos_frame_idx[pos_frame_idx.index(cds_frame):pos_frame_idx.index(cds_frame)+3]
+#            if (strand == "+" and bp_pos == cds_pos[0]) or (strand == "-" and bp_pos == cds_pos[1]):
+#                frame_at_bp = cds_frame
+#            elif cds_pos[0] < bp_pos <= cds_pos[1]:
+#                frame_at_bp = tmp_frame_idx[(bp_pos - (cds_pos[0] - 1)) % 3]
+
+            if strand == "+":
+#                tmp_frame_idx = pos_frame_idx[pos_frame_idx.index(cds_frame):pos_frame_idx.index(cds_frame)+3]
+#                frame_at_bp = tmp_frame_idx[(bp_pos - (cds_pos[0] - 1)) % 3]
+>>>>>>> 55fa52a168eebc0ae4f190e4019c00a654ba9fa0
                 if bp_pos == cds_pos[0]:
                     frame_at_bp = cds_frame
 #                    break
                 elif cds_pos[0] < bp_pos <= cds_pos[1]:
                     frame_at_bp = tmp_frame_idx[(bp_pos - (cds_pos[0] - 1)) % 3]
 #                    break
+<<<<<<< HEAD
             # on neg strand
             else:
+=======
+#                    frame_at_bp = pos_frame_idx[((bp_pos + 1) - cds_pos[0]) % 3 + cds_frame]
+            else:
+#                tmp_frame_idx = neg_frame_idx[pos_frame_idx.index(cds_frame):pos_frame_idx.index(cds_frame)+3]
+
+>>>>>>> 55fa52a168eebc0ae4f190e4019c00a654ba9fa0
                 if bp_pos == cds_pos[1]:
                     frame_at_bp = cds_frame
 #                    break
                 elif cds_pos[0] <= bp_pos < cds_pos[1]:
                     frame_at_bp = tmp_frame_idx[(cds_pos[1] - (bp_pos - 1)) % 3]
 #                    break
+<<<<<<< HEAD
+=======
+#                    frame_at_bp = neg_frame_idx[(cds_pos[1] - (bp_pos + 1)) % 3 + cds_frame]
+>>>>>>> 55fa52a168eebc0ae4f190e4019c00a654ba9fa0
         # get the starting frame of the cds
         if not len(pos_frame_list) == 0:
             if strand == "+":
                 frame_at_start = pos_frame_list[0][1]
             else:
+<<<<<<< HEAD
+=======
+#                frame_at_start = frame_idx[(pos_frame_list[-1][0][1] - pos_frame_list[-1][0][0]) % 3 + pos_frame_list[-1][1]]
+>>>>>>> 55fa52a168eebc0ae4f190e4019c00a654ba9fa0
                 frame_at_start = pos_frame_list[-1][1]
         # return frame at the beginning of the first cds and at the breakpoint position, both corrected according the the reading strand
         return frame_at_start, frame_at_bp
 
+<<<<<<< HEAD
     @staticmethod
     def get_frame2(frame1, frame2):
+=======
+    def get_frame2(self, frame1, frame2):
+>>>>>>> 55fa52a168eebc0ae4f190e4019c00a654ba9fa0
         """ Combine frame info from bp1 and 2 """
         if frame1 == -1:
             return "no_frame"
@@ -286,8 +378,12 @@ class FusionAnnotation(object):
             return "in_frame"
         return "out_frame"
 
+<<<<<<< HEAD
     @staticmethod
     def get_fusion_feature_list(bp1_pos, bp2_pos, bp1_strand, bp2_strand, bp1_feature_pos_list, bp2_feature_pos_list):
+=======
+    def get_fusion_feature_list(self, bp1_pos, bp2_pos, bp1_strand, bp2_strand, bp1_feature_pos_list, bp2_feature_pos_list):
+>>>>>>> 55fa52a168eebc0ae4f190e4019c00a654ba9fa0
         """ Based on the breakpoints, the strand and the complete feature positions of the involved genes, return only those feature positions which will remain in the fusion. """
         bp1_feature_fus_list = []
         bp2_feature_fus_list = []
@@ -336,13 +432,18 @@ class FusionAnnotation(object):
             if not cds_coord in self.cds_seq_dict[chrom][0]:
                 self.cds_seq_dict[chrom][0].append(cds_coord)
 
+<<<<<<< HEAD
     @staticmethod
     def get_stranded_seq(sequence, strand):
+=======
+    def get_stranded_seq(self, sequence, strand):
+>>>>>>> 55fa52a168eebc0ae4f190e4019c00a654ba9fa0
         """ Return the reverse complement of a sequence if the strand is negative and the unchanged sequence otherwise """
         if strand == "-":
             return sequence.reverse_complement()
         return sequence
 
+<<<<<<< HEAD
     def run(self, context_seqs_file, cis_near_distance, genome_fasta, context_seq_len, tsl_filter_level):
         """ Run the annotation pipeline """
         # for performance reasons (mainly seq grepping), results cannot be written on the fly and everything will therefore be stored in a list of lists
@@ -372,6 +473,11 @@ class FusionAnnotation(object):
         # get features overlapping with the bp from the db
         for fgid in self.bp_dict:
             print("Annotating \"{}\"...".format(fgid))
+<<<<<<< HEAD
+=======
+            # create fusion_gene from fgid
+            fusion_gene = self.fgid2fusiongene(fgid)
+>>>>>>> 55fa52a168eebc0ae4f190e4019c00a654ba9fa0
             # split breakpoint info
             bp1 = self.bp_dict[fgid][0]
             bp2 = self.bp_dict[fgid][1]
@@ -394,6 +500,11 @@ class FusionAnnotation(object):
                 wt1_trans_id, wt1_trans_biotype, wt1_gene_name, wt1_gene_biotype, wt1_description = self.get_parents(bp1_efeature)
                 # create a set to collect "suspicious findings" for transcripts
                 if wt1_trans_id not in self.trans_flags_dict:
+=======
+                wt1_trans_id, wt1_trans_biotype, wt1_gene_id, wt1_gene_name, wt1_gene_biotype, wt1_description = self.get_parents(bp1_efeature)
+                # create a set to collect "suspicious findings" for transcripts
+                if not wt1_trans_id in self.trans_flags_dict:
+>>>>>>> 55fa52a168eebc0ae4f190e4019c00a654ba9fa0
                     self.trans_flags_dict[wt1_trans_id] = set()
                 # get the complete set of exons, corresponding cds (cds at the same index are NA if there is none in the exon) and start frames of the cds
                 wt1_exon_pos_list, wt1_cds_pos_list, wt1_cds_frame_list = self.get_wt_codings(wt1_trans_id)
@@ -416,6 +527,7 @@ class FusionAnnotation(object):
                     # combined exon boundary information
                     exon_boundary = self.get_boundary2(exon_boundary1, exon_boundary2, bp1_strand, bp2_strand)
                     cds_boundary2 = self.get_boundary(bp2_pos, bp2_cfeature)
+<<<<<<< HEAD
                     wt2_trans_id, wt2_trans_biotype, wt2_gene_name, wt2_gene_biotype, wt2_description = self.get_parents(bp2_efeature)
                     if wt2_trans_id not in self.trans_flags_dict:
                         self.trans_flags_dict[wt2_trans_id] = set()
@@ -487,6 +599,7 @@ class FusionAnnotation(object):
         #            but as the following is mainly string manipulation and simple lookups it should not make a big difference
         #            in terms of speed and readability
         last_chr = "" # we save the last chromosome string to avoid some superfluous re-calculations
+<<<<<<< HEAD
         # due to annotation biases between different prediction tools, it is possible that the same ftid is created twice
         # as this is 100% redundant information, we will skip such records. In order to guarantee that this is working as intended,
         # we introduce the ftid plus which is the ftid plus appended seq hash
@@ -615,6 +728,150 @@ class FusionAnnotation(object):
 
             result_list[header_dict["exon_starts"]] = "{}*{}".format("|".join([str(x) for x, y in lookup_exons1]), "|".join([str(x) for x, y in lookup_exons2]))
             result_list[header_dict["exon_ends"]] = "{}*{}".format("|".join([str(y) for x, y in lookup_exons1]), "|".join([str(y) for x, y in lookup_exons2]))
+=======
+        count_context_seqs = 0 # the number of context seq records for correct setting of star genome generate parameter
+        summed_context_seqs_len = 0 # the cummulative length of context seq records for correct setting of star genome generate parameter
+        # we need 3 file writer, 1st for the context seqs, 2nd for the full length transcripts and 3rd for the full length peptides (the last two only for debugging)
+        context_fa = "{}.fasta".format(context_seqs_file)
+        transcript_fa = "{}_transcript.fasta".format(context_seqs_file)
+        peptide_fa = "{}_peptide.fasta".format(context_seqs_file)
+        with open(context_fa, "w") as cfasta, open(transcript_fa, "w") as tfasta, open(peptide_fa, "w") as pfasta:
+            for result_list in results_lists:
+                # create a tempory dict with the cds_pos tuple as keys and the respective genomic sequence as value
+                # the dict is restricted to the chromosome of the fusion partner and only updated if the chromosome changes
+                if not last_chr == result_list[header_dict["bp1_chr"]]:
+                    tmp_dict = dict(zip(self.cds_seq_dict[result_list[header_dict["bp1_chr"]]][0], self.cds_seq_dict[result_list[header_dict["bp1_chr"]]][1]))
+                    last_chr = result_list[header_dict["bp1_chr"]]
+                # add sequences as gffutils Seq objects to the table
+                result_list[header_dict["wt1_exon_seqs"]] = [tmp_dict[feature] for feature in result_list[header_dict["wt1_exon_pos"]]]
+                result_list[header_dict["ft1_exon_seqs"]] = [tmp_dict[feature] for feature in result_list[header_dict["ft1_exon_pos"]]]
+                result_list[header_dict["wt1_cds_seqs"]] = [tmp_dict[feature] for feature in result_list[header_dict["wt1_cds_pos"]]]
+                result_list[header_dict["ft1_cds_seqs"]] = [tmp_dict[feature] for feature in result_list[header_dict["ft1_cds_pos"]]]
+                # and concatenate them
+                result_list[header_dict["wt1_exon_transcripts"]] = sum(result_list[header_dict["wt1_exon_seqs"]], Seq("", generic_dna))
+                result_list[header_dict["ft1_exon_transcripts"]] = sum(result_list[header_dict["ft1_exon_seqs"]], Seq("", generic_dna))
+                result_list[header_dict["wt1_cds_transcripts"]] = sum(result_list[header_dict["wt1_cds_seqs"]], Seq("", generic_dna))
+                result_list[header_dict["ft1_cds_transcripts"]] = sum(result_list[header_dict["ft1_cds_seqs"]], Seq("", generic_dna))
+                # create the first part of the context and fusion sequence and translate wt1 seqs
+                translation_shift1 = result_list[header_dict["wt1_frame_at_start"]] # for easier visualization, store in separate var
+                trans_table = 1
+                if last_chr == "MT":
+                    trans_table = 2
+                result_list[header_dict["context_sequence"]] = self.get_stranded_seq(result_list[header_dict["ft1_exon_transcripts"]], result_list[header_dict["bp1_strand"]])
+                result_list[header_dict["context_sequence_wt1"]] = self.get_stranded_seq(result_list[header_dict["wt1_exon_transcripts"]], result_list[header_dict["bp1_strand"]])
+                result_list[header_dict["fusion_transcript"]] = self.get_stranded_seq(result_list[header_dict["ft1_cds_transcripts"]], result_list[header_dict["bp1_strand"]])
+                result_list[header_dict["wt1_peptide"]] = self.get_stranded_seq(result_list[header_dict["wt1_cds_transcripts"]], result_list[header_dict["bp1_strand"]])[translation_shift1:].translate(table = trans_table)
+
+                # do the same for fusion partner 2
+                if not last_chr == result_list[header_dict["bp2_chr"]]:
+                    tmp_dict = dict(zip(self.cds_seq_dict[result_list[header_dict["bp2_chr"]]][0], self.cds_seq_dict[result_list[header_dict["bp2_chr"]]][1]))
+                    last_chr = result_list[header_dict["bp2_chr"]]
+                result_list[header_dict["wt2_exon_seqs"]] = [tmp_dict[feature] for feature in result_list[header_dict["wt2_exon_pos"]]]
+                result_list[header_dict["ft2_exon_seqs"]] = [tmp_dict[feature] for feature in result_list[header_dict["ft2_exon_pos"]]]
+                result_list[header_dict["wt2_cds_seqs"]] = [tmp_dict[feature] for feature in result_list[header_dict["wt2_cds_pos"]]]
+                result_list[header_dict["ft2_cds_seqs"]] = [tmp_dict[feature] for feature in result_list[header_dict["ft2_cds_pos"]]]
+                result_list[header_dict["wt2_exon_transcripts"]] = sum(result_list[header_dict["wt2_exon_seqs"]], Seq("", generic_dna))
+                result_list[header_dict["ft2_exon_transcripts"]] = sum(result_list[header_dict["ft2_exon_seqs"]], Seq("", generic_dna))
+                result_list[header_dict["wt2_cds_transcripts"]] = sum(result_list[header_dict["wt2_cds_seqs"]], Seq("", generic_dna))
+                result_list[header_dict["ft2_cds_transcripts"]] = sum(result_list[header_dict["ft2_cds_seqs"]], Seq("", generic_dna))
+                translation_shift2 = result_list[header_dict["wt2_frame_at_start"]]
+                # append the second part of the context and fusion sequence and translate wt2 seqs
+                trans_table = 1
+                if last_chr == "MT":
+                    trans_table = 2
+                result_list[header_dict["context_sequence"]] += self.get_stranded_seq(result_list[header_dict["ft2_exon_transcripts"]], result_list[header_dict["bp2_strand"]])
+                result_list[header_dict["context_sequence_wt2"]] = self.get_stranded_seq(result_list[header_dict["wt2_exon_transcripts"]], result_list[header_dict["bp2_strand"]])
+                # for in frame fusions, use the cds sequences, for everything else, use the exons
+                if result_list[header_dict["frame"]] == "in_frame":
+                    result_list[header_dict["fusion_transcript"]] += self.get_stranded_seq(result_list[header_dict["ft2_cds_transcripts"]], result_list[header_dict["bp2_strand"]])
+                else:
+                    result_list[header_dict["fusion_transcript"]] += self.get_stranded_seq(result_list[header_dict["ft2_exon_transcripts"]], result_list[header_dict["bp2_strand"]])
+                result_list[header_dict["wt2_peptide"]] = self.get_stranded_seq(result_list[header_dict["wt2_cds_transcripts"]], result_list[header_dict["bp2_strand"]])[translation_shift2:].translate(table = trans_table)
+
+                # bp pos in the fusion
+                bp_in_fusion_nt = len(result_list[header_dict["ft1_cds_transcripts"]]) # the fusion starts in the fusion transcript with the end of the first part
+                bp_in_fusion_nt_ex = len(result_list[header_dict["ft1_exon_transcripts"]]) # the fusion starts in the fusion transcript with the end of the first part
+                bp_in_wt1_nt_ex = bp_in_fusion_nt_ex # the breakpoint in wt1 must be identical to the breakpoint in the fusion
+                bp_in_wt2_nt_ex = len(result_list[header_dict["wt2_exon_transcripts"]]) - len(result_list[header_dict["ft2_exon_transcripts"]]) # the breakpoint in wt2 is at the position where the ft2 transcripts start
+                bp_in_fusion_aa = ((bp_in_fusion_nt - translation_shift1)* 10 // 3) / 10 # the respective bp pos in the aa seq, whereas x.0 / x.3 / x.6 indicate that the breakpoint is at the beginning / after first base / after second base of the underlying codon
+
+                # translate and trim the fusion sequence around the breakpoint
+                result_list[header_dict["fusion_peptide"]] = result_list[header_dict["fusion_transcript"]][translation_shift1:].translate(table = 1, to_stop=True)
+                result_list[header_dict["context_sequence_100"]] = result_list[header_dict["context_sequence"]][max(0, bp_in_fusion_nt_ex - 100):(bp_in_fusion_nt_ex + 100)]
+                result_list[header_dict["context_sequence"]] = result_list[header_dict["context_sequence"]][max(0, bp_in_fusion_nt_ex - context_seq_len):(bp_in_fusion_nt_ex + context_seq_len)]
+                result_list[header_dict["context_sequence_wt1"]] = result_list[header_dict["context_sequence_wt1"]][max(0, bp_in_wt1_nt_ex - context_seq_len):(bp_in_wt1_nt_ex + context_seq_len)]
+                result_list[header_dict["context_sequence_wt2"]] = result_list[header_dict["context_sequence_wt2"]][max(0, bp_in_wt2_nt_ex - context_seq_len):(bp_in_wt2_nt_ex + context_seq_len)]
+                result_list[header_dict["context_sequence_bp"]] = min(context_seq_len, bp_in_fusion_nt_ex)
+                result_list[header_dict["context_sequence_wt1_bp"]] = min(context_seq_len, bp_in_wt1_nt_ex)
+                result_list[header_dict["context_sequence_wt2_bp"]] = min(context_seq_len, bp_in_wt2_nt_ex)
+
+                result_list[header_dict["neo_peptide_sequence"]] = result_list[header_dict["fusion_peptide"]][max(0, int(bp_in_fusion_aa) - 13):]
+                if (int(bp_in_fusion_aa) - 13) < 0:
+                    result_list[header_dict["neo_peptide_sequence_bp"]] = bp_in_fusion_aa
+                else:
+                    result_list[header_dict["neo_peptide_sequence_bp"]] = bp_in_fusion_aa - (int(bp_in_fusion_aa) - 13)
+                if result_list[header_dict["frame"]] == "in_frame":
+                    result_list[header_dict["neo_peptide_sequence"]] = result_list[header_dict["neo_peptide_sequence"]][:(int(result_list[header_dict["neo_peptide_sequence_bp"]]) + 13)]
+
+                result_list[header_dict["context_sequence_id"]] = xxhash.xxh64(str(result_list[header_dict["context_sequence"]])).hexdigest()
+                result_list[header_dict["context_sequence_100_id"]] = xxhash.xxh64(str(result_list[header_dict["context_sequence_100"]])).hexdigest()
+
+                # set exon starts/ends
+                # urla: needs revision and simplification, but is working...
+                neo_pep_nuc_length = len(result_list[header_dict["neo_peptide_sequence"]]) * 3
+                neo_pep_until_bp_nuc = int(round(result_list[header_dict["neo_peptide_sequence_bp"]] * 3, 0))
+                if result_list[header_dict["bp1_strand"]] == "+":
+                    summed_len = 0
+                    for exon_pos, exon_length in enumerate([y-x for x, y in result_list[header_dict["ft1_exon_pos"]]][::-1], 1):
+                        summed_len += exon_length
+                        if neo_pep_until_bp_nuc <= summed_len:
+                            break
+                    lookup_exons1 = result_list[header_dict["ft1_exon_pos"]][-exon_pos:]
+                else:
+                    summed_len = 0
+                    for exon_pos, exon_length in enumerate([y-x for x, y in result_list[header_dict["ft1_exon_pos"]]], 1):
+                        summed_len += exon_length
+                        if neo_pep_until_bp_nuc <= summed_len:
+                            break
+                    lookup_exons1 = result_list[header_dict["ft1_exon_pos"]][:exon_pos]
+
+                if result_list[header_dict["bp2_strand"]] == "+":
+                    summed_len = 0
+                    for exon_pos, exon_length in enumerate([y-x for x, y in result_list[header_dict["ft2_exon_pos"]]], 1):
+                        summed_len += exon_length
+                        if (neo_pep_nuc_length - neo_pep_until_bp_nuc) <= summed_len:
+                            break
+                    lookup_exons2 = result_list[header_dict["ft2_exon_pos"]][:exon_pos]
+                else:
+                    summed_len = 0
+                    for exon_pos, exon_length in enumerate([y-x for x, y in result_list[header_dict["ft2_exon_pos"]]][::-1], 1):
+                        summed_len += exon_length
+                        if (neo_pep_nuc_length - neo_pep_until_bp_nuc) <= summed_len:
+                            break
+                    lookup_exons2 = result_list[header_dict["ft2_exon_pos"]][-exon_pos:]
+
+                result_list[header_dict["exon_starts"]] = "{}*{}".format("|".join([str(x) for x,y in lookup_exons1]), "|".join([str(x) for x,y in lookup_exons2]))
+                result_list[header_dict["exon_ends"]] = "{}*{}".format("|".join([str(y) for x,y in lookup_exons1]), "|".join([str(y) for x,y in lookup_exons2]))
+
+                # count context data for star
+                # we perform tsl exclusion for the context seqs, but keep everything for the debugging data
+                if not (result_list[header_dict["wt1_TSL"]] in ["4", "5", "NA"] or result_list[header_dict["wt2_TSL"]] in ["4", "5", "NA"]):
+                    count_context_seqs += 3
+                    summed_context_seqs_len += sum(map(len, [
+                            result_list[header_dict["context_sequence"]],
+                            result_list[header_dict["context_sequence_wt1"]],
+                            result_list[header_dict["context_sequence_wt2"]]
+                            ]))
+                    # write sequences for requantification
+                    SeqIO.write(SeqRecord(result_list[header_dict["context_sequence"]], id="{}_{}_{}_ft".format(result_list[header_dict["FTID"]], result_list[header_dict["context_sequence_id"]], result_list[header_dict["context_sequence_bp"]]), name="", description=""), cfasta, "fasta")
+                    SeqIO.write(SeqRecord(result_list[header_dict["context_sequence_wt1"]], id="{}_{}_{}_wt1".format(result_list[header_dict["FTID"]], result_list[header_dict["context_sequence_id"]], result_list[header_dict["context_sequence_wt1_bp"]]), name="", description=""), cfasta, "fasta")
+                    SeqIO.write(SeqRecord(result_list[header_dict["context_sequence_wt2"]], id="{}_{}_{}_wt2".format(result_list[header_dict["FTID"]], result_list[header_dict["context_sequence_id"]], result_list[header_dict["context_sequence_wt2_bp"]]), name="", description=""), cfasta, "fasta")
+
+                SeqIO.write(SeqRecord(result_list[header_dict["fusion_transcript"]], id="{}_ft_{}".format(result_list[header_dict["FTID"]], bp_in_fusion_nt), name="", description=""), tfasta, "fasta")
+                SeqIO.write(SeqRecord(result_list[header_dict["fusion_peptide"]], id="{}_{}_{}".format(result_list[header_dict["FTID"]], bp_in_fusion_aa, result_list[header_dict["type"]]), name="", description=""), pfasta, "fasta")
+
+            # write sequences to file
+>>>>>>> 55fa52a168eebc0ae4f190e4019c00a654ba9fa0
 
             # experimental
             if not len(result_list[header_dict["wt1_cds_transcripts"]]) % 3 == 0:
@@ -625,6 +882,7 @@ class FusionAnnotation(object):
             result_list[header_dict["wt1_cds_transcripts"]] = str(result_list[header_dict["wt1_cds_transcripts"]])
             result_list[header_dict["wt2_cds_transcripts"]] = str(result_list[header_dict["wt2_cds_transcripts"]])
 
+<<<<<<< HEAD
         # write everything to a couple of files
         # 1) context.csv.debug and context.csv : for easy debugging, we will write these two files.
         #                                        The first contains all informations, the second is filtered and
@@ -666,14 +924,36 @@ class FusionAnnotation(object):
                 SeqIO.write(SeqRecord(result_line[header_dict["context_sequence"]], id="{}_{}_{}_ft".format(result_line[header_dict["FTID"]], result_line[header_dict["context_sequence_id"]], result_line[header_dict["context_sequence_bp"]]), name="", description=""), cfasta, "fasta")
                 SeqIO.write(SeqRecord(result_line[header_dict["context_sequence_wt1"]], id="{}_{}_{}_wt1".format(result_line[header_dict["FTID"]], result_line[header_dict["context_sequence_id"]], result_line[header_dict["context_sequence_wt1_bp"]]), name="", description=""), cfasta, "fasta")
                 SeqIO.write(SeqRecord(result_line[header_dict["context_sequence_wt2"]], id="{}_{}_{}_wt2".format(result_line[header_dict["FTID"]], result_line[header_dict["context_sequence_id"]], result_line[header_dict["context_sequence_wt2_bp"]]), name="", description=""), cfasta, "fasta")
+=======
+        # write everything to file
+        # for easy debugging, we will write two files. The first contains all informations, the second is filtered and contains only downstream required columns
+        with open("{}.debug".format(context_seqs_file), "w") as outfile:
+            outfile.write("{}\n".format(";".join(header)))
+            for result_line in results_lists:
+                outfile.write("{}\n".format(";".join(map(str, result_line))))
+        with open(context_seqs_file, "w") as outfile:
+            outfile.write("{}\n".format(";".join(short_header)))
+            for result_line in results_lists:
+                # filter all fusions with transcripts which have a TSL of 4 or 5 (keeping 1-3, 6(liftover), NA)
+                if result_line[header_dict["wt1_TSL"]] in ["4", "5", "NA"] or result_line[header_dict["wt2_TSL"]] in ["4", "5", "NA"]:
+                    continue
+                outfile.write("{}\n".format(";".join([str(result_line[header_dict[col_name]]) for col_name in short_header])))
+>>>>>>> 55fa52a168eebc0ae4f190e4019c00a654ba9fa0
         # write fasta.info file for star genome generate
         with open("{}.fasta.info".format(context_seqs_file), "w") as ifasta:
             ifasta.write("{}\n".format(count_context_seqs))
             ifasta.write("{}\n".format(summed_context_seqs_len))
 
+<<<<<<< HEAD
 def main():
     """Parse command line arguments and start script"""
     parser = ArgumentParser(description="Generate mapping stats for fusion detection")
+=======
+
+def main():
+    """Parse command line arguments and start script"""
+    parser = argparse.ArgumentParser(description="Generate mapping stats for fusion detection")
+>>>>>>> 55fa52a168eebc0ae4f190e4019c00a654ba9fa0
     parser.add_argument('--detected_fusions', dest='detected_fusions', help='detected_fusions.csv file from easyfuse', required=True)
     parser.add_argument('--annotation_db', dest='annotation_db', help='gff3 derived annotation database from gffutils', required=True)
     parser.add_argument('--out_csv', dest='out_csv', help='context_seqs.csv output for easyfuse', required=True)
@@ -681,7 +961,10 @@ def main():
     parser.add_argument('--tsl_info', dest='tsl_info', help='File containing transcript support level (TSL). Should have been generated by gtf2tsl.py', required=True)
     parser.add_argument('--cis_near_dist', dest='cis_near_dist', help='Genomic distance after which a cis_near becomes a cis_far fusion', required=True)
     parser.add_argument('--context_seq_length', dest='context_seq_len', help='The maximal length of sequence context (exon) at either site of the bp', required=True)
+<<<<<<< HEAD
     parser.add_argument('--tsl_filter_level', dest='tsl_filter_level', help='The TSL level to exclude from the final tables. Should be comma separated w/o spaces. Possible values include 1-5 and NA', required=True)
+=======
+>>>>>>> 55fa52a168eebc0ae4f190e4019c00a654ba9fa0
     args = parser.parse_args()
 
 #    bp_in_file = "/mnt/bfx/urla/easyfuse_validationData/easyfuse_standalone_urla/Sample_EasyValiS01TR_NFC15_Rep1/fetchdata/fd_1_tool/fetched_fusions/Detected_Fusions.csv"
@@ -691,7 +974,11 @@ def main():
 #    tsl_in = "/mnt/bfx/IVAC_DEV/src/FUS/GenomeData/Ensembl_GRCh37_v90/Homo_sapiens.GRCh37.87.tsl_info"
 
     fusannot = FusionAnnotation(args.annotation_db, args.detected_fusions, args.tsl_info)
+<<<<<<< HEAD
     fusannot.run(args.out_csv, int(args.cis_near_dist), args.genome_fasta, int(args.context_seq_len), args.tsl_filter_level)
+=======
+    fusannot.run(args.out_csv, int(args.cis_near_dist), args.genome_fasta, int(args.context_seq_len))
+>>>>>>> 55fa52a168eebc0ae4f190e4019c00a654ba9fa0
 
 if __name__ == '__main__':
     main()

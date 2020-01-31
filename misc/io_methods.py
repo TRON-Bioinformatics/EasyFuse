@@ -15,6 +15,7 @@ import sys
 import stat
 import re
 import ntpath
+import sqlite3
 
 
 def create_folder(path, logger=None):
