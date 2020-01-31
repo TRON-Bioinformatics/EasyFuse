@@ -109,7 +109,6 @@ class DataJoining(object):
         print("Looking for required files...")
         # check whether output already exists
         cols_to_aggregate_on = ["FGID", "context_sequence_id", "FTID"]
-<<<<<<< HEAD
 
         # in comparison to the previous implementation, pre-existing results will always be overwritten as it turned out that the
         # previous implementation is to error prone...
@@ -118,25 +117,6 @@ class DataJoining(object):
         joined_table_1b.agg(self.custom_data_aggregation).to_csv("{}_fusRank_1.csv".format(self.output), sep=";", index=False)
 
         joined_table_1 = pd.read_csv("{}_fusRank_1.csv".format(self.output), sep=";")
-=======
-        
-        # in comparison to the previous implementation, pre-existing results will always be overwritten as it turned out that the
-        # previous implementation is to error prone...
-        joined_table_1, header_list_1 = self.create_joined_table(self.id1, fusion_tools)
-        joined_table_1b = joined_table_1.groupby(by=cols_to_aggregate_on, sort=False, as_index=False)
-        joined_table_1b.agg(self.custom_data_aggregation).to_csv("{}_fusRank_1.csv".format(self.output), sep=";", index=False)
-        if icam_run:
-            joined_table_2, _ = self.create_joined_table(self.id2, fusion_tools)
-            joined_table_2b = joined_table_2.groupby(by=cols_to_aggregate_on, sort=False, as_index=False)
-            joined_table_2b.agg(self.custom_data_aggregation).to_csv("{}_fusRank_2.csv".format(self.output), sep=";", index=False)
-            print("Merging data...")
-            # drop columns from context seq in tab 2 as they are identical to the ones from tab 1
-            joined_table_2c = joined_table_2.drop(header_list_1, axis=1, errors="ignore")
-            # perform an inner join of the two replicate data frames
-            joined_table_12 = joined_table_1.join(joined_table_2c, lsuffix="_1", rsuffix="_2", how="inner")
-            joined_table_12b = joined_table_12.groupby(by=cols_to_aggregate_on, sort=False, as_index=False)
-            joined_table_12b.agg(self.custom_data_aggregation).to_csv("{}_fusRank_12.csv".format(self.output), sep=";", index=False)
->>>>>>> 55fa52a168eebc0ae4f190e4019c00a654ba9fa0
 
         for table in ["1", "2"]:
             summary_file = "{}_fusRank_{}.csv".format(self.output, table)
@@ -146,7 +126,6 @@ class DataJoining(object):
                 # append prediction scores based on pre-calculated model
                 cmd_model = "{0} --fusion_summary {1} --model_file {2} --prediction_threshold {3} --output {4}".format(os.path.join(cfg.module_dir, "R", "R_model_prediction.R"), summary_file, model_path, model_threshold, "{}.pModelPred.csv".format(summary_file[:-4]))
                 Queueing.submit("", cmd_model.split(" "), "", "", "", "", "", "", "", "", "", "none")
-<<<<<<< HEAD
                 # re-read the table with prediction for filter counting
                 # urla - note: there is probably a more elegant way using getattr/setattr but I'm not at all familiar with its pros/cons
                 if table == "1":
@@ -156,20 +135,6 @@ class DataJoining(object):
         joined_table_1.set_index(keys=cols_to_aggregate_on, drop=False, inplace=True)
 
         return self.count_records(joined_table_1, False, "F1N")
-=======
-        # re-read the table with prediction for filter counting
-        model_table_1 = pd.read_csv("{}_fusRank_1.pModelPred.csv".format(self.output), sep=";")
-
-        if icam_run:
-            model_table_2 = pd.read_csv("{}_fusRank_2.pModelPred.csv".format(self.output), sep=";")
-            #model_table_2.drop(header_list_1, axis=1, errors="ignore", inplace=True)
-            model_table_12 = model_table_1.join(model_table_2.drop(header_list_1, axis=1, errors="ignore"), lsuffix="_1", rsuffix="_2", how="inner")
-            model_table_12b = model_table_12.groupby(by=cols_to_aggregate_on, sort=False, as_index=False)
-            model_table_12b.agg(self.custom_data_aggregation).to_csv("{}_fusRank_12.pModelPred.csv".format(self.output), sep=";", index=False)
-            model_table_12 = pd.read_csv("{}_fusRank_12.pModelPred.csv".format(self.output), sep=";")
-            return (self.count_records(model_table_1, False, "F1"), self.count_records(model_table_2, False, "F2"), self.count_records(model_table_12, True, "F12"))
-        return self.count_records(model_table_1, False, "F1N")
->>>>>>> 55fa52a168eebc0ae4f190e4019c00a654ba9fa0
 
     @staticmethod
     def custom_data_aggregation(pd_series):
@@ -289,75 +254,6 @@ class DataJoining(object):
         return (map(len, fusion_gene_set_list), fusion_gene_filter_wo_pred)
 
     @staticmethod
-<<<<<<< HEAD
-=======
-    def count_records(pd_data_frame, is_merged, name):
-        """ stub """
-        print("Processing: {}".format(name))
-        print("Header: {}".format(list(pd_data_frame)))
-        gene_blacklist = ["HLA", "IG"]
-        # list of sets to store (un)filtered fusion gene names
-        # 0:type; 1:boundary; 2:frame; 3:pepseq; 4:counts; 5:blacklist; 6:prediction;
-        # 7:exonError; 8:unfiltered; 9:allFilter; 10:allButPredFilter
-        fusion_gene_set_list = []
-        df_rep = pd_data_frame
-        # try to correct annotation issues
-        ftid_dict = {}
-        for i in df_rep.index:
-            ftid = df_rep.loc[i, "FTID"]
-            if ftid not in ftid_dict:
-                ftid_dict[ftid] = [df_rep.loc[i, "Fusion_Gene"]]
-            else:
-                ftid_dict[ftid].append(df_rep.loc[i, "Fusion_Gene"])
-        
-        for ftid in ftid_dict:
-            # check if multiple fusion_gene strings are associated with the ftid
-            if len(ftid_dict[ftid]) > 1:
-                # check if there is one of the multiple fusion_gene records where both partners correspond to the ftid
-                for fusion_gene in ftid_dict[ftid]:
-                    left_fusion, right_fusion = fusion_gene.split("_")
-                    if left_fusion in ftid and right_fusion in ftid:
-                        ftid_dict[ftid] = fusion_gene
-                        break
-                # if none of the fusion_gene records fit to the ftid, take the shortest and print a warning
-                if type(ftid_dict[ftid]) == list:
-                    print("Warning: Unresolvable annotation bias detected between ftid \"{0}\" and fusion_gene records \"{1}\"".format(ftid, ftid_dict[ftid]))
-                    ftid_dict[ftid] = min(ftid_dict[ftid], key=len)
-                    print("Warning: Chosing {} as fusion_gene record which might be wrong.".format(ftid_dict[ftid]))
-            else:
-                ftid_dict[ftid] = ftid_dict[ftid][0]
-
-        # create sets of fusion gene names according to different fiters
-        fusion_gene_set_list.append(set([ftid_dict[x] for x in df_rep[df_rep["type"] != "cis_near"]["FTID"]])) # exclude cis near events as they are likely read through
-        fusion_gene_set_list.append(set([ftid_dict[x] for x in df_rep[df_rep["exon_boundary"] == "both"]["FTID"]])) # allow only fusions where the breakpoints are on exon boundaries in BOTH fusion partners
-        fusion_gene_set_list.append(set([ftid_dict[x] for x in df_rep[df_rep["frame"] != "no_frame"]["FTID"]])) # exclude no frame fusions
-        fusion_gene_set_list.append(set([ftid_dict[x] for x in df_rep[df_rep["neo_peptide_sequence"].str.isalpha()]["FTID"]])) # the neo peptide sequence must be an alphabetic sequence of at least length 1
-        if is_merged:
-            fusion_gene_set_list.append(set([ftid_dict[x] for x in df_rep[df_rep["ft_junc_cnt_org_1"] + df_rep["ft_span_cnt_org_1"] + df_rep["ft_junc_cnt_org_2"] + df_rep["ft_span_cnt_org_2"] > 0]["FTID"]])) # at least 1 junction or spanning counts on the fusion transcript in either replicate
-        else:
-            fusion_gene_set_list.append(set([ftid_dict[x] for x in df_rep[df_rep["ft_junc_cnt_org"] + df_rep["ft_span_cnt_org"] > 0]["FTID"]])) # at least 1 junction or spanning counts on the fusion transcript
-        fusion_gene_set_list.append(set([ftid_dict[z] for z in df_rep[[all([not y.startswith(tuple(gene_blacklist)) for y in x]) for x in df_rep["Fusion_Gene"].str.split("_")]]["FTID"]])) # both fusion partners are not allowed to start with anything mentioned in the "blacklisted" list
-        if is_merged:
-            fusion_gene_set_list.append(set([ftid_dict[x] for x in df_rep[(df_rep["prediction_class_1"] == "positive") | (df_rep["prediction_class_2"] == "positive")]["FTID"]])) # the random forrest model must have classified this at least once as "posititve" in either replicate
-        else:
-            fusion_gene_set_list.append(set([ftid_dict[x] for x in df_rep[df_rep["prediction_class"] == "positive"]["FTID"]])) # the random forrest model must have classified this at least once as "posititve"
-        fusion_gene_set_list.append(set([ftid_dict[x] for x in df_rep[(df_rep["exon_starts"] != "0") & (df_rep["exon_ends"] != "0")]["FTID"]])) # tmp hack to exclude valid ftids with missing exon numbers (bug in GetFusionSequence.R?)
-        
-        fusion_gene_filter_all = set(ftid_dict.values())
-        fusion_gene_filter_wo_pred = set(ftid_dict.values())
-        for i in range(len(fusion_gene_set_list)):
-            fusion_gene_filter_all = fusion_gene_filter_all.intersection(fusion_gene_set_list[i])
-            if i != 6:
-                fusion_gene_filter_wo_pred = fusion_gene_filter_wo_pred.intersection(fusion_gene_set_list[i])
-        
-        fusion_gene_set_list.append(set(ftid_dict.values()))
-        fusion_gene_set_list.append(fusion_gene_filter_all)
-        fusion_gene_set_list.append(fusion_gene_filter_wo_pred)
-
-        return (map(len, fusion_gene_set_list), fusion_gene_filter_all)
-
-    @staticmethod
->>>>>>> 55fa52a168eebc0ae4f190e4019c00a654ba9fa0
     def mimic_icam_implementation(inputfile1, inputfile2, outputfile):
         """ This is mimicing the fusion_peptide_filter.py implementation of MALO for testing purposes only! """
         fusion_filter_dict = {}
@@ -367,21 +263,13 @@ class DataJoining(object):
                          "wt1_junc_cnt_org", "wt1_span_cnt_org", "wt2_junc_cnt_org", "wt2_span_cnt_org", "prediction_prob", "prediction_class",
                          "n_replicates"]
         cols_dict = dict(zip(selected_cols, range(0, 21)))
-<<<<<<< HEAD
 
-=======
-        
->>>>>>> 55fa52a168eebc0ae4f190e4019c00a654ba9fa0
         for inputfile in [inputfile1, inputfile2]:
             # load required data from easyfuse output into pd dataframe and append column for replicate counting
             df_rep = pd.read_csv(inputfile, sep = ";")
             df_rep = df_rep[selected_cols[:-1]]
             #df_rep[str(selected_cols[-1])] = 0
-<<<<<<< HEAD
 
-=======
-            
->>>>>>> 55fa52a168eebc0ae4f190e4019c00a654ba9fa0
             # iterate over rows in the df
             for i in df_rep.index:
                 ftid = df_rep.loc[i, "FTID"]
@@ -422,25 +310,3 @@ class DataJoining(object):
             outfile.write("{}\n".format("\t".join(selected_cols)))
             for ftid in id_passing_filter_list:
                 outfile.write("{}\n".format("\t".join([str(x) for x in fusion_filter_dict[ftid]])))
-<<<<<<< HEAD
-=======
-
-def main():
-    """Parse command line arguments and start script"""
-    parser = argparse.ArgumentParser(description="Generate mapping stats for fusion detection")
-    parser.add_argument('-i', '--input_dir', dest='input_dir', help='Input root directory containing the sample file directories', required=True)
-    parser.add_argument('--id1', dest='id1', help='Identifier of the first sample replicate', required=True)
-    parser.add_argument('--id2', dest='id2', help='Identifier of the second sample replicate', required=True)
-    parser.add_argument('-o', '--output_prefix', dest='output', help='Specify output file prefix', required=True)
-    parser.add_argument('-c', '--config', dest='output', help='Specify output file prefix', required=True)
-    parser.add_argument('-f', '--fus_tool', dest='fustool', help='List of fusion tools to consider')
-    parser.add_argument('--overwrite', dest='overwrite', help=argparse.SUPPRESS, default=False, action='store_true')
-    parser.add_argument('--icam_run', dest='overwrite', help=argparse.SUPPRESS, default=False, action='store_true')
-    args = parser.parse_args()
-
-    fusrank = DataJoining(args.input_dir, args.id1, args.id2, args.output, args.overwrite)
-    fusrank.run(args.fustool, args.icam_run, args.model_predictions)
-
-if __name__ == '__main__':
-    main()
->>>>>>> 55fa52a168eebc0ae4f190e4019c00a654ba9fa0

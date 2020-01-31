@@ -26,14 +26,8 @@ class FusionSummary(object):
     """Collect stats of the run and write them to file"""
     def __init__(self, input_path):
         self.input_path = input_path
-<<<<<<< HEAD
         self.samples = SamplesDB(os.path.join(input_path, "samples.db"))
 #        self.figure_list = []
-=======
-        self.samples = Samples(os.path.join(input_path, "samples.db"))
-        self.cfg = Config(config_path)
-        self.figure_list = []
->>>>>>> 55fa52a168eebc0ae4f190e4019c00a654ba9fa0
 
     def run(self, model_predictions):
         """Execute individual methods"""
@@ -55,19 +49,11 @@ class FusionSummary(object):
         # 0:type; 1:boundary; 2:frame; 3:pepseq; 4:counts; 5:blacklist; 6:prediction;
         # 7:exonError; 8:unfiltered; 9:allFilter; 10:allButPredFilter
         colnames_filtering = [
-<<<<<<< HEAD
-                "unfiltered", "cis_near_no", "exon_bound_both", "no_frame_no", "pep_seq_yes",
-                "counts_yes", "blacklist_no", "pred_pos", "all_fltr", "all_fltr_but_pred"
-                ]
+            "unfiltered", "cis_near_no", "exon_bound_both", "no_frame_no", "pep_seq_yes",
+            "counts_yes", "blacklist_no", "pred_pos", "all_fltr", "all_fltr_but_pred"
+        ]
         # get sorted list of sample ids
         sid_list = sorted(self.samples.get_sample_ids())
-=======
-                "cis_near_no", "exon_bound_both", "no_frame_no", "pep_seq_yes", "counts_yes", "blacklist_no", "pred_pos",
-                "exon_err_no", "unfiltered", "all_fltr", "all_fltr_but_pred"
-                ]
-        # get sorted list of sample ids
-        sid_list = sorted(self.samples.get_sample_id_list())
->>>>>>> 55fa52a168eebc0ae4f190e4019c00a654ba9fa0
 #        sid_list = sid_list[:10]
         current_base = ""
         sample1 = ""
@@ -80,19 +66,11 @@ class FusionSummary(object):
         sample_date_dict = {}
         sample_toolCnt_dict = {}
         for i, sample in enumerate(sid_list, 1):
-<<<<<<< HEAD
 #            try:
 #                sample_date_dict[sample] = self.samples.get_fastq_files(sample)[0].split("/")[8].split("_")[0]
 #            except IndexError:
 #                print("Warning: Could not retrieve sample date for {}".format(sample))
             sample_date_dict[sample] = "NA"
-=======
-            try:
-                sample_date_dict[sample] = self.samples.get_fastq_files(sample)[0].split("/")[8].split("_")[0]
-            except IndexError:
-                print("Warning: Could not retrieve sample date for {}".format(sample))
-                sample_date_dict[sample] = "NA"
->>>>>>> 55fa52a168eebc0ae4f190e4019c00a654ba9fa0
             # count the numbers of fusion tools that have been run on this sample
             sample_toolCnt_dict[sample] = len([tool for tool in fusion_tools if tool in self.samples.get_tool_list_from_state(sample)])
             if "Fetchdata" in self.samples.get_tool_list_from_state(sample):
@@ -121,7 +99,6 @@ class FusionSummary(object):
                         time_taken = time.time() - start_time
                         average_time = (average_time * (count_processed-1) + time_taken) / count_processed
                         estimated_end = average_time * (count_valid_sample - count_processed)
-<<<<<<< HEAD
                         print("done. Processing time: {0:.2f}s; Average processing time: {1:.2f}s; Estimated end of processing in {2:.2f}s)\n".format(time_taken, average_time, estimated_end))
                     plt.close("all")
                     #except:
@@ -137,27 +114,6 @@ class FusionSummary(object):
 
                 # close all open plots
                 plt.close("all")
-=======
-                        print("done. Processing time: {0:.2f}s; Average processing time: {1:.2f}s; Estimated end of processing in {2:.2f}s)".format(time_taken, average_time, estimated_end))
-
-            pddfall = self.plot_barchart(fusion_frequency_all, "Fusion gene recurrency in single samples", 1)
-            pddfall.to_csv(data_out_path_freq_all, sep="\t", index=False)
-            #colnames_filtering = ["all fusions", "in/out/neo frame", "both on exon boundary", "with neo peptide", "not black-listed", "by 2-tools", "all together"]
-            mmm1 = self.plot_boxswarm(filtering_data_1, colnames_filtering, ["Sample", "Filter", "Data"], "Filter counts of distinct fusion genes - Rep1's")
-            fltr_out.write("Rep1's MinMaxMed\tNA\tNA\t" + "\t".join(map(str, mmm1)) + "\n")
-
-            if icam_run:
-                pddf12 = self.plot_barchart(fusion_frequency_12, "Fusion gene recurrency in patient samples (replicates merged)", 0)
-                pddf12.to_csv(data_out_path_freq_12, sep="\t", index=False)
-                mmm2 = self.plot_boxswarm(filtering_data_2, colnames_filtering, ["Sample", "Filter", "Data"], "Filter counts of distinct fusion genes - Rep2's")
-                mmm12 = self.plot_boxswarm(filtering_data_12, colnames_filtering, ["Sample", "Filter", "Data"], "Filter counts of distinct fusion genes - Merged")
-                fltr_out.write("Rep2's MinMaxMed\tNA\tNA\t" + "\t".join(map(str, mmm2)) + "\n")
-                fltr_out.write("Merged MinMaxMed\tNA\tNA\t" + "\t".join(map(str, mmm12)) + "\n")
-
-        with PdfPages(figure_out_path) as pdf:
-            for plot_fig in self.figure_list:
-                pdf.savefig(plot_fig)
->>>>>>> 55fa52a168eebc0ae4f190e4019c00a654ba9fa0
 
     def plot_barchart(self, fusion_frequency_dict, chart_title, label_cutoff):
         """ Plot the detected fusion gene frequencies in a bar blot """
