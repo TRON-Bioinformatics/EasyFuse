@@ -30,7 +30,7 @@ class Processing(object):
     """Run, monitor and schedule fastq processing for fusion gene prediction"""
     def __init__(self, cmd, input_paths, working_dir):
         """Parameter initiation and work folder creation. Start of progress logging."""
-        self.working_dir = working_dir.rstrip("/")
+        self.working_dir = os.path.abspath(working_dir)
         self.logger = Logger(os.path.join(self.working_dir, "easyfuse_processing.log"))
         IOMethods.create_folder(self.working_dir, self.logger)
         copy(os.path.join(cfg.module_dir, "config.py"), working_dir)

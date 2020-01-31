@@ -79,9 +79,11 @@ be executed with the given input parameters as command-line arguments.
 processing.py \
     -i <test_sample_folder> \
     -o <working_dir> \
-    -u <account_name> \
-    -c <config_file> \
-    -p <queueing_partition> \
     --tool_support 1 \
 ```
 
+Example call (Test Case):
+
+```
+python processing.py -i test_case/SRR1659960_05pc_* -o test_easyfuse_1.3.1/
+```
