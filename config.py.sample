@@ -161,5 +161,5 @@ other_files = {
     "infusion_cfg": "/projects/data/human/ensembl/GRCh38.86/infusion_index/infusion.cfg",
     "soapfuse_cfg": "/code/SOAPfuse/1.27/config/config_h86.txt",
     "soapfuse_cfg_mm10": "/code/SOAPfuse/1.27/config/config_m95.txt",
-    "easyfuse_model": os.path.join(module_dir, "data", "model", "Fusion_modeling_IVAC_BNT_v16.model.requant_and_boundary_org.randomForest.rds")
+    "easyfuse_model": os.path.join(module_dir, "data", "model", "Fusion_modeling_FFPE_deploy_v01.model_full_data.EasyFuse_model.rds")
 }
