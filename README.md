@@ -82,7 +82,13 @@ processing.py \
     --tool_support 1 \
 ```
 
-Example call (Test Case):
+### Example call (Test Case):
+
+Before executing the example command
+
+ - [ ] rename `build_env.sh.smaple` into `build_env.sh` and configure content. 
+ - [ ] rename `config.py.smaple` into `config.py` and configure content.
+ - [ ] rename `blacklist.txt.sample` into `blacklist.txt`.
 
 ```
 python processing.py -i test_case/SRR1659960_05pc_* -o test_easyfuse_1.3.1/
