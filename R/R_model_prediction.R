@@ -5,6 +5,8 @@
 require(optparse)
 require(dplyr)
 require(readr)
+require(tidyr)
+require(tidyselect)
 require(magrittr)
 require(randomForest)
 
@@ -49,7 +51,7 @@ fusion_data <- read_delim(input_file, delim = ";") %>%
                   levels = c("cis_near", "cis_inv", "cis_far", "cis_trans", 
                              "trans", "trans_inv")),
     # fix NA in exon_boundary if present
-    exon_boundary = replace_na(exon_boundary, "no_match"),
+    exon_boundary = tidyr::replace_na(exon_boundary, "no_match"),
     
     exon_boundary = factor(exon_boundary, 
                            levels = c("no_match", "3prime", "5prime", 
@@ -89,7 +91,7 @@ add_prediction <- function(df, model, threshold){
   } else {
     
     # get prediction probabilites
-    in_data <- select(df, all_of(model_features))
+    in_data <- select(df, tidyselect::one_of(model_features))
     pred_matrix <- predict(model, newdata = in_data, type = "prob")
     pred_prob <- pred_matrix[, "positive"]
     
@@ -111,6 +113,4 @@ model <- readr::read_rds(model_file)
 fusion_data <- add_prediction(fusion_data, model, prediction_threshold)
 
 # Write fusions to output file -------------------------------------------------
-#consitently use dec="."
-write.table(fusion_data, output_file, sep=";", dec=".", row.names = FALSE)
-
+write_delim(fusion_data, output_file, delim = ";")
