@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 #!/usr/bin/env python
 
 import getpass
@@ -14,31 +15,31 @@ __version__ = "1.3.2"
 pipeline_name = "EasyFuse"
 
 #tools=Readfilter,Mapsplice,Fusioncatcher,Star,Starfusion,Infusion,Fetchdata,Summary
-tools = ("QC", 
-         "Readfilter", 
-         "Fusioncatcher", 
-         "Star", 
-         "Starfusion", 
-         "Infusion", 
-         "Mapsplice", 
-         "Soapfuse", 
-         "Fetchdata", 
+tools = ("QC",
+         "Readfilter",
+         "Fusioncatcher",
+         "Star",
+         "Starfusion",
+         "Infusion",
+         "Mapsplice",
+         "Soapfuse",
+         "Fetchdata",
          "Summary")
 
-fusiontools = ("Fusioncatcher", 
-               "Starfusion", 
-               "Infusion", 
-               "Mapsplice", 
+fusiontools = ("Fusioncatcher",
+               "Starfusion",
+               "Infusion",
+               "Mapsplice",
                "Soapfuse")
 
 #fd_tools=Fusiongrep,Contextseq,Starindex,Staralign,Bamindex,Requantify
-fd_tools = ("Fusiongrep", 
-            "Contextseq", 
-            "Starindex", 
-            "ReadFilter2", 
-            "ReadFilter2b", 
-            "StaralignBest", 
-            "BamindexBest", 
+fd_tools = ("Fusiongrep",
+            "Contextseq",
+            "Starindex",
+            "ReadFilter2",
+            "ReadFilter2b",
+            "StaralignBest",
+            "BamindexBest",
             "RequantifyBest")
 
 sender = "sender@mail.com"
