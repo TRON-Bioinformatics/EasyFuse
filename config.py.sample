@@ -9,7 +9,7 @@ import os
 # 3) Which reference data shall be used (ref_trans_version & ref_genome_build)
 # 4) To whom shall slurm mails be sent to (receiver)
 
-__version__ = "1.3.1"
+__version__ = "1.3.2"
 
 pipeline_name = "EasyFuse"
 
@@ -138,28 +138,28 @@ commands = {
 references = {
     # wget http://ftp.ensembl.org/pub/release-86/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz
     "genome_fasta": "/path/to/Homo_sapiens.GRCh38.dna.primary_assembly.fa",
-    "genome_fastadir": "/projects/data/human/ensembl/GRCh38.86/fasta",
-    "genome_sizes": "/projects/data/human/ensembl/GRCh38.86/STAR_idx/chrNameLength.txt",
+    "genome_fastadir": "/path/to/fastadir",
+    "genome_sizes": "/path/to/STAR_idx/chrNameLength.txt",
     # wget http://ftp.ensembl.org/pub/release-86/fasta/homo_sapiens/cdna/Homo_sapiens.GRCh38.cdna.all.fa.gz
-    "genes_fasta": "/projects/data/human/ensembl/GRCh38.86/Homo_sapiens.GRCh38.cdna.all.fa",
+    "genes_fasta": "/path/to/Homo_sapiens.GRCh38.cdna.all.fa",
     # wget http://ftp.ensembl.org/pub/release-86/gtf/homo_sapiens/Homo_sapiens.GRCh38.86.chr.gtf.gz
-    "genes_gtf": "/path/to/Homo_sapiens.GRCh38.86.gtf",
-    "genes_adb": "/projects/data/human/ensembl/GRCh38.86/Homo_sapiens.GRCh38.86.gff3.db",
-    "genes_tsl": "/projects/data/human/ensembl/GRCh38.86/Homo_sapiens.GRCh38.86.gtf.tsl"
+    "genes_gtf": "/path/to/Homo_sapiens.GRCh38.<release>.gtf",
+    "genes_adb": "/path/to/Homo_sapiens.GRCh38.<release>.gff3.db",
+    "genes_tsl": "/path/to/Homo_sapiens.GRCh38.<release>.gtf.tsl"
 }
 
 # full path to program indices
 indices = {
-    "star": "/projects/data/human/ensembl/GRCh38.86/STAR_idx/",
-    "bowtie": "/projects/data/human/ensembl/GRCh38.86/bowtie_index/hg38",
-    "starfusion": "/projects/data/human/ensembl/GRCh38.86/starfusion_index/",
-    "fusioncatcher": "/projects/data/human/ensembl/GRCh38.86/fusioncatcher_index/"
+    "star": "/path/to/STAR_idx/",
+    "bowtie": "/path/to/bowtie_index/hg38",
+    "starfusion": "/path/to/starfusion_index/",
+    "fusioncatcher": "/path/to/fusioncatcher_index/"
 }
 
 # full path to program specific config files (these are just general files which need no user modification)
 other_files = {
-    "infusion_cfg": "/projects/data/human/ensembl/GRCh38.86/infusion_index/infusion.cfg",
-    "soapfuse_cfg": "/code/SOAPfuse/1.27/config/config_h86.txt",
-    "soapfuse_cfg_mm10": "/code/SOAPfuse/1.27/config/config_m95.txt",
-    "easyfuse_model": os.path.join(module_dir, "data", "model", "Fusion_modeling_IVAC_BNT_v16.model.requant_and_boundary_org.randomForest.rds")
+    "infusion_cfg": "/path/to/infusion_index/infusion.cfg",
+    "soapfuse_cfg": "/path/to/soapfuse_config/config_h86.txt",
+    "soapfuse_cfg_mm10": "/path/to/soapfuse_config/config_m95.txt",
+    "easyfuse_model": os.path.join(module_dir, "data", "model", "Fusion_modeling_FFPE_deploy_v01.model_full_data.EasyFuse_model.rds")
 }
