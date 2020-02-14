@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 #!/usr/bin/env python
 
 import getpass
@@ -160,7 +159,7 @@ indices = {
 # full path to program specific config files (these are just general files which need no user modification)
 other_files = {
     "infusion_cfg": "/path/to/infusion_index/infusion.cfg",
-    "soapfuse_cfg": "/path/to/soapfuse_config/config_h86.txt",
-    "soapfuse_cfg_mm10": "/path/to/soapfuse_config/config_m95.txt",
+    "soapfuse_cfg": "/path/to/soapfuse_config/config_h<release>.txt",
+    "soapfuse_cfg_mm10": "/path/to/soapfuse_config/config_m<release>.txt",
     "easyfuse_model": os.path.join(module_dir, "data", "model", "Fusion_modeling_FFPE_deploy_v01.model_full_data.EasyFuse_model.rds")
 }
