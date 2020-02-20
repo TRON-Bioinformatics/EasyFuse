@@ -50,15 +50,11 @@ Install python modules (we strongly recommend installation via conda):
   ```
 
 
- - R (>= 3.5.1)
+ - R (>= 3.6.0)
  - R packages: 
-    - optparse
-    - tidyverse
-    - randomForest
-    - Biostrings
-    - GenomicRanges
-    - BSgenome    
-    - bindrcpp
+    - optparse (1.6.4)
+    - tidyverse (1.3.0)
+    - randomForest (4.6-14)
 
   Install packages within R by
   
