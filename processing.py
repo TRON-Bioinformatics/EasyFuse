@@ -77,7 +77,7 @@ class Processing(object):
             # urla - note: would be happy to get the dependencies with a stacked LC, but is atm to complicated for me ^^
             dependency = []
             for sample in sample_list:
-                dependency.extend(Queueing.get_jobs_by_name("Fetchdata-{}".format(sample)))
+                dependency.extend(Queueing.get_jobs_by_name("Fetchdata-{}".format(sample), cfg.queueing_system))
             modelling_string = ""
             if cfg.other_files["easyfuse_model"]:
                 modelling_string = " --model_predictions"
@@ -133,6 +133,9 @@ class Processing(object):
         infusion_path = os.path.join(fusion_path, "infusion")
         soapfuse_path = os.path.join(fusion_path, "soapfuse")
         fetchdata_path = os.path.join(self.working_dir, "Sample_{}".format(sample_id), "fetchdata")
+        fastqc_1 = os.path.join(qc_path, sample_id + "_R1_fastqc", "fastqc_data.txt")
+        fastqc_2 = os.path.join(qc_path, sample_id + "_R2_fastqc", "fastqc_data.txt")
+
 
         for folder in [
                 output_results_path, 
@@ -163,9 +166,9 @@ class Processing(object):
         # Define cmd strings for each program
         # urla: mapsplice requires gunzip'd read files and process substitutions don't seem to work in slurm scripts...
         #       process substitution do somehow not work from this script - c/p the command line to the terminal, however, works w/o issues?!
-        cmd_fastqc = "{} --nogroup --extract -t 6 -o {} {} {}".format(cmds["fastqc"], qc_path, fq1, fq2)
-        cmd_qc_parser = "{} -i {}/*/fastqc_data.txt -o {}".format(os.path.join(module_dir, "misc", "qc_parser.py"), qc_path, qc_table_path)
-        cmd_skewer = "{} -q {} -i {} {} -o {}".format(os.path.join(module_dir, "tool_wrapper", "skewer_wrapper.py"), qc_table_path, fq1, fq2, skewer_path)
+        cmd_fastqc = "{0} --nogroup --extract -t 6 -o {1} {2} {3}".format(cmds["fastqc"], qc_path, fq1, fq2)
+        cmd_qc_parser = "{0} -i {1} {2} -o {3}".format(os.path.join(module_dir, "misc", "qc_parser.py"), fastqc_1, fastqc_2, qc_table_path)
+        cmd_skewer = "{0} -q {1} -i {2} {3} -o {4}".format(os.path.join(module_dir, "tool_wrapper", "skewer_wrapper.py"), qc_table_path, fq1, fq2, skewer_path)
 
         fq0 = ""
         if "QC" in tools:
@@ -317,19 +320,19 @@ class Processing(object):
                     exe_cmds[i] = exe_cmds[i].replace("waiting_for_output_string", exe_path[i]).replace("waiting_for_cpu_number", str(cpu))
                 cmd = " && ".join([exe_cmds[i], cmd_samples + tool])
                 # Managing slurm dependencies
+                que_sys = cfg.queueing_system
                 if tool == "Pizzly":
-                    dependency = Queueing.get_jobs_by_name("Kallisto-{0}".format(sample_id))
+                    dependency = Queueing.get_jobs_by_name("Kallisto-{0}".format(sample_id), que_sys)
                 elif tool == "Starfusion" or tool == "Starchip":
-                    dependency = Queueing.get_jobs_by_name("Star-{0}".format(sample_id))
+                    dependency = Queueing.get_jobs_by_name("Star-{0}".format(sample_id), que_sys)
                 elif tool == "Fetchdata":
-                    dependency = Queueing.get_jobs_by_name(sample_id)
+                    dependency = Queueing.get_jobs_by_name(sample_id, que_sys)
                 elif tool == "Assembly":
-                    dependency = Queueing.get_jobs_by_name("Fetchdata-{0}".format(sample_id))
+                    dependency = Queueing.get_jobs_by_name("Fetchdata-{0}".format(sample_id), que_sys)
                 elif tool == "ReadFilter":
-                    dependency = Queueing.get_jobs_by_name("QC-{0}".format(sample_id))
-                #                else:
-                dependency.extend(Queueing.get_jobs_by_name("Readfilter-{0}".format(sample_id)))
-                dependency.extend(Queueing.get_jobs_by_name("QC-{0}".format(sample_id)))
+                    dependency = Queueing.get_jobs_by_name("QC-{0}".format(sample_id), que_sys)
+                dependency.extend(Queueing.get_jobs_by_name("Readfilter-{0}".format(sample_id), que_sys))
+                dependency.extend(Queueing.get_jobs_by_name("QC-{0}".format(sample_id), que_sys))
                 self.logger.debug("Submitting slurm job: CMD - {0}; PATH - {1}; DEPS - {2}".format(cmd, exe_path[i], dependency))
                 self.submit_job(uid, cmd, cpu, mem, exe_path[i], dependency, "")
             else:
@@ -337,16 +340,17 @@ class Processing(object):
 
     def submit_job(self, uid, cmd, cores, mem_usage, output_results_folder, dependencies, mail):
         """Submit job to slurm scheduling"""
-        already_running = Queueing.get_jobs_by_name(uid)
+        que_sys = cfg.queueing_system
+        already_running = Queueing.get_jobs_by_name(uid, que_sys)
         if not already_running:
             # urla: for compatibility reasons (and to be independent of shell commands), concatenated commands are splitted again,
             #       dependencies within the splitted groups updated and everything submitted sequentially to the queueing system
             module_file = os.path.join(cfg.module_dir, "build_env.sh")
-            que_sys = cfg.queueing_system
+
             for i, cmd_split in enumerate(cmd.split(" && ")):
                 if not que_sys in ["slurm", "pbs"]:
                     cmd_split = cmd_split.split(" ")
-                dependencies.extend(Queueing.get_jobs_by_name("{0}_CMD{1}".format(uid, i - 1)))
+                dependencies.extend(Queueing.get_jobs_by_name("{0}_CMD{1}".format(uid, i - 1), que_sys))
                 Queueing.submit("{0}_CMD{1}".format(uid, i), cmd_split, cores, mem_usage, output_results_folder, dependencies, cfg.partition, cfg.user, cfg.time_limit, mail, module_file, que_sys)
                 time.sleep(0.5)
         else:
@@ -365,7 +369,7 @@ def main():
 
     # if version is request, print it and exit
     if args.version:
-        print(cfg.version)
+        print(cfg.__version__)
         sys.exit(0)
 
     script_call = "python {} -i {} -o {}".format(os.path.realpath(__file__), " ".join([os.path.abspath(x) for x in args.input_paths]), os.path.abspath(args.output_folder))

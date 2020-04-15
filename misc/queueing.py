@@ -23,6 +23,8 @@ def get_jobs_by_name(name, system="slurm"):
         return get_jobs_by_name_slurm(name)
     elif system == "pbs":
         return get_jobs_by_name_pbs(name)
+    else:
+        return []
 
 def get_jobs_by_name_pbs(name):
     jobs = []
@@ -70,12 +72,13 @@ def submit(job_name, cmd, cores, mem_usage, output_results_folder, dependencies,
     elif sched == "pbs":
         _submit_pbs(job_name, cmd, cores, mem_usage, output_results_folder, dependencies, module_file)
     else:
-        _submit_nonqueue(cmd, module_file)
+        _submit_nonqueue(job_name, cmd, module_file)
     
-def _submit_nonqueue(cmd, module_file=""):
+def _submit_nonqueue(job_name, cmd, module_file=""):
 #    if module_file:
 #        cmd = " && ".join(["source " + module_file, " ".join(cmd)]).split(" ")
-#    print(cmd)
+    print("Running {}".format(job_name))
+    print("CMD: {}".format(cmd))
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=False)
     (stdoutdata, stderrdata) = p.communicate()
     print(stdoutdata)
