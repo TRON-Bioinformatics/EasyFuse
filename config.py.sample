@@ -9,7 +9,7 @@ import os
 # 3) Which reference data shall be used (ref_trans_version & ref_genome_build)
 # 4) To whom shall slurm mails be sent to (receiver)
 
-__version__ = "1.3.2"
+version = "1.3.4"
 
 pipeline_name = "EasyFuse"
 

@@ -109,6 +109,7 @@ class Processing(object):
 #        kallisto_index_path = indices["kallisto"]
 #        pizzly_cache_path = "{}.pizzlyCache.txt".format(genes_gtf_path)
         starfusion_index_path = indices["starfusion"]
+        fusioncatcher_index_path = indices["fusioncatcher"]
         infusion_cfg_path = other_files["infusion_cfg"]
 #        starchip_param_path = other_files["starchip_param"]
 
@@ -195,12 +196,12 @@ class Processing(object):
         cmd_star = "{0} --genomeDir {1} --outFileNamePrefix waiting_for_output_string --runThreadN waiting_for_cpu_number --runMode alignReads --readFilesIn {2} {3} --readFilesCommand zcat --chimSegmentMin 10 --chimJunctionOverhangMin 10 --alignSJDBoverhangMin 10 --alignMatesGapMax {4} --alignIntronMax {4} --chimSegmentReadGapMax 3 --alignSJstitchMismatchNmax 5 -1 5 5 --seedSearchStartLmax 20 --winAnchorMultimapNmax 50 --outSAMtype BAM SortedByCoordinate --chimOutType Junctions SeparateSAMold --chimOutJunctionFormat 1".format(cmds["star"], star_index_path, fq1, fq2, cfg.max_dist_proper_pair)
         # (3) Mapslice
         # urla: the "keep" parameter requires gunzip >= 1.6
-        cmd_extr_fastq1 = "gunzip {0} --keep".format(fq1)
-        cmd_extr_fastq2 = "gunzip {0} --keep".format(fq2)
+        cmd_extr_fastq1 = "gunzip --keep {0}".format(fq1)
+        cmd_extr_fastq2 = "gunzip --keep {0}".format(fq2)
         # Added python interpreter to circumvent external hardcoded shell script
         cmd_mapsplice = "python {0} --chromosome-dir {1} -x {2} -1 {3} -2 {4} --threads waiting_for_cpu_number --output {5} --qual-scale phred33 --bam --seglen 20 --min-map-len 40 --gene-gtf {6} --fusion".format(cmds["mapsplice"], genome_chrs_path, bowtie_index_path, fq1[:-3], fq2[:-3], mapsplice_path, genes_gtf_path)
         # (4) Fusiocatcher
-        cmd_fusioncatcher = "{0} --input {1} --output {2} -p waiting_for_cpu_number".format(cmds["fusioncatcher"], ",".join([fq1, fq2]), fusioncatcher_path)
+        cmd_fusioncatcher = "{0} --input {1} --data {2} --output {3} -p waiting_for_cpu_number".format(cmds["fusioncatcher"], ",".join([fq1, fq2]), fusioncatcher_index_path, fusioncatcher_path)
         # star-fusion and star-chip can be run upon a previous star run (this MUST NOT be the star_filter run, but the star_expression run)
         # (5)
         cmd_starfusion = "{0} --chimeric_junction {1} --genome_lib_dir {2} --CPU waiting_for_cpu_number --output_dir {3}".format(cmds["starfusion"], "{}_Chimeric.out.junction".format(os.path.join(star_path, sample_id)), starfusion_index_path, starfusion_path)
