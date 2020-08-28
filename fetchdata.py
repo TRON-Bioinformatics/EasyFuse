@@ -15,6 +15,7 @@ import os
 import os.path
 import math
 import argparse
+import subprocess
 import misc.queueing as Queueing
 from misc.samples import SamplesDB
 from misc.logger import Logger
@@ -62,7 +63,8 @@ class Fetching(object):
     @staticmethod
     def get_input_read_count_from_fastq(fastq):
         """Parses input FASTQ to get read count"""
-        result = subprocess.getoutput("zcat {} | wc -l".format(fastq))
+        ps = subprocess.Popen(("zcat", fastq), stdout=subprocess.PIPE)
+        result = subprocess.check_output(("wc", "-l"), stdin=ps.stdout)
         return int(result) / 4
 
     def run(self, fusion_support, fq1, fq2):
