@@ -1,15 +1,14 @@
 # EasyFuse 
 
-EasyFuse is a pipline for fusion gene detection from RNA-seq data.\
-The pipeline is mainly written in python with some scripts being R.
+EasyFuse is a pipline for fusion gene detection from RNA-seq data. More detailed documentation is available in the [EasyFuse Wiki](https://github.com/TRON-Bioinformatics/EasyFuse/wiki).
 
+A manuscript describing the method and performance evaluations is submitted for peer-review and publication.
 
 ## Installation
 
 Fusion breakpoint prediction itself is currently not implemented in EasyFuse and the pipeline therefore depends on external fusion prediction tools.\
-Prediction tools that have been implemented and tested within EasyFuse are listed under Tools. EasyFuse requires star for alignment, additional alignment
-tools might be required depending on the external fusion prediction tools.
-For simplicity we provide in the following an installation instruction for EasyFuse together with STAR-Fusion (ref) and Fusioncatcher (ref).
+Prediction tools that have been implemented and tested within EasyFuse are listed under Tools. EasyFuse requires [STAR](https://github.com/alexdobin/STAR) for alignments. Additional alignment tools might be required depending on the external fusion prediction tools.
+For simplicity we provide in the following an installation instruction for EasyFuse together with [STAR-Fusion](https://github.com/STAR-Fusion/STAR-Fusion/wiki) and [Fusioncatcher](https://github.com/ndaniel/fusioncatcher). Detailed installation instructions can be found in the [EasyFuse Wiki](https://github.com/TRON-Bioinformatics/EasyFuse/wiki)
 
 ### Tools
 
@@ -60,9 +59,17 @@ Install python modules (we strongly recommend installation via conda):
   ```
   install.packages(c("optparse", "tidyverse", "randomForest"))
   ```
-  
-## Usage
 
+
+### Configuration
+
+Before executing the pipeline some configuration files need to be adopted:
+
+ - rename `build_env.sh.smaple` into `build_env.sh` and configure content. 
+ - rename `config.py.smaple` into `config.py` and configure content.
+ - rename `blacklist.txt.sample` into `blacklist.txt`.
+
+## Usage
 
 ### Start Fusion Prediction Pipeline
 
@@ -71,19 +78,15 @@ be executed with the given input parameters as command-line arguments.
 
 ```
 processing.py \
-    -i <test_sample_folder> \
-    -o <working_dir> \
-    --tool_support 1 \
+    -i <sample_folder> \
+    -o <working_dir> 
 ```
 
-### Example call (Test Case):
-
-Before executing the example command
-
- - rename `build_env.sh.smaple` into `build_env.sh` and configure content. 
- - rename `config.py.smaple` into `config.py` and configure content.
- - rename `blacklist.txt.sample` into `blacklist.txt`.
+### Example call on test dataset:
 
 ```
-python processing.py -i test_case/SRR1659960_05pc_* -o test_easyfuse_1.3.1/
+python processing.py -i test_case/SRR1659960_05pc_* -o test_easyfuse_1.3.4/
 ```
+## Output
+
+The output of EasyFuse is described in the wiki page [EasyFuse Output](https://github.com/TRON-Bioinformatics/EasyFuse/wiki/EasyFuse-Output).
