@@ -1,0 +1,383 @@
+#!/usr/bin/env python
+
+"""
+Read fastq files
+create per-sample (sub)folder tree
+run gene fusion predictions
+start data collection
+during all steps, perform slurm scheduling and process monitoring
+
+@author: Tron (PASO), BNT (URLA)
+@version: 20190118
+"""
+from __future__ import print_function
+import os
+import os.path
+import sys
+import time
+import argparse
+from shutil import copy2
+import misc.queue as Queueing
+from misc.config import Config
+from misc.samples import SamplesDB
+from misc.logger import Logger
+import misc.io_methods as IOMethods
+from misc.versioncontrol import VersCont
+import misc.version as eav
+
+# pylint: disable=line-too-long
+#         yes they are partially, but I do not consider this to be relevant here
+class Processing(object):
+    """Run, monitor and schedule fastq processing for fusion gene prediction"""
+    def __init__(self, cmd, config, input_path, working_dir, partitions, userid, overwrite):
+        """Parameter initiation and work folder creation. Start of progress logging."""
+        self.working_dir = working_dir.rstrip("/")
+        self.logger = Logger(os.path.join(self.working_dir, "easyfuse_processing.log"))
+        IOMethods.create_folder(self.working_dir, self.logger)
+        copy2(config, working_dir)
+        self.cfg = Config(os.path.join(self.working_dir, IOMethods.path_leaf(config)))
+        self.logger.info("Starting easyfuse: CMD - {}".format(cmd))
+        self.input_path = input_path
+        self.samples = SamplesDB(os.path.join(self.working_dir, "samples.db"))
+        self.partitions = partitions
+        self.userid = userid
+        self.overwrite = overwrite
+        self.easyfuse_path = os.path.dirname(os.path.realpath(__file__))
+
+    # The run method simply greps and organises fastq input files.
+    # Fastq pairs (single end input is currently not supported) are then send to "execute_pipeline"
+    def run(self, tool_num_cutoff):
+        """General parameter setting, identification of fastq files and initiation of processing"""
+        # Checking dependencies
+        VersCont(self.cfg.get('easyfuse_helper', 'dependencies')).get_and_print_tool_versions()
+        self.cfg.run_self_test()
+        is_stranded = False # urla: I leave it in although it is currently not required - however, future predictions may improve from stranded libs
+        is_rna_seq = True # urla: can this ever become false?!
+        # urla: organism is currently not used for anything, however, this might change; is mouse processing relevant at some point?
+        ref_genome = self.cfg.get('general', 'ref_genome_build')
+        ref_trans = self.cfg.get('general', 'ref_trans_version')
+#        if ref_genome in ['hg19', 'hg38']:
+#            organism = "human"
+#        else:
+#            organism = "mouse"
+        self.logger.info("Stranded: {0}, RNA-Seq: {1}, Reference Genome: {2}, Reference Transcriptome: {3}".format(is_stranded, is_rna_seq, ref_genome, ref_trans))
+        if self.overwrite:
+            self.logger.info("#############################################################################")
+            self.logger.info("")
+            self.logger.info("Overwrite flag is set => all previously existing results may be overwritten!")
+            self.logger.info("")
+            self.logger.info("#############################################################################")
+
+
+        sample_list = []
+        # get fastq files
+        left, right, sample_id = IOMethods.get_fastq_files(self.input_path, self.logger)
+        sample_list = sample_id
+        for i, _ in enumerate(left):
+            if len(left) == len(right):
+                self.logger.info("Processing Sample ID: {} (paired end)".format(sample_id[i]))
+                self.logger.info("Sample 1: {}".format(left[i]))
+                self.logger.info("Sample 2: {}".format(right[i]))
+                self.execute_pipeline(left[i], right[i], sample_id[i], ref_genome, ref_trans, tool_num_cutoff)
+        
+        # summarize all data if selected
+        if "Summary" in self.cfg.get('general', 'tools'):
+            #dependency = [Queueing.get_jobs_by_name("Fetchdata-{}".format(sample)) for sample in sample_list]
+            # urla - note: would be happy to get the dependencies with a stacked LC, but is atm to complicated for me ^^
+            dependency = []
+            for sample in sample_list:
+                dependency.extend(Queueing.get_jobs_by_name("Fetchdata-{}".format(sample)))
+            modelling_string = ""
+            if self.cfg.get("otherFiles", "easyfuse_model"):
+                modelling_string = " --model_predictions"
+            cmd_summarize = "python {0} --input {1} --config {2}{3}".format(os.path.join(self.easyfuse_path, "summarize_data.py"), self.working_dir, self.cfg.get_path(), modelling_string)
+            self.logger.debug("Submitting slurm job: CMD - {0}; PATH - {1}; DEPS - {2}".format(cmd_summarize, self.working_dir, dependency))
+            cpu, mem = self.cfg.get("resources", "summary").split(",")
+            self.submit_job("-".join(["Summary", str(int(round(time.time())))]), cmd_summarize, cpu, mem, self.working_dir, dependency, self.cfg.get('general', 'receiver'))
+
+    # Per sample, define input parameters and execution commands, create a folder tree and submit runs to slurm
+    def execute_pipeline(self, fq1, fq2, sample_id, ref_genome, ref_trans, tool_num_cutoff):
+        """Create sample specific subfolder structure and run tools on fastq files"""
+        self.samples.add_sample(sample_id, "NA", fq1, fq2)
+
+		# Genome/Gene references to use
+        genome_sizes_path = self.cfg.get("references", "{0}_genome_sizes_{1}".format(ref_trans, ref_genome))
+        genome_chrs_path = self.cfg.get("references", "{0}_genome_fastadir_{1}".format(ref_trans, ref_genome))
+        genes_fasta_path = self.cfg.get("references", "{0}_genes_fasta_{1}".format(ref_trans, ref_genome))
+        genes_gtf_path = self.cfg.get("references", "{0}_genes_gtf_{1}".format(ref_trans, ref_genome))
+
+        # Path' to specific indices
+        bowtie_index_path = self.cfg.get("indices", "{0}_bowtie_{1}".format(ref_trans, ref_genome))
+        star_index_path = self.cfg.get("indices", "{0}_star_{1}_sjdb{2}".format(ref_trans, ref_genome, 49))
+        kallisto_index_path = self.cfg.get("indices", "{0}_kallisto_{1}".format(ref_trans, ref_genome))
+        pizzly_cache_path = "{}.pizzlyCache.txt".format(genes_gtf_path)
+        starfusion_index_path = self.cfg.get("indices", "{0}_starfusion_{1}".format(ref_trans, ref_genome))
+        infusion_cfg_path = self.cfg.get("otherFiles", "{0}_infusion_cfg_{1}".format(ref_trans, ref_genome))
+        starchip_param_path = self.cfg.get("otherFiles", "{0}_starchip_param_{1}".format(ref_trans, ref_genome))
+
+        # Output results folder creation - currently included:
+        # 1) Gene/Isoform expression: kallisto, star
+        # 2) Fusion prediction: mapsplice, pizzly, fusioncatcher, star-fusion, starchip, infusion
+        output_results_path = os.path.join(self.working_dir, "Sample_{}".format(sample_id), "scratch")
+        qc_path = os.path.join(output_results_path, "qc")
+        skewer_path = os.path.join(qc_path, "skewer")
+        qc_table_path = os.path.join(qc_path, "qc_table.txt")
+        overrepresented_path = os.path.join(qc_path, "overrepresented.fa")
+        filtered_reads_path = os.path.join(output_results_path, "filtered_reads")
+        expression_path = os.path.join(output_results_path, "expression")
+        kallisto_path = os.path.join(expression_path, "kallisto")
+        star_path = os.path.join(expression_path, "star")
+        fusion_path = os.path.join(output_results_path, "fusion")
+        mapsplice_path = os.path.join(fusion_path, "mapsplice")
+        pizzly_path = os.path.join(fusion_path, "pizzly")
+        fusioncatcher_path = os.path.join(fusion_path, "fusioncatcher")
+        starfusion_path = os.path.join(fusion_path, "starfusion")
+        starchip_path = os.path.join(fusion_path, "starchip")
+        infusion_path = os.path.join(fusion_path, "infusion")
+        soapfuse_path = os.path.join(fusion_path, "soapfuse")
+        fetchdata_path = os.path.join(self.working_dir, "Sample_{}".format(sample_id), "fetchdata")
+
+        for folder in [
+                output_results_path, qc_path, skewer_path, filtered_reads_path,
+                expression_path, kallisto_path, star_path,
+                fusion_path, mapsplice_path, pizzly_path, fusioncatcher_path, starfusion_path, starchip_path, infusion_path, soapfuse_path,
+                fetchdata_path
+            ]:
+            IOMethods.create_folder(folder, self.logger)
+
+        # get a list of tools from the samples.db file that have been run previously on this sample
+        state_tools = self.samples.get_tool_list_from_state(sample_id)
+        # get a list of tools from the config file which shall be run on this sample
+        tools = []
+        if "," in self.cfg.get('general', 'tools'):
+            tools.extend(self.cfg.get('general', 'tools').split(","))
+        else:
+            tools.extend([self.cfg.get('general', 'tools')])
+
+        # Define cmd strings for each program
+        # urla: mapsplice requires gunzip'd read files and process substitutions don't seem to work in slurm scripts...
+        #       process substitution do somehow not work from this script - c/p the command line to the terminal, however, works w/o issues?!
+        cmd_fastqc = "{} --nogroup --extract -t 6 -o {} {} {}".format(self.cfg.get('commands', 'fastqc_cmd'), qc_path, fq1, fq2)
+        cmd_qc_parser = "{} -i {}/*/fastqc_data.txt -q {} -o {}".format(self.cfg.get('commands', 'qc_parser_cmd'), qc_path, qc_table_path, overrepresented_path)
+        cmd_skewer = "{} -q {} -m {} -i {} {} -o {} -b {}".format(self.cfg.get('commands', 'skewer_wrapper_cmd'), qc_table_path, 0.75, fq1, fq2, skewer_path, self.cfg.get('commands', 'skewer_cmd'))
+
+        fq0 = ""
+        if "QC" in tools:
+            fq0 = os.path.join(skewer_path, "out_file-trimmed.fastq.gz")
+            fq1 = os.path.join(skewer_path, "out_file-trimmed-pair1.fastq.gz")
+            fq2 = os.path.join(skewer_path, "out_file-trimmed-pair2.fastq.gz")
+        else:
+            qc_table_path = "None"
+
+        # (0) Readfilter
+        cmd_star_filter = "{0} --genomeDir {1} --outFileNamePrefix {2}_ --readFilesCommand zcat --readFilesIn {3} {4} --outFilterMultimapNmax 100 --outSAMmultNmax 1 --chimSegmentMin 10 --chimJunctionOverhangMin 10 --alignSJDBoverhangMin 10 --alignMatesGapMax {5} --alignIntronMax {5} --chimSegmentReadGapMax 3 --alignSJstitchMismatchNmax 5 -1 5 5 --seedSearchStartLmax 20 --winAnchorMultimapNmax 50 --outSAMtype BAM Unsorted --chimOutType Junctions WithinBAM --outSAMunmapped Within KeepPairs --runThreadN waiting_for_cpu_number".format(self.cfg.get('commands', 'star_cmd'), star_index_path, os.path.join(filtered_reads_path, sample_id), fq1, fq2, self.cfg.get('general', 'max_dist_proper_pair'))
+        cmd_read_filter = "{0} --input {1}_Aligned.out.bam --output {1}_Aligned.out.filtered.bam".format(os.path.join(self.easyfuse_path, "fusionreadfilter.py"), os.path.join(filtered_reads_path, sample_id))
+        # re-define fastq's if filtering is on (default)
+        fq0 = ""
+        if "Readfilter" in tools:
+            fq0 = os.path.join(filtered_reads_path, os.path.basename(fq1).replace("R1", "R0").replace(".fastq.gz", "_filtered_singles.fastq.gz"))
+            fq1 = os.path.join(filtered_reads_path, os.path.basename(fq1).replace(".fastq.gz", "_filtered.fastq.gz"))
+            fq2 = os.path.join(filtered_reads_path, os.path.basename(fq2).replace(".fastq.gz", "_filtered.fastq.gz"))
+
+        cmd_bam_to_fastq = "{0} fastq -0 {1} -1 {2} -2 {3} --threads waiting_for_cpu_number {4}_Aligned.out.filtered.bam".format(self.cfg.get('commands', 'samtools_cmd'), fq0, fq1, fq2, os.path.join(filtered_reads_path, sample_id))
+        # (1) Kallisto expression quantification (required for pizzly)
+        cmd_kallisto = "{0} quant --threads waiting_for_cpu_number --genomebam --gtf {1} --chromosomes {2} --index {3} --fusion --output-dir waiting_for_output_string {4} {5}".format(self.cfg.get('commands', 'kallisto_cmd'), genes_gtf_path, genome_sizes_path, kallisto_index_path, fq1, fq2)
+        # (2) Star expression quantification (required for starfusion and starchip)
+        cmd_star = "{0} --genomeDir {1} --outFileNamePrefix waiting_for_output_string --runThreadN waiting_for_cpu_number --runMode alignReads --readFilesIn {2} {3} --readFilesCommand zcat --chimSegmentMin 10 --chimJunctionOverhangMin 10 --alignSJDBoverhangMin 10 --alignMatesGapMax {4} --alignIntronMax {4} --chimSegmentReadGapMax 3 --alignSJstitchMismatchNmax 5 -1 5 5 --seedSearchStartLmax 20 --winAnchorMultimapNmax 50 --outSAMtype BAM SortedByCoordinate --chimOutType Junctions SeparateSAMold --chimOutJunctionFormat 1".format(self.cfg.get('commands', 'star_cmd'), star_index_path, fq1, fq2, self.cfg.get('general', 'max_dist_proper_pair'))
+        # (3) Mapslice
+        # urla: the "keep" parameter requires gunzip >= 1.6
+        cmd_extr_fastq1 = "gunzip {0} --keep".format(fq1)
+        cmd_extr_fastq2 = "gunzip {0} --keep".format(fq2)
+        # Added python interpreter to circumvent external hardcoded shell script
+        cmd_mapsplice = "python {0} --chromosome-dir {1} -x {2} -1 {3} -2 {4} --threads waiting_for_cpu_number --output {5} --qual-scale phred33 --bam --seglen 20 --min-map-len 40 --gene-gtf {6} --fusion".format(self.cfg.get('commands', 'mapsplice_cmd'), genome_chrs_path, bowtie_index_path, fq1[:-3], fq2[:-3], mapsplice_path, genes_gtf_path)
+        # (4) Fusiocatcher
+        cmd_fusioncatcher = "{0} --input {1} --output {2} -p waiting_for_cpu_number".format(self.cfg.get('commands', 'fusioncatcher_cmd'), ",".join([fq1, fq2]), fusioncatcher_path)
+        # star-fusion and star-chip can be run upon a previous star run (this MUST NOT be the star_filter run, but the star_expression run)
+        # (5)
+        cmd_starfusion = "{0} --chimeric_junction {1} --genome_lib_dir {2} --CPU waiting_for_cpu_number --output_dir {3}".format(self.cfg.get('commands', 'starfusion_cmd'), "{}_Chimeric.out.junction".format(os.path.join(star_path, sample_id)), starfusion_index_path, starfusion_path)
+        # (7)
+        cmd_starchip = "{0} {1} {2} {3}".format(self.cfg.get("commands", "starchip_cmd"), os.path.join(starchip_path, "starchip"), "{}_Chimeric.out.junction".format(os.path.join(star_path, sample_id)), starchip_param_path)
+        # (6) Pizzly
+        cmd_pizzly = "{0} -k 29 --gtf {1} --cache {2} --fasta {3} --output {4} {5}".format(self.cfg.get('commands', 'pizzly_cmd'), genes_gtf_path, pizzly_cache_path, genes_fasta_path, os.path.join(pizzly_path, "kallizzy"), os.path.join(kallisto_path, "fusion.txt"))
+        cmd_pizzly2 = "{0} {1} {2}".format(self.cfg.get('commands', 'pizzly_cmd2'), "{}.json".format(os.path.join(pizzly_path, "kallizzy")), "{}.json.txt".format(os.path.join(pizzly_path, "kallizzy")))
+        # (8) Infusion
+        cmd_infusion = "{0} -1 {1} -2 {2} --skip-finished --min-unique-alignment-rate 0 --min-unique-split-reads 0 --allow-non-coding --out-dir {3} {4}".format(self.cfg.get("commands", "infusion_cmd"), fq1, fq2, infusion_path, infusion_cfg_path)
+        # (x) Soapfuse
+        cmd_soapfuse = "{0} -c {1} -q {2} -i {3} -o {4} -g {5}".format(self.cfg.get('commands', 'soapfuse_wrapper_cmd'), self.cfg.get_path(), qc_table_path, " ".join([fq1, fq2]), soapfuse_path, ref_genome)
+        # (9) Data collection
+        cmd_fetchdata = "{0} -i {1} -o {2} -s {3} -c {4} --fq1 {5} --fq2 {6} --fusion_support {7}".format(os.path.join(self.easyfuse_path, "fetchdata.py"), output_results_path, fetchdata_path, sample_id, self.cfg.get_path(), fq1, fq2, tool_num_cutoff)
+        # (10) De novo assembly of fusion transcripts
+        # urla: This is currently still under active development and has not been tested thoroughly
+        cmd_denovoassembly = "{0} -i waiting_for_gene_list_input -c {1} -b {2}_Aligned.out.bam -g {3} -t {4} -o waiting_for_assembly_out_dir".format(os.path.join(self.easyfuse_path, "denovoassembly.py"), self.cfg.get_path(), os.path.join(filtered_reads_path, sample_id), ref_genome, ref_trans)
+        # (X) Sample monitoring
+        cmd_samples = "{0} --db_path={1} --sample_id={2} --action=append_state --tool=".format(os.path.join(self.easyfuse_path, "misc", "samples.py"), self.samples.db_path, sample_id)
+
+        # set final lists of executable tools and path
+        exe_tools = [
+            "QC", #0
+            "Readfilter", #1
+            "Kallisto", #2
+            "Star", #3
+            "Mapsplice", #4
+            "Fusioncatcher", #5
+            "Starfusion", #6
+            "Pizzly", #7
+            "Starchip", #8
+            "Infusion", #9
+            "Soapfuse", #10
+            "Fetchdata", #11
+            "Assembly" #12
+            ]
+        exe_cmds = [
+            " && ".join([cmd_fastqc, cmd_qc_parser, cmd_skewer]), #0
+            " && ".join([cmd_star_filter, cmd_read_filter, cmd_bam_to_fastq]), #1
+            cmd_kallisto, #2
+            cmd_star, #3
+            " && ".join([cmd_extr_fastq1, cmd_extr_fastq2, cmd_mapsplice]), #4
+            cmd_fusioncatcher, #5
+            cmd_starfusion, #6
+            " && ".join([cmd_pizzly, cmd_pizzly2]), #7
+            cmd_starchip, #8
+            cmd_infusion, #9
+            cmd_soapfuse, #10
+            cmd_fetchdata, #11
+            cmd_denovoassembly #12
+            ]
+        exe_path = [
+            qc_path, #0
+            filtered_reads_path, #1
+            kallisto_path, #2
+            star_path, #3
+            mapsplice_path, #4
+            fusioncatcher_path, #5
+            starfusion_path, #6
+            pizzly_path, #7
+            starchip_path, #8
+            infusion_path, #9
+            soapfuse_path, #10
+            fetchdata_path, #11
+            "" #12
+            ]
+
+        # create and submit slurm job if the tool is requested and hasn't been run before
+        for i, tool in enumerate(exe_tools, 0):
+            if tool in tools:
+                dependency = []
+                # check dependencies of the pipeline.
+                # Besides tool dependencies (Pizzly -> Kallisto, Starfusion/Starchip -> Star), read filtering is mandatory
+                # Processing will be skipped if a certain dependency was not found (either pre-processed data of the configs tool string are checked)
+                if tool in state_tools:
+                    # urla: the primary idea behind this flag is to allow multiple fetchdata executions during processing
+                    #       nevertheless, re-processing of the same data with a newer version of a tool will also be straightforward (but overwriting previous results, of course)
+                    if self.overwrite:
+                        self.logger.info("Executing {0} although it looks like a previous run finished successfully. Results in {1} may be overwritten".format(tool, exe_path[i]))
+                    else:
+                        self.logger.info("Skipping {0} as it looks like a previous run finished successfully. Results should be in {1}".format(tool, exe_path[i]))
+                        continue
+                else:
+                    if tool == "Readfilter" and "Readfilter" not in tools:
+                        self.logger.error(
+                                """Error 99: Sample {} will be skipped due to missing read filtering.\n
+                                Read filtering is currently a mandatory step for the processing.\n
+                                Because you haven't run it before for this sample, you have to include \"Readfilter\" in the tool selection in your config.\n
+                                """.format(sample_id))
+                        print("Error 99: Sample {} will be skipped due to missing read filtering.".format(sample_id))
+                        return 0
+                    elif tool == "Pizzly" and "Kallisto" not in tools:
+                        self.logger.error(
+                                """Error 99: Running {0} for Sample {1} will be skipped due to a missing dependency.\n
+                                Pizzly builds on Kallisto and it is therefore mandatory to run this first.\n
+                                Because you haven't run it before for this sample, you have to include \"Kallisto\" in the tool selection in your config.\n
+                                """.format(sample_id))
+                        print("Error 99: Running {0} for Sample {1} will be skipped due to a missing dependency.".format(tool, sample_id))
+                        continue
+                    elif (tool == "Starfusion" or tool == "Starchip") and "Star" not in tools:
+                        self.logger.error(
+                                """Error 99: Running {0} for Sample {1} will be skipped due to a missing dependency.\n
+                                {0} builds on Star and it is therefore mandatory to run this first.\n
+                                Because you haven't run it before for this sample, you have to include \"Star\" in the tool selection in your config.\n
+                                """.format(sample_id))
+                        print("Error 99: Running {0} for Sample {1} will be skipped due to a missing dependency.".format(tool, sample_id))
+                        continue
+
+                # prepare slurm jobs: get ressources, create uid, set output path and check dependencies
+                self.logger.debug("Submitting {} run to slurm".format(tool))
+                cpu, mem = self.cfg.get("resources", tool.lower()).split(",")
+                uid = "-".join([tool, sample_id])
+                if tool == "Star":
+                    exe_cmds[i] = exe_cmds[i].replace("waiting_for_output_string", "{}_".format(os.path.join(exe_path[i], sample_id))).replace("waiting_for_cpu_number", str(cpu))
+                else:
+                    exe_cmds[i] = exe_cmds[i].replace("waiting_for_output_string", exe_path[i]).replace("waiting_for_cpu_number", str(cpu))
+                cmd = " && ".join([exe_cmds[i], cmd_samples + tool])
+                # Managing slurm dependencies
+                if tool == "Pizzly":
+                    dependency = Queueing.get_jobs_by_name("Kallisto-{0}".format(sample_id))
+                elif tool == "Starfusion" or tool == "Starchip":
+                    dependency = Queueing.get_jobs_by_name("Star-{0}".format(sample_id))
+                elif tool == "Fetchdata":
+                    dependency = Queueing.get_jobs_by_name(sample_id)
+                elif tool == "Assembly":
+                    dependency = Queueing.get_jobs_by_name("Fetchdata-{0}".format(sample_id))
+                elif tool == "ReadFilter":
+                    dependency = Queueing.get_jobs_by_name("QC-{0}".format(sample_id))
+                #                else:
+                dependency.extend(Queueing.get_jobs_by_name("Readfilter-{0}".format(sample_id)))
+                dependency.extend(Queueing.get_jobs_by_name("QC-{0}".format(sample_id)))
+                self.logger.debug("Submitting slurm job: CMD - {0}; PATH - {1}; DEPS - {2}".format(cmd, exe_path[i], dependency))
+                self.submit_job(uid, cmd, cpu, mem, exe_path[i], dependency, "")
+            else:
+                self.logger.info("Skipping {0} as it is not selected for execution (Selected are: {1})".format(tool, tools))
+
+    def submit_job(self, uid, cmd, cores, mem_usage, output_results_folder, dependencies, mail):
+        """Submit job to slurm scheduling"""
+        already_running = Queueing.get_jobs_by_name(uid)
+        if not already_running:
+            # urla: for compatibility reasons (and to be independent of shell commands), concatenated commands are splitted again,
+            #       dependencies within the splitted groups updated and everything submitted sequentially to the queueing system
+            module_file = self.cfg.get('commands', 'module_file')
+            que_sys = self.cfg.get('general', 'queueing_system')
+            for i, cmd_split in enumerate(cmd.split(" && ")):
+                if not que_sys in ["slurm", "pbs"]:
+                    cmd_split = cmd_split.split(" ")
+                dependencies.extend(Queueing.get_jobs_by_name("{0}_CMD{1}".format(uid, i - 1)))
+                Queueing.submit("{0}_CMD{1}".format(uid, i), cmd_split, cores, mem_usage, output_results_folder, dependencies, self.partitions, self.userid, self.cfg.get('general', 'time_limit'), mail, module_file, que_sys)
+                time.sleep(0.5)
+        else:
+            self.logger.error("A job with this application/sample combination is currently running. Skipping {} in order to avoid unintended data loss.".format(uid))
+
+def main():
+    """Parse command line arguments and start script"""
+    parser = argparse.ArgumentParser(description='Processing of demultiplexed FASTQs')
+    # required arguments
+    parser.add_argument('-i', '--input', dest='input', nargs='+', help='Specify full path of the fastq folder to process.', required=True)
+    parser.add_argument('-o', '--output-folder', dest='output_folder', help='Specify full path of the folder to save the results into.', required=True)
+    parser.add_argument('-c', '--config', dest='config', help='Specify full path of config file.', required=True)
+    # optional arguments
+    parser.add_argument('-u', '--userid', dest='userid', help='User identifier used for scheduling and timing')
+    parser.add_argument('-p', '--partitions', dest='partitions', help='Comma-separated list of partitions to use for queueing.', default='allNodes')
+    parser.add_argument('--tool_support', dest='tool_support', help='The number of tools which are required to support a fusion event.', default="1")
+    parser.add_argument('--version', dest='version', help='Get version info')
+    # hidden (not visible in the help display) arguments
+    parser.add_argument('--overwrite', dest='overwrite', help=argparse.SUPPRESS, default=False, action='store_true')
+    args = parser.parse_args()
+
+    # if version is request, print it and exit
+    if args.version:
+        print(eav.__version__)
+        sys.exit(0)
+
+    script_call = "python {} {}".format(os.path.realpath(__file__), " ".join(sys.argv[1:]))
+
+    # create a local copy of the config file in the working dir folder in order to be able to re-run the script
+    proc = Processing(script_call, args.config, args.input, args.output_folder, args.partitions, args.userid, args.overwrite)
+
+
+    outf = open(os.path.join(args.output_folder, "process.sh"), "w")
+    outf.write("#!/bin/sh\n\n")
+    outf.write(script_call)
+    outf.close()
+
+    proc.run(args.tool_support)
+
+if __name__ == '__main__':
+    main()
