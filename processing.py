@@ -134,8 +134,8 @@ class Processing(object):
         infusion_path = os.path.join(fusion_path, "infusion")
         soapfuse_path = os.path.join(fusion_path, "soapfuse")
         fetchdata_path = os.path.join(self.working_dir, "Sample_{}".format(sample_id), "fetchdata")
-        fastqc_1 = os.path.join(qc_path, sample_id + "_R1_fastqc", "fastqc_data.txt")
-        fastqc_2 = os.path.join(qc_path, sample_id + "_R2_fastqc", "fastqc_data.txt")
+        fastqc_1 = os.path.join(qc_path, os.path.basename(fq1).rstrip(".fastq.gz") + "_fastqc", "fastqc_data.txt")
+        fastqc_2 = os.path.join(qc_path, os.path.basename(fq2).rstrip(".fastq.gz") + "_fastqc", "fastqc_data.txt")
 
 
         for folder in [
@@ -199,7 +199,7 @@ class Processing(object):
         cmd_extr_fastq1 = "gunzip --keep {0}".format(fq1)
         cmd_extr_fastq2 = "gunzip --keep {0}".format(fq2)
         # Added python interpreter to circumvent external hardcoded shell script
-        cmd_mapsplice = "python {0} --chromosome-dir {1} -x {2} -1 {3} -2 {4} --threads waiting_for_cpu_number --output {5} --qual-scale phred33 --bam --seglen 20 --min-map-len 40 --gene-gtf {6} --fusion".format(cmds["mapsplice"], genome_chrs_path, bowtie_index_path, fq1[:-3], fq2[:-3], mapsplice_path, genes_gtf_path)
+        cmd_mapsplice = "{0} --chromosome-dir {1} -x {2} -1 {3} -2 {4} --threads waiting_for_cpu_number --output {5} --qual-scale phred33 --bam --seglen 20 --min-map-len 40 --gene-gtf {6} --fusion".format(cmds["mapsplice"], genome_chrs_path, bowtie_index_path, fq1[:-3], fq2[:-3], mapsplice_path, genes_gtf_path)
         # (4) Fusiocatcher
         cmd_fusioncatcher = "{0} --input {1} --data {2} --output {3} -p waiting_for_cpu_number".format(cmds["fusioncatcher"], ",".join([fq1, fq2]), fusioncatcher_index_path, fusioncatcher_path)
         # star-fusion and star-chip can be run upon a previous star run (this MUST NOT be the star_filter run, but the star_expression run)
