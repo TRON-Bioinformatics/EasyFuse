@@ -18,28 +18,25 @@ import time
 import argparse
 from shutil import copy
 import misc.queueing as Queueing
-#from misc.config import Config
 from misc.samples import SamplesDB
 from misc.logger import Logger
 import misc.io_methods as IOMethods
 from misc.versioncontrol import VersCont
-#import misc.version as eav
 import config as cfg
 
 # pylint: disable=line-too-long
 #         yes they are partially, but I do not consider this to be relevant here
 class Processing(object):
     """Run, monitor and schedule fastq processing for fusion gene prediction"""
-    def __init__(self, cmd, input_path, working_dir):
+    def __init__(self, cmd, input_paths, working_dir):
         """Parameter initiation and work folder creation. Start of progress logging."""
-        self.working_dir = working_dir.rstrip("/")
+        self.working_dir = os.path.abspath(working_dir)
         self.logger = Logger(os.path.join(self.working_dir, "easyfuse_processing.log"))
         IOMethods.create_folder(self.working_dir, self.logger)
         copy(os.path.join(cfg.module_dir, "config.py"), working_dir)
         self.logger.info("Starting easyfuse: CMD - {}".format(cmd))
-        self.input_path = input_path
+        self.input_paths = [os.path.abspath(file) for file in input_paths]
         self.samples = SamplesDB(os.path.join(self.working_dir, "samples.db"))
-#        self.overwrite = overwrite
 
     # The run method simply greps and organises fastq input files.
     # Fastq pairs (single end input is currently not supported) are then send to "execute_pipeline"
@@ -64,7 +61,7 @@ class Processing(object):
 
         sample_list = []
         # get fastq files
-        left, right, sample_id = IOMethods.get_fastq_files(self.input_path, self.logger)
+        left, right, sample_id = IOMethods.get_fastq_files(self.input_paths, self.logger)
         sample_list = sample_id
         for i, _ in enumerate(left):
             if len(left) == len(right):
@@ -72,6 +69,7 @@ class Processing(object):
                 self.logger.info("Sample 1: {}".format(left[i]))
                 self.logger.info("Sample 2: {}".format(right[i]))
                 self.execute_pipeline(left[i], right[i], sample_id[i], ref_genome, ref_trans, tool_num_cutoff)
+
         
         # summarize all data if selected
         if "Summary" in cfg.tools:
@@ -358,25 +356,21 @@ def main():
     """Parse command line arguments and start script"""
     parser = argparse.ArgumentParser(description='Processing of demultiplexed FASTQs')
     # required arguments
-    parser.add_argument('-i', '--input', dest='input', nargs='+', help='Specify full path of the fastq folder to process.', required=True)
+    parser.add_argument('-i', '--input', dest='input_paths', nargs='+', help='Specify full path of the fastq folder to process.', required=True)
     parser.add_argument('-o', '--output-folder', dest='output_folder', help='Specify full path of the folder to save the results into.', required=True)
     # optional arguments
     parser.add_argument('--tool_support', dest='tool_support', help='The number of tools which are required to support a fusion event.', default="1")
     parser.add_argument('--version', dest='version', help='Get version info')
-    # hidden (not visible in the help display) arguments
-#    parser.add_argument('--overwrite', dest='overwrite', help=argparse.SUPPRESS, default=False, action='store_true')
     args = parser.parse_args()
 
     # if version is request, print it and exit
     if args.version:
-        print(cfg.__version__)
-#        print(eav.__version__)
+        print(cfg.version)
         sys.exit(0)
 
-    script_call = "python {} {}".format(os.path.realpath(__file__), " ".join(sys.argv[1:]))
+    script_call = "python {} -i {} -o {}".format(os.path.realpath(__file__), " ".join([os.path.abspath(x) for x in args.input_paths]), os.path.abspath(args.output_folder))
 
-    # create a local copy of the config file in the working dir folder in order to be able to re-run the script
-    proc = Processing(script_call, args.input, args.output_folder)
+    proc = Processing(script_call, args.input_paths, args.output_folder)
     proc.run(args.tool_support)
 
     with open(os.path.join(args.output_folder, "process.sh"), "w") as outf:

@@ -7,6 +7,7 @@ create and work on this DB. Concerning data structures: All data is stored
 in a samples table including sample_id, list of performed analyses as well as the corresponding FASTQ file location.
 Data itself can be modified using wrapped SQL queries.
 
+<<<<<<< HEAD
 @author: Tron (PASO), BNT (URLA)
 @version: 20190429
 """

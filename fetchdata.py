@@ -84,7 +84,7 @@ class Fetching(object):
     def execute_pipeline(self, fq1, fq2, fusion_support):
         """Create sample specific subfolder structuge and run tools on fastq files"""
 
-		# Genome/Gene references to use
+        # Genome/Gene references to use
         ref_trans = cfg.ref_trans_version
         ref_genome = cfg.ref_genome_build
         genome_fasta_path = cfg.references["genome_fasta"]
@@ -165,7 +165,6 @@ class Fetching(object):
         cmd_bamindex_best = "{0} index {1}best_Aligned.sortedByCoord.out.bam".format(cmds["samtools"], star_align_file)
         cmd_requantify_best = "{0} -i {1}best_Aligned.sortedByCoord.out.bam -o {2}_best.tdt -d 10".format(os.path.join(module_dir, "requantify.py"), star_align_file, classification_file)
 
-                                                                                
 
         # set final lists of executable tools and path
         exe_tools = [

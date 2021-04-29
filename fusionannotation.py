@@ -343,6 +343,7 @@ class FusionAnnotation(object):
             return sequence.reverse_complement()
         return sequence
 
+
     def run(self, context_seqs_file, cis_near_distance, genome_fasta, context_seq_len, tsl_filter_level):
         """ Run the annotation pipeline """
         # for performance reasons (mainly seq grepping), results cannot be written on the fly and everything will therefore be stored in a list of lists
