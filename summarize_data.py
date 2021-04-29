@@ -11,8 +11,6 @@ from datetime import datetime
 import time
 import argparse
 
-import pandas as pd
-import seaborn as sns
 from join_data import DataJoining
 from misc.samples import SamplesDB
 import misc.io_methods as IOMethods

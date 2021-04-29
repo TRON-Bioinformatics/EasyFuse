@@ -49,22 +49,16 @@ Install python modules (we strongly recommend installation via conda):
   conda install -c bioconda pysam=0.15.2 star=2.6.1b star-fusion=1.5.0 bowtie2=2.3.4.3 bx-python=0.8.2 crossmap=0.2.7
   ```
 
-
- - R (>= 3.5.1)
+ - R (>= 3.6.0)
  - R packages: 
-    - optparse
-    - tidyverse
-    - randomForest
-    - Biostrings
-    - GenomicRanges
-    - BSgenome    
-    - bindrcpp
+    - optparse (1.6.4)
+    - tidyverse (1.3.0)
+    - randomForest (4.6-14)
 
   Install packages within R by
   
   ```
-  install.packages(c("optparse", "tidyverse", "randomForest", "Biostrings","BiocManager","BSgenome","optparse"))
-  BiocManager::install("GenomicRanges") #bioconductor package
+  install.packages(c("optparse", "tidyverse", "randomForest"))
   ```
   
 ## Usage
@@ -86,9 +80,9 @@ processing.py \
 
 Before executing the example command
 
- - [ ] rename `build_env.sh.smaple` into `build_env.sh` and configure content. 
- - [ ] rename `config.py.smaple` into `config.py` and configure content.
- - [ ] rename `blacklist.txt.sample` into `blacklist.txt`.
+ - rename `build_env.sh.smaple` into `build_env.sh` and configure content. 
+ - rename `config.py.smaple` into `config.py` and configure content.
+ - rename `blacklist.txt.sample` into `blacklist.txt`.
 
 ```
 python processing.py -i test_case/SRR1659960_05pc_* -o test_easyfuse_1.3.1/
