@@ -10,7 +10,6 @@ Simple method collection for:
 @version: 20180118
 """
 
-from __future__ import print_function
 import os
 import sys
 import subprocess
@@ -149,18 +148,17 @@ def _submit_slurm(job_name, cmd, cores, mem_usage, output_results_folder, depend
             "#SBATCH --account {}\n".format(userid),
             "#SBATCH --kill-on-invalid-dep=yes\n",
             "#SBATCH --cpus-per-task={}\n".format(cores),
-            "#SBATCH --mem={}\n".format(int(mem_usage)*1000),
+            "#SBATCH --mem={}G\n".format(mem_usage),
             "#SBATCH --time={}\n".format(timelimit),
             depend,
             "#SBATCH -D {}\n".format(output_results_folder),
             "#SBATCH --error={}\n".format(error_file),
             "#SBATCH --output={}\n".format(output_file),
-#            "#SBATCH --requeue\n",
             mail_type,
             mail_user,
             "set -eo pipefail -o nounset\n",
-	    ". {}\n".format(module_file),
-            "srun {}\n".format(cmd)
+	    ". {}\n".format(module_file) if module_file else "\n",
+            "srun echo \"$(date) Slurm job started.\" > {0}.runtime && {1} && echo \"$(date) Slurm job finished.\" >> {0}.runtime\n".format(job_name, cmd)
         ])
     # and run it
     try:
@@ -190,7 +188,7 @@ def main():
     mem_usage = args.memory
     output_results_folder = args.output
     dependencies = ""
-    submit(job_name, cmd, cores, mem_usage, output_results_folder, dependencies, args.partitions, args.userid, args.timelimit)
+    submit(job_name, cmd, cores, mem_usage, output_results_folder, dependencies, args.partitions, args.userid, args.timelimit, "", "")
 
 if __name__ == '__main__':
     main()

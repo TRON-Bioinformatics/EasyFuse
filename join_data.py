@@ -9,11 +9,11 @@ Filtering of the final data table
 @version: 20190118
 """
 
-from __future__ import print_function, division
 import os
 import sys
 import pandas as pd
-import misc.queue as Queueing
+import misc.queueing as Queueing
+import config as cfg
 
 # pylint: disable=line-too-long
 #         yes they are partially, but I do not consider this to be relevant here
@@ -28,7 +28,6 @@ class DataJoining(object):
         self.model_predictions = model_predictions
         pd.options.mode.chained_assignment = None
         self.input_read_count = 0
-        self.easyfuse_path = os.path.dirname(os.path.realpath(__file__))
         self.blacklist = []
 
     def append_tool_cnts_to_context_file(self, context_data, detected_fusions, fusion_tool_list):
@@ -101,11 +100,11 @@ class DataJoining(object):
 
         return context_data.fillna(0), redundant_header
 
-    def run(self, config):
+    def run(self):
         """run the data concatenation"""
-        fusion_tools = config.get("general", "fusiontools").split(",")
-        requant_mode = config.get("general", "requant_mode").split(",")
-        self.load_blacklist(config.get("easyfuse_helper", "blacklist"))
+        fusion_tools = cfg.fusiontools
+        requant_mode = cfg.requant_mode
+        self.load_blacklist(os.path.join(cfg.module_dir, "blacklist.txt"))
         # urla - note: with icam_run set to True, two results from technical replicates are expected as input
         print("Looking for required files...")
         # check whether output already exists
@@ -122,10 +121,10 @@ class DataJoining(object):
         for table in ["1", "2"]:
             summary_file = "{}_fusRank_{}.csv".format(self.output, table)
             if self.model_predictions and self.check_files(summary_file, True):
-                model_path = config.get("otherFiles", "easyfuse_model")
-                model_threshold = config.get("general", "model_pred_threshold")
+                model_path = cfg.other_files["easyfuse_model"]
+                model_threshold = cfg.model_pred_threshold
                 # append prediction scores based on pre-calculated model
-                cmd_model = "{0} --fusion_summary {1} --model_file {2} --prediction_threshold {3} --output {4}".format(os.path.join(self.easyfuse_path, "R", "R_model_prediction.R"), summary_file, model_path, model_threshold, "{}.pModelPred.csv".format(summary_file[:-4]))
+                cmd_model = "{0} --fusion_summary {1} --model_file {2} --prediction_threshold {3} --output {4}".format(os.path.join(cfg.module_dir, "R", "R_model_prediction.R"), summary_file, model_path, model_threshold, "{}.pModelPred.csv".format(summary_file[:-4]))
                 Queueing.submit("", cmd_model.split(" "), "", "", "", "", "", "", "", "", "", "none")
                 # re-read the table with prediction for filter counting
                 # urla - note: there is probably a more elegant way using getattr/setattr but I'm not at all familiar with its pros/cons
@@ -211,9 +210,9 @@ class DataJoining(object):
                 ftid_dict[ftid] = ftid_dict[ftid][0]
 
         # create sets of fusion gene names according to different fiters
-        fusion_gene_set_list[1] = set([ftid_dict[x] for x in df_rep[df_rep["type"] != "cis_near"]["FTID"]]) # exclude cis near events as they are likely read through
-        fusion_gene_set_list[2] = set([ftid_dict[x] for x in df_rep[df_rep["exon_boundary"] == "both"]["FTID"]]) # allow only fusions where the breakpoints are on exon boundaries in BOTH fusion partners
-        fusion_gene_set_list[3] = set([ftid_dict[x] for x in df_rep[df_rep["frame"] != "no_frame"]["FTID"]]) # exclude no frame fusions
+        fusion_gene_set_list[1] = set([ftid_dict[x] for x in df_rep[df_rep["type"].astype(str) != "cis_near"]["FTID"]]) # exclude cis near events as they are likely read through
+        fusion_gene_set_list[2] = set([ftid_dict[x] for x in df_rep[df_rep["exon_boundary"].astype(str) == "both"]["FTID"]]) # allow only fusions where the breakpoints are on exon boundaries in BOTH fusion partners
+        fusion_gene_set_list[3] = set([ftid_dict[x] for x in df_rep[df_rep["frame"].astype(str) != "no_frame"]["FTID"]]) # exclude no frame fusions
         # urla - note: I'm not 100% why str.isalpha is working everywhere I tested, but not on our dev servers... This way, it works, although I thought the pandas str method would this already...
         fusion_gene_set_list[4] = set([ftid_dict[x] for x in df_rep[df_rep["neo_peptide_sequence"].astype(str).str.isalpha()]["FTID"]]) # the neo peptide sequence must be an alphabetic sequence of at least length 1
         if is_merged:

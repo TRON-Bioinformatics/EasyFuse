@@ -7,27 +7,20 @@ import subprocess
 
 from argparse import ArgumentParser
 
-sys.path.append(os.path.join(os.path.dirname( __file__ ), '..'))
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
-from misc.config import Config
+import config as cfg
 
 def main():
-    parser = ArgumentParser(description='Wrapper around SOAPfuse.')
-    parser.add_argument('-q','--qc-table', dest='qc_table', help='Specify input QC table')
-    parser.add_argument('-i','--input', dest='input', nargs='+', help='Specify input FASTQ files', required=True)
-    parser.add_argument('-o','--output', dest='output', help='Specify output folder', default='.')
-    parser.add_argument('-g','--genome', dest='genome', help='Specify reference genome', default='hg38')
-    parser.add_argument('-c','--config', dest='config', help='Specify config file')
+    parser = ArgumentParser(description="Wrapper around SOAPfuse.")
+    parser.add_argument("-q","--qc-table", dest="qc_table", help="Specify input QC table")
+    parser.add_argument("-i","--input", dest="input", nargs="+", help="Specify input FASTQ files", required=True)
+    parser.add_argument("-o","--output", dest="output", help="Specify output folder", default=".")
     args = parser.parse_args()
 
-    if args.config:
-        cfg = Config(args.config)
-    else:
-        cfg = Config(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'config.ini'))
+    soapfuse_cfg = cfg.other_files["soapfuse_cfg"]
 
-    soapfuse_cfg = cfg.get('otherFiles', 'ensembl_soapfuse_cfg_{}'.format(args.genome))
-
-    cols = args.input[0].rsplit("/",3)
+    cols = args.input[0].rsplit("/", 3)
 #    print(cols)
     remaining_len = 1000
     read_len = 0
@@ -60,7 +53,7 @@ def main():
             os.symlink(file, os.path.join(cols[0], cols[1], cols[2], "S_{}.fastq.gz".format((i+1))))
         except:
             print("Symlink already exists!")
-    cmd = "{} -c {} -fd {} -l {} -o {}".format(cfg.get('commands', 'soapfuse_cmd'), soapfuse_cfg, cols[0], cfg_file, args.output)
+    cmd = "{} -c {} -fd {} -l {} -o {}".format(cfg.commands["soapfuse"], soapfuse_cfg, cols[0], cfg_file, args.output)
 #    print cmd
     proc = subprocess.Popen(cmd, shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
     (stdoutdata, stderrdata) = proc.communicate()
@@ -76,5 +69,5 @@ def main():
 
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

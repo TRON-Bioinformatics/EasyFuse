@@ -20,7 +20,6 @@ A log file is generated after successful completion which contains information a
 @version: 20181126
 """
 
-from __future__ import print_function
 import sys
 import time
 from argparse import ArgumentParser

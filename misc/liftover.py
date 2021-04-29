@@ -4,27 +4,28 @@
 Changes the coordinates from one genome annotation to another (liftover) with crossmap
 Coordinates are changed in DetectedFusions.csv; all intermediate files are preserved.
 
-@author: BNT (URLA)
+@author: TRON (PASO), BNT (URLA)
 @version: 20190131
 """
 
-from __future__ import print_function
 from argparse import ArgumentParser
 import sys
 import os.path
 import pandas as pd
-from shutil import copy2
+from shutil import copyfile
 import queue as Queueing
-from config import Config
 from logger import Logger
+
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+
+import config as cfg
 
 class FusionLiftover(object):
     """Select alignments belonging to putative fusions from an s/bam file"""
-    def __init__(self, in_fus_detect, config, logger):
+    def __init__(self, in_fus_detect, logger):
         self.in_fus_detect = in_fus_detect
-        self.cfg = config
         self.logger = Logger(logger)
-        copy2(in_fus_detect, "{}.bak".format(in_fus_detect))
+        copyfile(in_fus_detect, "{}.bak".format(in_fus_detect))
         self.chr_list = [
             "1", "2", "3", "4", "5",
             "6", "7", "8", "9", "10",
@@ -35,12 +36,12 @@ class FusionLiftover(object):
 
     def liftcoords(self):
         """Parse ensembl transcriptome fasta file and modify header"""
-        crossmap_chain = self.cfg.get('liftover', 'crossmap_chain')
+        crossmap_chain = cfg.liftover["crossmap_chain"]
 
         # check whether annotations and references are set, existing and matching
         ref_genome_org = os.path.basename(crossmap_chain).replace(".", "_").split("_")[0]
         ref_genome_dest = os.path.basename(crossmap_chain).replace(".", "_").split("_")[2]
-        if not ref_genome_org.lower() == self.cfg.get('general', 'ref_genome_build').lower():
+        if not ref_genome_org.lower() == cfg.ref_genome_build.lower():
             self.logger.error("Error 99: Mismatch between set genome version and chain file. Please verify that you have the correct chain file was supplied!")
             print("Error 99: Mismatch between set genome version and chain file. Please verify that you have the correct chain file was supplied!")
             sys.exit(99)
@@ -61,8 +62,8 @@ class FusionLiftover(object):
                 fusout.write("{0}\t{1}\t{2}\t{3}\t2\t{4}\n".format(chrom, pos, (int(pos) + 1), strand, in_fus_detect_pddf.loc[i, "FGID"]))
 
         # run crossmap to perform liftover
-        cmd_crossmap = "{0} bed {1} {2} {3}".format(self.cfg.get('commands', 'crossmap_cmd'), crossmap_chain, tmp_org_bed, tmp_dest_bed)
-        module_file = self.cfg.get('commands', 'module_file')
+        cmd_crossmap = "{0} bed {1} {2} {3}".format(cfg.commands["crossmap_cmd"], crossmap_chain, tmp_org_bed, tmp_dest_bed)
+        module_file = os.path.join(cfg.module_dir, "build_env.sh")
         Queueing.submit("", cmd_crossmap.split(" "), "", "", "", "", "", "", "", "", module_file, "none")
         # check whether some coords were unmapped and print which those are (i.e. which fusion will be lost)
         if os.stat(tmp_dest_bed_unmap).st_size == 0:
@@ -117,11 +118,10 @@ def main():
     """Parse command line arguments and start script"""
     parser = ArgumentParser(description="Generate mapping stats for fusion detection")
     parser.add_argument('-i', '--input', dest='input', help='Detected fusions file', required=True)
-    parser.add_argument('-c', '--config', dest='config', help='Main config file', required=True)
     parser.add_argument('-l', '--logger', dest='logger', help='Logging of processing steps', default="")
     args = parser.parse_args()
 
-    flo = FusionLiftover(args.input, Config(args.config), args.logger)
+    flo = FusionLiftover(args.input, args.logger)
     flo.liftcoords()
 
 if __name__ == '__main__':

@@ -10,7 +10,6 @@ output folders and writes the "Detected_Fusions.csv"
 @version: 20181126
 """
 
-from __future__ import print_function
 import sys
 import os
 import re
@@ -33,13 +32,13 @@ class FusionParser(object):
         self.tool_num_cutoff = int(tool_num_cutoff)
         # urla: if we want to be more generic and allow different annotations, identification of the chr names
         #       (eg "chr1" vs "1" and "chrM" vs "MT") should be performed in advance
-        self.chr_list = [
+        self.chr_list = (
             "1", "2", "3", "4", "5",
             "6", "7", "8", "9", "10",
             "11", "12", "13", "14", "15",
             "16", "17", "18", "19", "20",
             "21", "22", "X", "Y", "MT"
-            ]
+        )
         self.tools = fusiontool_list.split(",")
         self.logger = Logger(sample_log)
 
