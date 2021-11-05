@@ -96,9 +96,10 @@ class FusionParser(object):
                 # skip all prediction not on standard chromosomes
                 if elements[8].split(":")[0] not in self.chr_list or elements[9].split(":")[0] not in self.chr_list:
                     continue
-                fgid = fusion_gene.split("_")[0] + "_" + elements[8] + "_" + fusion_gene.split("_")[1] + "_" + elements[9]
+                #fgid = fusion_gene.split("_")[0] + "_" + elements[8] + "_" + fusion_gene.split("_")[1] + "_" + elements[9]
+                bpid = elements[8] + "_" + elements[9]
 
-                fusion_map[fgid] = [
+                fusion_map[bpid] = [
                     fusion_gene,  # fusion_gene
                     elements[8],  # up_gene_bp
                     elements[9],  # dn_gene_bp
@@ -144,9 +145,11 @@ class FusionParser(object):
                 # check whether fusion gene is not on primary chr
                 if elements[5].split(":")[0] not in self.chr_list or elements[7].split(":")[0] not in self.chr_list:
                     continue
-                fgid = fusion_gene.split("_")[0] + "_" + elements[5] + "_" + fusion_gene.split("_")[1] + "_" + elements[7]
+                #fgid = fusion_gene.split("_")[0] + "_" + elements[5] + "_" + fusion_gene.split("_")[1] + "_" + elements[7]
                 #self.logger.debug("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\n".format(fgid, fusion_gene, elements[5], elements[7], elements[1], elements[2], self.sample_id))
-                fusion_map[fgid] = [
+                bpid = elements[5] + "_" + elements[7]
+
+                fusion_map[bpid] = [
                     fusion_gene,  # fusion_gene
                     elements[5],  # up_gene_bp
                     elements[7],  # dn_gene_bp
@@ -250,9 +253,10 @@ class FusionParser(object):
 
                 if up_gene_id.split(":")[0] not in self.chr_list or dn_gene_id.split(":")[0] not in self.chr_list:
                     continue
-                fgid = fusion_gene.split("_")[0] + "_" + up_gene_id + "_" + fusion_gene.split("_")[1] + "_" + dn_gene_id
+                #fgid = fusion_gene.split("_")[0] + "_" + up_gene_id + "_" + fusion_gene.split("_")[1] + "_" + dn_gene_id
+                bpid = up_gene_id + "_" + dn_gene_id
 
-                fusion_map[fgid] = [
+                fusion_map[bpid] = [
                     fusion_gene,   # fusion_gene
                     up_gene_id,    # up_gene_bp
                     dn_gene_id,    # dn_gene_bp
@@ -288,9 +292,11 @@ class FusionParser(object):
                 # check whether fusion gene is not on primary chr
                 if elements[0].split(":")[0] not in self.chr_list or elements[1].split(":")[0] not in self.chr_list:
                     continue
-                fgid = elements[5] + "_" + elements[0] + "_" + elements[7] + "_" + elements[1]
+                #fgid = elements[5] + "_" + elements[0] + "_" + elements[7] + "_" + elements[1]
 
-                fusion_map[fgid] = [
+                bpid = elements[0] + "_" + elements[1]
+
+                fusion_map[bpid] = [
                     fusion_gene,  # fusion_gene
                     elements[0],  # up_gene_bp
                     elements[1],  # dn_gene_bp
@@ -354,9 +360,11 @@ class FusionParser(object):
                 # check whether fusion gene is not on primary chr
                 if elements[1] not in self.chr_list or elements[4] not in self.chr_list:
                     continue
-                fgid = fusion_gene.split("_")[0] + "_" + up_gene_id + "_" + fusion_gene.split("_")[1] + "_" + dn_gene_id
+                #fgid = fusion_gene.split("_")[0] + "_" + up_gene_id + "_" + fusion_gene.split("_")[1] + "_" + dn_gene_id
 
-                fusion_map[fgid] = [
+                bpid = up_gene_id + "_" + dn_gene_id
+
+                fusion_map[bpid] = [
                     fusion_gene,  # fusion_gene
                     up_gene_id,  # up_gene_bp
                     dn_gene_id,  # dn_gene_bp
@@ -429,9 +437,11 @@ class FusionParser(object):
                 # check whether fusion gene is not on primary chr
                 if elements[1] not in self.chr_list or elements[6] not in self.chr_list:
                     continue
-                fgid = fusion_gene.split("_")[0] + "_" + up_gene_id + "_" + fusion_gene.split("_")[1] + "_" + dn_gene_id
+                #fgid = fusion_gene.split("_")[0] + "_" + up_gene_id + "_" + fusion_gene.split("_")[1] + "_" + dn_gene_id
 
-                fusion_map[fgid] = [
+                bpid = up_gene_id + "_" + dn_gene_id
+
+                fusion_map[bpid] = [
                     fusion_gene,  # fusion_gene
                     up_gene_id,  # up_gene_bp
                     dn_gene_id,  # dn_gene_bp
@@ -442,45 +452,6 @@ class FusionParser(object):
                     ]
         return fusion_map
 
-    # pizzly - results file is "kallizzy.json.txt"
-    def get_pizzly_results(self):
-        """Load and parse results from pizzly"""
-        pizzly_predict = os.path.join(self.scratch_path, "fusion", "pizzly", "kallizzy.json.txt")
-        fusion_map = {}
-        with open(pizzly_predict, "r") as prediction:
-            next(prediction) # skip header line
-            for line in prediction:
-                elements = line.rstrip().split("\t")
-                # Currently relevant fields (marked *) in the output file are:
-                # * elements[0] ~ geneA.name
-                #   elements[1] ~ geneA.id
-                # * elements[2] ~ geneB.name
-                #   elements[3] ~ geneB.id
-                # * elements[4] ~ paircount
-                # * elements[5] ~ splitcount
-                #   elements[6] ~ transcripts.list
-
-                # Pizzly is a overpredictor with a high FP ratio in its current version
-                # Therefore, only events supported by at least (paircount + splitcount >=3) are considered
-                if int(elements[4]) + int(elements[5]) < 3:
-                    continue
-                fusion_gene = "{0}_{1}".format(elements[0], elements[2]).upper()
-
-                # check whether fusion gene is not on primary chr - not possible for pizzly as exact breakpoint cannot directly be determined from pizzly output
-#                    if elements[0].split(":")[0] not in self.chr_list or elements[1].split(":")[0] not in self.chr_list:
-#                        continue
-                fgid = elements[0] + "_1:100:+_" + elements[2] + "_2:100:+"
-
-                fusion_map[fgid] = [
-                    fusion_gene,  # fusion_gene
-                    "1:100:+",  # up_gene_bp
-                    "2:100:+",  # dn_gene_bp
-                    elements[5],  # junc_reads_num
-                    elements[4],  # span_reads_num
-                    self.sample_id,
-                    "Pizzly"
-                    ]
-        return fusion_map
 
     #####
     ### parser of fusion tool parser outputs
@@ -522,8 +493,6 @@ class FusionParser(object):
                 pred_res_dict = self.get_infusion_results()
             elif tool == "Soapfuse":
                 pred_res_dict = self.get_soapfuse_results()
-            elif tool == "Pizzly":
-                pred_res_dict = self.get_pizzly_results()
         # pylint exceptions:
         #        the caught exception is not further specified as several different exceptions may be raised during processing
         #        the type of exception is, however, unimportant for further processing, because any exception must be manually reviewed
@@ -533,7 +502,7 @@ class FusionParser(object):
 
         tool_res_file = os.path.join(output_folder_path, tool + "_res.csv")
         with open(tool_res_file, "w") as tool_outf:
-            tool_outf.write("fgid;fusion_gene;breakpoint1;breakpoint2;junc_reads;span_reads;sample_id;tool\n")
+            tool_outf.write("bpid;fusion_gene;breakpoint1;breakpoint2;junc_reads;span_reads;sample_id;tool\n")
             for key in pred_res_dict:
                 tool_outf.write(key + ";" + ";".join(pred_res_dict[key]) + "\n")
         return (pred_res_dict, False)
@@ -625,7 +594,7 @@ class FusionParser(object):
         detected_fusions_file = os.path.join(self.fusion_output_path, "Detected_Fusions.csv")
         with open(detected_fusions_file, "w") as fus_file:
             # write header
-            fus_file.write("FGID;Fusion_Gene;Breakpoint1;Breakpoint2;Junction_Reads;Spanning_Reads;Sample;Tool\n")
+            fus_file.write("BPID;Fusion_Gene;Breakpoint1;Breakpoint2;Junction_Reads;Spanning_Reads;Sample;Tool\n")
             count_fusions = 0
             self.logger.debug("Generating Detected Fusions table")
 

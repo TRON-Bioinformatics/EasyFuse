@@ -11,44 +11,65 @@ during all steps, perform slurm scheduling and process monitoring
 @version: 20190118
 """
 
+from argparse import ArgumentParser
+from configparser import ConfigParser
+import json
 import os
 import os.path
+from shutil import copy
 import sys
 import time
-import argparse
-from shutil import copy
+
+
 import misc.queueing as Queueing
 from misc.samples import SamplesDB
 from misc.logger import Logger
 import misc.io_methods as IOMethods
 from misc.versioncontrol import VersCont
-import config as cfg
+#import config as cfg
 
 # pylint: disable=line-too-long
 #         yes they are partially, but I do not consider this to be relevant here
 class Processing(object):
     """Run, monitor and schedule fastq processing for fusion gene prediction"""
-    def __init__(self, cmd, input_paths, working_dir):
+    def __init__(self, cmd, input_paths, working_dir, cfg_file):
         """Parameter initiation and work folder creation. Start of progress logging."""
         self.working_dir = os.path.abspath(working_dir)
         self.logger = Logger(os.path.join(self.working_dir, "easyfuse_processing.log"))
         IOMethods.create_folder(self.working_dir, self.logger)
-        copy(os.path.join(cfg.module_dir, "config.py"), working_dir)
+
         self.logger.info("Starting easyfuse: CMD - {}".format(cmd))
         self.input_paths = [os.path.abspath(file) for file in input_paths]
         self.samples = SamplesDB(os.path.join(self.working_dir, "samples.db"))
+
+        self.cfg_file = cfg_file
+        self.cfg = None
+
+        if not cfg_file:
+            cfg_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), "config.ini")
+
+        if cfg_file.endswith("ini"):
+            self.cfg = ConfigParser()
+            self.cfg.read(cfg_file)
+        elif cfg_file.ednwith("json"):
+            with open(cfg_file) as config_file:
+                self.cfg = json.load(config_file)
+
+        copy(cfg_file, working_dir)
+
+        print(self.cfg)
 
     # The run method simply greps and organises fastq input files.
     # Fastq pairs (single end input is currently not supported) are then send to "execute_pipeline"
     def run(self, tool_num_cutoff):
         """General parameter setting, identification of fastq files and initiation of processing"""
-        self.logger.info("Pipeline Version: {}".format(cfg.version))
+        self.logger.info("Pipeline Version: {}".format(self.cfg["general"]["version"]))
         # Checking dependencies
         #VersCont(os.path.join(cfg.module_dir, "dependency_versions.txt")).get_and_print_tool_versions()
         #self.cfg.run_self_test()
         # urla: organism is currently not used for anything, however, this might change; is mouse processing relevant at some point?
-        ref_genome = cfg.ref_genome_build
-        ref_trans = cfg.ref_trans_version
+        ref_genome = self.cfg["general"]["ref_genome_build"]
+        ref_trans = self.cfg["general"]["ref_trans_version"]
 
         self.logger.info("Reference Genome: {0}, Reference Transcriptome: {1}".format(ref_genome, ref_trans))
  #       if self.overwrite:
@@ -72,27 +93,27 @@ class Processing(object):
 
         
         # summarize all data if selected
-        if "Summary" in cfg.tools:
+        if "Summary" in self.cfg["general"]["tools"].split(","):
             #dependency = [Queueing.get_jobs_by_name("Fetchdata-{}".format(sample)) for sample in sample_list]
             # urla - note: would be happy to get the dependencies with a stacked LC, but is atm to complicated for me ^^
             dependency = []
             for sample in sample_list:
-                dependency.extend(Queueing.get_jobs_by_name("Fetchdata-{}".format(sample), cfg.queueing_system))
+                dependency.extend(Queueing.get_jobs_by_name("Fetchdata-{}".format(sample), self.cfg["general"]["queueing_system"]))
             modelling_string = ""
-            if cfg.other_files["easyfuse_model"]:
+            if self.cfg["other_files"]["easyfuse_model"]:
                 modelling_string = " --model_predictions"
-            cmd_summarize = "python {0} --input {1}{2}".format(os.path.join(cfg.module_dir, "summarize_data.py"), self.working_dir, modelling_string)
+            cmd_summarize = "python {0} --input {1}{2}".format(os.path.join(self.cfg["module_dir"], "summarize_data.py"), self.working_dir, modelling_string)
             self.logger.debug("Submitting slurm job: CMD - {0}; PATH - {1}; DEPS - {2}".format(cmd_summarize, self.working_dir, dependency))
-            cpu = cfg.resources["summary"]["cpu"]
-            mem = cfg.resources["summary"]["mem"]
-            self.submit_job("-".join([cfg.pipeline_name, "Summary", str(int(round(time.time())))]), cmd_summarize, cpu, mem, self.working_dir, dependency, cfg.receiver)
+            cpu = self.cfg["resources"]["summary"][0]
+            mem = self.cfg["resources"]["summary"][1]
+            self.submit_job("-".join([self.cfg["general"]["pipeline_name"], "Summary", str(int(round(time.time())))]), cmd_summarize, cpu, mem, self.working_dir, dependency, self.cfg["general"]["receiver"])
 
     # Per sample, define input parameters and execution commands, create a folder tree and submit runs to slurm
     def execute_pipeline(self, fq1, fq2, sample_id, ref_genome, ref_trans, tool_num_cutoff):
         """Create sample specific subfolder structure and run tools on fastq files"""
         self.samples.add_sample(sample_id, "NA", fq1, fq2)
 
-        refs = cfg.references
+        refs = self.cfg["references"]
 
         # Genome/Gene references to use
         genome_sizes_path = refs["genome_sizes"]
@@ -101,8 +122,8 @@ class Processing(object):
         genes_gtf_path = refs["genes_gtf"]
 
         # Path' to specific indices
-        indices = cfg.indices
-        other_files = cfg.other_files
+        indices = self.cfg["indices"]
+        other_files = self.cfg["other_files"]
 
         bowtie_index_path = indices["bowtie"]
         star_index_path = indices["star"]
@@ -161,9 +182,9 @@ class Processing(object):
         # get a list of tools from the samples.db file that have been run previously on this sample
         state_tools = self.samples.get_tool_list_from_state(sample_id)
         # get a list of tools from the config file which shall be run on this sample
-        tools = cfg.tools
-        cmds = cfg.commands
-        module_dir = cfg.module_dir
+        tools = self.cfg["general"]["tools"].split(",")
+        cmds = self.cfg["commands"]
+        module_dir = self.cfg["general"]["module_dir"]
         # Define cmd strings for each program
         # urla: mapsplice requires gunzip'd read files and process substitutions don't seem to work in slurm scripts...
         #       process substitution do somehow not work from this script - c/p the command line to the terminal, however, works w/o issues?!
@@ -180,7 +201,7 @@ class Processing(object):
             qc_table_path = "None"
 
         # (0) Readfilter
-        cmd_star_filter = "{0} --genomeDir {1} --outFileNamePrefix {2}_ --readFilesCommand zcat --readFilesIn {3} {4} --outFilterMultimapNmax 100 --outSAMmultNmax 1 --chimSegmentMin 10 --chimJunctionOverhangMin 10 --alignSJDBoverhangMin 10 --alignMatesGapMax {5} --alignIntronMax {5} --chimSegmentReadGapMax 3 --alignSJstitchMismatchNmax 5 -1 5 5 --seedSearchStartLmax 20 --winAnchorMultimapNmax 50 --outSAMtype BAM Unsorted --chimOutType Junctions WithinBAM --outSAMunmapped Within KeepPairs --runThreadN waiting_for_cpu_number".format(cmds["star"], star_index_path, os.path.join(filtered_reads_path, sample_id), fq1, fq2, cfg.max_dist_proper_pair)
+        cmd_star_filter = "{0} --genomeDir {1} --outFileNamePrefix {2}_ --readFilesCommand zcat --readFilesIn {3} {4} --outFilterMultimapNmax 100 --outSAMmultNmax 1 --chimSegmentMin 10 --chimJunctionOverhangMin 10 --alignSJDBoverhangMin 10 --alignMatesGapMax {5} --alignIntronMax {5} --chimSegmentReadGapMax 3 --alignSJstitchMismatchNmax 5 -1 5 5 --seedSearchStartLmax 20 --winAnchorMultimapNmax 50 --outSAMtype BAM Unsorted --chimOutType Junctions WithinBAM --outSAMunmapped Within KeepPairs --runThreadN waiting_for_cpu_number".format(cmds["star"], star_index_path, os.path.join(filtered_reads_path, sample_id), fq1, fq2, self.cfg["general"]["max_dist_proper_pair"])
         cmd_read_filter = "{0} --input {1}_Aligned.out.bam --output {1}_Aligned.out.filtered.bam".format(os.path.join(module_dir, "fusionreadfilter.py"), os.path.join(filtered_reads_path, sample_id))
         # re-define fastq's if filtering is on (default)
         fq0 = ""
@@ -193,7 +214,7 @@ class Processing(object):
         # (1) Kallisto expression quantification (required for pizzly)
 #        cmd_kallisto = "{0} quant --threads waiting_for_cpu_number --genomebam --gtf {1} --chromosomes {2} --index {3} --fusion --output-dir waiting_for_output_string {4} {5}".format(cmds["kallisto"], genes_gtf_path, genome_sizes_path, kallisto_index_path, fq1, fq2)
         # (2) Star expression quantification (required for starfusion and starchip)
-        cmd_star = "{0} --genomeDir {1} --outFileNamePrefix waiting_for_output_string --runThreadN waiting_for_cpu_number --runMode alignReads --readFilesIn {2} {3} --readFilesCommand zcat --chimSegmentMin 10 --chimJunctionOverhangMin 10 --alignSJDBoverhangMin 10 --alignMatesGapMax {4} --alignIntronMax {4} --chimSegmentReadGapMax 3 --alignSJstitchMismatchNmax 5 -1 5 5 --seedSearchStartLmax 20 --winAnchorMultimapNmax 50 --outSAMtype BAM SortedByCoordinate --chimOutType Junctions SeparateSAMold --chimOutJunctionFormat 1".format(cmds["star"], star_index_path, fq1, fq2, cfg.max_dist_proper_pair)
+        cmd_star = "{0} --genomeDir {1} --outFileNamePrefix waiting_for_output_string --runThreadN waiting_for_cpu_number --runMode alignReads --readFilesIn {2} {3} --readFilesCommand zcat --chimSegmentMin 10 --chimJunctionOverhangMin 10 --alignSJDBoverhangMin 10 --alignMatesGapMax {4} --alignIntronMax {4} --chimSegmentReadGapMax 3 --alignSJstitchMismatchNmax 5 -1 5 5 --seedSearchStartLmax 20 --winAnchorMultimapNmax 50 --outSAMtype BAM SortedByCoordinate --chimOutType Junctions SeparateSAMold --chimOutJunctionFormat 1".format(cmds["star"], star_index_path, fq1, fq2, self.cfg["general"]["max_dist_proper_pair"])
         # (3) Mapslice
         # urla: the "keep" parameter requires gunzip >= 1.6
         cmd_extr_fastq1 = "gunzip --keep {0}".format(fq1)
@@ -215,7 +236,7 @@ class Processing(object):
         # (x) Soapfuse
         cmd_soapfuse = "{0} -q {1} -i {2} -o {3}".format(os.path.join(module_dir, "tool_wrapper", "soapfuse_wrapper.py"), qc_table_path, " ".join([fq1, fq2]), soapfuse_path)
         # (9) Data collection
-        cmd_fetchdata = "{0} -i {1} -o {2} -s {3} --fq1 {4} --fq2 {5} --fusion_support {6}".format(os.path.join(module_dir, "fetchdata.py"), output_results_path, fetchdata_path, sample_id, fq1, fq2, tool_num_cutoff)
+        cmd_fetchdata = "{0} -i {1} -o {2} -s {3} -c {4} --fq1 {5} --fq2 {6} --fusion_support {7}".format(os.path.join(module_dir, "fetchdata.py"), output_results_path, fetchdata_path, sample_id, self.cfg_file, fq1, fq2, tool_num_cutoff)
         # (10) De novo assembly of fusion transcripts
         # urla: This is currently still under active development and has not been tested thoroughly
 #        cmd_denovoassembly = "{0} -i waiting_for_gene_list_input -b {1}_Aligned.out.bam -g {2} -t {3} -o waiting_for_assembly_out_dir".format(os.path.join(module_dir, "denovoassembly.py"), os.path.join(filtered_reads_path, sample_id), ref_genome, ref_trans)
@@ -312,16 +333,16 @@ class Processing(object):
 
                 # prepare slurm jobs: get ressources, create uid, set output path and check dependencies
                 self.logger.debug("Submitting {} run to slurm".format(tool))
-                cpu = cfg.resources[tool.lower()]["cpu"]
-                mem = cfg.resources[tool.lower()]["mem"]
-                uid = "-".join([cfg.pipeline_name, tool, sample_id])
+                cpu = self.cfg["resources"][tool.lower()].split(",")[0]
+                mem = self.cfg["resources"][tool.lower()].split(",")[1]
+                uid = "-".join([self.cfg["general"]["pipeline_name"], tool, sample_id])
                 if tool == "Star":
                     exe_cmds[i] = exe_cmds[i].replace("waiting_for_output_string", "{}_".format(os.path.join(exe_path[i], sample_id))).replace("waiting_for_cpu_number", str(cpu))
                 else:
                     exe_cmds[i] = exe_cmds[i].replace("waiting_for_output_string", exe_path[i]).replace("waiting_for_cpu_number", str(cpu))
                 cmd = " && ".join([exe_cmds[i], cmd_samples + tool])
                 # Managing slurm dependencies
-                que_sys = cfg.queueing_system
+                que_sys = self.cfg["general"]["queueing_system"]
                 if tool == "Pizzly":
                     dependency = Queueing.get_jobs_by_name("Kallisto-{0}".format(sample_id), que_sys)
                 elif tool == "Starfusion" or tool == "Starchip":
@@ -341,41 +362,42 @@ class Processing(object):
 
     def submit_job(self, uid, cmd, cores, mem_usage, output_results_folder, dependencies, mail):
         """Submit job to slurm scheduling"""
-        que_sys = cfg.queueing_system
+        que_sys = self.cfg["general"]["queueing_system"]
         already_running = Queueing.get_jobs_by_name(uid, que_sys)
         if not already_running:
             # urla: for compatibility reasons (and to be independent of shell commands), concatenated commands are splitted again,
             #       dependencies within the splitted groups updated and everything submitted sequentially to the queueing system
-            module_file = os.path.join(cfg.module_dir, "build_env.sh")
+            module_file = os.path.join(self.cfg["general"]["module_dir"], "build_env.sh")
 
             for i, cmd_split in enumerate(cmd.split(" && ")):
                 if not que_sys in ["slurm", "pbs"]:
                     cmd_split = cmd_split.split(" ")
                 dependencies.extend(Queueing.get_jobs_by_name("{0}_CMD{1}".format(uid, i - 1), que_sys))
-                Queueing.submit("{0}_CMD{1}".format(uid, i), cmd_split, cores, mem_usage, output_results_folder, dependencies, cfg.partition, cfg.user, cfg.time_limit, mail, module_file, que_sys)
+                Queueing.submit("{0}_CMD{1}".format(uid, i), cmd_split, cores, mem_usage, output_results_folder, dependencies, self.cfg["general"]["partition"], self.cfg["general"]["user"], self.cfg["general"]["time_limit"], mail, module_file, que_sys)
                 time.sleep(0.5)
         else:
             self.logger.error("A job with this application/sample combination is currently running. Skipping {} in order to avoid unintended data loss.".format(uid))
 
 def main():
     """Parse command line arguments and start script"""
-    parser = argparse.ArgumentParser(description='Processing of demultiplexed FASTQs')
+    parser = ArgumentParser(description='Processing of demultiplexed FASTQs')
     # required arguments
     parser.add_argument('-i', '--input', dest='input_paths', nargs='+', help='Specify full path of the fastq folder to process.', required=True)
     parser.add_argument('-o', '--output-folder', dest='output_folder', help='Specify full path of the folder to save the results into.', required=True)
     # optional arguments
+    parser.add_argument('-c', '--config-file', dest='config_file', help='Specify alternative config file to use for your analysis')
     parser.add_argument('--tool_support', dest='tool_support', help='The number of tools which are required to support a fusion event.', default="1")
     parser.add_argument('--version', dest='version', help='Get version info')
     args = parser.parse_args()
 
     # if version is request, print it and exit
     if args.version:
-        print(cfg.__version__)
+        print(self.cfg["general"]["version"])
         sys.exit(0)
 
     script_call = "python {} -i {} -o {}".format(os.path.realpath(__file__), " ".join([os.path.abspath(x) for x in args.input_paths]), os.path.abspath(args.output_folder))
 
-    proc = Processing(script_call, args.input_paths, args.output_folder)
+    proc = Processing(script_call, args.input_paths, args.output_folder, args.config_file)
     proc.run(args.tool_support)
 
     with open(os.path.join(args.output_folder, "process.sh"), "w") as outf:

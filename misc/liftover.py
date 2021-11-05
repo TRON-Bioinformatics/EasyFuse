@@ -57,9 +57,9 @@ class FusionLiftover(object):
         with open(tmp_org_bed, "w") as fusout:
             for i in in_fus_detect_pddf.index:
                 chrom, pos, strand = in_fus_detect_pddf.loc[i, "Breakpoint1"].split(":")
-                fusout.write("{0}\t{1}\t{2}\t{3}\t1\t{4}\n".format(chrom, pos, (int(pos) + 1), strand, in_fus_detect_pddf.loc[i, "FGID"]))
+                fusout.write("{0}\t{1}\t{2}\t{3}\t1\t{4}\n".format(chrom, pos, (int(pos) + 1), strand, in_fus_detect_pddf.loc[i, "BPID"]))
                 chrom, pos, strand = in_fus_detect_pddf.loc[i, "Breakpoint2"].split(":")
-                fusout.write("{0}\t{1}\t{2}\t{3}\t2\t{4}\n".format(chrom, pos, (int(pos) + 1), strand, in_fus_detect_pddf.loc[i, "FGID"]))
+                fusout.write("{0}\t{1}\t{2}\t{3}\t2\t{4}\n".format(chrom, pos, (int(pos) + 1), strand, in_fus_detect_pddf.loc[i, "BPID"]))
 
         # run crossmap to perform liftover
         cmd_crossmap = "{0} bed {1} {2} {3}".format(cfg.commands["crossmap_cmd"], crossmap_chain, tmp_org_bed, tmp_dest_bed)
@@ -85,9 +85,9 @@ class FusionLiftover(object):
             for line in liftout:
                 line_splitter = line.rstrip("\n").split("\t")
                 if line_splitter[4] == "1":
-                    in_fus_detect_pddf.loc[in_fus_detect_pddf["FGID"] == line_splitter[5], "bp1_lifted"] = ":".join([line_splitter[0], line_splitter[1], line_splitter[3]])
+                    in_fus_detect_pddf.loc[in_fus_detect_pddf["BPID"] == line_splitter[5], "bp1_lifted"] = ":".join([line_splitter[0], line_splitter[1], line_splitter[3]])
                 elif line_splitter[4] == "2":
-                    in_fus_detect_pddf.loc[in_fus_detect_pddf["FGID"] == line_splitter[5], "bp2_lifted"] = ":".join([line_splitter[0], line_splitter[1], line_splitter[3]])
+                    in_fus_detect_pddf.loc[in_fus_detect_pddf["BPID"] == line_splitter[5], "bp2_lifted"] = ":".join([line_splitter[0], line_splitter[1], line_splitter[3]])
 
         in_fus_detect_pddf["lo_check"] = "Keep"
         for i in in_fus_detect_pddf.index:
@@ -102,9 +102,9 @@ class FusionLiftover(object):
                 self.logger.error("Skipping un-annotatable chromosomes {0} and/or {1}".format(chrom1, chrom2))
                 in_fus_detect_pddf.loc[i, "lo_check"] = "Remove"
                 continue
-            # replace the old breakpoints, with the new ones in the FGID
-            in_fus_detect_pddf.loc[i, "FGID"] = in_fus_detect_pddf.loc[i, "FGID"].replace(in_fus_detect_pddf.loc[i, "Breakpoint1"], in_fus_detect_pddf.loc[i, "bp1_lifted"])
-            in_fus_detect_pddf.loc[i, "FGID"] = in_fus_detect_pddf.loc[i, "FGID"].replace(in_fus_detect_pddf.loc[i, "Breakpoint2"], in_fus_detect_pddf.loc[i, "bp2_lifted"])
+            # replace the old breakpoints, with the new ones in the BPID
+            in_fus_detect_pddf.loc[i, "BPID"] = in_fus_detect_pddf.loc[i, "BPID"].replace(in_fus_detect_pddf.loc[i, "Breakpoint1"], in_fus_detect_pddf.loc[i, "bp1_lifted"])
+            in_fus_detect_pddf.loc[i, "BPID"] = in_fus_detect_pddf.loc[i, "BPID"].replace(in_fus_detect_pddf.loc[i, "Breakpoint2"], in_fus_detect_pddf.loc[i, "bp2_lifted"])
             # then overwrite the old breakpoints
             in_fus_detect_pddf.loc[i, "Breakpoint1"] = in_fus_detect_pddf.loc[i, "bp1_lifted"]
             in_fus_detect_pddf.loc[i, "Breakpoint2"] = in_fus_detect_pddf.loc[i, "bp2_lifted"]
