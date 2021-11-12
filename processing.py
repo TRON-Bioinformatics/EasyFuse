@@ -380,20 +380,14 @@ class Processing(object):
 
 def main():
     """Parse command line arguments and start script"""
-    parser = ArgumentParser(description='Processing of demultiplexed FASTQs')
+    parser = ArgumentParser(prog='EasyFuse', description='Run EasyFuse pipeline')
     # required arguments
     parser.add_argument('-i', '--input', dest='input_paths', nargs='+', help='Specify full path of the fastq folder to process.', required=True)
     parser.add_argument('-o', '--output-folder', dest='output_folder', help='Specify full path of the folder to save the results into.', required=True)
     # optional arguments
     parser.add_argument('-c', '--config-file', dest='config_file', help='Specify alternative config file to use for your analysis')
     parser.add_argument('--tool_support', dest='tool_support', help='The number of tools which are required to support a fusion event.', default="1")
-    parser.add_argument('--version', dest='version', help='Get version info')
     args = parser.parse_args()
-
-    # if version is request, print it and exit
-    if args.version:
-        print(self.cfg["general"]["version"])
-        sys.exit(0)
 
     script_call = "python {} -i {} -o {}".format(os.path.realpath(__file__), " ".join([os.path.abspath(x) for x in args.input_paths]), os.path.abspath(args.output_folder))
 
