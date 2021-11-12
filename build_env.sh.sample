@@ -1,11 +1,11 @@
 #!/bin/bash
 
-PERL5LIB=$PERL5LIB:/code/SOAPfuse/1.27/source/bin/perl_module; export PERL5LIB
-PYTHONPATH=/code/Anaconda/2/2018/lib/python2.7/site-packages/
-export LD_LIBRARY_PATH=/code/Atlas/lib:$LD_LIBRARY_PATH
-export PATH=$PATH:/code/ncbi-blast/2.8.1+/bin/
-export R_LIBS=/code/R/R-3.5.1/lib64/R/library
-export R_LIBS_USER=/code/R/R-3.5.1/lib64/R/library
+PERL5LIB=$PERL5LIB:/path/to/SOAPfuse/1.27/source/bin/perl_module; export PERL5LIB
+PYTHONPATH=/path/to/Anaconda/2/2018/lib/python2.7/site-packages/
+export LD_LIBRARY_PATH=/path/to/Atlas/lib:$LD_LIBRARY_PATH
+export PATH=$PATH:/path/to/ncbi-blast/2.8.1+/bin/
+export R_LIBS=/path/to/R/R-3.5.1/lib64/R/library
+export R_LIBS_USER=/path/to/R/R-3.5.1/lib64/R/library
 
 module purge
 
