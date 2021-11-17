@@ -5,6 +5,7 @@
 @version: 20190118
 """
 
+from configparser import ConfigParser
 import os
 import os.path
 from datetime import datetime
@@ -14,17 +15,32 @@ import argparse
 from join_data import DataJoining
 from misc.samples import SamplesDB
 import misc.io_methods as IOMethods
-import config as cfg
 
 class FusionSummary(object):
     """Collect stats of the run and write them to file"""
-    def __init__(self, input_path):
+    def __init__(self, input_path, cfg_file):
         self.input_path = input_path
         self.samples = SamplesDB(os.path.join(input_path, "samples.db"))
 
+        self.cfg = None
+
+        if not cfg_file:
+            cfg_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), "config.ini")
+
+        self.cfg_file = cfg_file
+
+        if cfg_file.endswith("ini"):
+            self.cfg = ConfigParser()
+            self.cfg.read(cfg_file)
+        elif cfg_file.ednwith("json"):
+            with open(cfg_file) as config_file:
+                self.cfg = json.load(config_file)
+
+        
+
     def run(self, model_predictions):
         """Execute individual methods"""
-        fusion_tools = cfg.fusiontools
+        fusion_tools = self.cfg["general"]["fusiontools"]
         fusion_data_summary_path = os.path.join(self.input_path, "FusionSummary")
         IOMethods.create_folder(fusion_data_summary_path)
 
@@ -75,7 +91,7 @@ class FusionSummary(object):
                 count_processed += 1
                 print("Processing sample {0} (dataset {1}/{2})".format(sample, count_processed, len(sid_list)))
                 start_time = time.time()
-                fusion_data_summary = DataJoining(self.input_path, sample, "", os.path.join(fusion_data_summary_path, sample), model_predictions).run()
+                fusion_data_summary = DataJoining(self.input_path, sample, "", os.path.join(fusion_data_summary_path, sample), model_predictions, self.cfg_file).run()
                 fusion_frequency_all = self.add_to_fus_dict(fusion_data_summary[1], fusion_frequency_all)
                 filtering_data_1[sample] = fusion_data_summary[0]
 
@@ -102,9 +118,11 @@ def main():
     parser = argparse.ArgumentParser(description='Post processing of an easyfuse run - currently, collecting runtimes only :)')
 
     parser.add_argument('-i', '--input', dest='input', help='Specify the easyfuse root dir of the run you want to process.', required=True)
+    parser.add_argument('-c', '--config-file', dest='config_file', help='Specify alternative config file to use for your analysis')
+
     parser.add_argument('--model_predictions', default=False, action='store_true', help='Score predictions based on pre-train model')
     args = parser.parse_args()
-    stats = FusionSummary(args.input)
+    stats = FusionSummary(args.input, args.config_file)
     stats.run(args.model_predictions)
 
 if __name__ == '__main__':

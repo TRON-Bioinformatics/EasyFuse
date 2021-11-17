@@ -572,8 +572,10 @@ class FusionParser(object):
                     #       eg: fusion with gene1 "AB1" and gene2 "AB2" will match to fusion "AB11"-"AB22"
                     #if uniq_fusion_id_split[0] in fusion_id_split and uniq_fusion_id_split[2] in fusion_id_split:
                     # urla: possible solution:
-                    if ((uniq_fusion_id_split[0] == fusion_id_split[0] and uniq_fusion_id_split[2] == fusion_id_split[2]) or
-                            (uniq_fusion_id_split[0] == fusion_id_split[2] and uniq_fusion_id_split[2] == fusion_id_split[0])):
+                    print(fusion_id_split)
+                    print(uniq_fusion_id_split)
+                    if ((uniq_fusion_id_split[0] == fusion_id_split[0] and uniq_fusion_id_split[1] == fusion_id_split[1]) or
+                            (uniq_fusion_id_split[0] == fusion_id_split[1] and uniq_fusion_id_split[1] == fusion_id_split[0])):
                         found_fusion = True
                         break # we don't need to look further if it was found at least once
                 list_of_found_fusion_booleans.append(found_fusion)

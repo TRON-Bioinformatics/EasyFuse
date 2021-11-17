@@ -52,7 +52,7 @@ class FusionAnnotation(object):
             for line in bpin:
                 # for the annotaion, we just need the fgid and the breakpoints
                 bpid, _, bp1, bp2, _, _, _, _ = line.split(";")
-                if not fgid in bp_dict:
+                if not bpid in bp_dict:
                     bp_dict[bpid] = (bp1, bp2)
         return bp_dict
 

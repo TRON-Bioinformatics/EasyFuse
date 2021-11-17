@@ -30,9 +30,11 @@ from misc.versioncontrol import VersCont
 
 # pylint: disable=line-too-long
 #         yes they are partially, but I do not consider this to be relevant here
+
+
 class Processing(object):
     """Run, monitor and schedule fastq processing for fusion gene prediction"""
-    def __init__(self, cmd, input_paths, working_dir, cfg_file):
+    def __init__(self, cmd, input_paths, working_dir, cfg_file, jobname_suffix):
         """Parameter initiation and work folder creation. Start of progress logging."""
         self.working_dir = os.path.abspath(working_dir)
         self.logger = Logger(os.path.join(self.working_dir, "easyfuse_processing.log"))
@@ -42,11 +44,13 @@ class Processing(object):
         self.input_paths = [os.path.abspath(file) for file in input_paths]
         self.samples = SamplesDB(os.path.join(self.working_dir, "samples.db"))
 
-        self.cfg_file = cfg_file
+
         self.cfg = None
 
         if not cfg_file:
             cfg_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), "config.ini")
+
+        self.cfg_file = cfg_file
 
         if cfg_file.endswith("ini"):
             self.cfg = ConfigParser()
@@ -58,6 +62,10 @@ class Processing(object):
         copy(cfg_file, working_dir)
 
         print(self.cfg)
+
+        self.jobname_suffix = None
+        if jobname_suffix:
+            self.jobname_suffix = jobname_suffix
 
     # The run method simply greps and organises fastq input files.
     # Fastq pairs (single end input is currently not supported) are then send to "execute_pipeline"
@@ -102,10 +110,10 @@ class Processing(object):
             modelling_string = ""
             if self.cfg["other_files"]["easyfuse_model"]:
                 modelling_string = " --model_predictions"
-            cmd_summarize = "python {0} --input {1}{2}".format(os.path.join(self.cfg["module_dir"], "summarize_data.py"), self.working_dir, modelling_string)
+            cmd_summarize = "python {0} --input {1}{2}".format(os.path.join(self.cfg["general"]["module_dir"], "summarize_data.py"), self.working_dir, modelling_string)
             self.logger.debug("Submitting slurm job: CMD - {0}; PATH - {1}; DEPS - {2}".format(cmd_summarize, self.working_dir, dependency))
-            cpu = self.cfg["resources"]["summary"][0]
-            mem = self.cfg["resources"]["summary"][1]
+            cpu, mem = self.cfg["resources"]["summary"].split(",")
+            #mem = self.cfg["resources"]["summary"].split(",")[1]
             self.submit_job("-".join([self.cfg["general"]["pipeline_name"], "Summary", str(int(round(time.time())))]), cmd_summarize, cpu, mem, self.working_dir, dependency, self.cfg["general"]["receiver"])
 
     # Per sample, define input parameters and execution commands, create a folder tree and submit runs to slurm
@@ -373,7 +381,10 @@ class Processing(object):
                 if not que_sys in ["slurm", "pbs"]:
                     cmd_split = cmd_split.split(" ")
                 dependencies.extend(Queueing.get_jobs_by_name("{0}_CMD{1}".format(uid, i - 1), que_sys))
-                Queueing.submit("{0}_CMD{1}".format(uid, i), cmd_split, cores, mem_usage, output_results_folder, dependencies, self.cfg["general"]["partition"], self.cfg["general"]["user"], self.cfg["general"]["time_limit"], mail, module_file, que_sys)
+                if self.jobname_suffix:
+                    Queueing.submit("{0}_CMD{1}-{2}".format(uid, i, self.jobname_suffix), cmd_split, cores, mem_usage, output_results_folder, dependencies, self.cfg["general"]["partition"], self.cfg["general"]["user"], self.cfg["general"]["time_limit"], mail, module_file, que_sys)
+                else:
+                    Queueing.submit("{0}_CMD{1}".format(uid, i), cmd_split, cores, mem_usage, output_results_folder, dependencies, self.cfg["general"]["partition"], self.cfg["general"]["user"], self.cfg["general"]["time_limit"], mail, module_file, que_sys)
                 time.sleep(0.5)
         else:
             self.logger.error("A job with this application/sample combination is currently running. Skipping {} in order to avoid unintended data loss.".format(uid))
@@ -387,6 +398,7 @@ def main():
     # optional arguments
     parser.add_argument('-c', '--config-file', dest='config_file', help='Specify alternative config file to use for your analysis')
     parser.add_argument('--tool_support', dest='tool_support', help='The number of tools which are required to support a fusion event.', default="1")
+    parser.add_argument('-p', '--jobname_suffix', dest='jobname_suffix', help='Specify a jobname suffix for running jobs on a queueing system', default='')
     parser.add_argument('--version', dest='version', help='Get version info')
     args = parser.parse_args()
 
@@ -395,9 +407,9 @@ def main():
         print(self.cfg["general"]["version"])
         sys.exit(0)
 
-    script_call = "python {} -i {} -o {}".format(os.path.realpath(__file__), " ".join([os.path.abspath(x) for x in args.input_paths]), os.path.abspath(args.output_folder))
+    script_call = "python {} -i {} -o {} -p {}".format(os.path.realpath(__file__), " ".join([os.path.abspath(x) for x in args.input_paths]), os.path.abspath(args.output_folder), args.jobname_suffix)
 
-    proc = Processing(script_call, args.input_paths, args.output_folder, args.config_file)
+    proc = Processing(script_call, args.input_paths, args.output_folder, args.config_file, args.jobname_suffix)
     proc.run(args.tool_support)
 
     with open(os.path.join(args.output_folder, "process.sh"), "w") as outf:

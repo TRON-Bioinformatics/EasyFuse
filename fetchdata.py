@@ -11,6 +11,8 @@ combine all results
 """
 
 from argparse import ArgumentParser
+from configparser import ConfigParser
+import json
 import math
 import os
 import os.path
@@ -45,7 +47,7 @@ class Fetching(object):
         if cfg_file.endswith("ini"):
             self.cfg = ConfigParser()
             self.cfg.read(cfg_file)
-        elif cfg_file.ednwith("json"):
+        elif cfg_file.endswith("json"):
             with open(cfg_file) as config_file:
                 self.cfg = json.load(config_file)
 
@@ -102,8 +104,8 @@ class Fetching(object):
         """Create sample specific subfolder structuge and run tools on fastq files"""
 
         # Genome/Gene references to use
-        ref_trans = self.cfg["ref_trans_version"]
-        ref_genome = self.cfg["ref_genome_build"]
+        ref_trans = self.cfg["general"]["ref_trans_version"]
+        ref_genome = self.cfg["general"]["ref_genome_build"]
         genome_fasta_path = self.cfg["references"]["genome_fasta"]
         genes_adb_path = self.cfg["references"]["genes_adb"]
         genes_tsl_path = self.cfg["references"]["genes_tsl"]
@@ -259,7 +261,7 @@ class Fetching(object):
 
 def main():
     """Parse command line arguments and start script"""
-    parser = argparse.ArgumentParser(description='Processing of demultiplexed FASTQs')
+    parser = ArgumentParser(description='Processing of demultiplexed FASTQs')
     # required arguments
     parser.add_argument('-i', '--input', dest='input', help='Data input directory.', required=True)
     parser.add_argument('-o', '--output', dest='output', help='Data output directory.', required=True)
