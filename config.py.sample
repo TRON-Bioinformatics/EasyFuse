@@ -57,8 +57,6 @@ time_limit = "30-00:00:0"
 partition = "Compute"
 user = getpass.getuser()
 module_dir = os.path.dirname(os.path.realpath(__file__))
-#logfile=/data/urla_progs/TronData/ngs_pipelines/easyfuse/fusion.log
-#fusion_db=/data/urla_progs/TronData/ngs_pipelines/easyfuse/fusion.db
 
 # Define ressource usage (cpu (number of threads), mem (ram in Gb)):
 resources = {

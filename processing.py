@@ -26,7 +26,6 @@ from misc.samples import SamplesDB
 from misc.logger import Logger
 import misc.io_methods as IOMethods
 from misc.versioncontrol import VersCont
-#import config as cfg
 
 # pylint: disable=line-too-long
 #         yes they are partially, but I do not consider this to be relevant here
@@ -391,7 +390,7 @@ class Processing(object):
 
 def main():
     """Parse command line arguments and start script"""
-    parser = ArgumentParser(description='Processing of demultiplexed FASTQs')
+    parser = ArgumentParser(prog='EasyFuse', description='Run EasyFuse pipeline')
     # required arguments
     parser.add_argument('-i', '--input', dest='input_paths', nargs='+', help='Specify full path of the fastq folder to process.', required=True)
     parser.add_argument('-o', '--output-folder', dest='output_folder', help='Specify full path of the folder to save the results into.', required=True)
@@ -407,7 +406,11 @@ def main():
         print(self.cfg["general"]["version"])
         sys.exit(0)
 
-    script_call = "python {} -i {} -o {} -p {}".format(os.path.realpath(__file__), " ".join([os.path.abspath(x) for x in args.input_paths]), os.path.abspath(args.output_folder), args.jobname_suffix)
+    jobname_suffix = ""
+    if args.jobname_suffix:
+        jobname_suffix = " -p {}".format(args.jobname_suffix)
+
+    script_call = "python {} -i {} -o {}{}".format(os.path.realpath(__file__), " ".join([os.path.abspath(x) for x in args.input_paths]), os.path.abspath(args.output_folder), jobname_suffix)
 
     proc = Processing(script_call, args.input_paths, args.output_folder, args.config_file, args.jobname_suffix)
     proc.run(args.tool_support)
