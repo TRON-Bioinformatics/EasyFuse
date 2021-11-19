@@ -98,7 +98,7 @@ class DataJoining(object):
         # read the original input read count and append CPM values from individual fusion prediction tools to context data
         if self.check_files(input_read_file, False):
             with open(input_read_file, "r") as rfile:
-                self.input_read_count = int(rfile.next())
+                self.input_read_count = int(rfile.readline())
         if self.check_files(detect_fusion_file, False):
             detect_data = pd.read_csv(detect_fusion_file, sep=";")
         context_data = self.append_tool_cnts_to_context_file(context_data, detect_data, fusion_tools)
@@ -119,7 +119,7 @@ class DataJoining(object):
 
     def run(self):
         """run the data concatenation"""
-        fusion_tools = self.cfg["general"]["fusiontools"]
+        fusion_tools = self.cfg["general"]["fusiontools"].split(",")
         requant_mode = self.cfg["general"]["requant_mode"]
         self.load_blacklist(os.path.join(self.cfg["general"]["module_dir"], "blacklist.txt"))
         # urla - note: with icam_run set to True, two results from technical replicates are expected as input
