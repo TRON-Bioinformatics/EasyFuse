@@ -40,7 +40,7 @@ class FusionSummary(object):
 
     def run(self, model_predictions):
         """Execute individual methods"""
-        fusion_tools = self.cfg["general"]["fusiontools"]
+        fusion_tools = self.cfg["general"]["fusiontools"].split(",")
         fusion_data_summary_path = os.path.join(self.input_path, "FusionSummary")
         IOMethods.create_folder(fusion_data_summary_path)
 
