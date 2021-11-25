@@ -197,7 +197,7 @@ class Processing(object):
         #       process substitution do somehow not work from this script - c/p the command line to the terminal, however, works w/o issues?!
         cmd_fastqc = "{0} --nogroup --extract -t 6 -o {1} {2} {3}".format(cmds["fastqc"], qc_path, fq1, fq2)
         cmd_qc_parser = "{0} -i {1} {2} -o {3}".format(os.path.join(module_dir, "misc", "qc_parser.py"), fastqc_1, fastqc_2, qc_table_path)
-        cmd_skewer = "{0} -q {1} -i {2} {3} -o {4}".format(os.path.join(module_dir, "tool_wrapper", "skewer_wrapper.py"), qc_table_path, fq1, fq2, skewer_path)
+        cmd_skewer = "{0} -q {1} -i {2} {3} -o {4} -b {5} -m {6}".format(os.path.join(module_dir, "tool_wrapper", "skewer_wrapper.py"), qc_table_path, fq1, fq2, skewer_path, self.cfg["commands"]["skewer"], self.cfg["general"]["min_read_len_perc"])
 
         fq0 = ""
         if "QC" in tools:
@@ -241,7 +241,7 @@ class Processing(object):
         # (8) Infusion
         cmd_infusion = "{0} -1 {1} -2 {2} --skip-finished --min-unique-alignment-rate 0 --min-unique-split-reads 0 --allow-non-coding --out-dir {3} {4}".format(cmds["infusion"], fq1, fq2, infusion_path, infusion_cfg_path)
         # (x) Soapfuse
-        cmd_soapfuse = "{0} -q {1} -i {2} -o {3}".format(os.path.join(module_dir, "tool_wrapper", "soapfuse_wrapper.py"), qc_table_path, " ".join([fq1, fq2]), soapfuse_path)
+        cmd_soapfuse = "{0} -q {1} -i {2} -o {3} -b {4} -c {5}".format(os.path.join(module_dir, "tool_wrapper", "soapfuse_wrapper.py"), qc_table_path, " ".join([fq1, fq2]), soapfuse_path, self.cfg["commands"]["soapfuse"], self.cfg["other_files"]["soapfuse_cfg"])
         # (9) Data collection
         cmd_fetchdata = "{0} -i {1} -o {2} -s {3} -c {4} --fq1 {5} --fq2 {6} --fusion_support {7}".format(os.path.join(module_dir, "fetchdata.py"), output_results_path, fetchdata_path, sample_id, self.cfg_file, fq1, fq2, tool_num_cutoff)
         # (10) De novo assembly of fusion transcripts
