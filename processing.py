@@ -109,7 +109,7 @@ class Processing(object):
             modelling_string = ""
             if self.cfg["other_files"]["easyfuse_model"]:
                 modelling_string = " --model_predictions"
-            cmd_summarize = "python {0} --input {1}{2}".format(os.path.join(self.cfg["general"]["module_dir"], "summarize_data.py"), self.working_dir, modelling_string)
+            cmd_summarize = "python {0} --input {1}{2} -c {3}".format(os.path.join(self.cfg["general"]["module_dir"], "summarize_data.py"), self.working_dir, modelling_string, self.cfg_file)
             self.logger.debug("Submitting slurm job: CMD - {0}; PATH - {1}; DEPS - {2}".format(cmd_summarize, self.working_dir, dependency))
             cpu, mem = self.cfg["resources"]["summary"].split(",")
             #mem = self.cfg["resources"]["summary"].split(",")[1]
