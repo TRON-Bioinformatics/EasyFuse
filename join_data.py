@@ -141,14 +141,14 @@ class DataJoining(object):
                 model_path = self.cfg["other_files"]["easyfuse_model"]
                 model_threshold = self.cfg["general"]["model_pred_threshold"]
                 # append prediction scores based on pre-calculated model
-                cmd_model = "{0} --fusion_summary {1} --model_file {2} --prediction_threshold {3} --output {4}".format(os.path.join(self.cfg["general"]["module_dir"], "R", "R_model_prediction.R"), summary_file, model_path, model_threshold, "{}.pModelPred.csv".format(summary_file[:-4]))
+                cmd_model = "{0} --fusion_summary {1} --model_file {2} --prediction_threshold {3} --output {4}".format(os.path.join(self.cfg["general"]["module_dir"], "R", "R_model_prediction.R"), summary_file, model_path, model_threshold, "{}.pred.csv".format(summary_file[:-4]))
                 Queueing.submit("", cmd_model.split(" "), "", "", "", "", "", "", "", "", "", "none")
                 # re-read the table with prediction for filter counting
                 # urla - note: there is probably a more elegant way using getattr/setattr but I'm not at all familiar with its pros/cons
                 if table == "1":
-                    joined_table_1 = pd.read_csv("{}_fusRank_1.pModelPred.csv".format(self.output), sep=";")
+                    joined_table_1 = pd.read_csv("{}_fusRank_1.pred.csv".format(self.output), sep=";")
                 else:
-                    joined_table_2 = pd.read_csv("{}_fusRank_2.pModelPred.csv".format(self.output), sep=";")
+                    joined_table_2 = pd.read_csv("{}_fusRank_2.pred.csv".format(self.output), sep=";")
         joined_table_1.set_index(keys=cols_to_aggregate_on, drop=False, inplace=True)
 
         return self.count_records(joined_table_1, False, "F1N")

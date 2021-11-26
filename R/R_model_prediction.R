@@ -108,5 +108,5 @@ readr::write_delim(
 # write additional output file with all candidate fusion genes
 readr::write_delim(
   fusion_data, 
-  paste0(output_file, ".all_candidates"), 
+  paste0(stringr::str_replace(output_file, "\\.csv", ""), ".all.csv"), 
   delim = ";")
