@@ -1,16 +1,17 @@
 #!/usr/bin/env python
 
 """
-@author: BNT (URLA)
+@author: BNT (URLA), TRON (PASO)
 @version: 20190118
 """
 
+from argparse import ArgumentParser
 from configparser import ConfigParser
+from datetime import datetime
 import os
 import os.path
-from datetime import datetime
+import sys
 import time
-import argparse
 
 from join_data import DataJoining
 from misc.samples import SamplesDB
@@ -24,8 +25,13 @@ class FusionSummary(object):
 
         self.cfg = None
 
-        if not cfg_file:
-            cfg_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), "config.ini")
+        default_cfg_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "config.ini")
+
+        if not cfg_file and os.path.exists(default_cfg_path):
+            cfg_file = default_cfg_path
+        elif not cfg_file and not os.path.exists(default_cfg_path):
+            self.logger.error("Could not find default config file (path={}). Exiting.".format(default_cfg_path))
+            sys.exit(1)
 
         self.cfg_file = cfg_file
 
@@ -115,7 +121,7 @@ class FusionSummary(object):
 
 def main():
     """Command line argument parsing and app start"""
-    parser = argparse.ArgumentParser(description='Post processing of an easyfuse run - currently, collecting runtimes only :)')
+    parser = ArgumentParser(description='Post processing of an easyfuse run - currently, collecting runtimes only :)')
 
     parser.add_argument('-i', '--input', dest='input', help='Specify the easyfuse root dir of the run you want to process.', required=True)
     parser.add_argument('-c', '--config-file', dest='config_file', help='Specify alternative config file to use for your analysis')

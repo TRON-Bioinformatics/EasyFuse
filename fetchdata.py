@@ -41,8 +41,14 @@ class Fetching(object):
 
         self.cfg = None
 
-        if not cfg_file:
-            cfg_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), "config.ini")
+
+        default_cfg_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "config.ini")
+
+        if not cfg_file and os.path.exists(default_cfg_path):
+            cfg_file = default_cfg_path
+        elif not cfg_file and not os.path.exists(default_cfg_path):
+            self.logger.error("Could not find default config file (path={}). Exiting.".format(default_cfg_path))
+            sys.exit(1)
 
         if cfg_file.endswith("ini"):
             self.cfg = ConfigParser()
