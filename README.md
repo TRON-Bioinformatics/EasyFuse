@@ -1,92 +1,68 @@
 # EasyFuse 
 
-EasyFuse is a pipline for fusion gene detection from RNA-seq data. More detailed documentation is available in the [EasyFuse Wiki](https://github.com/TRON-Bioinformatics/EasyFuse/wiki).
+EasyFuse is a pipeline to detect fusion transcripts from RNA-seq data with high accuracy.
+EasyFuse uses five fusion gene detection tools, [STAR-Fusion](https://github.com/STAR-Fusion/STAR-Fusion/wiki), [InFusion](https://bitbucket.org/kokonech/infusion/src/master/), [MapSplice2](http://www.netlab.uky.edu/p/bioinfo/MapSplice2), [Fusioncatcher](https://github.com/ndaniel/fusioncatcher), and [SoapFuse](https://sourceforge.net/p/soapfuse/wiki/Home/) along with a powerful read filtering strategy, stringent re-quantification of supporting reads, and machine learning for highly accurate predictions.
 
-A manuscript describing the method and performance evaluations is submitted for peer-review and publication.
+- Documentation: [EasyFuse Wiki](https://github.com/TRON-Bioinformatics/EasyFuse/wiki)
+- Paper: *available soon*
 
-## Installation
+We recommend using EasyFuse with the Docker container.
 
-Fusion breakpoint prediction itself is currently not implemented in EasyFuse and the pipeline therefore depends on external fusion prediction tools.\
-Prediction tools that have been implemented and tested within EasyFuse are listed under Tools. EasyFuse requires [STAR](https://github.com/alexdobin/STAR) for alignments. Additional alignment tools might be required depending on the external fusion prediction tools.
-For simplicity we provide in the following an installation instruction for EasyFuse together with [STAR-Fusion](https://github.com/STAR-Fusion/STAR-Fusion/wiki) and [Fusioncatcher](https://github.com/ndaniel/fusioncatcher). Detailed installation instructions can be found in the [EasyFuse Wiki](https://github.com/TRON-Bioinformatics/EasyFuse/wiki)
+## Usage with Docker
 
-### Tools
+### Download the image
 
- - star-fusion (1.5.0)
- - fusioncatcher (1.00)
- - mapsplice2 (2.2.1)
- - infusion (0.8)
- - SOAPfuse (1.2.7)
- - pizzly (0.37.3)
- - bowtie2 (2.3.4.3)
- - kallisto (0.44.0)
- - skewer (0.2.2)
+The Docker image can be downloaded from [dockerhub](https://hub.docker.com/r/tronbioinformatics/easyfuse) using the following command:
 
-### Dependencies
+```
+docker pull tronbioinformatics/easyfuse:1.3.4
+```
 
- - gzip (>=1.6) (if mapsplice shall be used)
- - samtools (1.9)
- - star (2.6.1d) 
- - Python (2.7.15)
- - Python modules:
-    - pandas (0.24.0)
-    - matplotlib (2.2.3)
-    - seaborn (0.9.0)
-    - pysam (0.15.2)
-    - crossmap (0.2.7) (optional if liftover shall be included)
-    - biopython (1.73)
-    - xlrd (1.0.0)
-    - openpyxl (2.5.0a2)
-    - bx-python (0.8.2)
+### Download references data
 
-Install python modules (we strongly recommend installation via conda):
+Before running EasyFuse the following reference annotation data needs to be downloaded (~92 GB).
 
-  ```
-  /path/to/conda/bin/conda create -n easyfuse python=2.7.15
-  source /path/to/conda/bin/activate easyfuse
-  conda install -c conda-forge pandas=0.24.0 matplotlib=2.2.3 seaborn=0.9.0 biopython=1.73 xlrd=1.0.0 openpyxl=2.5.0a2
-  conda install -c bioconda pysam=0.15.2 star=2.6.1b star-fusion=1.5.0 bowtie2=2.3.4.3 bx-python=0.8.2 crossmap=0.2.7
-  ```
+```
+# Download reference archive
+wget ftp://easyfuse.tron-mainz.de/easyfuse_ref_v2.tar.gz
+wget ftp://easyfuse.tron-mainz.de/easyfuse_ref_v2.tar.gz.md5
 
- - R (>= 3.6.0)
- - R packages: 
-    - optparse (1.6.4)
-    - tidyverse (1.3.0)
-    - randomForest (4.6-14)
+# Check MD5 sums for consistency
+md5sum -c easyfuse_ref_v2.tar.gz.md5 easyfuse_ref_v2.tar.gz
 
-  Install packages within R by
+# Extract reference archive
+tar xvfz easyfuse_ref_v2.tar.gz
+
+```
+### Run EasyFuse
+
+The input FASTQ files needs to be provided in a single folder named `input_fastqs`  (here `</path/to/data>/input_fastqs/`). 
+
+Now EasyFuse can be started by mounting the references data folder and the folder with input FASTQ files:
+
+```
+docker run \
+  --name easyfuse_container \
+  -v </path/to/easyfuse_ref>:/ref \
+  -v </path/to/data>:/data \
+  --rm \
+  -it easyfuse:1.3.4 \
+  python /code/easyfuse-1.3.4/processing.py -i /data/input_fastqs/ -o /data/results/
+
+```
+
+The output can be found in `</path/to/data>/results/`. The Output format is described in the wiki page [EasyFuse Output](https://github.com/TRON-Bioinformatics/EasyFuse/wiki/EasyFuse-Output)
+
+## Custom Installation
+
+The EasyFuse pipeline depends on multiple external fusion prediction tools and other dependencies. For example:
+
+  - [STAR](https://github.com/alexdobin/STAR) (2.6.1d) 
+  - [STAR-Fusion](https://github.com/STAR-Fusion/STAR-Fusion/wiki) (2.6.1d) 
+  - [Fusioncatcher](https://github.com/ndaniel/fusioncatcher)(1.00)
+  - [MapSplice2](https://github.com/davidroberson/MapSplice2) (2.2.1)
+  - [InFusion](https://bitbucket.org/kokonech/infusion/src/master/) (0.8)
+  - [SOAPfuse](https://sourceforge.net/projects/soapfuse/) (1.2.7) 
   
-  ```
-  install.packages(c("optparse", "tidyverse", "randomForest"))
-  ```
+The custom installation of EasyFuse is described in the [EasyFuse Wiki](https://github.com/TRON-Bioinformatics/EasyFuse/wiki/Installing-EasyFuse)
 
-
-### Configuration
-
-Before executing the pipeline some configuration files need to be adopted:
-
- - rename `build_env.sh.smaple` into `build_env.sh` and configure content. 
- - rename `config.py.smaple` into `config.py` and configure content.
- - rename `blacklist.txt.sample` into `blacklist.txt`.
-
-## Usage
-
-### Start Fusion Prediction Pipeline
-
-To start the fusion prediction pipeline on a specific sample the following python script has to
-be executed with the given input parameters as command-line arguments.
-
-```
-processing.py \
-    -i <sample_folder> \
-    -o <working_dir> 
-```
-
-### Example call on test dataset:
-
-```
-python processing.py -i test_case/SRR1659960_05pc_* -o test_easyfuse_1.3.4/
-```
-## Output
-
-The output of EasyFuse is described in the wiki page [EasyFuse Output](https://github.com/TRON-Bioinformatics/EasyFuse/wiki/EasyFuse-Output).
