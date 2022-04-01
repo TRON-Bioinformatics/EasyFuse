@@ -1,5 +1,7 @@
 # EasyFuse 
 
+<img src="img/easyfuse_workflow.png" style="float: right; margin-right: 10px; margin-top: 5px;">
+
 EasyFuse is a pipeline to detect fusion transcripts from RNA-seq data with high accuracy.
 EasyFuse uses five fusion gene detection tools, [STAR-Fusion](https://github.com/STAR-Fusion/STAR-Fusion/wiki), [InFusion](https://bitbucket.org/kokonech/infusion/src/master/), [MapSplice2](http://www.netlab.uky.edu/p/bioinfo/MapSplice2), [Fusioncatcher](https://github.com/ndaniel/fusioncatcher), and [SoapFuse](https://sourceforge.net/p/soapfuse/wiki/Home/) along with a powerful read filtering strategy, stringent re-quantification of supporting reads, and machine learning for highly accurate predictions.
 
@@ -7,6 +9,8 @@ EasyFuse uses five fusion gene detection tools, [STAR-Fusion](https://github.com
 - Paper: *available soon*
 
 We recommend using EasyFuse with the Docker container.
+
+<br clear="right"/>
 
 ## Usage with Docker
 
