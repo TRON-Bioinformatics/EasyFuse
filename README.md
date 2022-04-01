@@ -2,8 +2,14 @@
 
 <img src="img/easyfuse_workflow.png" style="float: right; margin-right: 10px; margin-top: 5px;">
 
+![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/tron-bioinformatics/EasyFuse)
+![Docker Image Version (latest semver)](https://img.shields.io/docker/v/tronbioinformatics/easyfuse?label=docker)
+[![License](https://img.shields.io/badge/license-GPLv3-green)](https://opensource.org/licenses/GPL-3.0)
+
 EasyFuse is a pipeline to detect fusion transcripts from RNA-seq data with high accuracy.
-EasyFuse uses five fusion gene detection tools, [STAR-Fusion](https://github.com/STAR-Fusion/STAR-Fusion/wiki), [InFusion](https://bitbucket.org/kokonech/infusion/src/master/), [MapSplice2](http://www.netlab.uky.edu/p/bioinfo/MapSplice2), [Fusioncatcher](https://github.com/ndaniel/fusioncatcher), and [SoapFuse](https://sourceforge.net/p/soapfuse/wiki/Home/) along with a powerful read filtering strategy, stringent re-quantification of supporting reads, and machine learning for highly accurate predictions.
+EasyFuse uses five fusion gene detection tools, [STAR-Fusion](https://github.com/STAR-Fusion/STAR-Fusion/wiki), [InFusion](https://bitbucket.org/kokonech/infusion/src/master/), [MapSplice2](http://www.netlab.uky.edu/p/bioinfo/MapSplice2), [Fusioncatcher](https://github.com/ndaniel/fusioncatcher), and [SoapFuse](https://sourceforge.net/p/soapfuse/wiki/Home/) along with a powerful read filtering strategy, stringent re-quantification of supporting reads and machine learning for highly accurate predictions.
+
+
 
 - Documentation: [EasyFuse Wiki](https://github.com/TRON-Bioinformatics/EasyFuse/wiki)
 - Paper: *available soon*
@@ -22,7 +28,7 @@ The Docker image can be downloaded from [dockerhub](https://hub.docker.com/r/tro
 docker pull tronbioinformatics/easyfuse:1.3.4
 ```
 
-### Download references data
+### Download reference data
 
 Before running EasyFuse the following reference annotation data needs to be downloaded (~92 GB).
 
@@ -36,26 +42,30 @@ md5sum -c easyfuse_ref_v2.tar.gz.md5 easyfuse_ref_v2.tar.gz
 
 # Extract reference archive
 tar xvfz easyfuse_ref_v2.tar.gz
-
 ```
+
 ### Run EasyFuse
 
-The input FASTQ files needs to be provided in a single folder named `input_fastqs`  (here `</path/to/data>/input_fastqs/`). 
+EasyFuse will require three folders:
+* The input data folder containing FASTQ files, in this example `/path/to/input_data`.
+* The reference data folder, in this example `/path/to/easyfuse_ref`
+* The output folder, in this example `/path/to/output`
 
-Now EasyFuse can be started by mounting the references data folder and the folder with input FASTQ files:
+Now EasyFuse can be started by mapping the input data, references and output folders.
 
 ```
 docker run \
   --name easyfuse_container \
   -v </path/to/easyfuse_ref>:/ref \
   -v </path/to/data>:/data \
+  -v </path/to/output>:/output \
   --rm \
   -it easyfuse:1.3.4 \
-  python /code/easyfuse-1.3.4/processing.py -i /data/input_fastqs/ -o /data/results/
-
+  python /code/easyfuse-1.3.4/processing.py -i /data -o /output
 ```
 
-The output can be found in `</path/to/data>/results/`. The Output format is described in the wiki page [EasyFuse Output](https://github.com/TRON-Bioinformatics/EasyFuse/wiki/EasyFuse-Output)
+
+The output can be found in `</path/to/output>/results/`. The Output format is described in the wiki page [EasyFuse Output](https://github.com/TRON-Bioinformatics/EasyFuse/wiki/EasyFuse-Output)
 
 ## Custom Installation
 
