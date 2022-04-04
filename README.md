@@ -10,7 +10,7 @@ EasyFuse uses five fusion gene detection tools, [STAR-Fusion](https://github.com
 <p align="center"><img src="img/easyfuse_workflow.png"></p>
 
 - Documentation: [EasyFuse Wiki](https://github.com/TRON-Bioinformatics/EasyFuse/wiki)
-- Paper: *available soon*
+- Paper: https://doi.org/10.1038/s41587-022-01247-9
 
 We recommend using EasyFuse with the Docker container.
 
