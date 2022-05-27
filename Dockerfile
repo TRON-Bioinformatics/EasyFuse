@@ -18,7 +18,7 @@ RUN conda install -y -c bioconda bowtie2=2.3.4.3
 RUN conda install -y -c bioconda bx-python=0.8.2 gffutils=0.10.1
 RUN conda install -y -c bioconda fastqc=0.11.9
 RUN conda install -y -c bioconda r-optparse
-RUN conda install -y -c r r=3.6.0 r-xml=3.98 r-tidyverse=1.2.1 r-randomforest=4.6_14
+RUN conda install -y -c r r=4.1.0 r-xml=3.99_0.9  r-tidyverse=1.3.1 r-randomforest=4.6_14 
 RUN conda install -y -c bioconda perl-parallel-forkmanager
 RUN conda clean -ay
 
