@@ -8,6 +8,7 @@
 from argparse import ArgumentParser
 from configparser import ConfigParser
 from datetime import datetime
+import json
 import os
 import os.path
 import sys
@@ -38,7 +39,7 @@ class FusionSummary(object):
         if cfg_file.endswith("ini"):
             self.cfg = ConfigParser()
             self.cfg.read(cfg_file)
-        elif cfg_file.ednwith("json"):
+        elif cfg_file.endswith("json"):
             with open(cfg_file) as config_file:
                 self.cfg = json.load(config_file)
 

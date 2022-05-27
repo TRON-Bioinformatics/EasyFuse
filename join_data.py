@@ -41,7 +41,7 @@ class DataJoining(object):
         if cfg_file.endswith("ini"):
             self.cfg = ConfigParser()
             self.cfg.read(cfg_file)
-        elif cfg_file.ednwith("json"):
+        elif cfg_file.endswith("json"):
             with open(cfg_file) as config_file:
                 self.cfg = json.load(config_file)
 

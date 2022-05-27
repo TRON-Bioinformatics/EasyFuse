@@ -53,6 +53,7 @@ class Fetching(object):
         if cfg_file.endswith("ini"):
             self.cfg = ConfigParser()
             self.cfg.read(cfg_file)
+            print(self.cfg)
         elif cfg_file.endswith("json"):
             with open(cfg_file) as config_file:
                 self.cfg = json.load(config_file)
@@ -285,7 +286,7 @@ def main():
     # 4: get expression?
     # ...
     for i in range(1, int(args.fusion_support) + 1):
-        proc = Fetching(args.input, args.output, args.sample, args.config_file)
+        proc = Fetching(args.input, args.output, args.sample, os.path.abspath(args.config_file))
         proc.run(i, args.fq1, args.fq2)
 
 if __name__ == '__main__':
