@@ -1,0 +1,88 @@
+# Required user input:
+# 1) Which fusion prediction tools should be executed (tools)
+# 2) Which post-processing steps should be executed (fd_tools)
+# 3) Which reference data shall be used (ref_trans_version & ref_genome_build)
+# 4) To whom shall slurm mails be sent to (receiver)
+
+[general]
+version = 1.3.5
+pipeline_name = EasyFuse
+tools = QC,Readfilter,Fusioncatcher,Star,Starfusion,Infusion,Mapsplice,Soapfuse,Fetchdata,Summary
+fusiontools = Fusioncatcher,Starfusion,Infusion,Mapsplice,Soapfuse
+fd_tools = Fusiongrep,Contextseq,Starindex,ReadFilter2,ReadFilter2b,StaralignBest,BamindexBest,RequantifyBest
+sender = sender@mail.com
+receiver = receiver@mail.com
+min_read_len_perc = 0.75
+max_dist_proper_pair = 200000
+cis_near_distance = 1000000
+model_pred_threshold = 0.5
+tsl_filter = 4,5,NA
+requant_mode = best
+context_seq_len = 400
+ref_genome_build = hg38
+ref_trans_version = ensembl
+queueing_system = none
+time_limit = 30-00:00:0
+partition = Compute
+user = sorn
+module_dir = /code/easyfuse-1.3.5/
+
+# Define ressource usage (cpu (number of threads), mem (ram in Gb)):
+[resources]
+qc = 6,10
+readfilter = 6,50
+star = 6,40
+mapsplice = 6,30
+fusioncatcher = 6,30
+starchip = 12,30
+starfusion = 6,30
+infusion = 6,30
+soapfuse = 6,20
+classification = 1,16
+fetchdata = 12,50
+summary = 1,16
+
+
+# execution command for individual programs (what you write here should be identical to what is typed in the console)
+[commands]
+# for qc
+fastqc = fastqc
+skewer = /code/skewer-0.2.2/skewer
+# for processing
+mapsplice = mapsplice.py
+fusioncatcher = /code/fusioncatcher/1.0/bin/fusioncatcher
+starfusion = STAR-Fusion
+infusion = /code/InFusion-0.8/infusion
+soapfuse = /code/SOAPfuse/1.27/SOAPfuse-RUN.pl
+# for processing and fetch data
+star = STAR
+samtools = samtools
+# for liftover
+crossmap = test
+
+
+# full path to reference files
+[references]
+genome_fasta = /ref/Homo_sapiens.GRCh38.dna.primary_assembly.fa
+genome_fastadir = /ref/fasta
+genome_sizes = /ref/STAR_idx/chrNameLength.txt
+genes_fasta = /ref/Homo_sapiens.GRCh38.cdna.all.fa
+genes_gtf = /ref/Homo_sapiens.GRCh38.86.gtf
+genes_adb = /ref/Homo_sapiens.GRCh38.86.gff3.db
+genes_tsl = /ref/Homo_sapiens.GRCh38.86.gtf.tsl
+
+
+
+# full path to program indices
+[indices]
+star = /ref/star_index/
+bowtie = /ref/bowtie_index/hg38
+starfusion = /ref/starfusion_index/
+fusioncatcher = /ref/fusioncatcher_index/
+
+
+# full path to program specific config files (these are just general files which need no user modification)
+[other_files]
+infusion_cfg = /ref/infusion.cfg
+soapfuse_cfg = /ref/soapfuse.cfg
+easyfuse_model = /code/easyfuse-1.3.5/data/model/Fusion_modeling_FFPE_train_v32.random_forest.model_full_data.EF_full.rds

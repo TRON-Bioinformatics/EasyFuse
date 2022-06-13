@@ -572,8 +572,8 @@ class FusionParser(object):
                     #       eg: fusion with gene1 "AB1" and gene2 "AB2" will match to fusion "AB11"-"AB22"
                     #if uniq_fusion_id_split[0] in fusion_id_split and uniq_fusion_id_split[2] in fusion_id_split:
                     # urla: possible solution:
-                    print(fusion_id_split)
-                    print(uniq_fusion_id_split)
+                    #print(fusion_id_split)
+                    #print(uniq_fusion_id_split)
                     if ((uniq_fusion_id_split[0] == fusion_id_split[0] and uniq_fusion_id_split[1] == fusion_id_split[1]) or
                             (uniq_fusion_id_split[0] == fusion_id_split[1] and uniq_fusion_id_split[1] == fusion_id_split[0])):
                         found_fusion = True
@@ -601,7 +601,7 @@ class FusionParser(object):
             self.logger.debug("Generating Detected Fusions table")
 
             fusion_result_dict, results_with_errors_dict = self.concatenate_fusion_results(tool_state_path, self.fusion_output_path)
-            print(len(fusion_result_dict))
+            #print(len(fusion_result_dict))
             if sum(results_with_errors_dict.values()) == len(fusion_result_dict):
                 self.logger.error("Fusion parsing failed completely. Revision required. Aborting.")
                 sys.exit(1)
