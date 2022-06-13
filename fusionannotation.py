@@ -51,9 +51,9 @@ class FusionAnnotation(object):
             next(bpin) # skip header
             for line in bpin:
                 # for the annotaion, we just need the fgid and the breakpoints
-                fgid, _, bp1, bp2, _, _, _, _ = line.split(";")
-                if not fgid in bp_dict:
-                    bp_dict[fgid] = (bp1, bp2)
+                bpid, _, bp1, bp2, _, _, _, _ = line.split(";")
+                if not bpid in bp_dict:
+                    bp_dict[bpid] = (bp1, bp2)
         return bp_dict
 
     @staticmethod
@@ -348,7 +348,7 @@ class FusionAnnotation(object):
         """ Run the annotation pipeline """
         # for performance reasons (mainly seq grepping), results cannot be written on the fly and everything will therefore be stored in a list of lists
         header = [
-            "FGID", "Fusion_Gene", "Breakpoint1", "Breakpoint2", "FTID", "context_sequence_id", "context_sequence_100_id", "type",
+            "BPID", "Fusion_Gene", "Breakpoint1", "Breakpoint2", "FTID", "context_sequence_id", "context_sequence_100_id", "type",
             "exon_nr", "exon_starts", "exon_ends", "exon_boundary1", "exon_boundary2", "exon_boundary", "bp1_frame", "bp2_frame",
             "frame", "context_sequence", "context_sequence_bp", "neo_peptide_sequence", "neo_peptide_sequence_bp",
 
@@ -371,11 +371,11 @@ class FusionAnnotation(object):
         results_lists = []
 
         # get features overlapping with the bp from the db
-        for fgid in self.bp_dict:
-            print("Annotating \"{}\"...".format(fgid))
+        for bpid in self.bp_dict:
+            print("Annotating \"{}\"...".format(bpid))
             # split breakpoint info
-            bp1 = self.bp_dict[fgid][0]
-            bp2 = self.bp_dict[fgid][1]
+            bp1 = self.bp_dict[bpid][0]
+            bp2 = self.bp_dict[bpid][1]
             bp1_chr, bp1_pos, bp1_strand = bp1.split(":")
             bp2_chr, bp2_pos, bp2_strand = bp2.split(":")
             bp1_pos = int(bp1_pos)
@@ -423,7 +423,7 @@ class FusionAnnotation(object):
                     # generate ftid from gene names, breakpoints and transcript ids
                     ftid = "_".join([wt1_gene_name, bp1, wt1_trans_id.split(":")[1], wt2_gene_name, bp2, wt2_trans_id.split(":")[1]])
                     # change fgid and create fusion_gene based on the easyfuse annotation
-                    fgid_ef = "_".join([wt1_gene_name, bp1, wt2_gene_name, bp2])
+                    #fgid_ef = "_".join([wt1_gene_name, bp1, wt2_gene_name, bp2])
                     fusion_gene_ef = "_".join([wt1_gene_name, wt2_gene_name])
 
                     wt2_exon_pos_list, wt2_cds_pos_list, wt2_cds_frame_list = self.get_wt_codings(wt2_trans_id)
@@ -459,7 +459,7 @@ class FusionAnnotation(object):
                     wt1_is_good_transcript = self.trans_flags_dict[wt1_trans_id]
                     wt2_is_good_transcript = self.trans_flags_dict[wt2_trans_id]
                     results_lists.append([
-                        fgid_ef, fusion_gene_ef, bp1, bp2, ftid, "context_sequence_id", "context_sequence_100_id", fusion_type,
+                        bpid, fusion_gene_ef, bp1, bp2, ftid, "context_sequence_id", "context_sequence_100_id", fusion_type,
                         str(exon_nr), "exon_starts", "exon_ends", exon_boundary1, exon_boundary2, exon_boundary, str(wt1_frame_at_bp), str(wt2_frame_at_bp),
                         frame, "context_sequence", "context_sequence_bp", "neo_peptide_sequence", "neo_peptide_sequence_bp",
 

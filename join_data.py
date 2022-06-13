@@ -9,17 +9,18 @@ Filtering of the final data table
 @version: 20190118
 """
 
+from configparser import ConfigParser
+import json
 import os
 import sys
 import pandas as pd
 import misc.queueing as Queueing
-import config as cfg
 
 # pylint: disable=line-too-long
 #         yes they are partially, but I do not consider this to be relevant here
 class DataJoining(object):
     """Select alignments belonging to putative fusions from an s/bam file"""
-    def __init__(self, input_dir, id1, id2, output, model_predictions):
+    def __init__(self, input_dir, id1, id2, output, model_predictions, cfg_file):
         """Parameter initialization"""
         self.input_dir = input_dir
         self.id1 = id1
@@ -29,6 +30,22 @@ class DataJoining(object):
         pd.options.mode.chained_assignment = None
         self.input_read_count = 0
         self.blacklist = []
+
+        self.cfg = None
+
+        if not cfg_file:
+            cfg_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), "config.ini")
+
+        self.cfg_file = cfg_file
+
+        if cfg_file.endswith("ini"):
+            self.cfg = ConfigParser()
+            self.cfg.read(cfg_file)
+        elif cfg_file.endswith("json"):
+            with open(cfg_file) as config_file:
+                self.cfg = json.load(config_file)
+
+
 
     def append_tool_cnts_to_context_file(self, context_data, detected_fusions, fusion_tool_list):
         """Add data to context seq table"""
@@ -42,8 +59,8 @@ class DataJoining(object):
 
         # iterate over context seq data
         for i in context_data.index:
-            # get tool prediction for each FGID
-            tmp_slice = detected_fusions.loc[detected_fusions["FGID"] == context_data["FGID"][i]]
+            # get tool prediction for each BPID
+            tmp_slice = detected_fusions.loc[detected_fusions["BPID"] == context_data["BPID"][i]]
             # check for each tool, whether a prediction was made by it and update the respective columns
             for tool in fusion_tool_list:
                 # pre-set values to 0 or NA indicating no prediction with this tool
@@ -81,7 +98,7 @@ class DataJoining(object):
         # read the original input read count and append CPM values from individual fusion prediction tools to context data
         if self.check_files(input_read_file, False):
             with open(input_read_file, "r") as rfile:
-                self.input_read_count = int(rfile.next())
+                self.input_read_count = int(rfile.readline())
         if self.check_files(detect_fusion_file, False):
             detect_data = pd.read_csv(detect_fusion_file, sep=";")
         context_data = self.append_tool_cnts_to_context_file(context_data, detect_data, fusion_tools)
@@ -90,25 +107,25 @@ class DataJoining(object):
         # perform subsequent joins on ftid_plus
         context_data.set_index("ftid_plus", inplace=True)
         # read and append normalized (cpm) and raw (counts) requantification data to context data
-        for mode in requant_mode:
-            requant_cpm_file = os.path.join(self.input_dir, "Sample_{}".format(sample_id), "fetchdata", "fd_1_tool", "classification", "classification_{}.tdt".format(mode))
-            requant_cnt_file = os.path.join(self.input_dir, "Sample_{}".format(sample_id), "fetchdata", "fd_1_tool", "classification", "classification_{}.tdt.counts".format(mode))
-            requant_cpm_data = pd.read_csv(requant_cpm_file, sep=";")
-            context_data = context_data.join(requant_cpm_data.set_index("ftid_plus"), how="left")
-            requant_cnt_data = pd.read_csv(requant_cnt_file, sep=";")
-            context_data = context_data.join(requant_cnt_data.set_index("ftid_plus"), lsuffix="_{}".format(mode), rsuffix="_cnt_{}".format(mode), how="left")
+        #for mode in requant_mode:
+        requant_cpm_file = os.path.join(self.input_dir, "Sample_{}".format(sample_id), "fetchdata", "fd_1_tool", "classification", "classification_{}.tdt".format(requant_mode))
+        requant_cnt_file = os.path.join(self.input_dir, "Sample_{}".format(sample_id), "fetchdata", "fd_1_tool", "classification", "classification_{}.tdt.counts".format(requant_mode))
+        requant_cpm_data = pd.read_csv(requant_cpm_file, sep=";")
+        context_data = context_data.join(requant_cpm_data.set_index("ftid_plus"), how="left")
+        requant_cnt_data = pd.read_csv(requant_cnt_file, sep=";")
+        context_data = context_data.join(requant_cnt_data.set_index("ftid_plus"), lsuffix="_{}".format(requant_mode), rsuffix="_cnt_{}".format(requant_mode), how="left")
 
         return context_data.fillna(0), redundant_header
 
     def run(self):
         """run the data concatenation"""
-        fusion_tools = cfg.fusiontools
-        requant_mode = cfg.requant_mode
-        self.load_blacklist(os.path.join(cfg.module_dir, "blacklist.txt"))
+        fusion_tools = self.cfg["general"]["fusiontools"].split(",")
+        requant_mode = self.cfg["general"]["requant_mode"]
+        self.load_blacklist(os.path.join(self.cfg["general"]["module_dir"], "blacklist.txt"))
         # urla - note: with icam_run set to True, two results from technical replicates are expected as input
         print("Looking for required files...")
         # check whether output already exists
-        cols_to_aggregate_on = ["FGID", "context_sequence_id", "FTID"]
+        cols_to_aggregate_on = ["BPID", "context_sequence_id", "FTID"]
 
         # in comparison to the previous implementation, pre-existing results will always be overwritten as it turned out that the
         # previous implementation is to error prone...
@@ -121,17 +138,17 @@ class DataJoining(object):
         for table in ["1", "2"]:
             summary_file = "{}_fusRank_{}.csv".format(self.output, table)
             if self.model_predictions and self.check_files(summary_file, True):
-                model_path = cfg.other_files["easyfuse_model"]
-                model_threshold = cfg.model_pred_threshold
+                model_path = self.cfg["other_files"]["easyfuse_model"]
+                model_threshold = self.cfg["general"]["model_pred_threshold"]
                 # append prediction scores based on pre-calculated model
-                cmd_model = "{0} --fusion_summary {1} --model_file {2} --prediction_threshold {3} --output {4}".format(os.path.join(cfg.module_dir, "R", "R_model_prediction.R"), summary_file, model_path, model_threshold, "{}.pModelPred.csv".format(summary_file[:-4]))
+                cmd_model = "{0} --fusion_summary {1} --model_file {2} --prediction_threshold {3} --output {4}".format(os.path.join(self.cfg["general"]["module_dir"], "R", "R_model_prediction.R"), summary_file, model_path, model_threshold, "{}.pred.csv".format(summary_file[:-4]))
                 Queueing.submit("", cmd_model.split(" "), "", "", "", "", "", "", "", "", "", "none")
                 # re-read the table with prediction for filter counting
                 # urla - note: there is probably a more elegant way using getattr/setattr but I'm not at all familiar with its pros/cons
                 if table == "1":
-                    joined_table_1 = pd.read_csv("{}_fusRank_1.pModelPred.csv".format(self.output), sep=";")
+                    joined_table_1 = pd.read_csv("{}_fusRank_1.pred.csv".format(self.output), sep=";")
                 else:
-                    joined_table_2 = pd.read_csv("{}_fusRank_2.pModelPred.csv".format(self.output), sep=";")
+                    joined_table_2 = pd.read_csv("{}_fusRank_2.pred.csv".format(self.output), sep=";")
         joined_table_1.set_index(keys=cols_to_aggregate_on, drop=False, inplace=True)
 
         return self.count_records(joined_table_1, False, "F1N")

@@ -11,11 +11,9 @@ Input/Output method collection
 """
 
 import os
-import sys
-import stat
 import re
-import ntpath
-import sqlite3
+import stat
+
 
 
 def create_folder(path, logger=None):
@@ -62,7 +60,9 @@ def get_fastq_files(input_paths, logger=None):
                     fastqs.extend(fastqs_tmp)
         elif os.path.isfile(path) and path.endswith((".fastq.gz", ".fq.gz", ".fq", ".fastq")):
             fastqs.append(path)
+    return fastqs
 
+def pair_fastq_files(fastqs, logger=None):
     left = []
     right = []
     sample_id = []
@@ -70,43 +70,75 @@ def get_fastq_files(input_paths, logger=None):
     print("\nGoing to process the following read files...")
     for i, fq_file in enumerate(sorted(fastqs)):
         print("Fastq file {0}: {1}".format(i, fq_file))
-        # urla: handled cases are: abc_R1_xyz.fastq.gz || abc_R1_xyz.fq.gz || abc_R1.fastq.gz || abc_1.fastq.gz || etc
         try:
             # Search for 1 or 2 between "_R|_" and "_|.f" in the basename of the file
-            #forrev = re.search('(\_|\_R)([1-2])(\_|\.f)', path_leaf(fq_file)).group(2)
-            # urla: replaced original (up) with the following <- worked in minimal test set, should be fine for everything
-            forrev = re.search('_R?([1-2])(_|[.]f)', path_leaf(fq_file)).group(1)
-#            print(forrev)
+            matches = re.search('(.*)(_R?[1-2])(_|[.])', os.path.basename(fq_file))
+
+            sample_id = matches.group(1)
+            forrev = matches.group(2)
+
+            if forrev == "_1" or forrev == "_R1":
+                left.append((sample_id, fq_file))
+            elif forrev == "_2" or forrev == "_R2":
+                right.append((sample_id, fq_file))
+
+
         except AttributeError:
             forrev = '-1'
-                                
-        if forrev == '1':
-            left.append(fq_file)
-        elif forrev == '2':
-            right.append(fq_file)
-        else:
-            print('Warning: Ignoring \"{}\" as it doesn\'t seem to be a valid fastq file'.format(fq_file))
+
     # Check whether file names match between paired files
-    if right:
-        for i, _ in enumerate(left):
-            # urla: ids for comparison are not generally applicable here, as they remove lane numbers as well
-            #sample_id_l = re.search('(\w*)(\_|\_R)([1])(\_|\.f)', path_leaf(left[i])).group(1)
-            #sample_id_r = re.search('(\w*)(\_|\_R)([2])(\_|\.f)', path_leaf(right[i])).group(1)
-            # urla: replaced original (up) with the following <- worked in minimal test set, should be fine for everything
-            sample_id_l = re.search('(.*)_R?1(_|[.]f)', path_leaf(left[i])).group(1)
-            sample_id_r = re.search('(.*)_R?2(_|[.]f)', path_leaf(right[i])).group(1)
-            sample_id.append(sample_id_l)
-#            print(sample_id_l)
-#            print(sample_id_r)
-            if sample_id_l != sample_id_r:
-                if logger:
-                    logger.error('Error 99: Paired files names {0} and {1} do not match!'.format(sample_id_l, sample_id_r))
-                print('Error 99: Paired files names {0} and {1} do not match!'.format(sample_id_l, sample_id_r))
-                sys.exit(99)
-    return (left, right, sample_id)
+    sample_list = []
+    #if right:
+    for sample_id_a, fq_file_a in left:
+        found = False
+        for sample_id_b, fq_file_b in right:
+            if sample_id_a == sample_id_b:
+                #print(sample_id_a, fq_file_a, fq_file_b)
+                found = True
+                sample_list.append((sample_id_a, fq_file_a, fq_file_b))
+                break
+            
+        if not found:
+            if logger:
+                logger.error('Could not find a matching FASTQ for {}!'.format(sample_id_a))
+            print('Could not find a matching FASTQ for {}!'.format(sample_id_a))
+            sample_list.append((sample_id_a, fq_file_a, ""))
+
+    return sample_list
 
 
-def path_leaf(path):
-    """Return the basename of a file path"""
-    head, tail = ntpath.split(path)
-    return tail or ntpath.basename(head)
+def load_gene_symbols(infile):
+    chr_list = (
+            "1", "2", "3", "4", "5",
+            "6", "7", "8", "9", "10",
+            "11", "12", "13", "14", "15",
+            "16", "17", "18", "19", "20",
+            "21", "22", "X", "Y", "MT"
+    )
+
+    trans_to_gene = {}
+    with open(infile) as inf:
+        for line in inf:
+            elements = line.rstrip().split("\t")
+
+            if len(elements) < 3:
+                continue
+
+            if elements[2] == "transcript" and elements[0] in chr_list:
+            #if elements[2] == "transcript":
+                trans_id = ""
+                gene_symbol = ""
+                gene_id = ""
+                ids = elements[8].rstrip(";").split(";")
+                for i in range(len(ids)):
+                    key, val = ids[i].strip().rsplit(" ", 1)
+                    val = val.strip("\"")
+                    if key == "transcript_id":
+                        trans_id = val
+                    elif key == "gene_name":
+                        gene_symbol = val
+                    elif key == "gene_id":
+                        gene_id = val
+
+                trans_to_gene[trans_id] = (gene_id, gene_symbol)
+    return trans_to_gene

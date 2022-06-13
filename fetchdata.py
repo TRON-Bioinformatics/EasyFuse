@@ -10,23 +10,27 @@ combine all results
 @version: 20190118
 """
 
-import sys
+from argparse import ArgumentParser
+from configparser import ConfigParser
+import json
+import math
 import os
 import os.path
-import math
-import argparse
 import subprocess
+import sys
+
+# custom imports
 import misc.queueing as Queueing
 from misc.samples import SamplesDB
 from misc.logger import Logger
 import misc.io_methods as IOMethods
-import config as cfg
+#import config as cfg
 
 # pylint: disable=line-too-long
 #         yes they are partially, but I do not consider this to be relevant here
 class Fetching(object):
     """Run, monitor and schedule fastq processing for fusion gene prediction"""
-    def __init__(self, scratch_path, fetchdata_path, sample_id):
+    def __init__(self, scratch_path, fetchdata_path, sample_id, cfg_file):
         """Parameter initiation and work folder creation."""
         self.scratch_path = scratch_path
         self.fetchdata_path = fetchdata_path
@@ -34,6 +38,26 @@ class Fetching(object):
         #self.tools = Samples(os.path.join(scratch_path, os.path.pardir, os.path.pardir, "samples.csv")).get_tool_list_from_state(self.sample_id)
         self.samples = SamplesDB(os.path.join(scratch_path, os.path.pardir, "samples.db"))
         self.logger = Logger(os.path.join(self.fetchdata_path, "fetchdata.log"))
+
+        self.cfg = None
+
+
+        default_cfg_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "config.ini")
+
+        if not cfg_file and os.path.exists(default_cfg_path):
+            cfg_file = default_cfg_path
+        elif not cfg_file and not os.path.exists(default_cfg_path):
+            self.logger.error("Could not find default config file (path={}). Exiting.".format(default_cfg_path))
+            sys.exit(1)
+
+        if cfg_file.endswith("ini"):
+            self.cfg = ConfigParser()
+            self.cfg.read(cfg_file)
+            print(self.cfg)
+        elif cfg_file.endswith("json"):
+            with open(cfg_file) as config_file:
+                self.cfg = json.load(config_file)
+
 
     def get_pseudo_genome_adjustments_for_star(self, num_len_file): # wrong pylint error due to long name => pylint: disable=C0103
         """Return the genome size of an associated fasta file calculated by urla_GetFusionSequence_latest.R"""
@@ -87,11 +111,11 @@ class Fetching(object):
         """Create sample specific subfolder structuge and run tools on fastq files"""
 
         # Genome/Gene references to use
-        ref_trans = cfg.ref_trans_version
-        ref_genome = cfg.ref_genome_build
-        genome_fasta_path = cfg.references["genome_fasta"]
-        genes_adb_path = cfg.references["genes_adb"]
-        genes_tsl_path = cfg.references["genes_tsl"]
+        ref_trans = self.cfg["general"]["ref_trans_version"]
+        ref_genome = self.cfg["general"]["ref_genome_build"]
+        genome_fasta_path = self.cfg["references"]["genome_fasta"]
+        genes_adb_path = self.cfg["references"]["genes_adb"]
+        genes_tsl_path = self.cfg["references"]["genes_tsl"]
 
         fetchdata_current_path = os.path.join(self.fetchdata_path, "fd_{}_tool".format(fusion_support))
         detected_fusions_path = os.path.join(fetchdata_current_path, "fetched_fusions")
@@ -116,22 +140,22 @@ class Fetching(object):
             IOMethods.create_folder(folder, self.logger)
 
         # processing steps to perform
-        tools = cfg.fd_tools
-        fusion_tools = cfg.tools
-        module_dir = cfg.module_dir
-        cmds = cfg.commands
+        tools = self.cfg["general"]["fd_tools"].split(",")
+        fusion_tools = self.cfg["general"]["tools"].split(",")
+        module_dir = self.cfg["general"]["module_dir"]
+        cmds = self.cfg["commands"]
         # In case of a liftover, some reference and path must be changed accordingly
         cmd_contextseq_org = ""
         if "Liftover" in tools:
             tools.insert(2, "ContextSeqBak")
             # for read grepping, we need the original reference on which the first mapping was performed
-            cmd_contextseq_org = "python {0} --detected_fusions {1}.bak --annotation_db {2} --out_csv {3}.bak --genome_fasta {4} --tsl_info {5} --cis_near_dist {6} --context_seq_len {7} --tsl_filter_level {8}".format(os.path.join(module_dir, "fusionannotation.py"), detected_fusions_file,  genes_adb_path, context_seq_file, genome_fasta_path, genes_tsl_path, cfg.cis_near_distance, cfg.context_seq_len, cfg.tsl_filter)
+            cmd_contextseq_org = "python {0} --detected_fusions {1}.bak --annotation_db {2} --out_csv {3}.bak --genome_fasta {4} --tsl_info {5} --cis_near_dist {6} --context_seq_len {7} --tsl_filter_level {8}".format(os.path.join(module_dir, "fusionannotation.py"), detected_fusions_file,  genes_adb_path, context_seq_file, genome_fasta_path, genes_tsl_path, self.cfg["general"]["cis_near_distance"], self.cfg["general"]["context_seq_len"], self.cfg["general"]["tsl_filter"])
             # now, references need to be updated according to the target liftover
-            crossmap_chain = cfg.liftover["crossmap_chain"]
+            crossmap_chain = self.cfg["liftover"]["crossmap_chain"]
             ref_genome_dest = os.path.basename(crossmap_chain).replace(".", "_").split("_")[2].lower()
             self.logger.debug("Creating a copy of the detected fusions file due to selection of liftover. Old ({0}) data will be kept in \"{1}.bak\"".format(ref_genome, detected_fusions_file))
-            genome_fasta_path = cfg.references["genome_fasta_hg37"]
-            genes_adb_path = cfg.references["genes_adb_hg37"]
+            genome_fasta_path = self.cfg["references"]["genome_fasta_hg37"]
+            genes_adb_path = self.cfg["references"]["genes_adb_hg37"]
 
         # urla - note: tmp hack to get original star input reads for normalization
         with open(os.path.join(classification_path, "Star_org_input_reads.txt"), "w") as infile:
@@ -140,10 +164,10 @@ class Fetching(object):
                 read_count = self.get_input_read_count_from_fastq(fq1)
             infile.write(str(read_count))
         # Define cmd strings for each program
-        cmd_fusiondata = "{0} -i {1} -o {2} -s {3} -t {4} -f {5} -l {6}".format(os.path.join(module_dir, "fusiontoolparser.py"), self.scratch_path, detected_fusions_path, self.sample_id, fusion_support, ",".join(cfg.fusiontools), self.logger.get_path())
+        cmd_fusiondata = "{0} -i {1} -o {2} -s {3} -t {4} -f {5} -l {6}".format(os.path.join(module_dir, "fusiontoolparser.py"), self.scratch_path, detected_fusions_path, self.sample_id, fusion_support, self.cfg["general"]["fusiontools"], self.logger.get_path())
         cmd_liftover = "{0} -i {1} -l {2}".format(os.path.join(module_dir, "misc", "liftover.py"), detected_fusions_file, self.logger.get_path())
-        cmd_contextseq = "{0} --detected_fusions {1} --annotation_db {2} --out_csv {3} --genome_fasta {4} --tsl_info {5} --cis_near_dist {6} --context_seq_len {7} --tsl_filter_level {8}".format(os.path.join(module_dir, "fusionannotation.py"), detected_fusions_file, genes_adb_path, context_seq_file, genome_fasta_path, genes_tsl_path, cfg.cis_near_distance, cfg.context_seq_len, cfg.tsl_filter)
-        cpu = cfg.resources["fetchdata"]["cpu"]
+        cmd_contextseq = "{0} --detected_fusions {1} --annotation_db {2} --out_csv {3} --genome_fasta {4} --tsl_info {5} --cis_near_dist {6} --context_seq_len {7} --tsl_filter_level {8}".format(os.path.join(module_dir, "fusionannotation.py"), detected_fusions_file, genes_adb_path, context_seq_file, genome_fasta_path, genes_tsl_path, self.cfg["general"]["cis_near_distance"], self.cfg["general"]["context_seq_len"], self.cfg["general"]["tsl_filter"])
+        cpu = self.cfg["resources"]["fetchdata"].split(",")[0]
 #        mem = cfg.resources["fetchdata"]["mem"]
         cmd_starindex = "{0} --runMode genomeGenerate --runThreadN {1} --limitGenomeGenerateRAM 48000000000 --genomeChrBinNbits waiting_for_bin_size_input --genomeSAindexNbases waiting_for_sa_idx_input --genomeDir {2} --genomeFastaFiles {3}".format(cmds["star"], cpu, star_genome_path, "{0}{1}".format(context_seq_file, ".fasta"))
         cmd_staralign_fltr = "{0} --genomeDir {1} --readFilesCommand zcat --readFilesIn {2} {3} --outSAMtype BAM SortedByCoordinate --outFilterMultimapNmax -1 --outSAMattributes Standard --outSAMunmapped None --outFilterMismatchNoverLmax 0.02 --runThreadN {4} --outFileNamePrefix {5}fltr_ --limitBAMsortRAM 48000000000".format(cmds["star"], star_genome_path, fq1, fq2, cpu, star_align_file)
@@ -244,11 +268,12 @@ class Fetching(object):
 
 def main():
     """Parse command line arguments and start script"""
-    parser = argparse.ArgumentParser(description='Processing of demultiplexed FASTQs')
+    parser = ArgumentParser(description='Processing of demultiplexed FASTQs')
     # required arguments
     parser.add_argument('-i', '--input', dest='input', help='Data input directory.', required=True)
     parser.add_argument('-o', '--output', dest='output', help='Data output directory.', required=True)
     parser.add_argument('-s', '--sample', dest='sample', help='Specify the sample to process.', required=True)
+    parser.add_argument('-c', '--config-file', dest='config_file', help='Specify alternative config file to use for your analysis')
     parser.add_argument('--fq1', dest='fq1', help='Input read1 file for re-quantification', default="", required=False)
     parser.add_argument('--fq2', dest='fq2', help='Input read2 file for re-quantification', default="", required=False)
     parser.add_argument('--fusion_support', dest='fusion_support', help='Number of fusion tools which must predict the fusion event', default=1)
@@ -261,7 +286,7 @@ def main():
     # 4: get expression?
     # ...
     for i in range(1, int(args.fusion_support) + 1):
-        proc = Fetching(args.input, args.output, args.sample)
+        proc = Fetching(args.input, args.output, args.sample, os.path.abspath(args.config_file))
         proc.run(i, args.fq1, args.fq2)
 
 if __name__ == '__main__':

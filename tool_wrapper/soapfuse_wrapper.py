@@ -7,18 +7,19 @@ import subprocess
 
 from argparse import ArgumentParser
 
-sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
-
-import config as cfg
+#sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
 def main():
     parser = ArgumentParser(description="Wrapper around SOAPfuse.")
     parser.add_argument("-q","--qc-table", dest="qc_table", help="Specify input QC table")
     parser.add_argument("-i","--input", dest="input", nargs="+", help="Specify input FASTQ files", required=True)
     parser.add_argument("-o","--output", dest="output", help="Specify output folder", default=".")
+    parser.add_argument("-b", "--binary", dest="binary", help="Specify Soapfuse binary", required=True)
+    parser.add_argument("-c", "--config-file", dest="config_file", help="Specify Soapfuse config file to use for your analysis", required=True)
     args = parser.parse_args()
 
-    soapfuse_cfg = cfg.other_files["soapfuse_cfg"]
+    soapfuse_bin = args.binary
+    soapfuse_cfg = args.config_file
 
     cols = args.input[0].rsplit("/", 3)
 #    print(cols)
@@ -53,7 +54,7 @@ def main():
             os.symlink(file, os.path.join(cols[0], cols[1], cols[2], "S_{}.fastq.gz".format((i+1))))
         except:
             print("Symlink already exists!")
-    cmd = "{} -c {} -fd {} -l {} -o {}".format(cfg.commands["soapfuse"], soapfuse_cfg, cols[0], cfg_file, args.output)
+    cmd = "{} -c {} -fd {} -l {} -o {}".format(soapfuse_bin, soapfuse_cfg, cols[0], cfg_file, args.output)
 #    print cmd
     proc = subprocess.Popen(cmd, shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
     (stdoutdata, stderrdata) = proc.communicate()

@@ -1,24 +1,24 @@
 #!/usr/bin/env python
 
-import sys
-import os
-import subprocess
-from shutil import copyfile
 from argparse import ArgumentParser
-
-sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
-
-import config as cfg
-
+import json
+import os
+from shutil import copyfile
+import subprocess
+import sys
 
 def main():
     parser = ArgumentParser(description="Wrapper around skewer.")
     parser.add_argument("-q", "--qc-table", dest="qc_table", help="Specify input QC table", required=True)
     parser.add_argument("-i", "--input", dest="input", nargs="+", help="Specify input FASTQ files", required=True)
     parser.add_argument("-o", "--output", dest="output", help="Specify output folder", default=".")
+    parser.add_argument("-b", "--binary", dest="binary", help="Specify Skewer binary", required=True)
+    parser.add_argument("-m", "--min-read-len-perc", dest="min_read_len_perc", type=float, help="Specify minimum read length percentage", default=0.75)
+    
     args = parser.parse_args()
 
-    min_rl_perc = cfg.min_read_len_perc
+    skewer_bin = args.binary
+    min_rl_perc = args.min_read_len_perc
     remaining_len = 1000
     read_len = 0
     with open(args.qc_table) as inf:
@@ -31,7 +31,7 @@ def main():
                 remaining_len = remaining
 
     if remaining_len != read_len and remaining_len >= (min_rl_perc * read_len):
-        cmd = "{} -l {} -q 28 -m pe -t 6 -k 5 -z -o {} {}".format(cfg.commands["skewer"], remaining_len, os.path.join(args.output, "out_file"), " ".join(args.input))
+        cmd = "{} -l {} -q 28 -m pe -t 6 -k 5 -z -o {} {}".format(skewer_bin, remaining_len, os.path.join(args.output, "out_file"), " ".join(args.input))
 
         proc = subprocess.Popen(cmd, shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
         (stdoutdata, stderrdata) = proc.communicate()
