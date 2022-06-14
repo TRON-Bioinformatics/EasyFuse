@@ -1,7 +1,7 @@
 from ubuntu:20.04
 
 RUN apt-get update -y --fix-missing
-RUN DEBIAN_FRONTEND="noninteractive" apt-get install -y software-properties-common python python3 python3-pip emacs curl wget zip unzip tar zlib1g-dev liblzo2-dev libcurl4-openssl-dev libssl-dev libncurses5 tzdata
+RUN DEBIAN_FRONTEND="noninteractive" apt-get install -y software-properties-common git python python3 python3-pip emacs curl wget zip unzip tar zlib1g-dev liblzo2-dev libcurl4-openssl-dev libssl-dev libncurses5 tzdata
 
 RUN curl -O https://repo.anaconda.com/miniconda/Miniconda2-latest-Linux-x86_64.sh
 RUN bash Miniconda2-latest-Linux-x86_64.sh -b -p /root/miniconda2
@@ -35,6 +35,14 @@ RUN R --slave -e 'remotes::install_version("tidyverse", "1.2.1")'
 RUN R --slave -e 'remotes::install_version("XML", "3.99-0.9")'
 RUN R --slave -e 'remotes::install_version("randomForest", "4.6-14")'
 
-
 COPY ./code/ /code/
+
+RUN wget https://github.com/TRON-Bioinformatics/EasyFuse/archive/refs/tags/v1.3.5.tar.gz && \
+tar xvfz v1.3.5.tar.gz && \
+mv EasyFuse-1.3.5/ /code/easyfuse/ && \
+cd /code/easyfuse/ && \
+mv config.ini.docker config.ini && \
+mv build_env.sh.sample build_env.sh && \
+mv blacklist.txt.sample blacklist.txt
+
 ENV PERL5LIB "$PERL5LIB:/code/SOAPfuse/1.27/source/bin/perl_module/"
