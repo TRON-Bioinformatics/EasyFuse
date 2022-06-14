@@ -21,7 +21,7 @@ We recommend using EasyFuse with the Docker container.
 The Docker image can be downloaded from [dockerhub](https://hub.docker.com/r/tronbioinformatics/easyfuse) using the following command:
 
 ```
-docker pull tronbioinformatics/easyfuse:1.3.5
+docker pull tronbioinformatics/easyfuse:latest
 ```
 
 ### Download reference data
@@ -56,8 +56,8 @@ docker run \
   -v </path/to/data>:/data \
   -v </path/to/output>:/output \
   --rm \
-  -it easyfuse:1.3.5 \
-  python /code/easyfuse-1.3.5/processing.py -i /data -o /output
+  -it easyfuse:latest \
+  python /code/easyfuse/processing.py -i /data -o /output
 ```
 
 

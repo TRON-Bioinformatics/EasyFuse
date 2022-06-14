@@ -2,5 +2,5 @@
 
 docker build \
 --rm \
--t docker.io/tronbioinformatics/easyfuse:1.3.5 \
+-t docker.io/tronbioinformatics/easyfuse:latest \
 .

@@ -37,12 +37,13 @@ RUN R --slave -e 'remotes::install_version("randomForest", "4.6-14")'
 
 COPY ./code/ /code/
 
-RUN wget https://github.com/TRON-Bioinformatics/EasyFuse/archive/refs/tags/v1.3.5.tar.gz && \
-tar xvfz v1.3.5.tar.gz && \
-mv EasyFuse-1.3.5/ /code/easyfuse/ && \
-cd /code/easyfuse/ && \
-mv config.ini.docker config.ini && \
-mv build_env.sh.sample build_env.sh && \
-mv blacklist.txt.sample blacklist.txt
+# After release 1.3.5 these lines can be used to automate docker image creation process further
+#RUN wget https://github.com/TRON-Bioinformatics/EasyFuse/archive/refs/tags/v1.3.5.tar.gz && \
+#tar xvfz v1.3.5.tar.gz && \
+#mv EasyFuse-1.3.5/ /code/easyfuse/ && \
+#cd /code/easyfuse/ && \
+#mv config.ini.docker config.ini && \
+#mv build_env.sh.sample build_env.sh && \
+#mv blacklist.txt.sample blacklist.txt
 
 ENV PERL5LIB "$PERL5LIB:/code/SOAPfuse/1.27/source/bin/perl_module/"
