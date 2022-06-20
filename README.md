@@ -21,7 +21,7 @@ We recommend using EasyFuse with the Docker container.
 The Docker image can be downloaded from [dockerhub](https://hub.docker.com/r/tronbioinformatics/easyfuse) using the following command:
 
 ```
-docker pull tronbioinformatics/easyfuse:1.3.4
+docker pull tronbioinformatics/easyfuse:latest
 ```
 
 ### Download reference data
@@ -56,8 +56,8 @@ docker run \
   -v </path/to/data>:/data \
   -v </path/to/output>:/output \
   --rm \
-  -it easyfuse:1.3.4 \
-  python /code/easyfuse-1.3.4/processing.py -i /data -o /output
+  -it easyfuse:latest \
+  python /code/easyfuse/processing.py -i /data -o /output
 ```
 
 
@@ -68,7 +68,7 @@ The output can be found in `</path/to/output>/results/`. The Output format is de
 The EasyFuse pipeline depends on multiple external fusion prediction tools and other dependencies. For example:
 
   - [STAR](https://github.com/alexdobin/STAR) (2.6.1d) 
-  - [STAR-Fusion](https://github.com/STAR-Fusion/STAR-Fusion/wiki) (2.6.1d) 
+  - [STAR-Fusion](https://github.com/STAR-Fusion/STAR-Fusion/wiki) (1.5.0) 
   - [Fusioncatcher](https://github.com/ndaniel/fusioncatcher)(1.00)
   - [MapSplice2](https://github.com/davidroberson/MapSplice2) (2.2.1)
   - [InFusion](https://bitbucket.org/kokonech/infusion/src/master/) (0.8)

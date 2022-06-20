@@ -53,7 +53,6 @@ class Fetching(object):
         if cfg_file.endswith("ini"):
             self.cfg = ConfigParser()
             self.cfg.read(cfg_file)
-            print(self.cfg)
         elif cfg_file.endswith("json"):
             with open(cfg_file) as config_file:
                 self.cfg = json.load(config_file)
