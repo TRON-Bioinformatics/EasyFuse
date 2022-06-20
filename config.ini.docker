@@ -85,4 +85,4 @@ fusioncatcher = /ref/fusioncatcher_index/
 [other_files]
 infusion_cfg = /ref/infusion.cfg
 soapfuse_cfg = /ref/soapfuse.cfg
-easyfuse_model = /code/easyfuse/data/model/Fusion_modeling_FFPE_train_v32.random_forest.model_full_data.EF_full.rds
+easyfuse_model = /code/easyfuse/data/model/Fusion_modeling_FFPE_train_v33.random_forest.model_full_data.EF_full.rds
