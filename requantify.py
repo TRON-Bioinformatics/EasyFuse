@@ -94,7 +94,7 @@ class Requantification(object):
         """Returns the CPM of a read count based on the number of original input reads"""
         if self.input_read_count == 0:
             return count
-        return count / self.input_read_count * 1000000
+        return count / float(self.input_read_count) * 1000000.0
 
     def header_to_dict(self):
         """Convert bam header into a dict with keys = SN fields and values = list of breakpoint + junction/spanning counter"""
