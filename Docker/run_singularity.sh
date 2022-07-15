@@ -20,5 +20,3 @@ singularity exec \
 --bind ${DATA_FOLDER}:/data \
 ${DOCKERHUB_OR_SIF} \
 python /code/easyfuse/processing.py -i /data/input_fastqs -o /data/${OUTPUT_FOLDER_NAME}/
-
-#docker://docker.io/tronbioinformatics/easyfuse:latest \
