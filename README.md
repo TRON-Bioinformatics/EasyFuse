@@ -49,6 +49,8 @@ EasyFuse will require three folders:
 
 Now EasyFuse can be started by mapping the input data, references and output folders.
 
+Using Docker:
+
 ```
 docker run \
   --name easyfuse_container \
@@ -60,8 +62,22 @@ docker run \
   python /code/easyfuse/processing.py -i /data -o /output
 ```
 
+Or by using Singularity:
+
+```
+singularity exec 
+  --containall \
+  --bind </path/to/easyfuse_ref>:/ref \
+  --bind </path/to/data>:/data \
+  docker://tronbioinformatics/easyfuse:latest \
+  python /code/easyfuse/processing.py -i /data/ -o /output
+
+```
 
 The output can be found in `</path/to/output>/results/`. The Output format is described in the wiki page [EasyFuse Output](https://github.com/TRON-Bioinformatics/EasyFuse/wiki/EasyFuse-Output)
+
+
+Note: Singularity execution will automatically download the image from dockerhub.
 
 ## Custom Installation
 
