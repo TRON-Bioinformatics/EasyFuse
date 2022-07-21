@@ -39,11 +39,11 @@ RUN R --slave -e 'remotes::install_version("XML", "3.99-0.9")'
 RUN R --slave -e 'remotes::install_version("randomForest", "4.6-14")'
 
 
-# After release 1.3.5 these lines can be used to automate docker image creation process further
-#RUN wget https://github.com/TRON-Bioinformatics/EasyFuse/archive/refs/tags/v1.3.5.tar.gz && \
-#tar xvfz v1.3.5.tar.gz && \
-#mv EasyFuse-1.3.5/ /code/easyfuse/ && \
-#cd /code/easyfuse/ && \
-#mv config.ini.docker config.ini && \
-#mv build_env.sh.sample build_env.sh && \
-#mv blacklist.txt.sample blacklist.txt
+# After release 1.3.6 these lines can be used to automate docker image creation process further
+# RUN rm -rf /code/easyfuse/ && \
+# git clone -b  release_1.3.6 https://github.com/TRON-Bioinformatics/EasyFuse.git && \
+# mv EasyFuse /code/easyfuse && \
+# chmod -R a+rx /code && \
+# mv /code/easyfuse/config.ini.docker /code/easyfuse/config.ini && \
+# mv /code/easyfuse/build_env.sh.sample /code/easyfuse/build_env.sh && \
+# mv /code/easyfuse/blacklist.txt.sample /code/easyfuse/blacklist.txt && \
