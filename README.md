@@ -1,7 +1,7 @@
 # EasyFuse 
 
-![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/tron-bioinformatics/EasyFuse)
-![Docker Image Version (latest semver)](https://img.shields.io/docker/v/tronbioinformatics/easyfuse?label=docker)
+[![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/tron-bioinformatics/EasyFuse)](https://github.com/TRON-Bioinformatics/EasyFuse/releases)
+[![Docker Image Version (latest semver)](https://img.shields.io/docker/v/tronbioinformatics/easyfuse?label=docker)](https://hub.docker.com/r/tronbioinformatics/easyfuse)
 [![License](https://img.shields.io/badge/license-GPLv3-green)](https://opensource.org/licenses/GPL-3.0)
 
 EasyFuse is a pipeline to detect fusion transcripts from RNA-seq data with high accuracy.
@@ -9,20 +9,13 @@ EasyFuse uses five fusion gene detection tools, [STAR-Fusion](https://github.com
 
 <p align="center"><img src="img/easyfuse_workflow.png"></p>
 
-- Documentation: [EasyFuse Wiki](https://github.com/TRON-Bioinformatics/EasyFuse/wiki)
-- Paper: https://doi.org/10.1038/s41587-022-01247-9
+ - Documentation: [EasyFuse Wiki](https://github.com/TRON-Bioinformatics/EasyFuse/wiki)
+ - Publication: [Weber D, Ibn-Salem J, Sorn P, et al. Nat Biotechnol. 2022](https://doi.org/10.1038/s41587-022-01247-9)
 
-We recommend using EasyFuse with the Docker container.
+We recommend using EasyFuse with Docker or Singularity.
 
-## Usage with Docker
+## Usage
 
-### Download the image
-
-The Docker image can be downloaded from [dockerhub](https://hub.docker.com/r/tronbioinformatics/easyfuse) using the following command:
-
-```
-docker pull tronbioinformatics/easyfuse:latest
-```
 
 ### Download reference data
 
@@ -40,10 +33,17 @@ md5sum -c easyfuse_ref_v2.tar.gz.md5 easyfuse_ref_v2.tar.gz
 tar xvfz easyfuse_ref_v2.tar.gz
 ```
 
-### Run EasyFuse
+### Run EasyFuse with Docker
+
+The Docker image can be downloaded from [dockerhub](https://hub.docker.com/r/tronbioinformatics/easyfuse) using the following command:
+
+```
+docker pull tronbioinformatics/easyfuse:latest
+```
 
 EasyFuse will require three folders:
-* The input data folder containing FASTQ files, in this example `/path/to/input_data`.
+
+* The input data folder containing FASTQ files, in this example `/path/to/data`.
 * The reference data folder, in this example `/path/to/easyfuse_ref`
 * The output folder, in this example `/path/to/output`
 
@@ -60,24 +60,23 @@ docker run \
   --rm \
   -it easyfuse:latest \
   python /code/easyfuse/processing.py -i /data -o /output
+
 ```
 
-Or by using Singularity:
+### Run EasyFuse with Singularity
 
 ```
 singularity exec 
   --containall \
   --bind </path/to/easyfuse_ref>:/ref \
   --bind </path/to/data>:/data \
+  --bind </path/to/output>:/output \  
   docker://tronbioinformatics/easyfuse:latest \
   python /code/easyfuse/processing.py -i /data/ -o /output
 
 ```
 
-The output can be found in `</path/to/output>/results/`. The Output format is described in the wiki page [EasyFuse Output](https://github.com/TRON-Bioinformatics/EasyFuse/wiki/EasyFuse-Output)
-
-
-Note: Singularity execution will automatically download the image from dockerhub.
+The output can be found in `</path/to/output>/FusionSummary`. The Output format is described in the wiki page [EasyFuse Output](https://github.com/TRON-Bioinformatics/EasyFuse/wiki/EasyFuse-Output)
 
 ## Custom Installation
 
