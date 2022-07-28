@@ -78,7 +78,7 @@ singularity exec
 
 The output can be found in `</path/to/output>/FusionSummary`. The Output format is described in the wiki page [EasyFuse Output](https://github.com/TRON-Bioinformatics/EasyFuse/wiki/EasyFuse-Output)
 
-## Custom Installation
+### Custom Installation
 
 The EasyFuse pipeline depends on multiple external fusion prediction tools and other dependencies. For example:
 
@@ -89,5 +89,5 @@ The EasyFuse pipeline depends on multiple external fusion prediction tools and o
   - [InFusion](https://bitbucket.org/kokonech/infusion/src/master/) (0.8)
   - [SOAPfuse](https://sourceforge.net/projects/soapfuse/) (1.2.7) 
   
-The custom installation of EasyFuse is described in the [EasyFuse Wiki](https://github.com/TRON-Bioinformatics/EasyFuse/wiki/Installing-EasyFuse)
+It is recommended to run EasyFuse with Docker or Singularity.
 
