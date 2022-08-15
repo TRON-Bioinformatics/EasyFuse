@@ -23,10 +23,6 @@ Before running EasyFuse the following reference annotation data needs to be down
 ```
 # Download reference archive
 wget ftp://easyfuse.tron-mainz.de/easyfuse_ref_v2.tar.gz
-wget ftp://easyfuse.tron-mainz.de/easyfuse_ref_v2.tar.gz.md5
-
-# Check MD5 sums for consistency
-md5sum -c easyfuse_ref_v2.tar.gz.md5 easyfuse_ref_v2.tar.gz
 
 # Extract reference archive
 tar xvfz easyfuse_ref_v2.tar.gz
@@ -46,16 +42,14 @@ EasyFuse will require three folders:
 * The reference data folder, in this example `/path/to/easyfuse_ref`
 * The output folder, in this example `/path/to/output`
 
-Now EasyFuse can be started by mapping the input data, references and output folders.
-
-Using Docker:
+EasyFuse can be started by mapping the input data, references and output folders.
 
 ```
 docker run \
   --name easyfuse_container \
-  -v </path/to/easyfuse_ref>:/ref \
-  -v </path/to/data>:/data \
-  -v </path/to/output>:/output \
+  -v /path/to/easyfuse_ref:/ref \
+  -v /path/to/data:/data \
+  -v /path/to/output:/output \
   --rm \
   -it easyfuse:latest \
   python /code/easyfuse/processing.py -i /data -o /output
@@ -64,38 +58,35 @@ docker run \
 
 ### Run EasyFuse with Singularity
 
+Alternatively, EasyFuse can be executed with [Singularity](https://sylabs.io/docs/) as follows:
+
 ```
 singularity exec 
   --containall \
-  --bind </path/to/easyfuse_ref>:/ref \
-  --bind </path/to/data>:/data \
-  --bind </path/to/output>:/output \  
+  --bind /path/to/easyfuse_ref:/ref \
+  --bind /path/to/data:/data \
+  --bind /path/to/output:/output \  
   docker://tronbioinformatics/easyfuse:latest \
   python /code/easyfuse/processing.py -i /data/ -o /output
 
 ```
 
-The output can be found in `</path/to/output>/FusionSummary`. The Output format is described in the wiki page [EasyFuse Output](https://github.com/TRON-Bioinformatics/EasyFuse/wiki/EasyFuse-Output)
-
-### Custom Installation
-
-The EasyFuse pipeline depends on multiple external fusion prediction tools and other dependencies. For example:
-
-  - [STAR](https://github.com/alexdobin/STAR) (2.6.1d) 
-  - [STAR-Fusion](https://github.com/STAR-Fusion/STAR-Fusion/wiki) (1.5.0) 
-  - [Fusioncatcher](https://github.com/ndaniel/fusioncatcher)(1.00)
-  - [MapSplice2](https://github.com/davidroberson/MapSplice2) (2.2.1)
-  - [InFusion](https://bitbucket.org/kokonech/infusion/src/master/) (0.8)
-  - [SOAPfuse](https://sourceforge.net/projects/soapfuse/) (1.2.7) 
-  
-It is recommended to run EasyFuse with Docker or Singularity.
+The output can be found in `/path/to/output/FusionSummary`.
 
 
-### EasyFuse output format description
+### Output format
 
-EasyFuse creates three output files per run. The files *Sample_Name*_fusRank_1.csv, *Sample_Name*_fusRank_1.pred.csv and *Sample_Name*_fusRank_1.pred.all.csv for each batch sample in the `FusionSummary` folder. Within the files each line describes a candidate fusion transcript. The file *Sample_Name*_fusRank_1.csv contains all annotated features, while files .pred.csv and .pred.all.csv additionally also contain the prediction probability assigned by the EasyFuse model as well as the assigned prediction class (*positive* or *negative*). The file .pred.all.csv contains information on all considered fusion transcripts, while the file .pred.csv contains only those with a *positive* assigned prediction class. 
+EasyFuse creates three output files per sample in the `FusionSummary` folder: 
 
-**The following table shows an example of the .pred.all.csv file.**  
+ - `<Sample_Name>_fusRank_1.csv`
+ - `<Sample_Name>_fusRank_1.pred.csv` 
+ - `<Sample_Name>_fusRank_1.pred.all.csv`
+ 
+Within the files each line describes a candidate fusion transcript. The prefix `<Sample_Name>` is infrared from the input fastq file names. The file `_fusRank_1.csv` contains only annotated features, while files `.pred.csv` and `.pred.all.csv` additionally also contain the prediction probability assigned by the EasyFuse model as well as the assigned prediction class (*positive* or *negative*). The file `.pred.all.csv` contains information on all considered fusion transcripts, while the file `.pred.csv` contains only those with a *positive* assigned prediction class. 
+
+#### Example Output
+
+The following table shows an example of the `.pred.all.csv` file.:
 
 | BPID | context_sequence_id | FTID | Fusion_Gene | Breakpoint1 | Breakpoint2 | context_sequence_100_id | type | exon_nr | exon_starts | exon_ends | exon_boundary1 | exon_boundary2 | exon_boundary | bp1_frame | bp2_frame | frame | context_sequence | context_sequence_bp | neo_peptide_sequence | neo_peptide_sequence_bp | fusioncatcher_detected | fusioncatcher_junc | fusioncatcher_span | starfusion_detected | starfusion_junc | starfusion_span | infusion_detected | infusion_junc | infusion_span | mapsplice_detected | mapsplice_junc | mapsplice_span | soapfuse_detected | soapfuse_junc | soapfuse_span | tool_count | tool_frac | ft_bp_best | ft_a_best | ft_b_best | ft_junc_best | ft_span_best | ft_anch_best | wt1_bp_best | wt1_a_best | wt1_b_best | wt1_junc_best | wt1_span_best | wt1_anch_best | wt2_bp_best | wt2_a_best | wt2_b_best | wt2_junc_best | wt2_span_best | wt2_anch_best | ft_bp_cnt_best | ft_a_cnt_best | ft_b_cnt_best | ft_junc_cnt_best | ft_span_cnt_best | ft_anch_cnt_best | wt1_bp_cnt_best | wt1_a_cnt_best | wt1_b_cnt_best | wt1_junc_cnt_best | wt1_span_cnt_best | wt1_anch_cnt_best | wt2_bp_cnt_best | wt2_a_cnt_best | wt2_b_cnt_best | wt2_junc_cnt_best | wt2_span_cnt_best | wt2_anch_cnt_best | prediction_prob | prediction_class
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -105,16 +96,17 @@ EasyFuse creates three output files per run. The files *Sample_Name*_fusRank_1.c
 | 8:42968214:+_10:43116584:+ | 07b05d58a3f6d152 | HOOK3_8:42968214:+_ENST00000527306_RET_10:43116584:+_ENST00000340058 | HOOK3_RET | 8:42968214:+ | 10:43116584:+ | b18ce98522749d2e | trans | 8 | 42968013*43116584 | 42968214*43116731 | right_boundary | left_boundary | both | -1 | 0 | no_frame | AAGAAGGCATTTGCAGCTCCAGACTCAATTAGAACAGCTCCAAGAAGAAACATTCAGACTAGAAGCAGCCAAAGATGATTATCGAATACGTTGTGAAGAGTTAGAAAAGGAGATCTCTGAACTTCGGCAACAGAATGATGAACTGACCACTTTGGCAGATGAAGCTCAGTCTCTGAAAGATGAGATCGACGTGCTGAGACATTCTTCTGATAAAGTATCTAAACTAGAAGGTCAAGTAGAATCTTATAAAAAGAAGCTAGAAGACCTTGGTGATTTAAGGCGGCAGGTTAAACTCTTAGAAGAGAAGAATACCATGTATATGCAGAATACTGTCAGTCTAGAGGAAGAGTTAAGAAAGGCCAACGCAGCGCGAAGTCAACTTGAAACCTACAAGAGACAGGAGGATCCAAAGTGGGAATTCCCTCGGAAGAACTTGGTTCTTGGAAAAACTCTAGGAGAAGGCGAATTTGGAAAAGTGGTCAAGGCAACGGCCTTCCATCTGAAAGGCAGAGCAGGGTACACCACGGTGGCCGTGAAGATGCTGAAAGAGAACGCCTCCCCGAGTGAGCTGCGAGACCTGCTGTCAGAGTTCAACGTCCTGAAGCAGGTCAACCACCCACATGTCATCAAATTGTATGGGGCCTGCAGCCAGGATGGCCCGCTCCTCCTCATCGTGGAGTACGCCAAATACGGCTCCCTGCGGGGCTTCCTCCGCGAGAGCCGCAAAGTGGGGCCTGGCTACCTGGGCAGTGGAGGCAGCCGCAACTCCAGCTCCCTGGACCACCCGGATGAGCGGGCCC | 400 | 0 | 0 | 1 | 0 | 0 | 1 | 0 | 0 | 0 | 0 | 0 | 1 | 0 | 0 | 1 | 0 | 0 | 4 | 0.8 | 400 | 1327.72589688 | 1096.43026325 | 155.679753403 | 328.039480385 | 25 | 400 | 869.582622581 | 2.22399647719 | 0 | 1.11199823859 | 0 | 400 | 0 | 648.294973101 | 0 | 0 | 0 | 400 | 1194 | 986 | 140 | 295 | 25 | 400 | 782 | 2 | 0 | 1 | 0 | 400 | 0 | 583 | 0 | 0 | 0 | 0.762 | positive |
   
 
-**Overview all features/columns annotated by EasyFuse:**  
+#### Column description
 
-**FGID:** The FGID is an identifier composed of GeneName1_chr1:position1:strand1_GeneName2_chr2:position2:strand2  
-**BPID:** The BPID (breakpoint ID) is an identifier composed of chr1:position1:strand1_chr2:position2:strand2 and is used as the main identifier throughout the EasyFuse publication.  
-**context_sequence_id:** The context sequence id is a unique identifier (hash) calculated from context sequence (default: 400 upstream and 400 bp downstream from the breakpoint).  
-**FTID:** The FTID is a unique identifier composed of GeneName1_chr1:position1:strand1_transcript1_GeneName2_chr2:position2:strand2_transcript2. All transcript combinations are considered.  
-**Fusion_Gene:** Fusion Gene is a combination of GeneName1_GeneName2.  
-**Breakpoint1:** Breakpoint1 is a combination of chr1:position1:strand1.  
-**Breakpoint2:** Breakpoint2 is a combination of chr2:position2:strand2.  
-**context_sequence_100_id:** The context sequence 100 id is a unique identifier (hash) calculated from 200 bp context sequence (100 upstream and 100 bp downstream from the breakpoint). This shorter sequence is used for primer design.  
+Overview all features/columns annotated by EasyFuse:
+
+- **BPID:** The BPID (breakpoint ID) is an identifier composed of `chr1:position1:strand1_chr2:position2:strand2` and is used as the main identifier of fusion breakpoints throughout the EasyFuse publication. In the BPID, `chr` and `position` are 1-based genomic coordinates (GRCh38 reference) of the two breakpoint positions.
+- **context_sequence_id:** The context sequence id is a unique identifier (hash value) calculated from `context_sequence`, the fusion transcript sequence context (400 upstream and 400 bp downstream from the breakpoint position).  
+- **FTID:** The FTID is a unique identifier composed of `GeneName1_chr1:position1:strand1_transcript1_GeneName2_chr2:position2:strand2_transcript2`. All transcript combinations are considered.
+- **Fusion_Gene:** Fusion Gene is a combination of the gene symbols of the involved genes in the form: `GeneName1_GeneName2`.  
+- **Breakpoint1:** Breakpoint1 is a combination of the first breakpoint position in the form: `chr1:position1:strand1`.  
+- **Breakpoint2:** Breakpoint2 is a combination of the second breakpoint position in the form: `chr2:position2:strand2`.
+- **context_sequence_100_id:** The context sequence 100 id is a unique identifier (hash value) calculated from 200 bp context sequence (100 upstream and 100 bp downstream from the breakpoint). This shorter sequence is used for primer design.  
 **type:** EasyFuse identifies six different types of fusion genes  
 
 | type      | comment                                                                                                                       |
