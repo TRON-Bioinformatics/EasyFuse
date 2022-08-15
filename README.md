@@ -93,7 +93,7 @@ It is recommended to run EasyFuse with Docker or Singularity.
 
 ### EasyFuse output format description
 
-EasyFuse creates three output files per run. The files *Sample_Name*_fusRank_1.csv, *Sample_Name*_fusRank_1.pred.csv and *Sample_Name*_fusRank_1.pred.all.csv for each batchsample in the `FusionSummary` folder. Within the files each line describes a candidate fusion transcript. The file *Sample_Name*_fusRank_1.csv contains all annotated features, while files .pred.csv and .pred.all.csv additionally also contain the prediction propability assigned by the EasyFuse model as well as the assigned prediction class (*positive* or *negative*). The file .pred.all.csv contains information on all considered fusion transcripts, while the file .pred.csv contains only those with a *positive* assigned prediction class. 
+EasyFuse creates three output files per run. The files *Sample_Name*_fusRank_1.csv, *Sample_Name*_fusRank_1.pred.csv and *Sample_Name*_fusRank_1.pred.all.csv for each batch sample in the `FusionSummary` folder. Within the files each line describes a candidate fusion transcript. The file *Sample_Name*_fusRank_1.csv contains all annotated features, while files .pred.csv and .pred.all.csv additionally also contain the prediction probability assigned by the EasyFuse model as well as the assigned prediction class (*positive* or *negative*). The file .pred.all.csv contains information on all considered fusion transcripts, while the file .pred.csv contains only those with a *positive* assigned prediction class. 
 
 **The following table shows an example of the .pred.all.csv file.**  
 
@@ -108,7 +108,7 @@ EasyFuse creates three output files per run. The files *Sample_Name*_fusRank_1.c
 **Overview all features/columns annotated by EasyFuse:**  
 
 **FGID:** The FGID is an identifier composed of GeneName1_chr1:position1:strand1_GeneName2_chr2:position2:strand2  
-**BPID:** The BPID (breakpoint ID) is an identifier composed of chr1:position1:strand1_chr2:position2:strand2 and is used as the main identifier trroughout the EasyFuse publication.  
+**BPID:** The BPID (breakpoint ID) is an identifier composed of chr1:position1:strand1_chr2:position2:strand2 and is used as the main identifier throughout the EasyFuse publication.  
 **context_sequence_id:** The context sequence id is a unique identifier (hash) calculated from context sequence (default: 400 upstream and 400 bp downstream from the breakpoint).  
 **FTID:** The FTID is a unique identifier composed of GeneName1_chr1:position1:strand1_transcript1_GeneName2_chr2:position2:strand2_transcript2. All transcript combinations are considered.  
 **Fusion_Gene:** Fusion Gene is a combination of GeneName1_GeneName2.  
@@ -146,7 +146,7 @@ EasyFuse creates three output files per run. The files *Sample_Name*_fusRank_1.c
 
 | frame     | description                                             |
 |-----------|---------------------------------------------------------|
-| in_frame  | translation of wildtype peptide sequences without frameshift after breakpoint (both coding frames are equal, bp1_frame = bp2_frame != -1) |
+| in_frame  | translation of wild type peptide sequences without frameshift after breakpoint (both coding frames are equal, bp1_frame = bp2_frame != -1) |
 | neo_frame | translation of none-coding region after breakpoint leads to novel peptide sequence (bp1_frame = {0,1,2} and bp2_frame = -1) |
 | no_frame  | no translation (bp1_frame = -1, bp2_frame = {-1,0,1,2}) |
 | out_frame | out of frame translation after breakpoints leads to novel peptide sequence (bp1_frame != bp2_frame != -1) |
@@ -155,9 +155,9 @@ EasyFuse creates three output files per run. The files *Sample_Name*_fusRank_1.c
 **context_sequence_bp:** Location of breakpoint on context sequence (400 for an 800 bp context sequence)  
 **neo_peptide_sequence:** Translated peptide sequence of context sequence starting at 13 aa before breakpoint until 13 aa after breakpoint (for in frame transcripts) or until next stop codon (for out frame and neo frame). This is to consider only the region around the breakpoint that may contain neo-epitopes.
 **neo_peptide_sequence_bp:** Breakpoint on translated peptide sequence.  
-***tool*_detected:** 1 if Breakpoint was detected by respective *tool*, 0 if not (fusioncatcher,starfusion,infusion, mapsplice, or soapfuse)    
+***tool*_detected:** 1 if Breakpoint was detected by respective *tool*, 0 if not (fusioncatcher, starfusion, infusion, mapsplice or soapfuse)    
 ***tool*_junc:** Junction Reads (reads covering breakpoint) detected by *tool*  
-***tool*_span:** Spanning Reads ( read pairs with each partner on one side of breakpoint) detected by *tool*  
+***tool*_span:** Spanning Reads (read pairs with each partner on one side of breakpoint) detected by *tool*  
 **tool_count:** Number of tools detecting fusion gene (1-5)  
 **tool_frac:** Fraction of tools out of 5  
 ***category*_bp_best:** Location of breakpoint on context sequence (400 for an 800 bp context sequence)  
@@ -175,9 +175,9 @@ EasyFuse creates three output files per run. The files *Sample_Name*_fusRank_1.c
 
 | category | comment                     |
 |----------|-----------------------------|
-| ft       | Context_sequence            |
-| wt1      | Fusion trascnript 1 (Wildtype) |
-| wt2      | Fusion trasncript 2 (Wildtype) |
+| ft       | context_sequence of fusion transcript |
+| wt1      | corresponding sequence of fusion partner 1 (wild type 1) |
+| wt2      | corresponding sequence of fusion partner 2 (wild type 2) |
 
 **prediction_prob:** The predicted probability according to the machine learning model that the fusion candidate is a true positive. 
 **prediction_class:** The predicted class (`negative` or `positive`) according to the machine learning model. This classification relies on a user-defined threshold on the `precition_prob` column. 
