@@ -42,7 +42,7 @@ EasyFuse will require three folders:
 * The reference data folder, in this example `/path/to/easyfuse_ref`
 * The output folder, in this example `/path/to/output`
 
-EasyFuse can be started by mapping the input data, references and output folders.
+EasyFuse can be started by mapping the input data, references, and output folders.
 
 ```
 docker run \
@@ -82,7 +82,7 @@ EasyFuse creates three output files per sample in the `FusionSummary` folder:
  - `<Sample_Name>_fusRank_1.pred.csv` 
  - `<Sample_Name>_fusRank_1.pred.all.csv`
  
-Within the files each line describes a candidate fusion transcript. The prefix `<Sample_Name>` is infrared from the input fastq file names. The file `_fusRank_1.csv` contains only annotated features, while files `.pred.csv` and `.pred.all.csv` additionally also contain the prediction probability assigned by the EasyFuse model as well as the assigned prediction class (*positive* or *negative*). The file `.pred.all.csv` contains information on all considered fusion transcripts, while the file `.pred.csv` contains only those with a *positive* assigned prediction class. 
+Within the files, each line describes a candidate fusion transcript. The prefix `<Sample_Name>` is infrared from the input fastq file names. The file `_fusRank_1.csv` contains only annotated features, while the files `.pred.csv` and `.pred.all.csv` contain additionally the prediction probability assigned by the EasyFuse model as well as the assigned prediction class (*positive* or *negative*). The file `.pred.all.csv` contains information on all considered fusion transcripts, while the file `.pred.csv` contains only those with a *positive* assigned prediction class. 
 
 #### Example Output
 
@@ -98,7 +98,7 @@ The following table shows an example of the `.pred.all.csv` file.:
 
 #### Column description
 
-Overview all features/columns annotated by EasyFuse:
+Overview of all features/columns annotated by EasyFuse:
 
 - **BPID:** The BPID (breakpoint ID) is an identifier composed of `chr1:position1:strand1_chr2:position2:strand2` and is used as the main identifier of fusion breakpoints throughout the EasyFuse publication. In the BPID, `chr` and `position` are 1-based genomic coordinates (GRCh38 reference) of the two breakpoint positions.
 - **context_sequence_id:** The context sequence id is a unique identifier (hash value) calculated from `context_sequence`, the fusion transcript sequence context (400 upstream and 400 bp downstream from the breakpoint position).  
@@ -106,70 +106,59 @@ Overview all features/columns annotated by EasyFuse:
 - **Fusion_Gene:** Fusion Gene is a combination of the gene symbols of the involved genes in the form: `GeneName1_GeneName2`.  
 - **Breakpoint1:** Breakpoint1 is a combination of the first breakpoint position in the form: `chr1:position1:strand1`.  
 - **Breakpoint2:** Breakpoint2 is a combination of the second breakpoint position in the form: `chr2:position2:strand2`.
-- **context_sequence_100_id:** The context sequence 100 id is a unique identifier (hash value) calculated from 200 bp context sequence (100 upstream and 100 bp downstream from the breakpoint). This shorter sequence is used for primer design.  
-**type:** EasyFuse identifies six different types of fusion genes  
+- **context_sequence_100_id:** The context sequence 100 id is a unique identifier (hash value) calculated from 200 bp context sequence (100 upstream and 100 bp downstream from the breakpoint).   
+**type:** EasyFuse identifies six different types of fusion genes. The type describes the configuration of the involved genes to each other with respect to location on chromosomes and transcriptional strands:  
+  - `cis_near`:  Genes on the same chromosome, same strand, order of genes matches reading direction, genomic distance < 1Mb (read-through likely)
+  - `cis_far`: Genes on the same chromosome, same strand, order of genes matches reading direction, genomic distance  >= 1Mb 
+  - `cis_trans`:  Genes on the same chromosome, same strand, but the order of genes does not match the reading direction
+  - `cis_inv`:  Genes on the same chromosome but on different strands
+  - `trans`:  Genes on different chromosomes, same strand
+  - `trans_inv`:  Genes on different chromosomes, different strands
 
-| type      | comment                                                                                                                       |
-|-----------|-------------------------------------------------------------------------------------------------------------------------------|
-| cis_near  | Fusion of genes on the same chromosome and strand and order of genes matches reading direction < 1MB apart (read-through likely) |
-| cis_far   | Fusion of genes on the same chromosome and strand and order of genes matches reading direction > 1MB apart |
-| cis_trans | Fusion of genes on the same chromosome and strand but order of genes does not match reading direction |
-| cis_inv   | Fusion of genes on the same chromosome but on different strands |
-| trans     | Fusion of genes with partners on different chromosomes and on the same strand |
-| trans_inv | Fusion of genes on different chromosomes and on different strands |
+- **exon_nr:** Number of exons involved in the fusion transcript  
+- **exon_starts:** Genomic starting positions of involved exons
+- **exon_ends:** Genomic end positions of involved exons  
+- **exon_boundary1:** Exon boundary of the breakpoint in Gene1 
+    - `left_boundary` is 5' in strand orientation
+    - `right_boundary` is 3' in strand orientation
+    - `within` means breakpoint is inside exon)  
+- **exon_boundary2:** Exon boundary of the breakpoint in Gene2 (`left_boundary` is 5' in strand orientation, `right_boundary` is 3' in strand orientation, `within` means breakpoint is inside exon)  
+- **exon_boundary:** describes which of the partner genes (gene 1 + gene 2) has their breakpoint on an exon boundary:
+  -  `both`:  `left_boundary`  + `right_boundary` 
+  - `5prime`: `left_boundary` + `within` 
+  -  `3prime`: `within` + `right_boundary`
+  - `no_match`: `within` + `within`  
 
-**exon_nr:** Number of exons involved in fusion transcript  
-**exon_starts:** Genomic starting positions of involved exons according to Ensembl  
-**exon_ends:** Genomic ending positions of involved exons according to Ensembl  
-**exon_boundary1:** Exon boundary of breakpoint in Gene1 (left boundary is 5' in strand orientation, right boundary is 3' in strand orientation, within means breakpoint is inside exon)  
-**exon_boundary2:** Exon boundary of breakpoint in Gene2 (left boundary is 5' in strand orientation, right boundary is 3' in strand orientation,  within means breakpoint is inside exon)  
-**exon_boundary:** Which of the partner genes has their breakpoint on an exon boundary
-
-| exon_boundary1 | exon_boundary2 | exon_boundary |
-|----------------|----------------|---------------|
-| left_boundary  | right_boundary | both          |
-| left_boundary  | within         | 5prime        |
-| within         | right_boundary | 3prime        |
-| within         | within         | no_match      |
-
-**bp1_frame:** Readingframe of translated peptide at breakpoint for fusion transcript1 (-1 is none-coding region/no frame; 0,1,2 is coding region with indicated offset for reading frame)  
-**bp2_frame:** Readingframe of translated peptide at breakpoint for fusion transcript2 (-1 is none-coding region/no frame; 0,1,2 is coding region with indicated offset for reading frame)  
-**frame:** Type of frame for translation of fusion gene  
-
-| frame     | description                                             |
-|-----------|---------------------------------------------------------|
-| in_frame  | translation of wild type peptide sequences without frameshift after breakpoint (both coding frames are equal, bp1_frame = bp2_frame != -1) |
-| neo_frame | translation of none-coding region after breakpoint leads to novel peptide sequence (bp1_frame = {0,1,2} and bp2_frame = -1) |
-| no_frame  | no translation (bp1_frame = -1, bp2_frame = {-1,0,1,2}) |
-| out_frame | out of frame translation after breakpoints leads to novel peptide sequence (bp1_frame != bp2_frame != -1) |
-
-**context_sequence:** Genomic sequence downstream and upstream from the breakpoint (default 800 bp, shorter if transcript start or end occurs within the region)  
-**context_sequence_bp:** Location of breakpoint on context sequence (400 for an 800 bp context sequence)  
-**neo_peptide_sequence:** Translated peptide sequence of context sequence starting at 13 aa before breakpoint until 13 aa after breakpoint (for in frame transcripts) or until next stop codon (for out frame and neo frame). This is to consider only the region around the breakpoint that may contain neo-epitopes.
-**neo_peptide_sequence_bp:** Breakpoint on translated peptide sequence.  
-***tool*_detected:** 1 if Breakpoint was detected by respective *tool*, 0 if not (fusioncatcher, starfusion, infusion, mapsplice or soapfuse)    
-***tool*_junc:** Junction Reads (reads covering breakpoint) detected by *tool*  
-***tool*_span:** Spanning Reads (read pairs with each partner on one side of breakpoint) detected by *tool*  
-**tool_count:** Number of tools detecting fusion gene (1-5)  
-**tool_frac:** Fraction of tools out of 5  
-***category*_bp_best:** Location of breakpoint on context sequence (400 for an 800 bp context sequence)  
-***category*_a_best:**  Fraction of read counts from 1 million reads that map to either context sequence (ft) or wildtype sequence (wt1 or wt2) 400 left of breakpoint  
-***category*_b_best:**  Fraction of read counts from 1 million reads that map to either context sequence (ft) or wildtype sequence (wt1 or wt2) 400 left of breakpoint  
-***category*_junc_best:** Fraction of read counts from 1 million reads that map to sequence and overlap breakpoint by at least 10 bp  
-***category*_span_best:** Fraction of read pairs from 1 million sequenced read pairs, that map to both sides of breakpoint position  
-***category*_anch_best:** Maximal read anchor size across all junction reads, where the anchor size for a given read is defined as the minimum distance between read start and breakpoint or read end and the breakpoint.  
-***category*_bp_cnt_best:** Location of breakpoint on context sequence (400 for an 800 bp context sequence)  
-***category*_a_cnt_best:** Number of reads, that map to either context sequence (ft) or wildtype sequence (wt1 or wt2) left of breakpoint  
-***category*_b_cnt_best:** Number of reads, that map to either context sequence (ft) or wildtype sequence (wt1 or wt2) 400 right of breakpoint  
-***category*_junc_cnt_best:** Number of reads that map to sequence and overlap breakpoint by at least 10 bp  
-***category*_span_cnt_best:** Number of read pairs, that map to both sides of breakpoint position  
-***category*_anch_cnt_best:** Maximal read anchor size across all junction reads, where the anchor size for a given read is defined as the minimum distance between read start and breakpoint or read end and the breakpoint.  
-
-| category | comment                     |
-|----------|-----------------------------|
-| ft       | context_sequence of fusion transcript |
-| wt1      | corresponding sequence of fusion partner 1 (wild type 1) |
-| wt2      | corresponding sequence of fusion partner 2 (wild type 2) |
-
-**prediction_prob:** The predicted probability according to the machine learning model that the fusion candidate is a true positive. 
-**prediction_class:** The predicted class (`negative` or `positive`) according to the machine learning model. This classification relies on a user-defined threshold on the `precition_prob` column. 
+- **bp1_frame:** Reading frame of translated peptide at breakpoint for fusion transcript1 (-1 is none-coding region/no frame; 0,1,2 is coding region with indicated offset for reading frame)  
+- **bp2_frame:** Reading frame of translated peptide at breakpoint for fusion transcript2 (-1 is none-coding region/no frame; 0,1,2 is coding region with indicated offset for reading frame)  
+- **frame:** Type of frame for translation of fusion gene: 
+  - `in_frame`: translation of wild type peptide sequences without frameshift after breakpoint (both coding frames are equal, `bp1_frame` == `bp2_frame` != `-1`)
+  - `neo_frame`:  translation of none-coding region after breakpoint leads to novel peptide sequence (`bp1_frame` is 0, 1, or 2 and `bp2_frame` is -1) 
+  - `no_frame`: no translation (`bp1_frame` is -1)
+  - `out_frame`: out of frame translation after breakpoints leads to novel peptide sequence (`bp1_frame` != `bp2_frame` != -1)
+- **context_sequence:** The fusion transcript sequence downstream and upstream from the breakpoint (default 800 bp, shorter if transcript start or end occurs within the region)  
+- **context_sequence_bp:** Position of breakpoint in context sequence  
+- **neo_peptide_sequence:** Translated peptide sequence of context sequence starting at 13 aa before breakpoint until 13 aa after breakpoint (for in-frame transcripts) or until next stop codon (for out frame and neo frame). This is to consider only the region around the breakpoint that may contain neo-epitopes.
+- **neo_peptide_sequence_bp:** Breakpoint on translated peptide sequence.  
+- ***toolname*_detected:** 1 if breakpoint was detected by respective tool, 0 if not (*toolname* is one of `fusioncatcher`, `starfusion`, `infusion`, `mapsplice` or `soapfuse`)
+- ***toolname*_junc:** Junction read count (reads covering breakpoint) reported by *toolname*  
+- ***toolname*_span:** Spanning read count (read pairs with each partner on one side of breakpoint) reported by *toolname*  
+- **tool_count:** Number of tools detecting fusion gene breakpoint  
+- **tool_frac:** Fraction of tools out of 5  
+- ***category*_bp_best:** Location of breakpoint on context sequence (400 for an 800 bp context sequence). Whereby *category* describes (here and in the following columns) the reference sequence to which the reads were mapped and quantified: 
+  - `ft`: context_sequence of fusion transcript 
+  - `wt1`: corresponding sequence of fusion partner 1 (wild type 1)
+  - `wt2`: corresponding sequence of fusion partner 2 (wild type 2)
+- ***category*_a_best:**  Fraction of read counts from 1 million reads that map to either context sequence (ft) or wildtype sequence (wt1 or wt2) 400 left of breakpoint  
+- ***category*_b_best:**  Fraction of read counts from 1 million reads that map to either context sequence (ft) or wildtype sequence (wt1 or wt2) 400 left of breakpoint  
+- ***category*_junc_best:** Fraction of read counts from 1 million reads that map to sequence and overlap breakpoint by at least 10 bp  
+- ***category*_span_best:** Fraction of read pairs from 1 million sequenced read pairs, that map to both sides of breakpoint position  
+- ***category*_anch_best:** Maximal read anchor size across all junction reads, where the anchor size for a given read is defined as the minimum distance between read start and breakpoint or read end and the breakpoint.  
+- ***category*_bp_cnt_best:** Location of breakpoint on context sequence (400 for an 800 bp context sequence)  
+- ***category*_a_cnt_best:** Number of reads, that map to either context sequence (ft) or wildtype sequence (wt1 or wt2) left of breakpoint  
+- ***category*_b_cnt_best:** Number of reads, that map to either context sequence (ft) or wildtype sequence (wt1 or wt2) 400 right of breakpoint  
+- ***category*_junc_cnt_best:** Number of reads that map to sequence and overlap breakpoint by at least 10 bp  
+- ***category*_span_cnt_best:** Number of read pairs, that map to both sides of breakpoint position  
+- ***category*_anch_cnt_best:** Maximal read anchor size across all junction reads, where the anchor size for a given read is defined as the minimum distance between read start and breakpoint or read end and the breakpoint.  
+- **prediction_prob:** The predicted probability according to the machine learning model that the fusion candidate is a true positive. 
+- **prediction_class:** The predicted class (`negative` or `positive`) according to the machine learning model. This classification relies on a user-defined threshold (default 0.5) applied to the `precition_prob` column. 
