@@ -82,7 +82,7 @@ EasyFuse creates three output files per sample in the `FusionSummary` folder:
  - `<Sample_Name>_fusRank_1.pred.csv` 
  - `<Sample_Name>_fusRank_1.pred.all.csv`
  
-Within the files, each line describes a candidate fusion transcript. The prefix `<Sample_Name>` is infrared from the input fastq file names. The file `_fusRank_1.csv` contains only annotated features, while the files `.pred.csv` and `.pred.all.csv` contain additionally the prediction probability assigned by the EasyFuse model as well as the assigned prediction class (*positive* or *negative*). The file `.pred.all.csv` contains information on all considered fusion transcripts, while the file `.pred.csv` contains only those with a *positive* assigned prediction class. 
+Within the files, each line describes a candidate fusion transcript. The prefix `<Sample_Name>` is inferred from the input fastq file names. The file `_fusRank_1.csv` contains only annotated features, while the files `.pred.csv` and `.pred.all.csv` contain additionally the prediction probability assigned by the EasyFuse model as well as the assigned prediction class (*positive* or *negative*). The file `.pred.all.csv` contains information on all considered fusion transcripts, while the file `.pred.csv` contains only those with a *positive* assigned prediction class. 
 
 #### Example Output
 
@@ -129,7 +129,7 @@ Overview of all features/columns annotated by EasyFuse:
   -  `3prime`: `within` + `right_boundary`
   - `no_match`: `within` + `within`  
 
-- **bp1_frame:** Reading frame of translated peptide at breakpoint for fusion transcript1 (-1 is none-coding region/no frame; 0,1,2 is coding region with indicated offset for reading frame)  
+- **bp1_frame:** Reading frame of translated peptide at breakpoint for fusion transcript1 (-1 is non-coding region/no frame; 0,1,2 is coding region with indicated offset for reading frame)  
 - **bp2_frame:** Reading frame of translated peptide at breakpoint for fusion transcript2 (-1 is none-coding region/no frame; 0,1,2 is coding region with indicated offset for reading frame)  
 - **frame:** Type of frame for translation of fusion gene: 
   - `in_frame`: translation of wild type peptide sequences without frameshift after breakpoint (both coding frames are equal, `bp1_frame` == `bp2_frame` != `-1`)
