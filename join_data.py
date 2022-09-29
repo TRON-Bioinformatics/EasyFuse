@@ -78,7 +78,7 @@ class DataJoining(object):
         """Returns the CPM of a read count based on the number of original input reads"""
         if self.input_read_count == 0:
             return count
-        return count / self.input_read_count * 1000000
+        return count / float(self.input_read_count) * 1000000.0
 
     def create_joined_table(self, sample_id, fusion_tools, requant_mode):
         """Join the three data tables context_seq, detected_fusions and requantification"""
