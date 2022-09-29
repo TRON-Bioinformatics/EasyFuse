@@ -549,7 +549,7 @@ class FusionAnnotation(object):
             bp_in_fusion_nt_ex = len(result_list[header_dict["ft1_exon_transcripts"]]) # the fusion starts in the fusion transcript with the end of the first part
             bp_in_wt1_nt_ex = bp_in_fusion_nt_ex # the breakpoint in wt1 must be identical to the breakpoint in the fusion
             bp_in_wt2_nt_ex = len(result_list[header_dict["wt2_exon_transcripts"]]) - len(result_list[header_dict["ft2_exon_transcripts"]]) # the breakpoint in wt2 is at the position where the ft2 transcripts start
-            bp_in_fusion_aa = ((bp_in_fusion_nt - translation_shift1)* 10 // 3) / 10 # the respective bp pos in the aa seq, whereas x.0 / x.3 / x.6 indicate that the breakpoint is at the beginning / after first base / after second base of the underlying codon
+            bp_in_fusion_aa = ((bp_in_fusion_nt - translation_shift1)* 10.0 // 3) / 10.0 # the respective bp pos in the aa seq, whereas x.0 / x.3 / x.6 indicate that the breakpoint is at the beginning / after first base / after second base of the underlying codon
 
             # translate and trim the fusion sequence around the breakpoint
             result_list[header_dict["fusion_peptide"]] = result_list[header_dict["fusion_transcript"]][translation_shift1:].translate(table=1, to_stop=True)
