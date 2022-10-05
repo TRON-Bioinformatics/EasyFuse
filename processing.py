@@ -8,8 +8,8 @@ start data collection
 during all steps, perform slurm scheduling and process monitoring
 
 @author: Tron (PASO), BNT (URLA)
-@version: 20190118
 """
+
 
 from argparse import ArgumentParser
 from configparser import ConfigParser
@@ -21,11 +21,11 @@ import sys
 import time
 
 
+from _version import __version__
 import misc.queueing as Queueing
 from misc.samples import SamplesDB
 from misc.logger import Logger
 import misc.io_methods as IOMethods
-from misc.versioncontrol import VersCont
 
 # pylint: disable=line-too-long
 #         yes they are partially, but I do not consider this to be relevant here
@@ -74,11 +74,8 @@ class Processing(object):
     # Fastq pairs (single end input is currently not supported) are then send to "execute_pipeline"
     def run(self, tool_num_cutoff):
         """General parameter setting, identification of fastq files and initiation of processing"""
-        self.logger.info("Pipeline Version: {}".format(self.cfg["general"]["version"]))
-        # Checking dependencies
-        #VersCont(os.path.join(cfg.module_dir, "dependency_versions.txt")).get_and_print_tool_versions()
-        #self.cfg.run_self_test()
-        # urla: organism is currently not used for anything, however, this might change; is mouse processing relevant at some point?
+        self.logger.info("Pipeline Version: {}".format(__version__))
+
         ref_genome = self.cfg["general"]["ref_genome_build"]
         ref_trans = self.cfg["general"]["ref_trans_version"]
 
@@ -98,7 +95,6 @@ class Processing(object):
         
         # summarize all data if selected
         if "Summary" in self.cfg["general"]["tools"].split(","):
-            # urla - note: would be happy to get the dependencies with a stacked LC, but is atm to complicated for me ^^
             dependency = []
             for sample in sample_list:
                 dependency.extend(Queueing.get_jobs_by_name("Fetchdata-{}".format(sample[0]), self.cfg["general"]["queueing_system"]))
@@ -108,7 +104,6 @@ class Processing(object):
             cmd_summarize = "python {0} --input {1}{2} -c {3}".format(os.path.join(self.cfg["general"]["module_dir"], "summarize_data.py"), self.working_dir, modelling_string, self.cfg_file)
             self.logger.debug("Submitting job: CMD - {0}; PATH - {1}; DEPS - {2}".format(cmd_summarize, self.working_dir, dependency))
             resources_summary = self.cfg["resources"]["summary"].split(",")
-            #print(resources_summary)
             cpu = resources_summary[0]
             mem = resources_summary[1]
             self.submit_job("-".join([self.cfg["general"]["pipeline_name"], "Summary", str(int(round(time.time())))]), cmd_summarize, cpu, mem, self.working_dir, dependency, self.cfg["general"]["receiver"])
@@ -363,13 +358,8 @@ def main():
     parser.add_argument('-c', '--config-file', dest='config_file', help='Specify alternative config file to use for your analysis')
     parser.add_argument('--tool_support', dest='tool_support', help='The number of tools which are required to support a fusion event.', default="1")
     parser.add_argument('-p', '--jobname_suffix', dest='jobname_suffix', help='Specify a jobname suffix for running jobs on a queueing system', default='')
-    parser.add_argument('--version', dest='version', help='Get version info')
+    parser.add_argument('-V', '--version', dest='version', action='version', version="%(prog)s {version}".format(version=__version__), help='Get version info')
     args = parser.parse_args()
-
-    # if version is request, print it and exit
-    if args.version:
-        print(self.cfg["general"]["version"])
-        sys.exit(0)
 
     jobname_suffix = ""
     if args.jobname_suffix:
