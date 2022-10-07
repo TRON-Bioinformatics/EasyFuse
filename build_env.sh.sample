@@ -1,16 +1,7 @@
 #!/bin/bash
 
-PERL5LIB=$PERL5LIB:/path/to/SOAPfuse/1.27/source/bin/perl_module; export PERL5LIB
-PYTHONPATH=/path/to/Anaconda/2/2018/lib/python2.7/site-packages/
-export LD_LIBRARY_PATH=/path/to/Atlas/lib:$LD_LIBRARY_PATH
-export PATH=$PATH:/path/to/ncbi-blast/2.8.1+/bin/
-export R_LIBS=/path/to/R/R-3.5.1/lib64/R/library
-export R_LIBS_USER=/path/to/R/R-3.5.1/lib64/R/library
+# Here you can add all commands which should be executed for each individual slurm job
+# e.g. module load R/3.6.0
 
-module purge
-
-module load anaconda/2/2018
-module load bioinf/star/2.6.1d
-module load bioinf/samtools/1.9
-module load R/3.5.1
-module load java/11.0.1
+PYTHONPATH=/path/to/your/python/packages/
+export PATH=$PATH:/path/to/be/added/
