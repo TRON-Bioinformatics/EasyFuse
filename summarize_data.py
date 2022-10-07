@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """
 @author: BNT (URLA), TRON (PASO)
@@ -93,7 +93,7 @@ class FusionSummary(object):
         count_processed = 0
 
         for sample in sid_list:
-            #                    try:
+
             if "Fetchdata" in self.samples.get_tool_list_from_state(sample):
                 count_processed += 1
                 print("Processing sample {0} (dataset {1}/{2})".format(sample, count_processed, len(sid_list)))
@@ -106,10 +106,7 @@ class FusionSummary(object):
                 average_time = (average_time * (count_processed-1) + time_taken) / count_processed
                 estimated_end = average_time * (count_valid_sample - count_processed)
                 print("done. Processing time: {0:.2f}s; Average processing time: {1:.2f}s; Estimated end of processing in {2:.2f}s)\n".format(time_taken, average_time, estimated_end))
-                #except:
-                #    print("Sample {} could not be processed! Please look into detail".format(sample))
 
-                #colnames_filtering = ["all fusions", "in/out/neo frame", "both on exon boundary", "with neo peptide", "not black-listed", "by 2-tools", "all together"]
 
     @staticmethod
     def add_to_fus_dict(input_set, fusion_dict):

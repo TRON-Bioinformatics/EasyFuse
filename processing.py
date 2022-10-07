@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """
 Read fastq files
@@ -26,9 +26,6 @@ import misc.queueing as Queueing
 from misc.samples import SamplesDB
 from misc.logger import Logger
 import misc.io_methods as IOMethods
-
-# pylint: disable=line-too-long
-#         yes they are partially, but I do not consider this to be relevant here
 
 
 class Processing(object):
@@ -212,7 +209,7 @@ class Processing(object):
         cmd_extr_fastq1 = "gunzip --keep {0}".format(fq1)
         cmd_extr_fastq2 = "gunzip --keep {0}".format(fq2)
         # Added python interpreter to circumvent external hardcoded shell script
-        cmd_mapsplice = "{0} --chromosome-dir {1} -x {2} -1 {3} -2 {4} --threads waiting_for_cpu_number --output {5} --qual-scale phred33 --bam --seglen 20 --min-map-len 40 --gene-gtf {6} --fusion".format(cmds["mapsplice"], genome_chrs_path, bowtie_index_path, fq1[:-3], fq2[:-3], mapsplice_path, genes_gtf_path)
+        cmd_mapsplice = "python2 {0} --chromosome-dir {1} -x {2} -1 {3} -2 {4} --threads waiting_for_cpu_number --output {5} --qual-scale phred33 --bam --seglen 20 --min-map-len 40 --gene-gtf {6} --fusion".format(cmds["mapsplice"], genome_chrs_path, bowtie_index_path, fq1[:-3], fq2[:-3], mapsplice_path, genes_gtf_path)
         # (4) Fusioncatcher
         cmd_fusioncatcher = "{0} --input {1} --data {2} --output {3} -p waiting_for_cpu_number".format(cmds["fusioncatcher"], ",".join([fq1, fq2]), fusioncatcher_index_path, fusioncatcher_path)
         # (5) Starfusion

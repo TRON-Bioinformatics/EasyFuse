@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """
 Collect fusion prediction results,
@@ -24,10 +24,9 @@ import misc.queueing as Queueing
 from misc.samples import SamplesDB
 from misc.logger import Logger
 import misc.io_methods as IOMethods
-#import config as cfg
 
-# pylint: disable=line-too-long
-#         yes they are partially, but I do not consider this to be relevant here
+
+
 class Fetching(object):
     """Run, monitor and schedule fastq processing for fusion gene prediction"""
     def __init__(self, scratch_path, fetchdata_path, sample_id, cfg_file):
@@ -35,7 +34,6 @@ class Fetching(object):
         self.scratch_path = scratch_path
         self.fetchdata_path = fetchdata_path
         self.sample_id = sample_id
-        #self.tools = Samples(os.path.join(scratch_path, os.path.pardir, os.path.pardir, "samples.csv")).get_tool_list_from_state(self.sample_id)
         self.samples = SamplesDB(os.path.join(scratch_path, os.path.pardir, "samples.db"))
         self.logger = Logger(os.path.join(self.fetchdata_path, "fetchdata.log"))
 
@@ -58,13 +56,13 @@ class Fetching(object):
                 self.cfg = json.load(config_file)
 
 
-    def get_pseudo_genome_adjustments_for_star(self, num_len_file): # wrong pylint error due to long name => pylint: disable=C0103
+    def get_pseudo_genome_adjustments_for_star(self, num_len_file):
         """Return the genome size of an associated fasta file calculated by urla_GetFusionSequence_latest.R"""
         seq_num = 0
         genome_size = 0
         with open(num_len_file) as lfile:
-            seq_num = int(lfile.next())
-            genome_size = int(lfile.next())
+            seq_num = int(lfile.readline().rstrip())
+            genome_size = int(lfile.readline().rstrip())
         star_genome_chr_bin_n_bits = min(18, int(math.log(genome_size / seq_num, 2)))
         star_genome_sa_index_n_bases = min(14, int(math.log(genome_size, 2) / 2 - 1)) - 2
         self.logger.debug("Custom genome sequence number: {0} => {1} will be used as bin size parameter for genome storage".format(seq_num, star_genome_chr_bin_n_bits))

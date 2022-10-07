@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """
 Changes the coordinates from one genome annotation to another (liftover) with crossmap
