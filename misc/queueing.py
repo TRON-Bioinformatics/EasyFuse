@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """
 Simple method collection for:
@@ -78,7 +78,7 @@ def _submit_nonqueue(job_name, cmd, module_file=""):
 #    if module_file:
 #        cmd = " && ".join(["source " + module_file, " ".join(cmd)]).split(" ")
     print("Running {}".format(job_name))
-    print("CMD: {}".format(cmd))
+    print("CMD: {}".format(" ".join(cmd)))
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=False)
     (stdoutdata, stderrdata) = p.communicate()
     print(stdoutdata)

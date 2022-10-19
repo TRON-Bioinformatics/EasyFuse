@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """
 Annotate predicted fusion genes. This involves:
@@ -10,20 +10,20 @@ Annotate predicted fusion genes. This involves:
     6) Collect information on the kind of fusion which might be relevant for downstream
        selection processes
     7) Filter likely artifacts based on the quality of the annotated transcripts
-@author: BNT (URLA)
-@version: 20190704
+@author: TRON (PASO), BNT (URLA)
+@version: 221006
 """
 
 from argparse import ArgumentParser
 import gffutils
+import sys
 import xxhash
-from Bio import SeqIO # pysam is not available for windows (where I run pylint) => pylint: disable=E0401
-from Bio.Seq import Seq # pylint: disable=E0401
-from Bio.Alphabet import generic_dna # pylint: disable=E0401
-from Bio.SeqRecord import SeqRecord # pylint: disable=E0401
+from Bio import SeqIO
+from Bio.Seq import Seq
+from Bio.Alphabet import generic_dna
+from Bio.SeqRecord import SeqRecord
 
-# pylint: disable=line-too-long
-#         yes they are partially, but I do not consider this to be relevant here
+
 class FusionAnnotation(object):
     """ Annotation of predicted fusion genes soley based on the breakpoint information """
     def __init__(self, db_file, bp_file, tsl_file):
@@ -37,7 +37,6 @@ class FusionAnnotation(object):
     @staticmethod
     def load_featuredb(db_in_file):
         """ Perform a simple check to confirm that the database input is a database """
-        # urla - note: I would like to have a better check implemented before trying to load the db but currently don't know how this should look like
         if not db_in_file.endswith("db"):
             print("Not a valid database file: {}".format(db_in_file))
         # return the db
@@ -50,8 +49,11 @@ class FusionAnnotation(object):
         with open(bp_in_file, "r") as bpin:
             next(bpin) # skip header
             for line in bpin:
-                # for the annotaion, we just need the fgid and the breakpoints
-                bpid, _, bp1, bp2, _, _, _, _ = line.split(";")
+                elements = line.rstrip().split(";")
+                bpid = elements[0]
+                bp1 = elements[2]
+                bp2 = elements[3]
+                # This could also be implemented as a set as BPID already contains both BPs
                 if not bpid in bp_dict:
                     bp_dict[bpid] = (bp1, bp2)
         return bp_dict
@@ -63,19 +65,24 @@ class FusionAnnotation(object):
         with open(tsl_in_file, "r") as tslin:
             next(tslin) # skip header
             for line in tslin:
-                # for the annotation, we just need the transcript id and the tsl
-                trans, _, _, tsl = line.strip().split("\t")
-                if not trans in tsl_dict:
-                    tsl_dict[trans] = tsl
+                elements = line.rstrip().split("\t")
+                trans_id = elements[0]
+                tsl = elements[3]
+                if not trans_id in tsl_dict:
+                    tsl_dict[trans_id] = tsl
         return tsl_dict
 
     def get_tsl(self, trans_id):
         """ Get the transcript support level (tsl) from the pre-loaded dict """
-        # urla - note: the tsl is not available for grch37 data (at least not v87/90) and I'm therefore using the tsl info from grch38 v90
-        #              With the newer data, however, it is possible that some transcript ids are not in the database (because the respective
-        #              transcript annotations were deleted or modified significantly).
-        # urla - note: Although the "correct" tsl for a missing trans_id would be "NA", I'm using "6" in order to allow differentiation from
-        #              from existing, "normal" tsl's which range from 1-5 and are NA for transcripts of unknown support
+        # the tsl is not available for grch37 data (at least not v87/90) 
+        # and I'm therefore using the tsl info from grch38 v90
+        # With the newer data, however, it is possible that some transcript ids 
+        # are not in the database (because the respective
+        # transcript annotations were deleted or modified significantly).
+        # Although the "correct" tsl for a missing trans_id would be "NA", 
+        # I'm using "6" in order to allow differentiation from
+        # existing, "normal" tsl's which range from 1-5 and are NA 
+        # for transcripts of unknown support
         if not trans_id in self.tsl_dict:
             return "6"
         return self.tsl_dict[trans_id]
@@ -87,9 +94,12 @@ class FusionAnnotation(object):
         # -	"trans" (bp of fusion partners on different chromosomes, but with same strand)
         # -	"trans_inv" (bp of fusion partners on different chromosomes and with different strand)
         # -	"cis_inv" (bp of fusion partners on same chromosome, but with different strand)
-        # -	"cis_trans" (bp of fusion partners on same chromosome and with same strand, but 2nd fusion partner is before (strandwise) 1st fusion partner)
-        # -	"cis_far" (bp of fusion partners on same chromosome, same strand, 1st before 2nd, but more than 1Mb apart from each other (genomic distance))
-        # -	"cis_near" (bp of fusion partners on same chromosome, same strand, 1st before 2nd and closer than 1Mb apart from each other (genomic distance))
+        # -	"cis_trans" (bp of fusion partners on same chromosome and with same strand, 
+        #       but 2nd fusion partner is before (strandwise) 1st fusion partner)
+        # -	"cis_far" (bp of fusion partners on same chromosome, same strand, 
+        #       1st before 2nd, but more than 1Mb apart from each other (genomic distance))
+        # -	"cis_near" (bp of fusion partners on same chromosome, same strand, 
+        #       1st before 2nd and closer than 1Mb apart from each other (genomic distance))
         if bp1_chr == bp2_chr:
             if bp1_strand == bp2_strand:
                 if bp1_strand == "+":
@@ -142,7 +152,7 @@ class FusionAnnotation(object):
     @staticmethod
     def get_boundary2(boundary1, boundary2, strand1, strand2):
         """ Check whether boundaries of both fusion partners are in the correct orientation """
-        # urla - note: "both" is returned to be compatible with the existing pipeline although the name is not very meaningful here
+        # "both" is returned to be compatible with the existing pipeline although the name is not very meaningful here
         if strand1 == "+":
             if strand2 == "+":
                 if boundary1 == "right_boundary" and boundary2 == "left_boundary":
@@ -254,18 +264,14 @@ class FusionAnnotation(object):
             if strand == "+":
                 if bp_pos == cds_pos[0]:
                     frame_at_bp = cds_frame
-#                    break
                 elif cds_pos[0] < bp_pos <= cds_pos[1]:
                     frame_at_bp = tmp_frame_idx[(bp_pos - (cds_pos[0] - 1)) % 3]
-#                    break
             # on neg strand
             else:
                 if bp_pos == cds_pos[1]:
                     frame_at_bp = cds_frame
-#                    break
                 elif cds_pos[0] <= bp_pos < cds_pos[1]:
                     frame_at_bp = tmp_frame_idx[(cds_pos[1] - (bp_pos - 1)) % 3]
-#                    break
         # get the starting frame of the cds
         if not len(pos_frame_list) == 0:
             if strand == "+":
@@ -371,7 +377,7 @@ class FusionAnnotation(object):
         results_lists = []
 
         # get features overlapping with the bp from the db
-        for bpid in self.bp_dict:
+        for bpid in sorted(self.bp_dict):
             print("Annotating \"{}\"...".format(bpid))
             # split breakpoint info
             bp1 = self.bp_dict[bpid][0]
@@ -478,10 +484,12 @@ class FusionAnnotation(object):
         # urla note: the max(..) check in the slicing is probably superfluous as CDS annotations should not start at chromosome position 0
         #            (which would become -1 in @get_frame()). Nevertheless, negative values would completely mess up the slicing...
         #            An additinal check at the end is not required as slicing stops anyway at the end of sequence
-        for rec in SeqIO.parse(genome_fasta, "fasta"):
-            if rec.id in self.cds_seq_dict:
-                print("Grepping candidate regions from chromosome {}".format(rec.id))
-                self.cds_seq_dict[rec.id][1] = map(lambda x: rec.seq[max(0, x[0]-1):x[1]], self.cds_seq_dict[rec.id][0])
+        for record in SeqIO.parse(genome_fasta, "fasta"):
+            if record.id in self.cds_seq_dict:
+                print("Grepping candidate regions from chromosome {}".format(record.id))
+
+                self.cds_seq_dict[record.id][1] = [record.seq[max(0, val[0]-1):val[1]] for val in self.cds_seq_dict[record.id][0]]
+                
 
         # based on the gathered information, create and add sequences to the table
         # urla note: we could have used a pandas df at create functions to apply on the columns to do the following,
@@ -492,14 +500,21 @@ class FusionAnnotation(object):
         # as this is 100% redundant information, we will skip such records. In order to guarantee that this is working as intended,
         # we introduce the ftid plus which is the ftid plus appended seq hash
         ftid_plus_set = set()
+        tmp_dict = None
         for result_list in results_lists:
             # create a tempory dict with the cds_pos tuple as keys and the respective genomic sequence as value
             # the dict is restricted to the chromosome of the fusion partner and only updated if the chromosome changes
+
             if not last_chr == result_list[header_dict["bp1_chr"]]:
                 tmp_dict = dict(zip(self.cds_seq_dict[result_list[header_dict["bp1_chr"]]][0], self.cds_seq_dict[result_list[header_dict["bp1_chr"]]][1]))
                 last_chr = result_list[header_dict["bp1_chr"]]
             # add sequences as gffutils Seq objects to the table
-            result_list[header_dict["wt1_exon_seqs"]] = [tmp_dict[feature] for feature in result_list[header_dict["wt1_exon_pos"]]]
+
+            result_list[header_dict["wt1_exon_seqs"]] = []
+            for feature in result_list[header_dict["wt1_exon_pos"]]:
+
+                result_list[header_dict["wt1_exon_seqs"]].append(tmp_dict[feature])
+            #result_list[header_dict["wt1_exon_seqs"]] = [tmp_dict[feature] for feature in result_list[header_dict["wt1_exon_pos"]]]
             result_list[header_dict["ft1_exon_seqs"]] = [tmp_dict[feature] for feature in result_list[header_dict["ft1_exon_pos"]]]
             result_list[header_dict["wt1_cds_seqs"]] = [tmp_dict[feature] for feature in result_list[header_dict["wt1_cds_pos"]]]
             result_list[header_dict["ft1_cds_seqs"]] = [tmp_dict[feature] for feature in result_list[header_dict["ft1_cds_pos"]]]
@@ -545,11 +560,16 @@ class FusionAnnotation(object):
             result_list[header_dict["wt2_peptide"]] = self.get_stranded_seq(result_list[header_dict["wt2_cds_transcripts"]], result_list[header_dict["bp2_strand"]])[translation_shift2:].translate(table=trans_table)
 
             # bp pos in the fusion
-            bp_in_fusion_nt = len(result_list[header_dict["ft1_cds_transcripts"]]) # the fusion starts in the fusion transcript with the end of the first part
-            bp_in_fusion_nt_ex = len(result_list[header_dict["ft1_exon_transcripts"]]) # the fusion starts in the fusion transcript with the end of the first part
-            bp_in_wt1_nt_ex = bp_in_fusion_nt_ex # the breakpoint in wt1 must be identical to the breakpoint in the fusion
-            bp_in_wt2_nt_ex = len(result_list[header_dict["wt2_exon_transcripts"]]) - len(result_list[header_dict["ft2_exon_transcripts"]]) # the breakpoint in wt2 is at the position where the ft2 transcripts start
-            bp_in_fusion_aa = ((bp_in_fusion_nt - translation_shift1)* 10 // 3) / 10 # the respective bp pos in the aa seq, whereas x.0 / x.3 / x.6 indicate that the breakpoint is at the beginning / after first base / after second base of the underlying codon
+            # the fusion starts in the fusion transcript with the end of the first part
+            bp_in_fusion_nt = len(result_list[header_dict["ft1_cds_transcripts"]])
+            # the fusion starts in the fusion transcript with the end of the first part
+            bp_in_fusion_nt_ex = len(result_list[header_dict["ft1_exon_transcripts"]])
+            # the breakpoint in wt1 must be identical to the breakpoint in the fusion
+            bp_in_wt1_nt_ex = bp_in_fusion_nt_ex
+            # the breakpoint in wt2 is at the position where the ft2 transcripts start
+            bp_in_wt2_nt_ex = len(result_list[header_dict["wt2_exon_transcripts"]]) - len(result_list[header_dict["ft2_exon_transcripts"]])
+            # the respective bp pos in the aa seq, whereas x.0 / x.3 / x.6 indicate that the breakpoint is at the beginning / after first base / after second base of the underlying codon
+            bp_in_fusion_aa = ((bp_in_fusion_nt - translation_shift1) * 10.0 // 3) / 10.0
 
             # translate and trim the fusion sequence around the breakpoint
             result_list[header_dict["fusion_peptide"]] = result_list[header_dict["fusion_transcript"]][translation_shift1:].translate(table=1, to_stop=True)
@@ -562,10 +582,11 @@ class FusionAnnotation(object):
             result_list[header_dict["context_sequence_wt2_bp"]] = min(context_seq_len, bp_in_wt2_nt_ex)
 
             result_list[header_dict["neo_peptide_sequence"]] = result_list[header_dict["fusion_peptide"]][max(0, int(bp_in_fusion_aa) - 13):]
+
             if (int(bp_in_fusion_aa) - 13) < 0:
-                result_list[header_dict["neo_peptide_sequence_bp"]] = bp_in_fusion_aa
+                result_list[header_dict["neo_peptide_sequence_bp"]] = round(bp_in_fusion_aa, 1)
             else:
-                result_list[header_dict["neo_peptide_sequence_bp"]] = bp_in_fusion_aa - (int(bp_in_fusion_aa) - 13)
+                result_list[header_dict["neo_peptide_sequence_bp"]] = round(bp_in_fusion_aa - (int(bp_in_fusion_aa) - 13), 1)
             if result_list[header_dict["frame"]] == "in_frame":
                 result_list[header_dict["neo_peptide_sequence"]] = result_list[header_dict["neo_peptide_sequence"]][:(int(result_list[header_dict["neo_peptide_sequence_bp"]]) + 13)]
 

@@ -1,12 +1,12 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """
 Combining of all relevant infos into a final table
 Calculations of additional metrics
 Filtering of the final data table
 
-@author: BNT (URLA)
-@version: 20190118
+@author: TRON (PASO), BNT (URLA)
+@version: 20221005
 """
 
 from configparser import ConfigParser
@@ -16,8 +16,8 @@ import sys
 import pandas as pd
 import misc.queueing as Queueing
 
-# pylint: disable=line-too-long
-#         yes they are partially, but I do not consider this to be relevant here
+
+
 class DataJoining(object):
     """Select alignments belonging to putative fusions from an s/bam file"""
     def __init__(self, input_dir, id1, id2, output, model_predictions, cfg_file):
@@ -78,7 +78,7 @@ class DataJoining(object):
         """Returns the CPM of a read count based on the number of original input reads"""
         if self.input_read_count == 0:
             return count
-        return count / self.input_read_count * 1000000
+        return count / float(self.input_read_count) * 1000000.0
 
     def create_joined_table(self, sample_id, fusion_tools, requant_mode):
         """Join the three data tables context_seq, detected_fusions and requantification"""

@@ -1,21 +1,19 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """
 Junction/Spanning read pair counting
 
-@author: BNT (URLA)
-@version: 20190118
+@author: TRON (PASO), BNT (URLA)
+@version: 20221005
 """
 
-from __future__ import print_function, division
+
 import os.path
 from argparse import ArgumentParser
-#from urla_logger_latest import Logger
-import pysam # pysam is not available for windows (where I run pylint) => pylint: disable=E0401
+
+import pysam
 
 
-# pylint: disable=line-too-long
-#         yes they are partially, but I do not consider this to be relevant here
 class Requantification(object):
     """Select alignments belonging to putative fusions from an s/bam file"""
     def __init__(self, bam, output, bp_distance_threshold):
@@ -24,7 +22,6 @@ class Requantification(object):
         self.output = output
         self.bp_distance_threshold = int(bp_distance_threshold)
         self.fusion_seq_dict = {}
-        #self.logger = Logger("{}.fusionReadFilterLog".format(output))
         self.input_read_count = 0
 
     def quantify_read_groups(self, read_buffer, reference_base):
@@ -94,7 +91,7 @@ class Requantification(object):
         """Returns the CPM of a read count based on the number of original input reads"""
         if self.input_read_count == 0:
             return count
-        return count / self.input_read_count * 1000000
+        return count / float(self.input_read_count) * 1000000.0
 
     def header_to_dict(self):
         """Convert bam header into a dict with keys = SN fields and values = list of breakpoint + junction/spanning counter"""
@@ -167,14 +164,14 @@ class Requantification(object):
 
         # process the last read_buffer
         self.quantify_read_groups(read_buffer, last_reference)
-        print("All done! Reads did not map to ~{}% of the reference input".format(100 - (count_processed_refs / (len(self.fusion_seq_dict) / 100))))
+        print("All done! Reads did not map to ~{}% of the reference input".format(100.0 - (float(count_processed_refs) / (len(self.fusion_seq_dict) / 100.0))))
         # close reading/writing stream
         self.in_bam.close()
         # write data to file. Change out_file_sep to ";" to create a csv file
 
         # get input read count
         with open(os.path.join(os.path.dirname(self.output), "Star_org_input_reads.txt"), "r") as rfile:
-            self.input_read_count = int(rfile.next())
+            self.input_read_count = int(rfile.readline().rstrip())
 
         out_file_sep = ";"
         header_string = out_file_sep.join(
@@ -197,29 +194,7 @@ class Requantification(object):
                 self.fusion_seq_dict[key] = [read_count if i in no_norm else self.normalize_counts_cpm(read_count) for i, read_count in enumerate(self.fusion_seq_dict[key])]
                 #self.fusion_seq_dict[key] = map(self.normalize_counts_cpm, self.fusion_seq_dict[key])
                 out_norm.write("{}\n".format(out_file_sep.join(map(str, self.fusion_seq_dict[key]))))
-        # write normalized counts
-#        with
-#            out_file2.write("{}\n".format(header_string))
-#            for key in self.fusion_seq_dict:
-                # write only those putative fusions, where not all counts are 0
-                #if sum(self.fusion_seq_dict[key][1:]) > 0:
-                #self.fusion_seq_dict[key].insert(0, key.rsplit("_", 2)[0])
-#                self.fusion_seq_dict[key] = map(self.normalize_counts_cpm, self.fusion_seq_dict[key])
-#                self.fusion_seq_dict[key].insert(0, key)
-#                out_file.write("{}\n".format(out_file_sep.join(map(str, self.fusion_seq_dict[key]))))
 
-#        out_file_sep = ";"
-#        with open(self.output, "w") as out_file:
-#            out_file.write(out_file_sep.join(["ftid_plus", "Type", "Reads_Gene_A", "Reads_Gene_B", "Junction_Reads", "Spanning_Pairs", "Longest_Anchor"]) + "\n")
-#            for key in self.fusion_seq_dict:
-#                # write only those putative fusions, where not all counts are 0
-#                #if sum(self.fusion_seq_dict[key][1:]) > 0:
-#                #ABCA7_19:1059141:+_ENST00000532194_DNHD1_11:6546666:+_ENST00000533649_9dd39c73a904776e_100_ft
-#                ftid_p = key.rsplit("_", 2)[0]
-#                (_, junc_ft, span_ft, anch_ft, junc_wt1, span_wt1, anch_wt1, junc_wt2, span_wt2, anch_wt2) = self.fusion_seq_dict[key]
-#                out_file.write(out_file_sep.join(map(str, [ftid_p, "ft", "NA", "NA", junc_ft, span_ft, anch_ft])) + "\n")
-#                out_file.write(out_file_sep.join(map(str, [ftid_p, "wt1", "NA", "NA", junc_wt1, span_wt1, anch_wt1])) + "\n")
-#                out_file.write(out_file_sep.join(map(str, [ftid_p, "wt2", "NA", "NA", junc_wt2, span_wt2, anch_wt2])) + "\n")
 
 def main():
     """Parse command line arguments and start script"""
