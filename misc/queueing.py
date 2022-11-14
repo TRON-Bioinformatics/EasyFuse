@@ -81,7 +81,7 @@ def _submit_nonqueue(job_name, cmd, module_file=""):
     print("CMD: {}".format(" ".join(cmd)))
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=False)
     (stdoutdata, stderrdata) = p.communicate()
-    print(stdoutdata)
+    #print(stdoutdata)
     r = p.returncode
     if r != 0:
         print("Error: Command \"{}\" returned non-zero exit status".format(cmd))

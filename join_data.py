@@ -83,9 +83,9 @@ class DataJoining(object):
     def create_joined_table(self, sample_id, fusion_tools, requant_mode):
         """Join the three data tables context_seq, detected_fusions and requantification"""
         # define path' to the context seq, detected fusion and re-quantification files
-        context_seq_file = os.path.join(self.input_dir, "Sample_{}".format(sample_id), "fetchdata", "fd_1_tool", "fetched_contextseqs", "Context_Seqs.csv")
-        detect_fusion_file = os.path.join(self.input_dir, "Sample_{}".format(sample_id), "fetchdata", "fd_1_tool", "fetched_fusions", "Detected_Fusions.csv")
-        input_read_file = os.path.join(self.input_dir, "Sample_{}".format(sample_id), "fetchdata", "fd_1_tool", "classification", "Star_org_input_reads.txt")
+        context_seq_file = os.path.join(self.input_dir, "Sample_{}".format(sample_id), "fetchdata", "fetched_contextseqs", "Context_Seqs.csv")
+        detect_fusion_file = os.path.join(self.input_dir, "Sample_{}".format(sample_id), "fetchdata", "fetched_fusions", "Detected_Fusions.csv")
+        input_read_file = os.path.join(self.input_dir, "Sample_{}".format(sample_id), "fetchdata", "classification", "Star_org_input_reads.txt")
 
         print("Loading data for sample {} into memory...".format(sample_id))
         if self.check_files(context_seq_file, False):
@@ -108,8 +108,8 @@ class DataJoining(object):
         context_data.set_index("ftid_plus", inplace=True)
         # read and append normalized (cpm) and raw (counts) requantification data to context data
         #for mode in requant_mode:
-        requant_cpm_file = os.path.join(self.input_dir, "Sample_{}".format(sample_id), "fetchdata", "fd_1_tool", "classification", "classification_{}.tdt".format(requant_mode))
-        requant_cnt_file = os.path.join(self.input_dir, "Sample_{}".format(sample_id), "fetchdata", "fd_1_tool", "classification", "classification_{}.tdt.counts".format(requant_mode))
+        requant_cpm_file = os.path.join(self.input_dir, "Sample_{}".format(sample_id), "fetchdata", "classification", "classification_{}.tdt".format(requant_mode))
+        requant_cnt_file = os.path.join(self.input_dir, "Sample_{}".format(sample_id), "fetchdata", "classification", "classification_{}.tdt.counts".format(requant_mode))
         requant_cpm_data = pd.read_csv(requant_cpm_file, sep=";")
         context_data = context_data.join(requant_cpm_data.set_index("ftid_plus"), how="left")
         requant_cnt_data = pd.read_csv(requant_cnt_file, sep=";")

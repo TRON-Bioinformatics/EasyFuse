@@ -85,7 +85,7 @@ class FusionSummary(object):
             sample_date_dict[sample] = "NA"
             # count the numbers of fusion tools that have been run on this sample
             sample_toolCnt_dict[sample] = len([tool for tool in fusion_tools if tool in self.samples.get_tool_list_from_state(sample)])
-            if "Fetchdata" in self.samples.get_tool_list_from_state(sample):
+            if "fetchdata" in self.samples.get_tool_list_from_state(sample):
                 count_valid_sample += 1
         print("Found {0} (partially) processed samples in {1}. Data will be collected from {2} samples for which fetchdata has been run.".format(i, self.input_path, count_valid_sample))
 
@@ -94,7 +94,7 @@ class FusionSummary(object):
 
         for sample in sid_list:
 
-            if "Fetchdata" in self.samples.get_tool_list_from_state(sample):
+            if "fetchdata" in self.samples.get_tool_list_from_state(sample):
                 count_processed += 1
                 print("Processing sample {0} (dataset {1}/{2})".format(sample, count_processed, len(sid_list)))
                 start_time = time.time()
