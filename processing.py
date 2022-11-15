@@ -94,7 +94,7 @@ class Processing(object):
         if "summary" in self.cfg["general"]["tools"].split(","):
             dependency = []
             for sample in sample_list:
-                dependency.extend(Queueing.get_jobs_by_name("Fetchdata-{}".format(sample[0]), self.cfg["general"]["queueing_system"]))
+                dependency.extend(Queueing.get_jobs_by_name("fetchdata-{}".format(sample[0]), self.cfg["general"]["queueing_system"]))
             modelling_string = ""
             if self.cfg["other_files"]["easyfuse_model"]:
                 modelling_string = " --model_predictions"
@@ -206,9 +206,10 @@ class Processing(object):
         # (2) Star expression quantification (required for starfusion)
         cmd_star = "{0} --genomeDir {1} --outFileNamePrefix waiting_for_output_string --runThreadN waiting_for_cpu_number --runMode alignReads --readFilesIn {2} {3} --readFilesCommand zcat --chimSegmentMin 10 --chimJunctionOverhangMin 10 --alignSJDBoverhangMin 10 --alignMatesGapMax {4} --alignIntronMax {4} --chimSegmentReadGapMax 3 --alignSJstitchMismatchNmax 5 -1 5 5 --seedSearchStartLmax 20 --winAnchorMultimapNmax 50 --outSAMtype BAM SortedByCoordinate --chimOutType Junctions SeparateSAMold --chimOutJunctionFormat 1".format(cmds["star"], star_index_path, fq1, fq2, self.cfg["general"]["max_dist_proper_pair"])
         # (3) Mapslice
-        # urla: the "keep" parameter requires gunzip >= 1.6
-        cmd_extr_fastq1 = "gunzip --keep {0}".format(fq1)
-        cmd_extr_fastq2 = "gunzip --keep {0}".format(fq2)
+        # Using "gunzip -c" instead of "gunzip --keep" to keep compatibility with older machines
+        print(fq1[:-3], fq2[:-3])
+        cmd_extr_fastq1 = "gunzip -c -f {0} > {1}".format(fq1, fq1[:-3])
+        cmd_extr_fastq2 = "gunzip -c -f {0} > {1}".format(fq2, fq2[:-3])
         # Added python interpreter to circumvent external hardcoded shell script
         cmd_mapsplice = "{0} --chromosome-dir {1} -x {2} -1 {3} -2 {4} --threads waiting_for_cpu_number --output {5} --qual-scale phred33 --bam --seglen 20 --min-map-len 40 --gene-gtf {6} --fusion".format(cmds["mapsplice"], genome_chrs_path, bowtie_index_path, fq1[:-3], fq2[:-3], mapsplice_path, genes_gtf_path)
         # (4) Fusioncatcher

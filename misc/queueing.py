@@ -79,15 +79,21 @@ def _submit_nonqueue(job_name, cmd, module_file=""):
 #        cmd = " && ".join(["source " + module_file, " ".join(cmd)]).split(" ")
     print("Running {}".format(job_name))
     print("CMD: {}".format(" ".join(cmd)))
-    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=False)
-    (stdoutdata, stderrdata) = p.communicate()
-    #print(stdoutdata)
-    r = p.returncode
-    if r != 0:
-        print("Error: Command \"{}\" returned non-zero exit status".format(cmd))
-        print(stderrdata)
-        sys.exit(1)
-    return stdoutdata
+    if ">" in cmd:
+        output_file = ""
+        index = cmd.index(">")
+        output_file = cmd[index+1]
+        adj_cmd = cmd[:index]
+        with open(output_file, "w") as fp: 
+            subprocess.run(adj_cmd, stdout=fp)
+    else:
+        p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=False)
+        (stdoutdata, stderrdata) = p.communicate()
+        r = p.returncode
+        if r != 0:
+            print("Error: Command \"{}\" returned non-zero exit status".format(cmd))
+            print(stderrdata)
+            sys.exit(1)
 
 
 def _submit_pbs(job_name, cmd, cores, mem_usage, output_results_folder, dependencies):
