@@ -123,6 +123,3 @@ def main():
     if args.action == "append_state":
         db.append_state(args.sample_id, args.tool)
     db.close_connection()
-
-if __name__ == "__main__":
-    main()

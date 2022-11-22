@@ -19,10 +19,11 @@ import os.path
 from shutil import copy
 import sys
 import time
-from easy_fuse._version import __version__
+from easy_fuse import __version__
+from easy_fuse.misc import queueing
 from easy_fuse.misc.samples import SamplesDB
 from easy_fuse.misc.logger import Logger
-import easy_fuse.misc.io_methods as IOMethods
+import easy_fuse.misc.io_methods as io_methods
 
 
 class Processing(object):
@@ -31,12 +32,11 @@ class Processing(object):
         """Parameter initiation and work folder creation. Start of progress logging."""
         self.working_dir = os.path.abspath(working_dir)
         self.logger = Logger(os.path.join(self.working_dir, "easyfuse_processing.log"))
-        IOMethods.create_folder(self.working_dir, self.logger)
+        io_methods.create_folder(self.working_dir, self.logger)
 
         self.logger.info("Starting easyfuse: CMD - {}".format(cmd))
         self.input_paths = [os.path.abspath(file) for file in input_paths]
         self.samples = SamplesDB(os.path.join(self.working_dir, "samples.db"))
-
 
         self.cfg = None
 
@@ -77,8 +77,8 @@ class Processing(object):
 
 
         # get fastq files
-        fastqs = IOMethods.get_fastq_files(self.input_paths, self.logger)
-        sample_list = IOMethods.pair_fastq_files(fastqs, self.logger)
+        fastqs = io_methods.get_fastq_files(self.input_paths, self.logger)
+        sample_list = io_methods.pair_fastq_files(fastqs, self.logger)
         for sample in sample_list:
             if sample[1] and sample[2]:
                 self.logger.info("Processing Sample ID: {} (paired end)".format(sample[0]))
@@ -166,7 +166,7 @@ class Processing(object):
                 soapfuse_path,
                 fetchdata_path
             ]:
-            IOMethods.create_folder(folder, self.logger)
+            io_methods.create_folder(folder, self.logger)
 
         # get a list of tools from the samples.db file that have been run previously on this sample
         state_tools = self.samples.get_tool_list_from_state(sample_id)
@@ -347,6 +347,7 @@ class Processing(object):
         else:
             self.logger.error("A job with this application/sample combination is currently running. Skipping {} in order to avoid unintended data loss.".format(uid))
 
+
 def main():
     """Parse command line arguments and start script"""
     parser = ArgumentParser(prog='EasyFuse', description='Run EasyFuse pipeline')
@@ -378,5 +379,6 @@ def main():
     with open(os.path.join(args.output_folder, "process.sh"), "w") as outf:
         outf.write("#!/bin/sh\n\n{}".format(script_call))
 
-if __name__ == '__main__':
-    main()
+
+#if __name__ == '__main__':
+#    main()

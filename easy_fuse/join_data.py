@@ -15,6 +15,8 @@ import os
 import sys
 import pandas as pd
 
+from easy_fuse.misc import queueing
+
 
 class DataJoining(object):
     """Select alignments belonging to putative fusions from an s/bam file"""

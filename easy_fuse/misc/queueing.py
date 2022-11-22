@@ -191,6 +191,3 @@ def main():
     output_results_folder = args.output
     dependencies = ""
     submit(job_name, cmd, cores, mem_usage, output_results_folder, dependencies, args.partitions, args.userid, args.timelimit, "", "")
-
-if __name__ == '__main__':
-    main()

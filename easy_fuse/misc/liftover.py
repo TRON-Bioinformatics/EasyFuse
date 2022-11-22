@@ -15,8 +15,8 @@ import pandas as pd
 from shutil import copyfile
 import queue as Queueing
 from logger import Logger
-sys.path.append(os.path.join(os.path.dirname(__file__), "../.."))
-import config as cfg
+#sys.path.append(os.path.join(os.path.dirname(__file__), "../.."))
+#import config as cfg
 
 
 class FusionLiftover(object):
@@ -32,15 +32,16 @@ class FusionLiftover(object):
             "16", "17", "18", "19", "20",
             "21", "22", "X", "Y", "MT"
             ]
+        self.cnf = None
 
     def liftcoords(self):
         """Parse ensembl transcriptome fasta file and modify header"""
-        crossmap_chain = cfg.liftover["crossmap_chain"]
+        crossmap_chain = self.cfg.liftover["crossmap_chain"]
 
         # check whether annotations and references are set, existing and matching
         ref_genome_org = os.path.basename(crossmap_chain).replace(".", "_").split("_")[0]
         ref_genome_dest = os.path.basename(crossmap_chain).replace(".", "_").split("_")[2]
-        if not ref_genome_org.lower() == cfg.ref_genome_build.lower():
+        if not ref_genome_org.lower() == self.cfg.ref_genome_build.lower():
             self.logger.error("Error 99: Mismatch between set genome version and chain file. Please verify that you have the correct chain file was supplied!")
             print("Error 99: Mismatch between set genome version and chain file. Please verify that you have the correct chain file was supplied!")
             sys.exit(99)
@@ -61,8 +62,8 @@ class FusionLiftover(object):
                 fusout.write("{0}\t{1}\t{2}\t{3}\t2\t{4}\n".format(chrom, pos, (int(pos) + 1), strand, in_fus_detect_pddf.loc[i, "BPID"]))
 
         # run crossmap to perform liftover
-        cmd_crossmap = "{0} bed {1} {2} {3}".format(cfg.commands["crossmap_cmd"], crossmap_chain, tmp_org_bed, tmp_dest_bed)
-        module_file = os.path.join(cfg.module_dir, "build_env.sh")
+        cmd_crossmap = "{0} bed {1} {2} {3}".format(self.cfg.commands["crossmap_cmd"], crossmap_chain, tmp_org_bed, tmp_dest_bed)
+        module_file = os.path.join(self.cfg.module_dir, "build_env.sh")
         Queueing.submit("", cmd_crossmap.split(" "), "", "", "", "", "", "", "", "", module_file, "none")
         # check whether some coords were unmapped and print which those are (i.e. which fusion will be lost)
         if os.stat(tmp_dest_bed_unmap).st_size == 0:

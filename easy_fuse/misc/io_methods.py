@@ -52,7 +52,7 @@ def get_fastq_files(input_paths, logger=None):
                 file_path = os.path.join(path, filename)
                 if os.path.isfile(file_path) and filename.endswith((".fastq.gz", ".fq.gz", ".fq", ".fastq")):
                     if not filename.endswith(".gz"):
-                        logger.info("Warning: Fastq files are supposed to be gzipped! Skipping record {}!".format(file))
+                        logger.info("Warning: Fastq files are supposed to be gzipped! Skipping record {}!".format(filename))
                         continue
                     fastqs.append(file_path)
                 elif os.path.isdir(file_path):
@@ -72,10 +72,13 @@ def pair_fastq_files(fastqs, logger=None):
         print("Fastq file {0}: {1}".format(i, fq_file))
         try:
             # Search for 1 or 2 between "_R|_" and "_|.f" in the basename of the file
-            matches = re.search('(.*)(_R?[1-2])(_|[.])', os.path.basename(fq_file))
-
-            sample_id = matches.group(1)
-            forrev = matches.group(2)
+            filename = os.path.basename(fq_file)
+            matches = re.search('(.*)(_R?[1-2])(_|[.])', filename)
+            if matches:
+                sample_id = matches.group(1)
+                forrev = matches.group(2)
+            else:
+                raise ValueError("File failed to match name pattern: {}".format(filename))
 
             if forrev == "_1" or forrev == "_R1":
                 left.append((sample_id, fq_file))

@@ -19,6 +19,7 @@ import os.path
 import subprocess
 import sys
 
+from easy_fuse.misc import queueing
 # custom imports
 from easy_fuse.misc.samples import SamplesDB
 from easy_fuse.misc.logger import Logger

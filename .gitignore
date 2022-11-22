@@ -7,3 +7,6 @@ test_local/
 *.pyc
 */*.pyc
 .idea
+*.egg-info
+dist
+build

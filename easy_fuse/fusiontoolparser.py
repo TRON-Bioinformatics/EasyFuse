@@ -57,9 +57,11 @@ class FusionParser(object):
                 if line.strip().startswith("*"):
                     # urla: todo: pylint warning - anomalous backslash
                     #             I don't really understand the problem and the RE is simple and working very fine
-                    fusion_gene = re.search(r'\*\s([\S]*)', line).group(1)
-                    if "reciprocal" in line:
-                        reciprocal_fusions.append(fusion_gene.replace("--", "_").upper())
+                    match = re.search(r'\*\s([\S]*)', line)
+                    if match:
+                        fusion_gene = match.group(1)
+                        if "reciprocal" in line:
+                            reciprocal_fusions.append(fusion_gene.replace("--", "_").upper())
         fusion_map = {}
         with open(fusioncatcher_predict_detail) as prediction:
             next(prediction) # skip header line
