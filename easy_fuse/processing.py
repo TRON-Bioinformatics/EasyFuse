@@ -96,9 +96,12 @@ class Processing(object):
             modelling_string = ""
             if self.cfg["other_files"]["easyfuse_model"]:
                 modelling_string = " --model_predictions"
-            cmd_summarize = "python {0} --input {1}{2} -c {3}".format(os.path.join(self.cfg["general"]["module_dir"],
-                                                                                   "summarize_data.py"),
-                                                                      self.working_dir, modelling_string, self.cfg_file)
+
+            cmd_summarize = "summarize_data --input {0}{1} -c {2}".format(
+                self.working_dir,
+                modelling_string,
+                self.cfg_file)
+
             logger.debug(
                 "Submitting job: CMD - {0}; PATH - {1}; DEPS - {2}".format(cmd_summarize, self.working_dir, dependency))
             resources_summary = self.cfg["resources"]["summary"].split(",")
@@ -170,16 +173,20 @@ class Processing(object):
         # get a list of tools from the config file which shall be run on this sample
         tools = self.cfg["general"]["tools"].split(",")
         cmds = self.cfg["commands"]
-        module_dir = self.cfg["general"]["module_dir"]
         # Define cmd strings for each program
         # urla: mapsplice requires gunzip'd read files and process substitutions don't seem to work in slurm scripts...
         #       process substitution do somehow not work from this script - c/p the command line to the terminal, however, works w/o issues?!
         # (0) QC
         cmd_fastqc = "{0} --nogroup --extract -t 6 -o {1} {2} {3}".format(cmds["fastqc"], qc_path, fq1, fq2)
-        cmd_qc_parser = "{0} -i {1} {2} -o {3}".format(os.path.join(module_dir, "misc", "qc_parser.py"), fastqc_1,
-                                                       fastqc_2, qc_table_path)
-        cmd_skewer = "{0} -q {1} -i {2} {3} -o {4} -b {5} -m {6}".format(
-            os.path.join(module_dir, "tool_wrapper", "skewer_wrapper.py"), qc_table_path, fq1, fq2, skewer_path,
+        cmd_qc_parser = "qc_parser " \
+                        "-i {0} {1} " \
+                        "-o {2}".format(
+            fastqc_1,
+            fastqc_2,
+            qc_table_path)
+
+        cmd_skewer = "skewer_wrapper -q {0} -i {1} {2} -o {3} -b {4} -m {5}".format(
+            qc_table_path, fq1, fq2, skewer_path,
             self.cfg["commands"]["skewer"], self.cfg["general"]["min_read_len_perc"])
 
         fq0 = ""
@@ -194,9 +201,10 @@ class Processing(object):
         cmd_star_filter = "{0} --genomeDir {1} --outFileNamePrefix {2}_ --readFilesCommand zcat --readFilesIn {3} {4} --outFilterMultimapNmax 100 --outSAMmultNmax 1 --chimSegmentMin 10 --chimJunctionOverhangMin 10 --alignSJDBoverhangMin 10 --alignMatesGapMax {5} --alignIntronMax {5} --chimSegmentReadGapMax 3 --alignSJstitchMismatchNmax 5 -1 5 5 --seedSearchStartLmax 20 --winAnchorMultimapNmax 50 --outSAMtype BAM Unsorted --chimOutType Junctions WithinBAM --outSAMunmapped Within KeepPairs --runThreadN waiting_for_cpu_number".format(
             cmds["star"], star_index_path, os.path.join(filtered_reads_path, sample_id), fq1, fq2,
             self.cfg["general"]["max_dist_proper_pair"])
-        cmd_read_filter = "{0} --input {1}_Aligned.out.bam --output {1}_Aligned.out.filtered.bam".format(
-            os.path.join(module_dir,
-                         "fusionreadfilter.py"), os.path.join(filtered_reads_path, sample_id))
+
+        cmd_read_filter = "fusionreadfilter --input {0}_Aligned.out.bam --output {0}_Aligned.out.filtered.bam".format(
+            os.path.join(filtered_reads_path, sample_id))
+
         # re-define fastq's if filtering is on (default)
         fq0 = ""
         if "Readfilter" in tools:
@@ -207,41 +215,45 @@ class Processing(object):
 
         cmd_bam_to_fastq = "{0} fastq -0 {1} -1 {2} -2 {3} --threads waiting_for_cpu_number {4}_Aligned.out.filtered.bam".format(
             cmds["samtools"], fq0, fq1, fq2, os.path.join(filtered_reads_path, sample_id))
+
         # (2) Star expression quantification (required for starfusion)
         cmd_star = "{0} --genomeDir {1} --outFileNamePrefix waiting_for_output_string --runThreadN waiting_for_cpu_number --runMode alignReads --readFilesIn {2} {3} --readFilesCommand zcat --chimSegmentMin 10 --chimJunctionOverhangMin 10 --alignSJDBoverhangMin 10 --alignMatesGapMax {4} --alignIntronMax {4} --chimSegmentReadGapMax 3 --alignSJstitchMismatchNmax 5 -1 5 5 --seedSearchStartLmax 20 --winAnchorMultimapNmax 50 --outSAMtype BAM SortedByCoordinate --chimOutType Junctions SeparateSAMold --chimOutJunctionFormat 1".format(
             cmds["star"], star_index_path, fq1, fq2, self.cfg["general"]["max_dist_proper_pair"])
+
         # (3) Mapslice
         # urla: the "keep" parameter requires gunzip >= 1.6
         cmd_extr_fastq1 = "gunzip --keep {0}".format(fq1)
         cmd_extr_fastq2 = "gunzip --keep {0}".format(fq2)
+
         # Added python interpreter to circumvent external hardcoded shell script
         cmd_mapsplice = "python2 {0} --chromosome-dir {1} -x {2} -1 {3} -2 {4} --threads waiting_for_cpu_number --output {5} --qual-scale phred33 --bam --seglen 20 --min-map-len 40 --gene-gtf {6} --fusion".format(
             cmds["mapsplice"], genome_chrs_path, bowtie_index_path, fq1[:-3], fq2[:-3], mapsplice_path, genes_gtf_path)
+
         # (4) Fusioncatcher
         cmd_fusioncatcher = "{0} --input {1} --data {2} --output {3} -p waiting_for_cpu_number".format(
             cmds["fusioncatcher"], ",".join([fq1, fq2]), fusioncatcher_index_path, fusioncatcher_path)
+
         # (5) Starfusion
         cmd_starfusion = "{0} --chimeric_junction {1} --genome_lib_dir {2} --CPU waiting_for_cpu_number --output_dir {3}".format(
             cmds["starfusion"], "{}_Chimeric.out.junction".format(os.path.join(star_path, sample_id)),
             starfusion_index_path, starfusion_path)
+
         # (6) Infusion
         cmd_infusion = "{0} -1 {1} -2 {2} --skip-finished --min-unique-alignment-rate 0 --min-unique-split-reads 0 --allow-non-coding --out-dir {3} {4}".format(
             cmds["infusion"], fq1, fq2, infusion_path, infusion_cfg_path)
+
         # (7) Soapfuse
-        cmd_soapfuse = "{0} -q {1} -i {2} -o {3} -b {4} -c {5}".format(
-            os.path.join(module_dir, "tool_wrapper", "soapfuse_wrapper.py"), qc_table_path, " ".join([fq1, fq2]),
+        cmd_soapfuse = "soapfuse_wrapper -q {0} -i {1} -o {2} -b {3} -c {4}".format(
+            qc_table_path, " ".join([fq1, fq2]),
             soapfuse_path, self.cfg["commands"]["soapfuse"], self.cfg["other_files"]["soapfuse_cfg"])
+
         # (8) Data collection
-        cmd_fetchdata = "{0} -i {1} -o {2} -s {3} -c {4} --fq1 {5} --fq2 {6} --fusion_support {7}".format(
-            os.path.join(module_dir,
-                         "fetchdata.py"), output_results_path, fetchdata_path, sample_id, self.cfg_file, fq1, fq2,
-            tool_num_cutoff)
+        cmd_fetchdata = "fetchdata -i {0} -o {1} -s {2} -c {3} --fq1 {4} --fq2 {5} --fusion_support {6}".format(
+            output_results_path, fetchdata_path, sample_id, self.cfg_file, fq1, fq2, tool_num_cutoff)
+
         # (X) Sample monitoring
-        cmd_samples = "{0} --db_path={1} --sample_id={2} --action=append_state --tool=".format(os.path.join(module_dir,
-                                                                                                            "misc",
-                                                                                                            "samples.py"),
-                                                                                               self.samples.db_path,
-                                                                                               sample_id)
+        cmd_samples = "samples --db_path={0} --sample_id={1} --action=append_state --tool=".format(
+            self.samples.db_path, sample_id)
 
         # set final lists of executable tools and path
         exe_tools = [
@@ -360,7 +372,7 @@ class Processing(object):
         if not already_running:
             # urla: for compatibility reasons (and to be independent of shell commands), concatenated commands are splitted again,
             #       dependencies within the splitted groups updated and everything submitted sequentially to the queueing system
-            module_file = os.path.join(self.cfg["general"]["module_dir"], "build_env.sh")
+            module_file = self.cfg["general"]["build_env"]
 
             for i, cmd_split in enumerate(cmd.split(" && ")):
                 if not que_sys in ["slurm", "pbs"]:

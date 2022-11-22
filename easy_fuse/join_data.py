@@ -131,7 +131,7 @@ class DataJoining(object):
         """run the data concatenation"""
         fusion_tools = self.cfg["general"]["fusiontools"].split(",")
         requant_mode = self.cfg["general"]["requant_mode"]
-        self.load_blacklist(os.path.join(self.cfg["general"]["module_dir"], "blacklist.txt"))
+        self.load_blacklist(self.cfg["general"]["blacklist"])
         # urla - note: with icam_run set to True, two results from technical replicates are expected as input
         print("Looking for required files...")
         # check whether output already exists

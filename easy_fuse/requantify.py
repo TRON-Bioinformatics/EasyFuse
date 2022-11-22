@@ -220,7 +220,3 @@ def main():
 
     requant = Requantification(args.input, args.output, args.bp_distance)
     requant.run()
-
-
-if __name__ == '__main__':
-    main()

@@ -24,7 +24,8 @@ queueing_system = none
 time_limit = 30-00:00:0
 partition = Compute
 user = username
-module_dir = /path/to/EasyFuse/
+build_env = build_env.sh
+blacklist = blacklist.txt
 
 # Define ressource usage (cpu (number of threads), mem (ram in Gb)):
 [resources]

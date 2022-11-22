@@ -9,7 +9,6 @@ Coordinates are changed in DetectedFusions.csv; all intermediate files are prese
 """
 
 import os.path
-import queue as Queueing
 import sys
 from argparse import ArgumentParser
 from shutil import copyfile
@@ -20,6 +19,8 @@ from shutil import copyfile
 import logzero
 import pandas as pd
 from logzero import logger
+
+import easy_fuse.misc.queueing as Queueing
 
 
 class FusionLiftover(object):
@@ -72,7 +73,7 @@ class FusionLiftover(object):
         # run crossmap to perform liftover
         cmd_crossmap = "{0} bed {1} {2} {3}".format(self.cfg.commands["crossmap_cmd"], crossmap_chain, tmp_org_bed,
                                                     tmp_dest_bed)
-        module_file = os.path.join(self.cfg.module_dir, "build_env.sh")
+        module_file = self.cfg.build_env
         Queueing.submit("", cmd_crossmap.split(" "), "", "", "", "", "", "", "", "", module_file, "none")
         # check whether some coords were unmapped and print which those are (i.e. which fusion will be lost)
         if os.stat(tmp_dest_bed_unmap).st_size == 0:
@@ -140,7 +141,3 @@ def main():
 
     flo = FusionLiftover(args.input, args.logger)
     flo.liftcoords()
-
-
-if __name__ == '__main__':
-    main()

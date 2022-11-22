@@ -835,7 +835,3 @@ def main():
     fusannot = FusionAnnotation(args.annotation_db, args.detected_fusions, args.tsl_info)
     fusannot.run(args.out_csv, int(args.cis_near_dist), args.genome_fasta, int(args.context_seq_len),
                  args.tsl_filter_level)
-
-
-if __name__ == '__main__':
-    main()

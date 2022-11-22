@@ -662,7 +662,3 @@ def main():
 
     res_parse_1 = FusionParser(args.input, args.output, args.sample, args.toolcutoff, args.fusionlist, args.logger)
     res_parse_1.run()
-
-
-if __name__ == '__main__':
-    main()
