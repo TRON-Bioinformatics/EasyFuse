@@ -12,7 +12,6 @@ import sys
 import time
 from argparse import ArgumentParser
 from configparser import ConfigParser
-from datetime import datetime
 
 import easy_fuse.misc.io_methods as IOMethods
 from easy_fuse.join_data import DataJoining
@@ -51,28 +50,14 @@ class FusionSummary(object):
         fusion_data_summary_path = os.path.join(self.input_path, "FusionSummary")
         IOMethods.create_folder(fusion_data_summary_path)
 
-        now_time = datetime.fromtimestamp(time.time()).strftime("%Y%m%d_%H%M%S")
-
         fusion_frequency_all = {}
-        fusion_frequency_12 = {}
         filtering_data_1 = {}
-        filtering_data_2 = {}
-        filtering_data_12 = {}
         # 0:type; 1:boundary; 2:frame; 3:pepseq; 4:counts; 5:blacklist; 6:prediction;
         # 7:exonError; 8:unfiltered; 9:allFilter; 10:allButPredFilter
-        colnames_filtering = [
-            "unfiltered", "cis_near_no", "exon_bound_both", "no_frame_no", "pep_seq_yes",
-            "counts_yes", "blacklist_no", "pred_pos", "all_fltr", "all_fltr_but_pred"
-        ]
         # get sorted list of sample ids
         sid_list = sorted(self.samples.get_sample_ids())
         #        sid_list = sid_list[:10]
-        current_base = ""
-        sample1 = ""
-        sample2 = ""
 
-        count_pairs = 0
-        count_valid_pairs = 0
         count_valid_sample = 0
         # check how many samples are available for processing and create {sample_id: sample_date} dict
         sample_date_dict = {}

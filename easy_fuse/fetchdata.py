@@ -57,8 +57,6 @@ class Fetching(object):
 
     def get_pseudo_genome_adjustments_for_star(self, num_len_file):
         """Return the genome size of an associated fasta file calculated by urla_GetFusionSequence_latest.R"""
-        seq_num = 0
-        genome_size = 0
         with open(num_len_file) as lfile:
             seq_num = int(lfile.readline().rstrip())
             genome_size = int(lfile.readline().rstrip())
@@ -111,7 +109,6 @@ class Fetching(object):
         """Create sample specific subfolder structuge and run tools on fastq files"""
 
         # Genome/Gene references to use
-        ref_trans = self.cfg["general"]["ref_trans_version"]
         ref_genome = self.cfg["general"]["ref_genome_build"]
         genome_fasta_path = self.cfg["references"]["genome_fasta"]
         genes_adb_path = self.cfg["references"]["genes_adb"]
@@ -155,8 +152,6 @@ class Fetching(object):
                 genome_fasta_path, genes_tsl_path, self.cfg["general"]["cis_near_distance"],
                 self.cfg["general"]["context_seq_len"], self.cfg["general"]["tsl_filter"])
             # now, references need to be updated according to the target liftover
-            crossmap_chain = self.cfg["liftover"]["crossmap_chain"]
-            ref_genome_dest = os.path.basename(crossmap_chain).replace(".", "_").split("_")[2].lower()
             logger.debug(
                 "Creating a copy of the detected fusions file due to selection of liftover. Old ({0}) data will be kept in \"{1}.bak\"".format(
                     ref_genome, detected_fusions_file))

@@ -81,7 +81,7 @@ class Fusionreadfilter(object):
         """Walk linewise through a s/bam file and send proper read pairs to classification"""
         logger.info("Starting fusion read filtering")
         read1 = read2 = None
-        read_flag = read1_flag = read2_flag = None
+        read1_flag = read2_flag = None
         self.last_time = time.time()
         last_query = ""
         count_current_query_member = 0
@@ -92,8 +92,12 @@ class Fusionreadfilter(object):
         #       until a "normal mapping" was found. If this is never the case, the pair is written to the filtered out. This, however, will have
         #       a strong effect on runtimes! (2) with the chimeric multi-mapping setting in the most recent star versions. This should actually
         #       work directly as star chimeric classification outranks multi-mapping disposal. It has, however, not been throughly evaluated by the star community
-        for read in self.in_bam.fetch(
-                until_eof=True):  # iterate through alignments as they appear in the file (this is mandatory becaue (a) we cannot create an index, (b) want to include unmapped reads and (c) have many references in the header during 2nd filtering)
+
+        for read in self.in_bam.fetch(until_eof=True):
+            # iterate through alignments as they appear in the file (this is mandatory because
+            # (a) we cannot create an index,
+            # (b) want to include unmapped reads and
+            # (c) have many references in the header during 2nd filtering)
             self.counter[0] += 1
             read_flag = read.flag
 

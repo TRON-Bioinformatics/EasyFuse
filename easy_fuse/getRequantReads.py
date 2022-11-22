@@ -135,7 +135,6 @@ class ReadSelection(object):
         """Walk linewise through a s/bam file and send proper read pairs to classification"""
         logger.info("Starting fusion read filtering")
         read1 = read2 = None
-        read_flag = read1_flag = read2_flag = None
         self.last_time = time.time()
         last_query = ""
         count_current_query_member = 0

@@ -14,6 +14,7 @@ import sys
 from argparse import ArgumentParser
 from shutil import copyfile
 
+# NOTE: this config.py does not exist anymore... but is this liftover used
 # sys.path.append(os.path.join(os.path.dirname(__file__), "../.."))
 # import config as cfg
 import logzero
@@ -35,7 +36,7 @@ class FusionLiftover(object):
             "16", "17", "18", "19", "20",
             "21", "22", "X", "Y", "MT"
         ]
-        self.cnf = None
+        self.cfg = None
 
     def liftcoords(self):
         """Parse ensembl transcriptome fasta file and modify header"""

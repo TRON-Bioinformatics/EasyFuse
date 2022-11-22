@@ -221,7 +221,6 @@ class FusionAnnotation(object):
         # exons are the scaffold as there can be exons w/o cds but not vv
         cds_pos_list2 = []
         cds_frame_list2 = []
-        exon_has_cds = False
         for exon_start, exon_stop in exon_pos_list:
             exon_has_cds = False
             for cds_counter, (cds_start, cds_stop) in enumerate(cds_pos_list, 0):
@@ -298,7 +297,8 @@ class FusionAnnotation(object):
 
     @staticmethod
     def get_fusion_feature_list(bp1_pos, bp2_pos, bp1_strand, bp2_strand, bp1_feature_pos_list, bp2_feature_pos_list):
-        """ Based on the breakpoints, the strand and the complete feature positions of the involved genes, return only those feature positions which will remain in the fusion. """
+        """ Based on the breakpoints, the strand and the complete feature positions of the involved genes, return
+        only those feature positions which will remain in the fusion. """
         bp1_feature_fus_list = []
         bp2_feature_fus_list = []
 
@@ -307,16 +307,16 @@ class FusionAnnotation(object):
             if bp1_strand == "+":  # on the "+" strand, we need everything LEFT of the bp for fusion gene partner 1
                 bp1_feature_fus_list = [feature for feature in bp1_feature_pos_list if bp1_pos >= feature[0]]
                 if not len(bp1_feature_fus_list) == 0:
-                    if bp1_feature_fus_list[-1][
-                        0] == bp1_pos:  # delete the last cds (i.e. last before the bp) if it starts with the breakpoint
+                    # delete the last cds (i.e. last before the bp) if it starts with the breakpoint
+                    if bp1_feature_fus_list[-1][0] == bp1_pos:
                         bp1_feature_fus_list = bp1_feature_fus_list[:-1]
                     else:  # or shorten the cds to the bp if it is within it
                         bp1_feature_fus_list[-1] = (bp1_feature_fus_list[-1][0], bp1_pos)
             else:  # on the "-" strand, we need everything RIGHT of the bp for fusion gene partner 1
                 bp1_feature_fus_list = [feature for feature in bp1_feature_pos_list if bp1_pos <= feature[1]]
                 if not len(bp1_feature_fus_list) == 0:
-                    if bp1_feature_fus_list[0][
-                        1] == bp1_pos:  # delete first cds (i.e. first after the bp) if it starts with the breakpoint
+                    # delete first cds (i.e. first after the bp) if it starts with the breakpoint
+                    if bp1_feature_fus_list[0][1] == bp1_pos:
                         bp1_feature_fus_list = bp1_feature_fus_list[1:]
                     else:
                         bp1_feature_fus_list[0] = (bp1_pos, bp1_feature_fus_list[0][1])
@@ -326,16 +326,16 @@ class FusionAnnotation(object):
             if bp2_strand == "+":  # on the "+" strand, we need everything RIGHT of the bp for fusion gene partner 2
                 bp2_feature_fus_list = [feature for feature in bp2_feature_pos_list if bp2_pos <= feature[1]]
                 if not len(bp2_feature_fus_list) == 0:
-                    if bp2_feature_fus_list[0][
-                        1] == bp2_pos:  # delete first cds (i.e. first after the bp) if it starts with the breakpoint
+                    # delete first cds (i.e. first after the bp) if it starts with the breakpoint
+                    if bp2_feature_fus_list[0][1] == bp2_pos:
                         bp2_feature_fus_list = bp2_feature_fus_list[1:]
                     else:
                         bp2_feature_fus_list[0] = (bp2_pos, bp2_feature_fus_list[0][1])
             else:  # on the "-" strand, we need everything LEFT of the bp for fusion gene partner 2
                 bp2_feature_fus_list = [feature for feature in bp2_feature_pos_list if bp2_pos >= feature[0]]
                 if not len(bp2_feature_fus_list) == 0:
-                    if bp2_feature_fus_list[-1][
-                        0] == bp2_pos:  # delete the last cds (i.e. last before the bp) if it starts with the breakpoint
+                    # delete the last cds (i.e. last before the bp) if it starts with the breakpoint
+                    if bp2_feature_fus_list[-1][0] == bp2_pos:
                         bp2_feature_fus_list = bp2_feature_fus_list[:-1]
                     else:  # or shorten the cds to the bp if it is within it
                         bp2_feature_fus_list[-1] = (bp2_feature_fus_list[-1][0], bp2_pos)
@@ -343,7 +343,8 @@ class FusionAnnotation(object):
 
     def fill_seq_lookup_dict(self, chrom, cds_list):
         """ Create/fill a dictionary of genomic position tuple with chromosomes as keys and a list of two lists as values.
-            Genomic coordinates are loaded into the first list and the second one is later complemented by the respective sequence"""
+            Genomic coordinates are loaded into the first list and the second one is later complemented by the
+            respective sequence"""
         if not chrom in self.cds_seq_dict:
             self.cds_seq_dict[chrom] = [[], []]
         for cds_coord in cds_list:
@@ -352,14 +353,16 @@ class FusionAnnotation(object):
 
     @staticmethod
     def get_stranded_seq(sequence, strand):
-        """ Return the reverse complement of a sequence if the strand is negative and the unchanged sequence otherwise """
+        """ Return the reverse complement of a sequence if the strand is negative and the unchanged sequence
+        otherwise """
         if strand == "-":
             return sequence.reverse_complement()
         return sequence
 
     def run(self, context_seqs_file, cis_near_distance, genome_fasta, context_seq_len, tsl_filter_level):
         """ Run the annotation pipeline """
-        # for performance reasons (mainly seq grepping), results cannot be written on the fly and everything will therefore be stored in a list of lists
+        # for performance reasons (mainly seq grepping), results cannot be written on the fly and everything will
+        # therefore be stored in a list of lists
         header = [
             "BPID", "Fusion_Gene", "Breakpoint1", "Breakpoint2", "FTID", "context_sequence_id",
             "context_sequence_100_id", "type",
@@ -388,7 +391,8 @@ class FusionAnnotation(object):
 
         header_idx = range(len(header))
         header_dict = dict(zip(header, header_idx))
-        # information in the header is complete and useful for debugging, information in the short_header is identical to the format of the previous
+        # information in the header is complete and useful for debugging, information in the short_header is identical
+        # to the format of the previous
         # version of the fusion annotation and therefore used for downstream processing
         short_header = header[0:21]
         results_lists = []
@@ -421,7 +425,8 @@ class FusionAnnotation(object):
                 # create a set to collect "suspicious findings" for transcripts
                 if wt1_trans_id not in self.trans_flags_dict:
                     self.trans_flags_dict[wt1_trans_id] = set()
-                # get the complete set of exons, corresponding cds (cds at the same index are NA if there is none in the exon) and start frames of the cds
+                # get the complete set of exons, corresponding cds (cds at the same index are NA if there is none in
+                # the exon) and start frames of the cds
                 wt1_exon_pos_list, wt1_cds_pos_list, wt1_cds_frame_list = self.get_wt_codings(wt1_trans_id)
                 # get the frame at the start of the first cds and at the breakpoint
                 wt1_frame_at_start, wt1_frame_at_bp = self.get_frame(bp1_pos, wt1_cds_pos_list, wt1_cds_frame_list,
@@ -520,8 +525,10 @@ class FusionAnnotation(object):
                     ])
 
         # grep chromosomes and extract cds sequences from the @cds_seq_dict
-        # urla note: the max(..) check in the slicing is probably superfluous as CDS annotations should not start at chromosome position 0
-        #            (which would become -1 in @get_frame()). Nevertheless, negative values would completely mess up the slicing...
+        # urla note: the max(..) check in the slicing is probably superfluous as CDS annotations should not start at
+        # chromosome position 0
+        #            (which would become -1 in @get_frame()). Nevertheless, negative values would completely mess up
+        #            the slicing...
         #            An additinal check at the end is not required as slicing stops anyway at the end of sequence
         for record in SeqIO.parse(genome_fasta, "fasta"):
             if record.id in self.cds_seq_dict:
@@ -532,11 +539,14 @@ class FusionAnnotation(object):
 
         # based on the gathered information, create and add sequences to the table
         # urla note: we could have used a pandas df at create functions to apply on the columns to do the following,
-        #            but as the following is mainly string manipulation and simple lookups it should not make a big difference
+        #            but as the following is mainly string manipulation and simple lookups it should not make a big
+        #            difference
         #            in terms of speed and readability
         last_chr = ""  # we save the last chromosome string to avoid some superfluous re-calculations
-        # due to annotation biases between different prediction tools, it is possible that the same ftid is created twice
-        # as this is 100% redundant information, we will skip such records. In order to guarantee that this is working as intended,
+        # due to annotation biases between different prediction tools, it is possible that the same ftid is created
+        # twice
+        # as this is 100% redundant information, we will skip such records. In order to guarantee that this is working
+        # as intended,
         # we introduce the ftid plus which is the ftid plus appended seq hash
         ftid_plus_set = set()
         tmp_dict = None
@@ -553,7 +563,6 @@ class FusionAnnotation(object):
             result_list[header_dict["wt1_exon_seqs"]] = []
             for feature in result_list[header_dict["wt1_exon_pos"]]:
                 result_list[header_dict["wt1_exon_seqs"]].append(tmp_dict[feature])
-            # result_list[header_dict["wt1_exon_seqs"]] = [tmp_dict[feature] for feature in result_list[header_dict["wt1_exon_pos"]]]
             result_list[header_dict["ft1_exon_seqs"]] = [tmp_dict[feature] for feature in
                                                          result_list[header_dict["ft1_exon_pos"]]]
             result_list[header_dict["wt1_cds_seqs"]] = [tmp_dict[feature] for feature in

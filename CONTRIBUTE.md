@@ -27,3 +27,11 @@ Install the wheel file: `pip install dist/easy_fuse-x.y.z-py3-none-any.whl`
 
 Now, EasyFuse should be available in the command line: `easy-fuse --help`
 
+## Cleaning the code
+
+PyCharm provides a useful tool to reformat code under `code -> reformat`.
+This allows to organize imports and enforce basic style guidelines.
+
+Vulture enables inspecting the code base for dead code. Install vulture with `pip install vulture`. 
+Then run as follows: `vulture easy_fuse`. Do not trust a vulture blindly.
+

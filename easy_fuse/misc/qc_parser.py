@@ -8,7 +8,6 @@ class Parser(object):
 
     def parse_total_sequences(self, infile):
         total_sequences = 0
-        counter = 0
         with open(infile) as inf:
             for line in inf:
                 if line.startswith("Total Sequences"):

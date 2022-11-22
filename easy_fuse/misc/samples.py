@@ -68,29 +68,6 @@ class SamplesDB(object):
             sample_ids.append(row[0])
         return sample_ids
 
-    def get_samples(self):
-        """Get all existing samples in DB"""
-        self.cursor.execute("SELECT * FROM samples")
-        return self.cursor.fetchall()
-
-    def print_db(self):
-        """Print sample progress"""
-        completed = 0
-        total = 0
-        for row in self.cursor.execute("SELECT * FROM samples"):
-            print("Sample ID:", str(row[0]))
-            print("Performed Analyses:", str(row[1]))
-            print("FQ1:", str(row[2]))
-            print("FQ2:", str(row[3]))
-            if "Fetchdata" in row[1]:
-                print("Status: Complete")
-                completed += 1
-            else:
-                print("Status: Incomplete")
-            total += 1
-            print
-        print("Overall: {:.2f}% complete.".format(completed * 100.0 / total))
-
     def append_state(self, sample_id, analysis):
         """Add analysis to list of performed analyses within sample"""
         curr_analysis = self.get_tool_list_from_state(sample_id)

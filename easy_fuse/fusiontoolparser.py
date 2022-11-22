@@ -104,7 +104,7 @@ class FusionParser(object):
                 # skip all prediction not on standard chromosomes
                 if elements[8].split(":")[0] not in self.chr_list or elements[9].split(":")[0] not in self.chr_list:
                     continue
-                # fgid = fusion_gene.split("_")[0] + "_" + elements[8] + "_" + fusion_gene.split("_")[1] + "_" + elements[9]
+
                 bpid = elements[8] + "_" + elements[9]
 
                 fusion_map[bpid] = [
@@ -155,8 +155,6 @@ class FusionParser(object):
                 # check whether fusion gene is not on primary chr
                 if elements[5].split(":")[0] not in self.chr_list or elements[7].split(":")[0] not in self.chr_list:
                     continue
-                # fgid = fusion_gene.split("_")[0] + "_" + elements[5] + "_" + fusion_gene.split("_")[1] + "_" + elements[7]
-                # logger.debug("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\n".format(fgid, fusion_gene, elements[5], elements[7], elements[1], elements[2], self.sample_id))
                 bpid = elements[5] + "_" + elements[7]
 
                 fusion_map[bpid] = [
@@ -263,7 +261,7 @@ class FusionParser(object):
 
                 if up_gene_id.split(":")[0] not in self.chr_list or dn_gene_id.split(":")[0] not in self.chr_list:
                     continue
-                # fgid = fusion_gene.split("_")[0] + "_" + up_gene_id + "_" + fusion_gene.split("_")[1] + "_" + dn_gene_id
+
                 bpid = up_gene_id + "_" + dn_gene_id
 
                 fusion_map[bpid] = [
@@ -302,7 +300,6 @@ class FusionParser(object):
                 # check whether fusion gene is not on primary chr
                 if elements[0].split(":")[0] not in self.chr_list or elements[1].split(":")[0] not in self.chr_list:
                     continue
-                # fgid = elements[5] + "_" + elements[0] + "_" + elements[7] + "_" + elements[1]
 
                 bpid = elements[0] + "_" + elements[1]
 
@@ -371,7 +368,6 @@ class FusionParser(object):
                 # check whether fusion gene is not on primary chr
                 if elements[1] not in self.chr_list or elements[4] not in self.chr_list:
                     continue
-                # fgid = fusion_gene.split("_")[0] + "_" + up_gene_id + "_" + fusion_gene.split("_")[1] + "_" + dn_gene_id
 
                 bpid = up_gene_id + "_" + dn_gene_id
 
@@ -449,7 +445,6 @@ class FusionParser(object):
                 # check whether fusion gene is not on primary chr
                 if elements[1] not in self.chr_list or elements[6] not in self.chr_list:
                     continue
-                # fgid = fusion_gene.split("_")[0] + "_" + up_gene_id + "_" + fusion_gene.split("_")[1] + "_" + dn_gene_id
 
                 bpid = up_gene_id + "_" + dn_gene_id
 

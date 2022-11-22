@@ -115,9 +115,7 @@ class Processing(object):
         refs = self.cfg["references"]
 
         # Genome/Gene references to use
-        genome_sizes_path = refs["genome_sizes"]
         genome_chrs_path = refs["genome_fastadir"]
-        genes_fasta_path = refs["genes_fasta"]
         genes_gtf_path = refs["genes_gtf"]
 
         # Path' to specific indices
@@ -137,16 +135,13 @@ class Processing(object):
         qc_path = os.path.join(output_results_path, "qc")
         skewer_path = os.path.join(qc_path, "skewer")
         qc_table_path = os.path.join(qc_path, "qc_table.txt")
-        overrepresented_path = os.path.join(qc_path, "overrepresented.fa")
         filtered_reads_path = os.path.join(output_results_path, "filtered_reads")
         expression_path = os.path.join(output_results_path, "expression")
         star_path = os.path.join(expression_path, "star")
         fusion_path = os.path.join(output_results_path, "fusion")
         mapsplice_path = os.path.join(fusion_path, "mapsplice")
-        pizzly_path = os.path.join(fusion_path, "pizzly")
         fusioncatcher_path = os.path.join(fusion_path, "fusioncatcher")
         starfusion_path = os.path.join(fusion_path, "starfusion")
-        starchip_path = os.path.join(fusion_path, "starchip")
         infusion_path = os.path.join(fusion_path, "infusion")
         soapfuse_path = os.path.join(fusion_path, "soapfuse")
         fetchdata_path = os.path.join(self.working_dir, "Sample_{}".format(sample_id), "fetchdata")
