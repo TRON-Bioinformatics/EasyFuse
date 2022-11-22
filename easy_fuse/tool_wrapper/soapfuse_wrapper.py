@@ -4,7 +4,6 @@ import sys
 import os
 import gzip
 import subprocess
-
 from argparse import ArgumentParser
 
 

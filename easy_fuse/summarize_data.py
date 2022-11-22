@@ -13,10 +13,10 @@ import os
 import os.path
 import sys
 import time
+from easy_fuse.join_data import DataJoining
+from easy_fuse.misc.samples import SamplesDB
+import easy_fuse.misc.io_methods as IOMethods
 
-from join_data import DataJoining
-from misc.samples import SamplesDB
-import misc.io_methods as IOMethods
 
 class FusionSummary(object):
     """Collect stats of the run and write them to file"""

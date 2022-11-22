@@ -15,7 +15,8 @@ import os
 import re
 import operator
 from argparse import ArgumentParser
-from misc.logger import Logger
+from easy_fuse.misc.logger import Logger
+
 
 # pylint: disable=line-too-long
 #         yes they are partially, but I do not consider this to be relevant here

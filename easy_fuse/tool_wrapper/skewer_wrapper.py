@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 
 from argparse import ArgumentParser
-import json
 import os
 from shutil import copyfile
 import subprocess
 import sys
+
 
 def main():
     parser = ArgumentParser(description="Wrapper around skewer.")

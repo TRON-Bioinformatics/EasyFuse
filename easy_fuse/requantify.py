@@ -10,7 +10,6 @@ Junction/Spanning read pair counting
 
 import os.path
 from argparse import ArgumentParser
-
 import pysam
 
 

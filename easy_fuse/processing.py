@@ -19,13 +19,10 @@ import os.path
 from shutil import copy
 import sys
 import time
-
-
-from _version import __version__
-import misc.queueing as Queueing
-from misc.samples import SamplesDB
-from misc.logger import Logger
-import misc.io_methods as IOMethods
+from easy_fuse._version import __version__
+from easy_fuse.misc.samples import SamplesDB
+from easy_fuse.misc.logger import Logger
+import easy_fuse.misc.io_methods as IOMethods
 
 
 class Processing(object):
@@ -94,11 +91,13 @@ class Processing(object):
         if "Summary" in self.cfg["general"]["tools"].split(","):
             dependency = []
             for sample in sample_list:
-                dependency.extend(Queueing.get_jobs_by_name("Fetchdata-{}".format(sample[0]), self.cfg["general"]["queueing_system"]))
+                dependency.extend(
+                    queueing.get_jobs_by_name("Fetchdata-{}".format(sample[0]), self.cfg["general"]["queueing_system"]))
             modelling_string = ""
             if self.cfg["other_files"]["easyfuse_model"]:
                 modelling_string = " --model_predictions"
-            cmd_summarize = "python {0} --input {1}{2} -c {3}".format(os.path.join(self.cfg["general"]["module_dir"], "summarize_data.py"), self.working_dir, modelling_string, self.cfg_file)
+            cmd_summarize = "python {0} --input {1}{2} -c {3}".format(os.path.join(self.cfg["general"]["module_dir"],
+                                                                                   "summarize_data.py"), self.working_dir, modelling_string, self.cfg_file)
             self.logger.debug("Submitting job: CMD - {0}; PATH - {1}; DEPS - {2}".format(cmd_summarize, self.working_dir, dependency))
             resources_summary = self.cfg["resources"]["summary"].split(",")
             cpu = resources_summary[0]
@@ -193,7 +192,8 @@ class Processing(object):
 
         # (1) Readfilter
         cmd_star_filter = "{0} --genomeDir {1} --outFileNamePrefix {2}_ --readFilesCommand zcat --readFilesIn {3} {4} --outFilterMultimapNmax 100 --outSAMmultNmax 1 --chimSegmentMin 10 --chimJunctionOverhangMin 10 --alignSJDBoverhangMin 10 --alignMatesGapMax {5} --alignIntronMax {5} --chimSegmentReadGapMax 3 --alignSJstitchMismatchNmax 5 -1 5 5 --seedSearchStartLmax 20 --winAnchorMultimapNmax 50 --outSAMtype BAM Unsorted --chimOutType Junctions WithinBAM --outSAMunmapped Within KeepPairs --runThreadN waiting_for_cpu_number".format(cmds["star"], star_index_path, os.path.join(filtered_reads_path, sample_id), fq1, fq2, self.cfg["general"]["max_dist_proper_pair"])
-        cmd_read_filter = "{0} --input {1}_Aligned.out.bam --output {1}_Aligned.out.filtered.bam".format(os.path.join(module_dir, "fusionreadfilter.py"), os.path.join(filtered_reads_path, sample_id))
+        cmd_read_filter = "{0} --input {1}_Aligned.out.bam --output {1}_Aligned.out.filtered.bam".format(os.path.join(module_dir,
+                                                                                                                      "fusionreadfilter.py"), os.path.join(filtered_reads_path, sample_id))
         # re-define fastq's if filtering is on (default)
         fq0 = ""
         if "Readfilter" in tools:
@@ -219,9 +219,11 @@ class Processing(object):
         # (7) Soapfuse
         cmd_soapfuse = "{0} -q {1} -i {2} -o {3} -b {4} -c {5}".format(os.path.join(module_dir, "tool_wrapper", "soapfuse_wrapper.py"), qc_table_path, " ".join([fq1, fq2]), soapfuse_path, self.cfg["commands"]["soapfuse"], self.cfg["other_files"]["soapfuse_cfg"])
         # (8) Data collection
-        cmd_fetchdata = "{0} -i {1} -o {2} -s {3} -c {4} --fq1 {5} --fq2 {6} --fusion_support {7}".format(os.path.join(module_dir, "fetchdata.py"), output_results_path, fetchdata_path, sample_id, self.cfg_file, fq1, fq2, tool_num_cutoff)
+        cmd_fetchdata = "{0} -i {1} -o {2} -s {3} -c {4} --fq1 {5} --fq2 {6} --fusion_support {7}".format(os.path.join(module_dir,
+                                                                                                                       "fetchdata.py"), output_results_path, fetchdata_path, sample_id, self.cfg_file, fq1, fq2, tool_num_cutoff)
         # (X) Sample monitoring
-        cmd_samples = "{0} --db_path={1} --sample_id={2} --action=append_state --tool=".format(os.path.join(module_dir, "misc", "samples.py"), self.samples.db_path, sample_id)
+        cmd_samples = "{0} --db_path={1} --sample_id={2} --action=append_state --tool=".format(os.path.join(module_dir,
+                                                                                                            "misc", "samples.py"), self.samples.db_path, sample_id)
 
         # set final lists of executable tools and path
         exe_tools = [
@@ -308,17 +310,17 @@ class Processing(object):
                 # Managing slurm dependencies
                 que_sys = self.cfg["general"]["queueing_system"]
                 if tool == "Pizzly":
-                    dependency = Queueing.get_jobs_by_name("Kallisto-{0}".format(sample_id), que_sys)
+                    dependency = queueing.get_jobs_by_name("Kallisto-{0}".format(sample_id), que_sys)
                 elif tool == "Starfusion" or tool == "Starchip":
-                    dependency = Queueing.get_jobs_by_name("Star-{0}".format(sample_id), que_sys)
+                    dependency = queueing.get_jobs_by_name("Star-{0}".format(sample_id), que_sys)
                 elif tool == "Fetchdata":
-                    dependency = Queueing.get_jobs_by_name(sample_id, que_sys)
+                    dependency = queueing.get_jobs_by_name(sample_id, que_sys)
                 elif tool == "Assembly":
-                    dependency = Queueing.get_jobs_by_name("Fetchdata-{0}".format(sample_id), que_sys)
+                    dependency = queueing.get_jobs_by_name("Fetchdata-{0}".format(sample_id), que_sys)
                 elif tool == "ReadFilter":
-                    dependency = Queueing.get_jobs_by_name("QC-{0}".format(sample_id), que_sys)
-                dependency.extend(Queueing.get_jobs_by_name("Readfilter-{0}".format(sample_id), que_sys))
-                dependency.extend(Queueing.get_jobs_by_name("QC-{0}".format(sample_id), que_sys))
+                    dependency = queueing.get_jobs_by_name("QC-{0}".format(sample_id), que_sys)
+                dependency.extend(queueing.get_jobs_by_name("Readfilter-{0}".format(sample_id), que_sys))
+                dependency.extend(queueing.get_jobs_by_name("QC-{0}".format(sample_id), que_sys))
                 self.logger.debug("Submitting job: CMD - {0}; PATH - {1}; DEPS - {2}".format(cmd, exe_path[i], dependency))
                 self.submit_job(uid, cmd, cpu, mem, exe_path[i], dependency, "")
             else:
@@ -327,7 +329,7 @@ class Processing(object):
     def submit_job(self, uid, cmd, cores, mem_usage, output_results_folder, dependencies, mail):
         """Submit job to for process generation"""
         que_sys = self.cfg["general"]["queueing_system"]
-        already_running = Queueing.get_jobs_by_name(uid, que_sys)
+        already_running = queueing.get_jobs_by_name(uid, que_sys)
         if not already_running:
             # urla: for compatibility reasons (and to be independent of shell commands), concatenated commands are splitted again,
             #       dependencies within the splitted groups updated and everything submitted sequentially to the queueing system
@@ -336,11 +338,11 @@ class Processing(object):
             for i, cmd_split in enumerate(cmd.split(" && ")):
                 if not que_sys in ["slurm", "pbs"]:
                     cmd_split = cmd_split.split(" ")
-                dependencies.extend(Queueing.get_jobs_by_name("{0}_CMD{1}".format(uid, i - 1), que_sys))
+                dependencies.extend(queueing.get_jobs_by_name("{0}_CMD{1}".format(uid, i - 1), que_sys))
                 if self.jobname_suffix:
-                    Queueing.submit("{0}_CMD{1}-{2}".format(uid, i, self.jobname_suffix), cmd_split, cores, mem_usage, output_results_folder, dependencies, self.cfg["general"]["partition"], self.cfg["general"]["user"], self.cfg["general"]["time_limit"], mail, module_file, que_sys)
+                    queueing.submit("{0}_CMD{1}-{2}".format(uid, i, self.jobname_suffix), cmd_split, cores, mem_usage, output_results_folder, dependencies, self.cfg["general"]["partition"], self.cfg["general"]["user"], self.cfg["general"]["time_limit"], mail, module_file, que_sys)
                 else:
-                    Queueing.submit("{0}_CMD{1}".format(uid, i), cmd_split, cores, mem_usage, output_results_folder, dependencies, self.cfg["general"]["partition"], self.cfg["general"]["user"], self.cfg["general"]["time_limit"], mail, module_file, que_sys)
+                    queueing.submit("{0}_CMD{1}".format(uid, i), cmd_split, cores, mem_usage, output_results_folder, dependencies, self.cfg["general"]["partition"], self.cfg["general"]["user"], self.cfg["general"]["time_limit"], mail, module_file, que_sys)
                 time.sleep(0.5)
         else:
             self.logger.error("A job with this application/sample combination is currently running. Skipping {} in order to avoid unintended data loss.".format(uid))

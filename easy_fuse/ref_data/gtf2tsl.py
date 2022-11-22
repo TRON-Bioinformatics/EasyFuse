@@ -10,6 +10,7 @@ Get Transcript Support Level (TSL) info from an ensembl GTF file
 import sys
 import argparse
 
+
 class Gtf2Tsl(object):
     """stub"""
     def __init__(self, gtf_in, tsl_out):

@@ -20,11 +20,9 @@ import subprocess
 import sys
 
 # custom imports
-import misc.queueing as Queueing
-from misc.samples import SamplesDB
-from misc.logger import Logger
-import misc.io_methods as IOMethods
-
+from easy_fuse.misc.samples import SamplesDB
+from easy_fuse.misc.logger import Logger
+import easy_fuse.misc.io_methods as IOMethods
 
 
 class Fetching(object):
@@ -146,7 +144,8 @@ class Fetching(object):
         if "Liftover" in tools:
             tools.insert(2, "ContextSeqBak")
             # for read grepping, we need the original reference on which the first mapping was performed
-            cmd_contextseq_org = "python {0} --detected_fusions {1}.bak --annotation_db {2} --out_csv {3}.bak --genome_fasta {4} --tsl_info {5} --cis_near_dist {6} --context_seq_len {7} --tsl_filter_level {8}".format(os.path.join(module_dir, "fusionannotation.py"), detected_fusions_file,  genes_adb_path, context_seq_file, genome_fasta_path, genes_tsl_path, self.cfg["general"]["cis_near_distance"], self.cfg["general"]["context_seq_len"], self.cfg["general"]["tsl_filter"])
+            cmd_contextseq_org = "python {0} --detected_fusions {1}.bak --annotation_db {2} --out_csv {3}.bak --genome_fasta {4} --tsl_info {5} --cis_near_dist {6} --context_seq_len {7} --tsl_filter_level {8}".format(os.path.join(module_dir,
+                                                                                                                                                                                                                                      "fusionannotation.py"), detected_fusions_file, genes_adb_path, context_seq_file, genome_fasta_path, genes_tsl_path, self.cfg["general"]["cis_near_distance"], self.cfg["general"]["context_seq_len"], self.cfg["general"]["tsl_filter"])
             # now, references need to be updated according to the target liftover
             crossmap_chain = self.cfg["liftover"]["crossmap_chain"]
             ref_genome_dest = os.path.basename(crossmap_chain).replace(".", "_").split("_")[2].lower()
@@ -161,21 +160,26 @@ class Fetching(object):
                 read_count = self.get_input_read_count_from_fastq(fq1)
             infile.write(str(read_count))
         # Define cmd strings for each program
-        cmd_fusiondata = "{0} -i {1} -o {2} -s {3} -t {4} -f {5} -l {6}".format(os.path.join(module_dir, "fusiontoolparser.py"), self.scratch_path, detected_fusions_path, self.sample_id, fusion_support, self.cfg["general"]["fusiontools"], self.logger.get_path())
+        cmd_fusiondata = "{0} -i {1} -o {2} -s {3} -t {4} -f {5} -l {6}".format(os.path.join(module_dir,
+                                                                                             "fusiontoolparser.py"), self.scratch_path, detected_fusions_path, self.sample_id, fusion_support, self.cfg["general"]["fusiontools"], self.logger.get_path())
         cmd_liftover = "{0} -i {1} -l {2}".format(os.path.join(module_dir, "misc", "liftover.py"), detected_fusions_file, self.logger.get_path())
-        cmd_contextseq = "{0} --detected_fusions {1} --annotation_db {2} --out_csv {3} --genome_fasta {4} --tsl_info {5} --cis_near_dist {6} --context_seq_len {7} --tsl_filter_level {8}".format(os.path.join(module_dir, "fusionannotation.py"), detected_fusions_file, genes_adb_path, context_seq_file, genome_fasta_path, genes_tsl_path, self.cfg["general"]["cis_near_distance"], self.cfg["general"]["context_seq_len"], self.cfg["general"]["tsl_filter"])
+        cmd_contextseq = "{0} --detected_fusions {1} --annotation_db {2} --out_csv {3} --genome_fasta {4} --tsl_info {5} --cis_near_dist {6} --context_seq_len {7} --tsl_filter_level {8}".format(os.path.join(module_dir,
+                                                                                                                                                                                                               "fusionannotation.py"), detected_fusions_file, genes_adb_path, context_seq_file, genome_fasta_path, genes_tsl_path, self.cfg["general"]["cis_near_distance"], self.cfg["general"]["context_seq_len"], self.cfg["general"]["tsl_filter"])
         cpu = self.cfg["resources"]["fetchdata"].split(",")[0]
 #        mem = cfg.resources["fetchdata"]["mem"]
         cmd_starindex = "{0} --runMode genomeGenerate --runThreadN {1} --limitGenomeGenerateRAM 48000000000 --genomeChrBinNbits waiting_for_bin_size_input --genomeSAindexNbases waiting_for_sa_idx_input --genomeDir {2} --genomeFastaFiles {3}".format(cmds["star"], cpu, star_genome_path, "{0}{1}".format(context_seq_file, ".fasta"))
         cmd_staralign_fltr = "{0} --genomeDir {1} --readFilesCommand zcat --readFilesIn {2} {3} --outSAMtype BAM SortedByCoordinate --outFilterMultimapNmax -1 --outSAMattributes Standard --outSAMunmapped None --outFilterMismatchNoverLmax 0.02 --runThreadN {4} --outFileNamePrefix {5}fltr_ --limitBAMsortRAM 48000000000".format(cmds["star"], star_genome_path, fq1, fq2, cpu, star_align_file)
         cmd_bamindex_fltr = "{0} index {1}fltr_Aligned.sortedByCoord.out.bam".format(cmds["samtools"], star_align_file)
-        cmd_requantify_fltr = "{0} -i {1}fltr_Aligned.sortedByCoord.out.bam -o {2}_fltr.tdt -d 10".format(os.path.join(module_dir, "requantify.py"), star_align_file, classification_file)
+        cmd_requantify_fltr = "{0} -i {1}fltr_Aligned.sortedByCoord.out.bam -o {2}_fltr.tdt -d 10".format(os.path.join(module_dir,
+                                                                                                                       "requantify.py"), star_align_file, classification_file)
         (fq1, fq2) = self.samples.get_fastq_files(self.sample_id)
         cmd_staralign_org = "{0} --genomeDir {1} --readFilesCommand zcat --readFilesIn {2} {3} --outSAMtype BAM SortedByCoordinate --outFilterMultimapNmax -1 --outSAMattributes Standard --outSAMunmapped None --outFilterMismatchNoverLmax 0.02 --runThreadN {4} --outFileNamePrefix {5}org_ --limitBAMsortRAM 48000000000".format(cmds["star"], star_genome_path, fq1, fq2, cpu, star_align_file)
         cmd_bamindex_org = "{0} index {1}org_Aligned.sortedByCoord.out.bam".format(cmds["samtools"], star_align_file)
-        cmd_requantify_org = "{0} -i {1}org_Aligned.sortedByCoord.out.bam -o {2}_org.tdt -d 10".format(os.path.join(module_dir, "requantify.py"), star_align_file, classification_file)
+        cmd_requantify_org = "{0} -i {1}org_Aligned.sortedByCoord.out.bam -o {2}_org.tdt -d 10".format(os.path.join(module_dir,
+                                                                                                                    "requantify.py"), star_align_file, classification_file)
         # for testing, based on debug. should be removed if merged to original
-        cmd_read_filter2 = "{0} --input {1}_Aligned.out.bam --input2 {2}.debug --output {1}_Aligned.out.filtered2.bam".format(os.path.join(module_dir, "getRequantReads.py"), os.path.join(filtered_reads_path, self.sample_id), context_seq_file)
+        cmd_read_filter2 = "{0} --input {1}_Aligned.out.bam --input2 {2}.debug --output {1}_Aligned.out.filtered2.bam".format(os.path.join(module_dir,
+                                                                                                                                           "getRequantReads.py"), os.path.join(filtered_reads_path, self.sample_id), context_seq_file)
         # re-define fastq's if filtering is on (default)
         fq0 = ""
         if "Readfilter" in fusion_tools:
@@ -186,7 +190,8 @@ class Fetching(object):
         # allow soft-clipping? Specificity? --alignEndsType EndToEnd
         cmd_staralign_best = "{0} --genomeDir {1} --readFilesCommand zcat --readFilesIn {2} {3} --outSAMtype BAM SortedByCoordinate --outFilterMultimapNmax -1 --outSAMattributes Standard --outSAMunmapped None --outFilterMismatchNoverLmax 0.02 --runThreadN {4} --outFileNamePrefix {5}best_ --limitBAMsortRAM 48000000000".format(cmds["star"], star_genome_path, fq1, fq2, cpu, star_align_file)
         cmd_bamindex_best = "{0} index {1}best_Aligned.sortedByCoord.out.bam".format(cmds["samtools"], star_align_file)
-        cmd_requantify_best = "{0} -i {1}best_Aligned.sortedByCoord.out.bam -o {2}_best.tdt -d 10".format(os.path.join(module_dir, "requantify.py"), star_align_file, classification_file)
+        cmd_requantify_best = "{0} -i {1}best_Aligned.sortedByCoord.out.bam -o {2}_best.tdt -d 10".format(os.path.join(module_dir,
+                                                                                                                       "requantify.py"), star_align_file, classification_file)
 
 
         # set final lists of executable tools and path
@@ -256,7 +261,7 @@ class Fetching(object):
                         exe_cmds[i] = exe_cmds[i].replace("waiting_for_bin_size_input", star_bin)
                         exe_cmds[i] = exe_cmds[i].replace("waiting_for_sa_idx_input", star_sa)
                     self.logger.debug("Executing: {}".format(exe_cmds[i]))
-                    Queueing.submit("", exe_cmds[i].split(" "), "", "", "", "", "", "", "", "", module_file, "none")
+                    queueing.submit("", exe_cmds[i].split(" "), "", "", "", "", "", "", "", "", module_file, "none")
                 else:
                     self.logger.error("Could not run {0} due to the missing dependency {1}".format(tool, exe_dependencies[i]))
                     sys.exit(1)

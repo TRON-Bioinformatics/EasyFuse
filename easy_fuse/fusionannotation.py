@@ -16,7 +16,6 @@ Annotate predicted fusion genes. This involves:
 
 from argparse import ArgumentParser
 import gffutils
-import sys
 import xxhash
 from Bio import SeqIO
 from Bio.Seq import Seq

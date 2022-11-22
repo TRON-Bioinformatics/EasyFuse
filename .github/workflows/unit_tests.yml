@@ -18,4 +18,4 @@ jobs:
     - name: Build, install and run unit tests
       run: |
         pip install -r requirements.txt
-        python -m unittest discover tests
+        python -m unittest discover easy_fuse.tests

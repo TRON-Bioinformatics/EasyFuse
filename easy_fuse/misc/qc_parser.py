@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
-
-import sys
 from argparse import ArgumentParser
+
 
 class Parser(object):
     def __init__(self):

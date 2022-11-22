@@ -23,10 +23,8 @@ A log file is generated after successful completion which contains information a
 import sys
 import time
 from argparse import ArgumentParser
-
 import pysam
-
-from misc.logger import Logger
+from easy_fuse.misc.logger import Logger
 
 
 class Fusionreadfilter(object):

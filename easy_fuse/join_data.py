@@ -14,8 +14,6 @@ import json
 import os
 import sys
 import pandas as pd
-import misc.queueing as Queueing
-
 
 
 class DataJoining(object):
@@ -141,8 +139,9 @@ class DataJoining(object):
                 model_path = self.cfg["other_files"]["easyfuse_model"]
                 model_threshold = self.cfg["general"]["model_pred_threshold"]
                 # append prediction scores based on pre-calculated model
-                cmd_model = "{0} --fusion_summary {1} --model_file {2} --prediction_threshold {3} --output {4}".format(os.path.join(self.cfg["general"]["module_dir"], "R", "R_model_prediction.R"), summary_file, model_path, model_threshold, "{}.pred.csv".format(summary_file[:-4]))
-                Queueing.submit("", cmd_model.split(" "), "", "", "", "", "", "", "", "", "", "none")
+                cmd_model = "{0} --fusion_summary {1} --model_file {2} --prediction_threshold {3} --output {4}".format(os.path.join(self.cfg["general"]["module_dir"],
+                                                                                                                                    "../R", "R_model_prediction.R"), summary_file, model_path, model_threshold, "{}.pred.csv".format(summary_file[:-4]))
+                queueing.submit("", cmd_model.split(" "), "", "", "", "", "", "", "", "", "", "none")
                 # re-read the table with prediction for filter counting
                 # urla - note: there is probably a more elegant way using getattr/setattr but I'm not at all familiar with its pros/cons
                 if table == "1":

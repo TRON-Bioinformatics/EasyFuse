@@ -13,7 +13,6 @@ Simple method collection for:
 import os
 import sys
 import subprocess
-
 from argparse import ArgumentParser
 
 

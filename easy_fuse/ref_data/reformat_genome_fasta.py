@@ -15,6 +15,7 @@ from __future__ import print_function
 from argparse import ArgumentParser
 import os.path
 
+
 class GenomeRefParser(object):
     """Initialize class variables"""
     def __init__(self, in_fasta, out_dir):

@@ -11,11 +11,9 @@ Data itself can be modified using wrapped SQL queries.
 @author: Tron (PASO), BNT (URLA)
 @version: 20190429
 """
-
-
 from argparse import ArgumentParser
-
 import sqlite3
+
 
 class SamplesDB(object):
     """Create and interact with the sample DB"""

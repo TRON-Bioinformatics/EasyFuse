@@ -15,10 +15,9 @@ import pandas as pd
 from shutil import copyfile
 import queue as Queueing
 from logger import Logger
-
-sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
-
+sys.path.append(os.path.join(os.path.dirname(__file__), "../.."))
 import config as cfg
+
 
 class FusionLiftover(object):
     """Select alignments belonging to putative fusions from an s/bam file"""
@@ -114,6 +113,7 @@ class FusionLiftover(object):
         in_fus_detect_pddf.to_csv(self.in_fus_detect, sep=";", index=False)
         # urla - note: one could also drop the old cols, rename the new ones and reorder the df, but I find this much more fail-save
 
+
 def main():
     """Parse command line arguments and start script"""
     parser = ArgumentParser(description="Generate mapping stats for fusion detection")
@@ -123,6 +123,7 @@ def main():
 
     flo = FusionLiftover(args.input, args.logger)
     flo.liftcoords()
+
 
 if __name__ == '__main__':
     main()
