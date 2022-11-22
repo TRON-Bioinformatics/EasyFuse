@@ -15,7 +15,9 @@ import sys
 from configparser import ConfigParser
 
 import pandas as pd
+import pkg_resources
 
+import easy_fuse
 from easy_fuse.misc import queueing
 
 
@@ -149,11 +151,15 @@ class DataJoining(object):
             if self.model_predictions and self.check_files(summary_file, True):
                 model_path = self.cfg["other_files"]["easyfuse_model"]
                 model_threshold = self.cfg["general"]["model_pred_threshold"]
+
                 # append prediction scores based on pre-calculated model
                 cmd_model = "{0} --fusion_summary {1} --model_file {2} --prediction_threshold {3} --output {4}".format(
-                    os.path.join(self.cfg["general"]["module_dir"],
-                                 "../R", "R_model_prediction.R"), summary_file, model_path, model_threshold,
+                    pkg_resources.resource_filename(easy_fuse.__name__, "resources/R/R_model_prediction.R"),
+                    summary_file,
+                    model_path,
+                    model_threshold,
                     "{}.pred.csv".format(summary_file[:-4]))
+
                 queueing.submit("", cmd_model.split(" "), "", "", "", "", "", "", "", "", "", "none")
                 # re-read the table with prediction for filter counting
                 # urla - note: there is probably a more elegant way using getattr/setattr but I'm not at all familiar with its pros/cons
