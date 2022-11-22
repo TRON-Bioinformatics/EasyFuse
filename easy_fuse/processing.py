@@ -22,8 +22,9 @@ import time
 from easy_fuse import __version__
 from easy_fuse.misc import queueing
 from easy_fuse.misc.samples import SamplesDB
-from easy_fuse.misc.logger import Logger
 import easy_fuse.misc.io_methods as io_methods
+import logzero
+from logzero import logger
 
 
 class Processing(object):
@@ -31,10 +32,10 @@ class Processing(object):
     def __init__(self, cmd, input_paths, working_dir, cfg_file, jobname_suffix):
         """Parameter initiation and work folder creation. Start of progress logging."""
         self.working_dir = os.path.abspath(working_dir)
-        self.logger = Logger(os.path.join(self.working_dir, "easyfuse_processing.log"))
-        io_methods.create_folder(self.working_dir, self.logger)
+        logzero.logfile(os.path.join(self.working_dir, "easyfuse_processing.log"))
+        io_methods.create_folder(self.working_dir)
 
-        self.logger.info("Starting easyfuse: CMD - {}".format(cmd))
+        logger.info("Starting easyfuse: CMD - {}".format(cmd))
         self.input_paths = [os.path.abspath(file) for file in input_paths]
         self.samples = SamplesDB(os.path.join(self.working_dir, "samples.db"))
 
@@ -45,7 +46,7 @@ class Processing(object):
         if not cfg_file and os.path.exists(default_cfg_path):
             cfg_file = default_cfg_path
         elif not cfg_file and not os.path.exists(default_cfg_path):
-            self.logger.error("Could not find default config file (path={}). Exiting.".format(default_cfg_path))
+            logger.error("Could not find default config file (path={}). Exiting.".format(default_cfg_path))
             sys.exit(1)
 
         self.cfg_file = cfg_file
@@ -68,22 +69,22 @@ class Processing(object):
     # Fastq pairs (single end input is currently not supported) are then send to "execute_pipeline"
     def run(self, tool_num_cutoff):
         """General parameter setting, identification of fastq files and initiation of processing"""
-        self.logger.info("Pipeline Version: {}".format(__version__))
+        logger.info("Pipeline Version: {}".format(__version__))
 
         ref_genome = self.cfg["general"]["ref_genome_build"]
         ref_trans = self.cfg["general"]["ref_trans_version"]
 
-        self.logger.info("Reference Genome: {0}, Reference Transcriptome: {1}".format(ref_genome, ref_trans))
+        logger.info("Reference Genome: {0}, Reference Transcriptome: {1}".format(ref_genome, ref_trans))
 
 
         # get fastq files
-        fastqs = io_methods.get_fastq_files(self.input_paths, self.logger)
-        sample_list = io_methods.pair_fastq_files(fastqs, self.logger)
+        fastqs = io_methods.get_fastq_files(self.input_paths)
+        sample_list = io_methods.pair_fastq_files(fastqs)
         for sample in sample_list:
             if sample[1] and sample[2]:
-                self.logger.info("Processing Sample ID: {} (paired end)".format(sample[0]))
-                self.logger.info("Sample 1: {}".format(sample[1]))
-                self.logger.info("Sample 2: {}".format(sample[2]))
+                logger.info("Processing Sample ID: {} (paired end)".format(sample[0]))
+                logger.info("Sample 1: {}".format(sample[1]))
+                logger.info("Sample 2: {}".format(sample[2]))
                 self.execute_pipeline(sample[1], sample[2], sample[0], ref_genome, ref_trans, tool_num_cutoff)
 
         
@@ -98,7 +99,7 @@ class Processing(object):
                 modelling_string = " --model_predictions"
             cmd_summarize = "python {0} --input {1}{2} -c {3}".format(os.path.join(self.cfg["general"]["module_dir"],
                                                                                    "summarize_data.py"), self.working_dir, modelling_string, self.cfg_file)
-            self.logger.debug("Submitting job: CMD - {0}; PATH - {1}; DEPS - {2}".format(cmd_summarize, self.working_dir, dependency))
+            logger.debug("Submitting job: CMD - {0}; PATH - {1}; DEPS - {2}".format(cmd_summarize, self.working_dir, dependency))
             resources_summary = self.cfg["resources"]["summary"].split(",")
             cpu = resources_summary[0]
             mem = resources_summary[1]
@@ -166,7 +167,7 @@ class Processing(object):
                 soapfuse_path,
                 fetchdata_path
             ]:
-            io_methods.create_folder(folder, self.logger)
+            io_methods.create_folder(folder)
 
         # get a list of tools from the samples.db file that have been run previously on this sample
         state_tools = self.samples.get_tool_list_from_state(sample_id)
@@ -268,11 +269,11 @@ class Processing(object):
                 # Besides tool dependencies (Pizzly -> Kallisto, Starfusion/Starchip -> Star), read filtering is mandatory
                 # Processing will be skipped if a certain dependency was not found (either pre-processed data of the configs tool string are checked)
                 if tool in state_tools:
-                    self.logger.info("Skipping {0} as it looks like a previous run finished successfully. Results should be in {1}".format(tool, exe_path[i]))
+                    logger.info("Skipping {0} as it looks like a previous run finished successfully. Results should be in {1}".format(tool, exe_path[i]))
                     continue
                 else:
                     if tool == "Readfilter" and "Readfilter" not in tools:
-                        self.logger.error(
+                        logger.error(
                                 """Error 99: Sample {} will be skipped due to missing read filtering.\n
                                 Read filtering is currently a mandatory step for the processing.\n
                                 Because you haven't run it before for this sample, you have to include \"Readfilter\" in the tool selection in your config.\n
@@ -280,7 +281,7 @@ class Processing(object):
                         print("Error 99: Sample {} will be skipped due to missing read filtering.".format(sample_id))
                         return 0
                     elif tool == "Pizzly" and "Kallisto" not in tools:
-                        self.logger.error(
+                        logger.error(
                                 """Error 99: Running {0} for Sample {1} will be skipped due to a missing dependency.\n
                                 Pizzly builds on Kallisto and it is therefore mandatory to run this first.\n
                                 Because you haven't run it before for this sample, you have to include \"Kallisto\" in the tool selection in your config.\n
@@ -288,7 +289,7 @@ class Processing(object):
                         print("Error 99: Running {0} for Sample {1} will be skipped due to a missing dependency.".format(tool, sample_id))
                         continue
                     elif (tool == "Starfusion" or tool == "Starchip") and "Star" not in tools:
-                        self.logger.error(
+                        logger.error(
                                 """Error 99: Running {0} for Sample {1} will be skipped due to a missing dependency.\n
                                 {0} builds on Star and it is therefore mandatory to run this first.\n
                                 Because you haven't run it before for this sample, you have to include \"Star\" in the tool selection in your config.\n
@@ -297,7 +298,7 @@ class Processing(object):
                         continue
 
                 # prepare slurm jobs: get ressources, create uid, set output path and check dependencies
-                self.logger.debug("Submitting {} run".format(tool))
+                logger.debug("Submitting {} run".format(tool))
                 cpumem = self.cfg["resources"][tool.lower()].split(",")
                 cpu = cpumem[0]
                 mem = cpumem[1]
@@ -321,10 +322,10 @@ class Processing(object):
                     dependency = queueing.get_jobs_by_name("QC-{0}".format(sample_id), que_sys)
                 dependency.extend(queueing.get_jobs_by_name("Readfilter-{0}".format(sample_id), que_sys))
                 dependency.extend(queueing.get_jobs_by_name("QC-{0}".format(sample_id), que_sys))
-                self.logger.debug("Submitting job: CMD - {0}; PATH - {1}; DEPS - {2}".format(cmd, exe_path[i], dependency))
+                logger.debug("Submitting job: CMD - {0}; PATH - {1}; DEPS - {2}".format(cmd, exe_path[i], dependency))
                 self.submit_job(uid, cmd, cpu, mem, exe_path[i], dependency, "")
             else:
-                self.logger.info("Skipping {0} as it is not selected for execution (Selected are: {1})".format(tool, tools))
+                logger.info("Skipping {0} as it is not selected for execution (Selected are: {1})".format(tool, tools))
 
     def submit_job(self, uid, cmd, cores, mem_usage, output_results_folder, dependencies, mail):
         """Submit job to for process generation"""
@@ -345,7 +346,7 @@ class Processing(object):
                     queueing.submit("{0}_CMD{1}".format(uid, i), cmd_split, cores, mem_usage, output_results_folder, dependencies, self.cfg["general"]["partition"], self.cfg["general"]["user"], self.cfg["general"]["time_limit"], mail, module_file, que_sys)
                 time.sleep(0.5)
         else:
-            self.logger.error("A job with this application/sample combination is currently running. Skipping {} in order to avoid unintended data loss.".format(uid))
+            logger.error("A job with this application/sample combination is currently running. Skipping {} in order to avoid unintended data loss.".format(uid))
 
 
 def main():

@@ -22,8 +22,9 @@ import sys
 from easy_fuse.misc import queueing
 # custom imports
 from easy_fuse.misc.samples import SamplesDB
-from easy_fuse.misc.logger import Logger
 import easy_fuse.misc.io_methods as IOMethods
+import logzero
+from logzero import logger
 
 
 class Fetching(object):
@@ -34,7 +35,7 @@ class Fetching(object):
         self.fetchdata_path = fetchdata_path
         self.sample_id = sample_id
         self.samples = SamplesDB(os.path.join(scratch_path, os.path.pardir, "samples.db"))
-        self.logger = Logger(os.path.join(self.fetchdata_path, "fetchdata.log"))
+        logzero.logfile(os.path.join(self.fetchdata_path, "fetchdata.log"))
 
         self.cfg = None
 
@@ -44,7 +45,7 @@ class Fetching(object):
         if not cfg_file and os.path.exists(default_cfg_path):
             cfg_file = default_cfg_path
         elif not cfg_file and not os.path.exists(default_cfg_path):
-            self.logger.error("Could not find default config file (path={}). Exiting.".format(default_cfg_path))
+            logger.error("Could not find default config file (path={}). Exiting.".format(default_cfg_path))
             sys.exit(1)
 
         if cfg_file.endswith("ini"):
@@ -64,8 +65,8 @@ class Fetching(object):
             genome_size = int(lfile.readline().rstrip())
         star_genome_chr_bin_n_bits = min(18, int(math.log(genome_size / seq_num, 2)))
         star_genome_sa_index_n_bases = min(14, int(math.log(genome_size, 2) / 2 - 1)) - 2
-        self.logger.debug("Custom genome sequence number: {0} => {1} will be used as bin size parameter for genome storage".format(seq_num, star_genome_chr_bin_n_bits))
-        self.logger.debug("Custom Genome Size: {0} bp => {1} will be used as length parameter for SA pre-indexing".format(genome_size, star_genome_sa_index_n_bases))
+        logger.debug("Custom genome sequence number: {0} => {1} will be used as bin size parameter for genome storage".format(seq_num, star_genome_chr_bin_n_bits))
+        logger.debug("Custom Genome Size: {0} bp => {1} will be used as length parameter for SA pre-indexing".format(genome_size, star_genome_sa_index_n_bases))
         return(str(star_genome_chr_bin_n_bits), str(star_genome_sa_index_n_bases))
 
     @staticmethod
@@ -92,11 +93,11 @@ class Fetching(object):
         # print sample id
         # execute processing pipe
         # sampleID = ...
-        self.logger.info("Fetching in sample {}".format(self.sample_id))
+        logger.info("Fetching in sample {}".format(self.sample_id))
         if not fq1 or not fq2:
-            self.logger.debug("Either ReadFile 1 or 2 or both are missing, trying to get original files from samples.csv")
-            self.logger.debug(self.sample_id)
-            self.logger.debug(self.samples.db_path)
+            logger.debug("Either ReadFile 1 or 2 or both are missing, trying to get original files from samples.csv")
+            logger.debug(self.sample_id)
+            logger.debug(self.samples.db_path)
             (fq1, fq2) = self.samples.get_fastq_files(self.sample_id)
         self.execute_pipeline(fq1, fq2, fusion_support)
 
@@ -133,7 +134,7 @@ class Fetching(object):
                 star_align_path,
                 classification_path
             ]:
-            IOMethods.create_folder(folder, self.logger)
+            IOMethods.create_folder(folder)
 
         # processing steps to perform
         tools = self.cfg["general"]["fd_tools"].split(",")
@@ -150,7 +151,7 @@ class Fetching(object):
             # now, references need to be updated according to the target liftover
             crossmap_chain = self.cfg["liftover"]["crossmap_chain"]
             ref_genome_dest = os.path.basename(crossmap_chain).replace(".", "_").split("_")[2].lower()
-            self.logger.debug("Creating a copy of the detected fusions file due to selection of liftover. Old ({0}) data will be kept in \"{1}.bak\"".format(ref_genome, detected_fusions_file))
+            logger.debug("Creating a copy of the detected fusions file due to selection of liftover. Old ({0}) data will be kept in \"{1}.bak\"".format(ref_genome, detected_fusions_file))
             genome_fasta_path = self.cfg["references"]["genome_fasta_hg37"]
             genes_adb_path = self.cfg["references"]["genes_adb_hg37"]
 
@@ -162,8 +163,8 @@ class Fetching(object):
             infile.write(str(read_count))
         # Define cmd strings for each program
         cmd_fusiondata = "{0} -i {1} -o {2} -s {3} -t {4} -f {5} -l {6}".format(os.path.join(module_dir,
-                                                                                             "fusiontoolparser.py"), self.scratch_path, detected_fusions_path, self.sample_id, fusion_support, self.cfg["general"]["fusiontools"], self.logger.get_path())
-        cmd_liftover = "{0} -i {1} -l {2}".format(os.path.join(module_dir, "misc", "liftover.py"), detected_fusions_file, self.logger.get_path())
+                                                                                                 "fusiontoolparser.py"), self.scratch_path, detected_fusions_path, self.sample_id, fusion_support, self.cfg["general"]["fusiontools"], logger.get_path())
+        cmd_liftover = "{0} -i {1} -l {2}".format(os.path.join(module_dir, "misc", "liftover.py"), detected_fusions_file, logger.get_path())
         cmd_contextseq = "{0} --detected_fusions {1} --annotation_db {2} --out_csv {3} --genome_fasta {4} --tsl_info {5} --cis_near_dist {6} --context_seq_len {7} --tsl_filter_level {8}".format(os.path.join(module_dir,
                                                                                                                                                                                                                "fusionannotation.py"), detected_fusions_file, genes_adb_path, context_seq_file, genome_fasta_path, genes_tsl_path, self.cfg["general"]["cis_near_distance"], self.cfg["general"]["context_seq_len"], self.cfg["general"]["tsl_filter"])
         cpu = self.cfg["resources"]["fetchdata"].split(",")[0]
@@ -256,18 +257,18 @@ class Fetching(object):
         for i, tool in enumerate(exe_tools, 0):
             if tool in tools:
                 if not exe_dependencies[i] or os.path.exists(exe_dependencies[i]):
-                    self.logger.info("Starting {}".format(tool))
+                    logger.info("Starting {}".format(tool))
                     if tool == "Starindex": # the genome size required for the genomeSAindexNbases parameter is not known before now
                         (star_bin, star_sa) = self.get_pseudo_genome_adjustments_for_star("{0}{1}".format(context_seq_file, ".fasta.info"))
                         exe_cmds[i] = exe_cmds[i].replace("waiting_for_bin_size_input", star_bin)
                         exe_cmds[i] = exe_cmds[i].replace("waiting_for_sa_idx_input", star_sa)
-                    self.logger.debug("Executing: {}".format(exe_cmds[i]))
+                    logger.debug("Executing: {}".format(exe_cmds[i]))
                     queueing.submit("", exe_cmds[i].split(" "), "", "", "", "", "", "", "", "", module_file, "none")
                 else:
-                    self.logger.error("Could not run {0} due to the missing dependency {1}".format(tool, exe_dependencies[i]))
+                    logger.error("Could not run {0} due to the missing dependency {1}".format(tool, exe_dependencies[i]))
                     sys.exit(1)
             else:
-                self.logger.debug("Skipping {0} as it is not selected for execution (Selected are: {1})".format(tool, tools))
+                logger.debug("Skipping {0} as it is not selected for execution (Selected are: {1})".format(tool, tools))
 
 def main():
     """Parse command line arguments and start script"""

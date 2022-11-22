@@ -14,16 +14,17 @@ import os.path
 import pandas as pd
 from shutil import copyfile
 import queue as Queueing
-from logger import Logger
 #sys.path.append(os.path.join(os.path.dirname(__file__), "../.."))
 #import config as cfg
+import logzero
+from logzero import logger
 
 
 class FusionLiftover(object):
     """Select alignments belonging to putative fusions from an s/bam file"""
     def __init__(self, in_fus_detect, logger):
         self.in_fus_detect = in_fus_detect
-        self.logger = Logger(logger)
+        logzero.logfile(logger)
         copyfile(in_fus_detect, "{}.bak".format(in_fus_detect))
         self.chr_list = [
             "1", "2", "3", "4", "5",
@@ -42,11 +43,11 @@ class FusionLiftover(object):
         ref_genome_org = os.path.basename(crossmap_chain).replace(".", "_").split("_")[0]
         ref_genome_dest = os.path.basename(crossmap_chain).replace(".", "_").split("_")[2]
         if not ref_genome_org.lower() == self.cfg.ref_genome_build.lower():
-            self.logger.error("Error 99: Mismatch between set genome version and chain file. Please verify that you have the correct chain file was supplied!")
+            logger.error("Error 99: Mismatch between set genome version and chain file. Please verify that you have the correct chain file was supplied!")
             print("Error 99: Mismatch between set genome version and chain file. Please verify that you have the correct chain file was supplied!")
             sys.exit(99)
 
-        self.logger.info("Performing liftover from {} to {} with crossmap".format(ref_genome_org, ref_genome_dest))
+        logger.info("Performing liftover from {} to {} with crossmap".format(ref_genome_org, ref_genome_dest))
         tmp_org_bed = "{}.liftover_{}.bed".format(self.in_fus_detect[:-4], ref_genome_org)
         tmp_dest_bed = "{}.liftover_{}.bed".format(self.in_fus_detect[:-4], ref_genome_dest)
         tmp_dest_bed_unmap = "{}.liftover_{}.bed.unmap".format(self.in_fus_detect[:-4], ref_genome_dest)
@@ -67,9 +68,9 @@ class FusionLiftover(object):
         Queueing.submit("", cmd_crossmap.split(" "), "", "", "", "", "", "", "", "", module_file, "none")
         # check whether some coords were unmapped and print which those are (i.e. which fusion will be lost)
         if os.stat(tmp_dest_bed_unmap).st_size == 0:
-            self.logger.info("Liftover was successful for all fusion breakpoints! Creating a new DetectedFusions table...")
+            logger.info("Liftover was successful for all fusion breakpoints! Creating a new DetectedFusions table...")
         else:
-            self.logger.debug("Fusions couldn't be lifted completely. The following fusions have to be excluded from downstream analyses.")
+            logger.debug("Fusions couldn't be lifted completely. The following fusions have to be excluded from downstream analyses.")
             with open(tmp_dest_bed_unmap, "r") as liftout:
                 for line in liftout:
                     print(line)
@@ -93,13 +94,13 @@ class FusionLiftover(object):
         for i in in_fus_detect_pddf.index:
             # skip fusions mapping to "strange" chromosomes
             if not in_fus_detect_pddf.loc[i, "bp1_lifted"] or not in_fus_detect_pddf.loc[i, "bp2_lifted"]:
-                self.logger.error("Skipping wrong liftover for {0} and/or {1}".format(in_fus_detect_pddf.loc[i, "bp1_lifted"], in_fus_detect_pddf.loc[i, "bp2_lifted"]))
+                logger.error("Skipping wrong liftover for {0} and/or {1}".format(in_fus_detect_pddf.loc[i, "bp1_lifted"], in_fus_detect_pddf.loc[i, "bp2_lifted"]))
                 in_fus_detect_pddf.loc[i, "lo_check"] = "Remove"
                 continue
             chrom1, _, _ = in_fus_detect_pddf.loc[i, "bp1_lifted"].split(":")
             chrom2, _, _ = in_fus_detect_pddf.loc[i, "bp2_lifted"].split(":")
             if chrom1 not in self.chr_list or chrom2 not in self.chr_list:
-                self.logger.error("Skipping un-annotatable chromosomes {0} and/or {1}".format(chrom1, chrom2))
+                logger.error("Skipping un-annotatable chromosomes {0} and/or {1}".format(chrom1, chrom2))
                 in_fus_detect_pddf.loc[i, "lo_check"] = "Remove"
                 continue
             # replace the old breakpoints, with the new ones in the BPID

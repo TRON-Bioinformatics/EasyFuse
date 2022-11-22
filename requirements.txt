@@ -5,3 +5,4 @@ biopython==1.73
 pysam==0.15.2
 gffutils==0.10.1
 bx-python==0.8.2
+logzero==1.7.0

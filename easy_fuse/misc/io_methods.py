@@ -13,10 +13,10 @@ Input/Output method collection
 import os
 import re
 import stat
+from logzero import logger
 
 
-
-def create_folder(path, logger=None):
+def create_folder(path):
     '''This function creates a specified folder, if not already existing and grants the respective permission.'''
     if not os.path.exists(path):
         os.makedirs(path)
@@ -41,7 +41,7 @@ def grant_permissions(path, mode):
             os.chmod(file, mode)
 
 
-def get_fastq_files(input_paths, logger=None):
+def get_fastq_files(input_paths):
     """Load fastq files, check file name consistency and return tuple of left/right pairs"""
     # load fastq files from the provide path to a list
     fastqs = []
@@ -62,7 +62,7 @@ def get_fastq_files(input_paths, logger=None):
             fastqs.append(path)
     return fastqs
 
-def pair_fastq_files(fastqs, logger=None):
+def pair_fastq_files(fastqs):
     left = []
     right = []
     sample_id = []

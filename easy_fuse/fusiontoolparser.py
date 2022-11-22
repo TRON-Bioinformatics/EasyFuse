@@ -15,7 +15,8 @@ import os
 import re
 import operator
 from argparse import ArgumentParser
-from easy_fuse.misc.logger import Logger
+import logzero
+from logzero import logger
 
 
 # pylint: disable=line-too-long
@@ -41,7 +42,7 @@ class FusionParser(object):
             "21", "22", "X", "Y", "MT"
         )
         self.tools = fusiontool_list.split(",")
-        self.logger = Logger(sample_log)
+        logzero.logfile(sample_log)
 
     #####
     ### fusion tool parser
@@ -149,7 +150,7 @@ class FusionParser(object):
                 if elements[5].split(":")[0] not in self.chr_list or elements[7].split(":")[0] not in self.chr_list:
                     continue
                 #fgid = fusion_gene.split("_")[0] + "_" + elements[5] + "_" + fusion_gene.split("_")[1] + "_" + elements[7]
-                #self.logger.debug("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\n".format(fgid, fusion_gene, elements[5], elements[7], elements[1], elements[2], self.sample_id))
+                #logger.debug("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\n".format(fgid, fusion_gene, elements[5], elements[7], elements[1], elements[2], self.sample_id))
                 bpid = elements[5] + "_" + elements[7]
 
                 fusion_map[bpid] = [
@@ -466,7 +467,7 @@ class FusionParser(object):
             fusion_result_dict = {} # stores the complete fusion map per tool
             results_with_errors_dict = {} # stores booleans whether exeption was raised during tool exe
 
-            self.logger.info("Processing " + self.sample_id)
+            logger.info("Processing " + self.sample_id)
             sample_string = self.sample_id
             for tool in self.tools:
                 fusion_result_dict[tool], results_with_errors_dict[tool] = self.get_tool_results(fusion_output_path, tool)
@@ -482,7 +483,7 @@ class FusionParser(object):
     def get_tool_results(self, output_folder_path, tool):
         """Return tuple of (dict of results from individual fusion tools, error type)"""
         pred_res_dict = {} # dictionary of prediction results
-        self.logger.info("Parsing results for " + tool)
+        logger.info("Parsing results for " + tool)
         try:
             if tool == "Fusioncatcher":
                 pred_res_dict = self.get_fusioncatcher_results()
@@ -500,7 +501,7 @@ class FusionParser(object):
         #        the caught exception is not further specified as several different exceptions may be raised during processing
         #        the type of exception is, however, unimportant for further processing, because any exception must be manually reviewed
         except Exception as ukn_err: # pylint: disable=W0703
-            self.logger.error("Couldn't fetch results from {0}, please check data in {1}. Error message: {2}".format(tool, output_folder_path, ukn_err))
+            logger.error("Couldn't fetch results from {0}, please check data in {1}. Error message: {2}".format(tool, output_folder_path, ukn_err))
             return (pred_res_dict, True)
 
         tool_res_file = os.path.join(output_folder_path, tool + "_res.csv")
@@ -601,15 +602,15 @@ class FusionParser(object):
             # write header
             fus_file.write("BPID;Fusion_Gene;Breakpoint1;Breakpoint2;Junction_Reads;Spanning_Reads;Sample;Tool\n")
             count_fusions = 0
-            self.logger.debug("Generating Detected Fusions table")
+            logger.debug("Generating Detected Fusions table")
 
             fusion_result_dict, results_with_errors_dict = self.concatenate_fusion_results(tool_state_path, self.fusion_output_path)
             #print(len(fusion_result_dict))
             if sum(results_with_errors_dict.values()) == len(fusion_result_dict):
-                self.logger.error("Fusion parsing failed completely. Revision required. Aborting.")
+                logger.error("Fusion parsing failed completely. Revision required. Aborting.")
                 sys.exit(1)
             elif sum(results_with_errors_dict.values()) != 0:
-                self.logger.error("Results incomplete. Please make sure that all tools have run completely on dataset.")
+                logger.error("Results incomplete. Please make sure that all tools have run completely on dataset.")
 
             dict_of_boolean_list_of_found_uniq_fusions = self.lookup_fusions_in_prediction(fusion_result_dict) # this is snake case, although too long... pylint: disable=C0103
             # for each unique fusion
@@ -627,7 +628,7 @@ class FusionParser(object):
                                 count_fusions += 1
                                 fus_file.write(uniq_fusion_id + ";" + ";".join(fusion_result_dict[fusion_tool][fusion_id]) + "\n")
 
-        self.logger.info("Wrote {0} detected fusion genes to {1}.".format(count_fusions, detected_fusions_file))
+        logger.info("Wrote {0} detected fusion genes to {1}.".format(count_fusions, detected_fusions_file))
 
 def main():
     """Main"""
