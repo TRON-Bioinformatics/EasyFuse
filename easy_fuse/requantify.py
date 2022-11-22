@@ -7,14 +7,15 @@ Junction/Spanning read pair counting
 @version: 20221005
 """
 
-
 import os.path
 from argparse import ArgumentParser
+
 import pysam
 
 
 class Requantification(object):
     """Select alignments belonging to putative fusions from an s/bam file"""
+
     def __init__(self, bam, output, bp_distance_threshold):
         """Parameter initialization"""
         self.in_bam = pysam.AlignmentFile(bam, "rb")
@@ -32,24 +33,33 @@ class Requantification(object):
         # the read_group is list of reads (incl multimappers) belonging to a single read pair
         # reads from this read group can map independently to ft, wt1 and wt2
         for read_group in read_buffer:
-            junction_ft = 0 # 0 = no junction overlapping read, 1+ = at least one of the paired reads is a junction read
-            spanning_ft = [0, 0] # left: paired read cnt fully left of the fusion bp, right: paired read cnt fulls right of the fusion bp
-            junction_wt1 = 0 # like is_junction_ft but for wt1
-            spanning_wt1 = [0, 0] # like is_spanning_ft but for wt1
-            junction_wt2 = 0 # like is_junction_ft but for wt2
-            spanning_wt2 = [0, 0] # like is_spanning_ft but for wt2
+            junction_ft = 0  # 0 = no junction overlapping read, 1+ = at least one of the paired reads is a junction read
+            spanning_ft = [0,
+                           0]  # left: paired read cnt fully left of the fusion bp, right: paired read cnt fulls right of the fusion bp
+            junction_wt1 = 0  # like is_junction_ft but for wt1
+            spanning_wt1 = [0, 0]  # like is_spanning_ft but for wt1
+            junction_wt2 = 0  # like is_junction_ft but for wt2
+            spanning_wt2 = [0, 0]  # like is_spanning_ft but for wt2
 
             # each processed read belongs to one of the three defined read_groups
             for read in read_buffer[read_group]:
                 if read.reference_name.endswith("ft"):
-                    junction_ft, spanning_ft, anchor_ft = self.count_junc_span(read, self.fusion_seq_dict[reference_base][0], junction_ft, spanning_ft, anchor_ft)
+                    junction_ft, spanning_ft, anchor_ft = self.count_junc_span(read,
+                                                                               self.fusion_seq_dict[reference_base][0],
+                                                                               junction_ft, spanning_ft, anchor_ft)
                 elif read.reference_name.endswith("wt1"):
-                    junction_wt1, spanning_wt1, anchor_wt1 = self.count_junc_span(read, self.fusion_seq_dict[reference_base][6], junction_wt1, spanning_wt1, anchor_wt1)
+                    junction_wt1, spanning_wt1, anchor_wt1 = self.count_junc_span(read,
+                                                                                  self.fusion_seq_dict[reference_base][
+                                                                                      6], junction_wt1, spanning_wt1,
+                                                                                  anchor_wt1)
                 elif read.reference_name.endswith("wt2"):
-                    junction_wt2, spanning_wt2, anchor_wt2 = self.count_junc_span(read, self.fusion_seq_dict[reference_base][12], junction_wt2, spanning_wt2, anchor_wt2)
+                    junction_wt2, spanning_wt2, anchor_wt2 = self.count_junc_span(read,
+                                                                                  self.fusion_seq_dict[reference_base][
+                                                                                      12], junction_wt2, spanning_wt2,
+                                                                                  anchor_wt2)
 
-            #print("stored before: {}".format(self.fusion_seq_dict[reference_base]))
-            #print("jft: {}, sft: {}, jwt: {}, swt: {}".format(is_junction_ft, is_spanning_ft, is_junction_wt, is_spanning_wt))
+            # print("stored before: {}".format(self.fusion_seq_dict[reference_base]))
+            # print("jft: {}, sft: {}, jwt: {}, swt: {}".format(is_junction_ft, is_spanning_ft, is_junction_wt, is_spanning_wt))
             # update junction and spanning counts
             self.update_counts(reference_base, junction_ft, spanning_ft, 1)
             self.update_counts(reference_base, junction_wt1, spanning_wt1, 7)
@@ -58,12 +68,14 @@ class Requantification(object):
         self.fusion_seq_dict[reference_base][5] = anchor_ft
         self.fusion_seq_dict[reference_base][11] = anchor_wt1
         self.fusion_seq_dict[reference_base][17] = anchor_wt2
-            #print("stored after: {}".format(self.fusion_seq_dict[reference_base]))
+        # print("stored after: {}".format(self.fusion_seq_dict[reference_base]))
 
     def count_junc_span(self, read, breakpoint_pos, junction_count, spanning_counts, anchor):
         """Identify whether a read belongs to a junction or spanning pair"""
         # read overlaps the fusion breakpoint
-        if breakpoint_pos >= self.bp_distance_threshold and read.get_overlap(breakpoint_pos - self.bp_distance_threshold, breakpoint_pos + self.bp_distance_threshold) == 2 * self.bp_distance_threshold:
+        if breakpoint_pos >= self.bp_distance_threshold and read.get_overlap(
+                breakpoint_pos - self.bp_distance_threshold,
+                breakpoint_pos + self.bp_distance_threshold) == 2 * self.bp_distance_threshold:
             junction_count += 1
             anchor = max(anchor, min(read.reference_end - breakpoint_pos, breakpoint_pos - read.reference_start))
         # read maps left of the fusion breakpoint
@@ -102,21 +114,21 @@ class Requantification(object):
             # [3]: junction read count on ft
             # [4]: spanning pairs count on ft
             # [5]: longest anchor on ft
-            
+
             # [6]: breakpoint position on wt1
             # [7]: gene a counts on wt1
             # [8]: gene b counts on wt2
             # [9]: junction read count on wt1
             # [10]: spanning pairs count on wt1
             # [11]: longest anchor on wt1
-            
+
             # [12]: breakpoint position on wt2
             # [13]: gene a counts on wt2
             # [14]: gene b counts on wt2
             # [15]: junction read count on wt2
             # [16]: spanning pairs count on wt2
             # [17]: longest anchor on wt2
-            
+
             # currently, the header is in the format: "FTID_contextSeqHash_breakpoint_{ft,wt1,wt2}"
             # As breakpoints can be different between ft and wt, basename is everything before
             id_split = header_seq_id["SN"].split("_")
@@ -135,7 +147,7 @@ class Requantification(object):
 
     def run(self):
         """Walk linewise through a s/bam file and send reads mapping to the same fusion/wt context to counting"""
-        #self.logger.info("Starting fusion read filtering")
+        # self.logger.info("Starting fusion read filtering")
         count_lines = 0
         count_processed_refs = 0
         # the read buffer is a dict of lists. The dict has query names as keys and a list of corresponding reads as values.
@@ -156,14 +168,15 @@ class Requantification(object):
             read_buffer[read.query_name].append(read)
             # reference name conventions may change in the near future, but the tail must be
             # "*_breakpointPosition_ft" for the fusion transcript and "*_wt{1,2}" for the wt background
-#            if read.reference_name.endswith("ft"):
+            #            if read.reference_name.endswith("ft"):
             last_reference = "_".join(read.reference_name.split("_")[:-2])
-#            else:
-#                last_reference = "_".join(read.reference_name.split("_")[:-1])
+        #            else:
+        #                last_reference = "_".join(read.reference_name.split("_")[:-1])
 
         # process the last read_buffer
         self.quantify_read_groups(read_buffer, last_reference)
-        print("All done! Reads did not map to ~{}% of the reference input".format(100.0 - (float(count_processed_refs) / (len(self.fusion_seq_dict) / 100.0))))
+        print("All done! Reads did not map to ~{}% of the reference input".format(
+            100.0 - (float(count_processed_refs) / (len(self.fusion_seq_dict) / 100.0))))
         # close reading/writing stream
         self.in_bam.close()
         # write data to file. Change out_file_sep to ";" to create a csv file
@@ -190,8 +203,9 @@ class Requantification(object):
                 # write counts directly
                 out_counts.write("{}\n".format(out_file_sep.join(map(str, self.fusion_seq_dict[key]))))
                 # normalize and write normalized counts
-                self.fusion_seq_dict[key] = [read_count if i in no_norm else self.normalize_counts_cpm(read_count) for i, read_count in enumerate(self.fusion_seq_dict[key])]
-                #self.fusion_seq_dict[key] = map(self.normalize_counts_cpm, self.fusion_seq_dict[key])
+                self.fusion_seq_dict[key] = [read_count if i in no_norm else self.normalize_counts_cpm(read_count) for
+                                             i, read_count in enumerate(self.fusion_seq_dict[key])]
+                # self.fusion_seq_dict[key] = map(self.normalize_counts_cpm, self.fusion_seq_dict[key])
                 out_norm.write("{}\n".format(out_file_sep.join(map(str, self.fusion_seq_dict[key]))))
 
 
@@ -200,11 +214,13 @@ def main():
     parser = ArgumentParser(description="Generate mapping stats for fusion detection")
     parser.add_argument('-i', '--input', dest='input', help='Specify input BAM file', required=True)
     parser.add_argument('-o', '--output', dest='output', help='Specify output file', required=True)
-    parser.add_argument('-d', '--bp_distance', dest='bp_distance', help='Threshold of bases around the breakpoint for junction/spanning counting', default="3")
+    parser.add_argument('-d', '--bp_distance', dest='bp_distance',
+                        help='Threshold of bases around the breakpoint for junction/spanning counting', default="3")
     args = parser.parse_args()
 
     requant = Requantification(args.input, args.output, args.bp_distance)
     requant.run()
+
 
 if __name__ == '__main__':
     main()

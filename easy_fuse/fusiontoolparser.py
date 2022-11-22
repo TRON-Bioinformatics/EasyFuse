@@ -10,11 +10,12 @@ output folders and writes the "Detected_Fusions.csv"
 @version: 20181126
 """
 
-import sys
+import operator
 import os
 import re
-import operator
+import sys
 from argparse import ArgumentParser
+
 import logzero
 from logzero import logger
 
@@ -23,6 +24,7 @@ from logzero import logger
 #         yes they are partially, but I do not consider this to be relevant here
 class FusionParser(object):
     """Get and parse results from previously run programs (fusion prediction, hla typing, expression estimation)"""
+
     # Initialization of parameters
     # urla: todo: pylint convention - too many arguments
     #             are all vars required to be class vars?
@@ -50,8 +52,10 @@ class FusionParser(object):
     # fusioncatcher - results file is "summary_candidate_fusions.txt"
     def get_fusioncatcher_results(self):
         """Load and parse results from fusioncatcher"""
-        fusioncatcher_predict_summary = os.path.join(self.scratch_path, "fusion", "fusioncatcher", "summary_candidate_fusions.txt")
-        fusioncatcher_predict_detail = os.path.join(self.scratch_path, "fusion", "fusioncatcher", "final-list_candidate-fusion-genes.txt")
+        fusioncatcher_predict_summary = os.path.join(self.scratch_path, "fusion", "fusioncatcher",
+                                                     "summary_candidate_fusions.txt")
+        fusioncatcher_predict_detail = os.path.join(self.scratch_path, "fusion", "fusioncatcher",
+                                                    "final-list_candidate-fusion-genes.txt")
         reciprocal_fusions = []
         with open(fusioncatcher_predict_summary) as predict_summary:
             for line in predict_summary:
@@ -65,7 +69,7 @@ class FusionParser(object):
                             reciprocal_fusions.append(fusion_gene.replace("--", "_").upper())
         fusion_map = {}
         with open(fusioncatcher_predict_detail) as prediction:
-            next(prediction) # skip header line
+            next(prediction)  # skip header line
             for line in prediction:
                 elements = line.rstrip().split("\t")
                 # Currently relevant fields (marked *) in the output file are:
@@ -89,18 +93,18 @@ class FusionParser(object):
                 # if the fusion gene is reciprocal, the fusion id is reversed? <- what for??
                 if fusion_gene in reciprocal_fusions:
                     fusion_gene = (elements[1] + "_" + elements[0]).upper()
-#                for key in self.sub_dict:
-#                    fusion_gene = fusion_gene.replace(key, self.sub_dict[key])
+                #                for key in self.sub_dict:
+                #                    fusion_gene = fusion_gene.replace(key, self.sub_dict[key])
 
                 # urla: why not catching "Counts_of_common_mapping_reads" which indicate how similar the fusion partners are? <- FP's; should be 0 for max specificity
-                #common_map_num = elements[3]
+                # common_map_num = elements[3]
                 # urla: according to online manual, junction reads are in elements[5] and all supporting (junction and spanning?) in elements[4]?!
                 # urla_c: I changed it here
 
                 # skip all prediction not on standard chromosomes
                 if elements[8].split(":")[0] not in self.chr_list or elements[9].split(":")[0] not in self.chr_list:
                     continue
-                #fgid = fusion_gene.split("_")[0] + "_" + elements[8] + "_" + fusion_gene.split("_")[1] + "_" + elements[9]
+                # fgid = fusion_gene.split("_")[0] + "_" + elements[8] + "_" + fusion_gene.split("_")[1] + "_" + elements[9]
                 bpid = elements[8] + "_" + elements[9]
 
                 fusion_map[bpid] = [
@@ -111,7 +115,7 @@ class FusionParser(object):
                     elements[4],  # span_reads_num - urla: todo: verify that this is correct
                     self.sample_id,
                     "Fusioncatcher"
-                    ]
+                ]
         return fusion_map
 
     # starfusion - results file is "star-fusion.fusion_candidates.final (not any more, now: star-fusion.fusion_predictions.abridged.tsv)"
@@ -121,12 +125,14 @@ class FusionParser(object):
     #              amount of time and is therefore out of scope of this project
     def get_starfusion_results(self):
         """Load and parse results from star-fusion"""
-        starfusion_predict = os.path.join(self.scratch_path, "fusion", "starfusion", "star-fusion.fusion_predictions.abridged.tsv")
+        starfusion_predict = os.path.join(self.scratch_path, "fusion", "starfusion",
+                                          "star-fusion.fusion_predictions.abridged.tsv")
         if not os.path.isfile(starfusion_predict):
-            starfusion_predict = os.path.join(self.scratch_path, "fusion", "starfusion", "star-fusion.fusion_candidates.final")
+            starfusion_predict = os.path.join(self.scratch_path, "fusion", "starfusion",
+                                              "star-fusion.fusion_candidates.final")
         fusion_map = {}
         with open(starfusion_predict, "r") as prediction:
-            next(prediction) # skip header line
+            next(prediction)  # skip header line
             for line in prediction:
                 elements = line.rstrip().split("\t")
                 # Currently relevant fields (marked *) in the output file are:
@@ -149,8 +155,8 @@ class FusionParser(object):
                 # check whether fusion gene is not on primary chr
                 if elements[5].split(":")[0] not in self.chr_list or elements[7].split(":")[0] not in self.chr_list:
                     continue
-                #fgid = fusion_gene.split("_")[0] + "_" + elements[5] + "_" + fusion_gene.split("_")[1] + "_" + elements[7]
-                #logger.debug("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\n".format(fgid, fusion_gene, elements[5], elements[7], elements[1], elements[2], self.sample_id))
+                # fgid = fusion_gene.split("_")[0] + "_" + elements[5] + "_" + fusion_gene.split("_")[1] + "_" + elements[7]
+                # logger.debug("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\n".format(fgid, fusion_gene, elements[5], elements[7], elements[1], elements[2], self.sample_id))
                 bpid = elements[5] + "_" + elements[7]
 
                 fusion_map[bpid] = [
@@ -161,7 +167,7 @@ class FusionParser(object):
                     elements[2],  # span_reads_num
                     self.sample_id,
                     "Starfusion"
-                    ]
+                ]
         return fusion_map
 
     # mapsplice2 - results file is "fusions_well_annotated.txt"
@@ -257,18 +263,18 @@ class FusionParser(object):
 
                 if up_gene_id.split(":")[0] not in self.chr_list or dn_gene_id.split(":")[0] not in self.chr_list:
                     continue
-                #fgid = fusion_gene.split("_")[0] + "_" + up_gene_id + "_" + fusion_gene.split("_")[1] + "_" + dn_gene_id
+                # fgid = fusion_gene.split("_")[0] + "_" + up_gene_id + "_" + fusion_gene.split("_")[1] + "_" + dn_gene_id
                 bpid = up_gene_id + "_" + dn_gene_id
 
                 fusion_map[bpid] = [
-                    fusion_gene,   # fusion_gene
-                    up_gene_id,    # up_gene_bp
-                    dn_gene_id,    # dn_gene_bp
-                    elements[4],   # junc_reads_num
+                    fusion_gene,  # fusion_gene
+                    up_gene_id,  # up_gene_bp
+                    dn_gene_id,  # dn_gene_bp
+                    elements[4],  # junc_reads_num
                     elements[27],  # span_reads_num
                     self.sample_id,
                     "Mapsplice"
-                    ]
+                ]
         return fusion_map
 
     # starchip - results file is "starchip.summary"
@@ -277,7 +283,7 @@ class FusionParser(object):
         starchip_predict = os.path.join(self.scratch_path, "fusion", "starchip", "starchip.summary")
         fusion_map = {}
         with open(starchip_predict, "r") as prediction:
-            next(prediction) # skip header line
+            next(prediction)  # skip header line
             for line in prediction:
                 elements = line.rstrip().split("\t")
                 # Currently relevant fields (marked *) in the output file are:
@@ -296,7 +302,7 @@ class FusionParser(object):
                 # check whether fusion gene is not on primary chr
                 if elements[0].split(":")[0] not in self.chr_list or elements[1].split(":")[0] not in self.chr_list:
                     continue
-                #fgid = elements[5] + "_" + elements[0] + "_" + elements[7] + "_" + elements[1]
+                # fgid = elements[5] + "_" + elements[0] + "_" + elements[7] + "_" + elements[1]
 
                 bpid = elements[0] + "_" + elements[1]
 
@@ -308,7 +314,7 @@ class FusionParser(object):
                     elements[2],  # span_reads_num
                     self.sample_id,
                     "Starchip"
-                    ]
+                ]
         return fusion_map
 
     # infusion - results file is "fusions.detailed.txt"
@@ -317,7 +323,7 @@ class FusionParser(object):
         infusion_predict = os.path.join(self.scratch_path, "fusion", "infusion", "fusions.detailed.txt")
         fusion_map = {}
         with open(infusion_predict, "r") as prediction:
-            next(prediction) # skip header line
+            next(prediction)  # skip header line
             for line in prediction:
                 elements = line.rstrip().split("\t")
                 # Currently relevant fields (marked *) in the output file are:
@@ -355,7 +361,8 @@ class FusionParser(object):
                 #   elements[31] ~ expression_2
                 #   elements[32] ~ splice_motif
                 #   elements[33] ~ filters
-                fusion_gene = "{0}_{1}".format(self.get_fusion_gene_id_infusion(elements[21], elements[22]), self.get_fusion_gene_id_infusion(elements[27], elements[28])).upper()
+                fusion_gene = "{0}_{1}".format(self.get_fusion_gene_id_infusion(elements[21], elements[22]),
+                                               self.get_fusion_gene_id_infusion(elements[27], elements[28])).upper()
 
                 # element[1/4] = chr num, [2/5] = breakpoints, [23/29] = strands
                 up_gene_id = elements[1] + ":" + elements[2] + ":" + elements[23]
@@ -364,7 +371,7 @@ class FusionParser(object):
                 # check whether fusion gene is not on primary chr
                 if elements[1] not in self.chr_list or elements[4] not in self.chr_list:
                     continue
-                #fgid = fusion_gene.split("_")[0] + "_" + up_gene_id + "_" + fusion_gene.split("_")[1] + "_" + dn_gene_id
+                # fgid = fusion_gene.split("_")[0] + "_" + up_gene_id + "_" + fusion_gene.split("_")[1] + "_" + dn_gene_id
 
                 bpid = up_gene_id + "_" + dn_gene_id
 
@@ -376,7 +383,7 @@ class FusionParser(object):
                     elements[8],  # span_reads_num
                     self.sample_id,
                     "Infusion"
-                    ]
+                ]
         return fusion_map
 
     @staticmethod
@@ -411,10 +418,11 @@ class FusionParser(object):
                     if res.endswith(".final.Fusion.specific.for.genes"):
                         soapfuse_predict = os.path.join(folder_path, res)
         if not soapfuse_predict:
-            soapfuse_predict = os.path.join(self.scratch_path, "fusion", "soapfuse", "final_fusion_genes", self.sample_id, self.sample_id + ".final.Fusion.specific.for.genes")
+            soapfuse_predict = os.path.join(self.scratch_path, "fusion", "soapfuse", "final_fusion_genes",
+                                            self.sample_id, self.sample_id + ".final.Fusion.specific.for.genes")
         fusion_map = {}
         with open(soapfuse_predict) as prediction:
-            next(prediction) # skip header line
+            next(prediction)  # skip header line
             for line in prediction:
                 elements = line.rstrip().split("\t")
                 # Currently relevant fields (marked *) in the output file are:
@@ -441,7 +449,7 @@ class FusionParser(object):
                 # check whether fusion gene is not on primary chr
                 if elements[1] not in self.chr_list or elements[6] not in self.chr_list:
                     continue
-                #fgid = fusion_gene.split("_")[0] + "_" + up_gene_id + "_" + fusion_gene.split("_")[1] + "_" + dn_gene_id
+                # fgid = fusion_gene.split("_")[0] + "_" + up_gene_id + "_" + fusion_gene.split("_")[1] + "_" + dn_gene_id
 
                 bpid = up_gene_id + "_" + dn_gene_id
 
@@ -453,9 +461,8 @@ class FusionParser(object):
                     elements[10],  # span_reads_num
                     self.sample_id,
                     "Soapfuse"
-                    ]
+                ]
         return fusion_map
-
 
     #####
     ### parser of fusion tool parser outputs
@@ -464,13 +471,14 @@ class FusionParser(object):
     def concatenate_fusion_results(self, tool_state_path, fusion_output_path):
         """Return tuple of (dict of results dicts, dict of errors) and writes error/pass to summary file"""
         with open(tool_state_path, "a") as outf:
-            fusion_result_dict = {} # stores the complete fusion map per tool
-            results_with_errors_dict = {} # stores booleans whether exeption was raised during tool exe
+            fusion_result_dict = {}  # stores the complete fusion map per tool
+            results_with_errors_dict = {}  # stores booleans whether exeption was raised during tool exe
 
             logger.info("Processing " + self.sample_id)
             sample_string = self.sample_id
             for tool in self.tools:
-                fusion_result_dict[tool], results_with_errors_dict[tool] = self.get_tool_results(fusion_output_path, tool)
+                fusion_result_dict[tool], results_with_errors_dict[tool] = self.get_tool_results(fusion_output_path,
+                                                                                                 tool)
 
                 if results_with_errors_dict[tool]:
                     sample_string += ";0"
@@ -482,7 +490,7 @@ class FusionParser(object):
 
     def get_tool_results(self, output_folder_path, tool):
         """Return tuple of (dict of results from individual fusion tools, error type)"""
-        pred_res_dict = {} # dictionary of prediction results
+        pred_res_dict = {}  # dictionary of prediction results
         logger.info("Parsing results for " + tool)
         try:
             if tool == "Fusioncatcher":
@@ -500,8 +508,10 @@ class FusionParser(object):
         # pylint exceptions:
         #        the caught exception is not further specified as several different exceptions may be raised during processing
         #        the type of exception is, however, unimportant for further processing, because any exception must be manually reviewed
-        except Exception as ukn_err: # pylint: disable=W0703
-            logger.error("Couldn't fetch results from {0}, please check data in {1}. Error message: {2}".format(tool, output_folder_path, ukn_err))
+        except Exception as ukn_err:  # pylint: disable=W0703
+            logger.error("Couldn't fetch results from {0}, please check data in {1}. Error message: {2}".format(tool,
+                                                                                                                output_folder_path,
+                                                                                                                ukn_err))
             return (pred_res_dict, True)
 
         tool_res_file = os.path.join(output_folder_path, tool + "_res.csv")
@@ -510,6 +520,7 @@ class FusionParser(object):
             for key in pred_res_dict:
                 tool_outf.write(key + ";" + ";".join(pred_res_dict[key]) + "\n")
         return (pred_res_dict, False)
+
     # pylint: enable=W0703
 
     # urla: naming is terribly complicated to understand and follow, changed every single var name!
@@ -531,7 +542,8 @@ class FusionParser(object):
             # if no fusions were predicted by a tool, set an empty list
             # urla: is this actually required? it would anyway become an empty
             #       list in the for loop, wouldn't it?
-            if len(dict_of_fusion_dicts[fusion_tool]) == 0: # this is a "number of elements" check => pylint: disable=C1801
+            if len(dict_of_fusion_dicts[
+                       fusion_tool]) == 0:  # this is a "number of elements" check => pylint: disable=C1801
                 dict_of_fusionid_lists[fusion_tool] = []
 
             # for each fusion id (=keys of the respective fusion dict),
@@ -545,7 +557,9 @@ class FusionParser(object):
                 try:
                     dict_of_fusionid_lists[fusion_tool].append(fusion_id)
                 except KeyError:
-                    print("Error when trying to append to list of tool {0}. Trying to create new list with {1} at start".format(fusion_tool, fusion_id))
+                    print(
+                        "Error when trying to append to list of tool {0}. Trying to create new list with {1} at start".format(
+                            fusion_tool, fusion_id))
                     dict_of_fusionid_lists[fusion_tool] = [fusion_id]
 
         # create a list of unique fusion ids
@@ -574,14 +588,16 @@ class FusionParser(object):
                     # is present in the current fusion (independent of the orientation)
                     # urla: this will lead to false positive results:
                     #       eg: fusion with gene1 "AB1" and gene2 "AB2" will match to fusion "AB11"-"AB22"
-                    #if uniq_fusion_id_split[0] in fusion_id_split and uniq_fusion_id_split[2] in fusion_id_split:
+                    # if uniq_fusion_id_split[0] in fusion_id_split and uniq_fusion_id_split[2] in fusion_id_split:
                     # urla: possible solution:
-                    #print(fusion_id_split)
-                    #print(uniq_fusion_id_split)
-                    if ((uniq_fusion_id_split[0] == fusion_id_split[0] and uniq_fusion_id_split[1] == fusion_id_split[1]) or
-                            (uniq_fusion_id_split[0] == fusion_id_split[1] and uniq_fusion_id_split[1] == fusion_id_split[0])):
+                    # print(fusion_id_split)
+                    # print(uniq_fusion_id_split)
+                    if ((uniq_fusion_id_split[0] == fusion_id_split[0] and uniq_fusion_id_split[1] == fusion_id_split[
+                        1]) or
+                            (uniq_fusion_id_split[0] == fusion_id_split[1] and uniq_fusion_id_split[1] ==
+                             fusion_id_split[0])):
                         found_fusion = True
-                        break # we don't need to look further if it was found at least once
+                        break  # we don't need to look further if it was found at least once
                 list_of_found_fusion_booleans.append(found_fusion)
 
             if sum(list_of_found_fusion_booleans) >= self.tool_num_cutoff:
@@ -604,15 +620,17 @@ class FusionParser(object):
             count_fusions = 0
             logger.debug("Generating Detected Fusions table")
 
-            fusion_result_dict, results_with_errors_dict = self.concatenate_fusion_results(tool_state_path, self.fusion_output_path)
-            #print(len(fusion_result_dict))
+            fusion_result_dict, results_with_errors_dict = self.concatenate_fusion_results(tool_state_path,
+                                                                                           self.fusion_output_path)
+            # print(len(fusion_result_dict))
             if sum(results_with_errors_dict.values()) == len(fusion_result_dict):
                 logger.error("Fusion parsing failed completely. Revision required. Aborting.")
                 sys.exit(1)
             elif sum(results_with_errors_dict.values()) != 0:
                 logger.error("Results incomplete. Please make sure that all tools have run completely on dataset.")
 
-            dict_of_boolean_list_of_found_uniq_fusions = self.lookup_fusions_in_prediction(fusion_result_dict) # this is snake case, although too long... pylint: disable=C0103
+            dict_of_boolean_list_of_found_uniq_fusions = self.lookup_fusions_in_prediction(
+                fusion_result_dict)  # this is snake case, although too long... pylint: disable=C0103
             # for each unique fusion
             for uniq_fusion_id in dict_of_boolean_list_of_found_uniq_fusions:
                 # for each fusion tool
@@ -626,23 +644,30 @@ class FusionParser(object):
                             #       because a fusion gene can be called more than once with sligthly different breakpoints
                             if fusion_id == uniq_fusion_id:
                                 count_fusions += 1
-                                fus_file.write(uniq_fusion_id + ";" + ";".join(fusion_result_dict[fusion_tool][fusion_id]) + "\n")
+                                fus_file.write(
+                                    uniq_fusion_id + ";" + ";".join(fusion_result_dict[fusion_tool][fusion_id]) + "\n")
 
         logger.info("Wrote {0} detected fusion genes to {1}.".format(count_fusions, detected_fusions_file))
+
 
 def main():
     """Main"""
     parser = ArgumentParser(description='Extracts information on fusion genes')
     parser.add_argument('-i', '--input', dest='input', help='Specify the scratch folder of the sample.', required=True)
-    parser.add_argument('-o', '--output', dest='output', help='Specify the fusion output folder of the sample.', required=True)
+    parser.add_argument('-o', '--output', dest='output', help='Specify the fusion output folder of the sample.',
+                        required=True)
     parser.add_argument('-s', '--sample', dest='sample', help='Specify the sample to process.', required=True)
-    parser.add_argument('-t', '--toolcutoff', dest='toolcutoff', help='The minimal of tools that must support a fusion in order to be considered further.', required=True)
-    parser.add_argument('-f', '--fusionlist', dest='fusionlist', help='A list of fusion prediction tools that where run on the sample.', required=True)
+    parser.add_argument('-t', '--toolcutoff', dest='toolcutoff',
+                        help='The minimal of tools that must support a fusion in order to be considered further.',
+                        required=True)
+    parser.add_argument('-f', '--fusionlist', dest='fusionlist',
+                        help='A list of fusion prediction tools that where run on the sample.', required=True)
     parser.add_argument('-l', '--logger', dest='logger', help='Logging of processing steps', default="")
     args = parser.parse_args()
 
     res_parse_1 = FusionParser(args.input, args.output, args.sample, args.toolcutoff, args.fusionlist, args.logger)
     res_parse_1.run()
+
 
 if __name__ == '__main__':
     main()

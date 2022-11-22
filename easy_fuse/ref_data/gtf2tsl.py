@@ -7,12 +7,13 @@ Get Transcript Support Level (TSL) info from an ensembl GTF file
 @version: 20190702
 """
 
-import sys
 import argparse
+import sys
 
 
 class Gtf2Tsl(object):
     """stub"""
+
     def __init__(self, gtf_in, tsl_out):
         """Parameter initialization"""
         self.gtf_in = gtf_in
@@ -25,10 +26,10 @@ class Gtf2Tsl(object):
         count_transcripts = 0
         with open(self.gtf_in, "r") as in_file:
             for line in in_file:
-                if line.startswith("#"): # skip header
+                if line.startswith("#"):  # skip header
                     continue
                 _, _, feature, _, _, _, _, _, attribute = line.split("\t")
-                if not feature in feature_list :
+                if not feature in feature_list:
                     feature_list.append(feature)
                 if feature == "transcript":
                     count_transcripts += 1
@@ -46,7 +47,9 @@ class Gtf2Tsl(object):
                     print("{}_{}_{}_{}".format(transcript_id, trans_biotype, gene_biotype, tsl))
                     # check again, that what we have is what we expect
                     if not (transcript_id[0:3] == "ENS" or transcript_id[0:4] == "MGP_"):
-                        print("This does not look like a valid ensembl id: {}. Is this a valid ensembl gtf line: {}?".format(transcript_id, line))
+                        print(
+                            "This does not look like a valid ensembl id: {}. Is this a valid ensembl gtf line: {}?".format(
+                                transcript_id, line))
                         sys.exit(99)
                     if not transcript_id in tsl_dict:
                         tsl_dict[transcript_id] = [trans_biotype, gene_biotype, tsl]
@@ -60,16 +63,17 @@ class Gtf2Tsl(object):
                 out_file.write("{}\t{}\n".format(transcript_id, "\t".join(tsl_dict[transcript_id])))
         # list of available feature strings
         print(feature_list)
-                            
+
     def get_field_value(self, old_value, field_string, lookup_string):
         """ Helper method to get the value from a key-value pair in the form of: ( this the value "and this the key") """
-        if not old_value == "NA": # check if value has been found previously
+        if not old_value == "NA":  # check if value has been found previously
             return old_value
         new_value = "NA"
-        field_string = field_string.strip() # remove leading/trailing whitespaces
+        field_string = field_string.strip()  # remove leading/trailing whitespaces
         if field_string.startswith(lookup_string):
-            new_value = field_string.split("\"")[1] # get the value inside quotation marks
+            new_value = field_string.split("\"")[1]  # get the value inside quotation marks
         return new_value
+
 
 def main():
     """Parse command line arguments and start script"""
@@ -79,6 +83,7 @@ def main():
     args = parser.parse_args()
 
     Gtf2Tsl(args.gtf, args.tsl).get_data()
+
 
 if __name__ == '__main__':
     main()

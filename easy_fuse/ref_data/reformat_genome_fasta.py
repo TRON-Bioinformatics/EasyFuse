@@ -12,12 +12,14 @@ a good idea to avoid any kind of parsing issues
 """
 
 from __future__ import print_function
-from argparse import ArgumentParser
+
 import os.path
+from argparse import ArgumentParser
 
 
 class GenomeRefParser(object):
     """Initialize class variables"""
+
     def __init__(self, in_fasta, out_dir):
         self.in_fasta = in_fasta
         self.out_dir = out_dir
@@ -54,6 +56,7 @@ class GenomeRefParser(object):
             if fasout:
                 fasout.close()
 
+
 def main():
     """Parse command line arguments and start script"""
     parser = ArgumentParser(description="Generate mapping stats for fusion detection")
@@ -64,6 +67,7 @@ def main():
     grp = GenomeRefParser(args.input, args.output)
     grp.short_header()
     grp.split()
+
 
 if __name__ == '__main__':
     main()

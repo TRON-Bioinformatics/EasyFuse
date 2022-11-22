@@ -23,8 +23,9 @@ A log file is generated after successful completion which contains information a
 import sys
 import time
 from argparse import ArgumentParser
-import pysam # pysam is not available for windows (where I run pylint) => pylint: disable=E0401
+
 import logzero
+import pysam  # pysam is not available for windows (where I run pylint) => pylint: disable=E0401
 from logzero import logger
 
 
@@ -32,6 +33,7 @@ from logzero import logger
 #         yes they are partially, but I do not consider this to be relevant here
 class ReadSelection(object):
     """Select alignments belonging to putative fusions from an s/bam file"""
+
     def __init__(self, bam, output, context_file):
         """Parameter initialization"""
         self.bam_file = bam
@@ -51,19 +53,19 @@ class ReadSelection(object):
         self.counter = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         self.last_time = 0
         logzero.logfile("{}.fusionReadFilterLog".format(output))
-        
+
         self.coord_dict = {}
         self.get_ranges(context_file)
-        #print(self.coord_dict)
-    
+        # print(self.coord_dict)
+
     def get_ranges(self, context_file):
         """ vlkfh """
         with open(context_file, "r") as cfile:
-            next(cfile) # skip header
+            next(cfile)  # skip header
             for line in cfile:
                 line_splitter = line.split(";")
-                self.ranges_to_dict(line_splitter[-3]) # wt1 ranges
-                self.ranges_to_dict(line_splitter[-2]) # wt2 ranges
+                self.ranges_to_dict(line_splitter[-3])  # wt1 ranges
+                self.ranges_to_dict(line_splitter[-2])  # wt2 ranges
         self.merge_ranges()
 
     def ranges_to_dict(self, context_range):
@@ -144,7 +146,8 @@ class ReadSelection(object):
         #       until a "normal mapping" was found. If this is never the case, the pair is written to the filtered out. This, however, will have
         #       a strong effect on runtimes! (2) with the chimeric multi-mapping setting in the most recent star versions. This should actually
         #       work directly as star chimeric classification outranks multi-mapping disposal. It has, however, not been throughly evaluated by the star community
-        for read in self.in_bam.fetch(until_eof=True): # iterate through alignments as they appear in the file (this is mandatory becaue (a) we cannot create an index, (b) want to include unmapped reads and (c) have many references in the header during 2nd filtering)
+        for read in self.in_bam.fetch(
+                until_eof=True):  # iterate through alignments as they appear in the file (this is mandatory becaue (a) we cannot create an index, (b) want to include unmapped reads and (c) have many references in the header during 2nd filtering)
             self.counter[0] += 1
             read_flag = read.flag
 
@@ -165,10 +168,10 @@ class ReadSelection(object):
                 self.counter[5] += 1
             else:
                 # urla: the following commented version should be fine, but the other one is still kept in order to be more error-aware
-#                if read.is_read1:
-#                    read1 = read
-#                else:
-#                    read2 = read
+                #                if read.is_read1:
+                #                    read1 = read
+                #                else:
+                #                    read2 = read
                 if not read1 and read.is_read1:
                     read1 = read
                     read1_flag = read_flag
@@ -176,7 +179,9 @@ class ReadSelection(object):
                     read2 = read
                     read2_flag = read_flag
                 else:
-                    logger.error("Neither r1 nor r2??? Read: {0}; R1: {1}; R2: {2}; bamLine: {3}".format(read, read1, read2, self.counter[0]))
+                    logger.error(
+                        "Neither r1 nor r2??? Read: {0}; R1: {1}; R2: {2}; bamLine: {3}".format(read, read1, read2,
+                                                                                                self.counter[0]))
                     sys.exit(1)
             # urla: uncomment the following, if you'd like to have stats updates during the run and not only at the end
             if self.counter[0] % 1000000 == 0:
@@ -201,13 +206,14 @@ class ReadSelection(object):
         time_taken = this_time - self.last_time
         time_taken_1m = float(time_taken * 1000000) / float(self.counter[0])
         self.last_time = this_time
-        logger.info("Processed {0} alignments, {1} of {2} pairs remained after filtering ({3:.2%}) ({4:.2f}s / 1M alignments; {5:.2f}s in total)".format(
-            self.counter[0],
-            self.counter[2],
-            self.counter[1],
-            float(self.counter[2]) / float(self.counter[1]),
-            time_taken_1m,
-            time_taken))
+        logger.info(
+            "Processed {0} alignments, {1} of {2} pairs remained after filtering ({3:.2%}) ({4:.2f}s / 1M alignments; {5:.2f}s in total)".format(
+                self.counter[0],
+                self.counter[2],
+                self.counter[1],
+                float(self.counter[2]) / float(self.counter[1]),
+                time_taken_1m,
+                time_taken))
 
         qc1 = False
         if self.get_input_read_count_from_star() == self.counter[1]:
@@ -226,12 +232,14 @@ class ReadSelection(object):
         # 7: count_10bp_s_clip
         # 8: count_proper_pair
         logger.info("Star_chimeric (chim alignment from star):\t{} pairs (filtered)".format(self.counter[4]))
-        logger.info("QC'd (additional Star_chimeric alignment):\t{} alignments (included in above)".format(self.counter[5]))
+        logger.info(
+            "QC'd (additional Star_chimeric alignment):\t{} alignments (included in above)".format(self.counter[5]))
         logger.info("Multimapped (1 < x <= 100 equal mappings):\t{} pairs (discarded)".format(self.counter[3]))
         logger.info("Unmapped (no mapping or >100 multi map):\t{} pairs (filtered)".format(self.counter[6]))
         logger.info("No proper pair (unexpected read distance):\t{} pairs (filtered)".format(self.counter[8]))
         logger.info("10bp_s_clip (>9bp soft-clipped in cigar):\t{} pairs (filtered)".format(self.counter[7]))
-        logger.info("Unlikely chimeric (\"normal\" mappings): \t{} pairs (discarded)".format(self.counter[1] - self.counter[4] - self.counter[3] - self.counter[6] - self.counter[8] - self.counter[7]))
+        logger.info("Unlikely chimeric (\"normal\" mappings): \t{} pairs (discarded)".format(
+            self.counter[1] - self.counter[4] - self.counter[3] - self.counter[6] - self.counter[8] - self.counter[7]))
         logger.info("Not filtered, but mapped to fusion gene:\t{} pairs (filtered)".format(self.counter[9]))
         logger.info("Filter QC1 (fq reads = bam alignments):\t{}".format(qc1))
         logger.info("Filter QC2 (QC'd alignments are chimeric):\t{}".format(qc2))
@@ -245,6 +253,7 @@ class ReadSelection(object):
                     return int(line.split("|")[1].strip())
         return -1
 
+
 def main():
     """Parse command line arguments and start script"""
     parser = ArgumentParser(description="Generate mapping stats for fusion detection")
@@ -255,6 +264,8 @@ def main():
 
     stats = ReadSelection(args.input, args.output, args.input2)
     stats.run()
+
+
 #    stats.run_unsorted_chimeric()
 
 if __name__ == '__main__':

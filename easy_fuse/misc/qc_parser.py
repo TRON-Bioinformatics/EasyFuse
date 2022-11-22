@@ -26,24 +26,24 @@ class Parser(object):
                 if check and line.startswith(">>END_MODULE"):
                     check = False
                 if check and not line.startswith(">>END_MODULE"):
-#                    print line
+                    #                    print line
                     elements = line.rstrip().split("\t")
                     base = elements[0]
                     if base != "#Base":
                         mean = float(elements[1])
                         median = float(elements[2])
-                        lower_quartile = float(elements[3])       # min 20, so suggested trim length is not too strict
+                        lower_quartile = float(elements[3])  # min 20, so suggested trim length is not too strict
                         upper_quartile = float(elements[4])
                         percentile_10 = float(elements[5])
                         percentile_90 = float(elements[6])
                         if read_length < int(base):
                             read_length = int(base)
                         seq_map[int(base)] = [
-                            mean, 
-                            median, 
-                            lower_quartile, 
-                            upper_quartile, 
-                            percentile_10, 
+                            mean,
+                            median,
+                            lower_quartile,
+                            upper_quartile,
+                            percentile_10,
                             percentile_90
                         ]
                 if line.startswith(">>Per base sequence quality"):
@@ -60,25 +60,30 @@ class Parser(object):
             else:
                 if seq_map[key][2] < 20:
                     badass_bases.append(key)
-                    
+
         remaining = read_length - counter
         actual = 0
-        if (read_length - counter) < (0.75*read_length):
-            actual = int(round(0.25*read_length))
+        if (read_length - counter) < (0.75 * read_length):
+            actual = int(round(0.25 * read_length))
         else:
             actual = counter
         total_sequences = self.parse_total_sequences(infile)
         with open(outfile, 'a') as outf:
-            outf.write("{},{},{},{},{},{},{}\n".format(infile, read_length, counter, remaining, actual, len(badass_bases), total_sequences))
+            outf.write(
+                "{},{},{},{},{},{},{}\n".format(infile, read_length, counter, remaining, actual, len(badass_bases),
+                                                total_sequences))
         return seq_map
+
 
 def main():
     parser = ArgumentParser(description='Parses FastQC quality values and outputs suggested trimming ratios')
-    parser.add_argument('-i', '--input', dest='input', nargs='+', help='Specify input file(s) (fastqc_data.txt in fastqc folder(s))')
+    parser.add_argument('-i', '--input', dest='input', nargs='+',
+                        help='Specify input file(s) (fastqc_data.txt in fastqc folder(s))')
     parser.add_argument('-o', '--qc-table', dest='qc_table', help='Specify output QC table')
     args = parser.parse_args()
 
-    open(args.qc_table, "w").write("filename,read_length,suggested_trim_length,remaining_read_length,actual_trim_length,badass_bases,total_sequences\n")
+    open(args.qc_table, "w").write(
+        "filename,read_length,suggested_trim_length,remaining_read_length,actual_trim_length,badass_bases,total_sequences\n")
     p = Parser()
 
     for file in args.input:

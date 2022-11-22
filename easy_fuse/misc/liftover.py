@@ -8,20 +8,22 @@ Coordinates are changed in DetectedFusions.csv; all intermediate files are prese
 @version: 20190131
 """
 
-from argparse import ArgumentParser
-import sys
 import os.path
-import pandas as pd
-from shutil import copyfile
 import queue as Queueing
-#sys.path.append(os.path.join(os.path.dirname(__file__), "../.."))
-#import config as cfg
+import sys
+from argparse import ArgumentParser
+from shutil import copyfile
+
+# sys.path.append(os.path.join(os.path.dirname(__file__), "../.."))
+# import config as cfg
 import logzero
+import pandas as pd
 from logzero import logger
 
 
 class FusionLiftover(object):
     """Select alignments belonging to putative fusions from an s/bam file"""
+
     def __init__(self, in_fus_detect, logger):
         self.in_fus_detect = in_fus_detect
         logzero.logfile(logger)
@@ -32,7 +34,7 @@ class FusionLiftover(object):
             "11", "12", "13", "14", "15",
             "16", "17", "18", "19", "20",
             "21", "22", "X", "Y", "MT"
-            ]
+        ]
         self.cnf = None
 
     def liftcoords(self):
@@ -43,8 +45,10 @@ class FusionLiftover(object):
         ref_genome_org = os.path.basename(crossmap_chain).replace(".", "_").split("_")[0]
         ref_genome_dest = os.path.basename(crossmap_chain).replace(".", "_").split("_")[2]
         if not ref_genome_org.lower() == self.cfg.ref_genome_build.lower():
-            logger.error("Error 99: Mismatch between set genome version and chain file. Please verify that you have the correct chain file was supplied!")
-            print("Error 99: Mismatch between set genome version and chain file. Please verify that you have the correct chain file was supplied!")
+            logger.error(
+                "Error 99: Mismatch between set genome version and chain file. Please verify that you have the correct chain file was supplied!")
+            print(
+                "Error 99: Mismatch between set genome version and chain file. Please verify that you have the correct chain file was supplied!")
             sys.exit(99)
 
         logger.info("Performing liftover from {} to {} with crossmap".format(ref_genome_org, ref_genome_dest))
@@ -58,19 +62,23 @@ class FusionLiftover(object):
         with open(tmp_org_bed, "w") as fusout:
             for i in in_fus_detect_pddf.index:
                 chrom, pos, strand = in_fus_detect_pddf.loc[i, "Breakpoint1"].split(":")
-                fusout.write("{0}\t{1}\t{2}\t{3}\t1\t{4}\n".format(chrom, pos, (int(pos) + 1), strand, in_fus_detect_pddf.loc[i, "BPID"]))
+                fusout.write("{0}\t{1}\t{2}\t{3}\t1\t{4}\n".format(chrom, pos, (int(pos) + 1), strand,
+                                                                   in_fus_detect_pddf.loc[i, "BPID"]))
                 chrom, pos, strand = in_fus_detect_pddf.loc[i, "Breakpoint2"].split(":")
-                fusout.write("{0}\t{1}\t{2}\t{3}\t2\t{4}\n".format(chrom, pos, (int(pos) + 1), strand, in_fus_detect_pddf.loc[i, "BPID"]))
+                fusout.write("{0}\t{1}\t{2}\t{3}\t2\t{4}\n".format(chrom, pos, (int(pos) + 1), strand,
+                                                                   in_fus_detect_pddf.loc[i, "BPID"]))
 
         # run crossmap to perform liftover
-        cmd_crossmap = "{0} bed {1} {2} {3}".format(self.cfg.commands["crossmap_cmd"], crossmap_chain, tmp_org_bed, tmp_dest_bed)
+        cmd_crossmap = "{0} bed {1} {2} {3}".format(self.cfg.commands["crossmap_cmd"], crossmap_chain, tmp_org_bed,
+                                                    tmp_dest_bed)
         module_file = os.path.join(self.cfg.module_dir, "build_env.sh")
         Queueing.submit("", cmd_crossmap.split(" "), "", "", "", "", "", "", "", "", module_file, "none")
         # check whether some coords were unmapped and print which those are (i.e. which fusion will be lost)
         if os.stat(tmp_dest_bed_unmap).st_size == 0:
             logger.info("Liftover was successful for all fusion breakpoints! Creating a new DetectedFusions table...")
         else:
-            logger.debug("Fusions couldn't be lifted completely. The following fusions have to be excluded from downstream analyses.")
+            logger.debug(
+                "Fusions couldn't be lifted completely. The following fusions have to be excluded from downstream analyses.")
             with open(tmp_dest_bed_unmap, "r") as liftout:
                 for line in liftout:
                     print(line)
@@ -86,15 +94,19 @@ class FusionLiftover(object):
             for line in liftout:
                 line_splitter = line.rstrip("\n").split("\t")
                 if line_splitter[4] == "1":
-                    in_fus_detect_pddf.loc[in_fus_detect_pddf["BPID"] == line_splitter[5], "bp1_lifted"] = ":".join([line_splitter[0], line_splitter[1], line_splitter[3]])
+                    in_fus_detect_pddf.loc[in_fus_detect_pddf["BPID"] == line_splitter[5], "bp1_lifted"] = ":".join(
+                        [line_splitter[0], line_splitter[1], line_splitter[3]])
                 elif line_splitter[4] == "2":
-                    in_fus_detect_pddf.loc[in_fus_detect_pddf["BPID"] == line_splitter[5], "bp2_lifted"] = ":".join([line_splitter[0], line_splitter[1], line_splitter[3]])
+                    in_fus_detect_pddf.loc[in_fus_detect_pddf["BPID"] == line_splitter[5], "bp2_lifted"] = ":".join(
+                        [line_splitter[0], line_splitter[1], line_splitter[3]])
 
         in_fus_detect_pddf["lo_check"] = "Keep"
         for i in in_fus_detect_pddf.index:
             # skip fusions mapping to "strange" chromosomes
             if not in_fus_detect_pddf.loc[i, "bp1_lifted"] or not in_fus_detect_pddf.loc[i, "bp2_lifted"]:
-                logger.error("Skipping wrong liftover for {0} and/or {1}".format(in_fus_detect_pddf.loc[i, "bp1_lifted"], in_fus_detect_pddf.loc[i, "bp2_lifted"]))
+                logger.error(
+                    "Skipping wrong liftover for {0} and/or {1}".format(in_fus_detect_pddf.loc[i, "bp1_lifted"],
+                                                                        in_fus_detect_pddf.loc[i, "bp2_lifted"]))
                 in_fus_detect_pddf.loc[i, "lo_check"] = "Remove"
                 continue
             chrom1, _, _ = in_fus_detect_pddf.loc[i, "bp1_lifted"].split(":")
@@ -104,13 +116,15 @@ class FusionLiftover(object):
                 in_fus_detect_pddf.loc[i, "lo_check"] = "Remove"
                 continue
             # replace the old breakpoints, with the new ones in the BPID
-            in_fus_detect_pddf.loc[i, "BPID"] = in_fus_detect_pddf.loc[i, "BPID"].replace(in_fus_detect_pddf.loc[i, "Breakpoint1"], in_fus_detect_pddf.loc[i, "bp1_lifted"])
-            in_fus_detect_pddf.loc[i, "BPID"] = in_fus_detect_pddf.loc[i, "BPID"].replace(in_fus_detect_pddf.loc[i, "Breakpoint2"], in_fus_detect_pddf.loc[i, "bp2_lifted"])
+            in_fus_detect_pddf.loc[i, "BPID"] = in_fus_detect_pddf.loc[i, "BPID"].replace(
+                in_fus_detect_pddf.loc[i, "Breakpoint1"], in_fus_detect_pddf.loc[i, "bp1_lifted"])
+            in_fus_detect_pddf.loc[i, "BPID"] = in_fus_detect_pddf.loc[i, "BPID"].replace(
+                in_fus_detect_pddf.loc[i, "Breakpoint2"], in_fus_detect_pddf.loc[i, "bp2_lifted"])
             # then overwrite the old breakpoints
             in_fus_detect_pddf.loc[i, "Breakpoint1"] = in_fus_detect_pddf.loc[i, "bp1_lifted"]
             in_fus_detect_pddf.loc[i, "Breakpoint2"] = in_fus_detect_pddf.loc[i, "bp2_lifted"]
         # finally, drop the added columns again and write to disk
-        in_fus_detect_pddf.drop(in_fus_detect_pddf[in_fus_detect_pddf.lo_check == "Remove"].index, inplace = True)
+        in_fus_detect_pddf.drop(in_fus_detect_pddf[in_fus_detect_pddf.lo_check == "Remove"].index, inplace=True)
         in_fus_detect_pddf.drop(labels=["bp1_lifted", "bp2_lifted", "lo_check"], axis=1, inplace=True)
         in_fus_detect_pddf.to_csv(self.in_fus_detect, sep=";", index=False)
         # urla - note: one could also drop the old cols, rename the new ones and reorder the df, but I find this much more fail-save

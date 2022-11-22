@@ -11,8 +11,8 @@ Simple method collection for:
 """
 
 import os
-import sys
 import subprocess
+import sys
 from argparse import ArgumentParser
 
 
@@ -25,20 +25,21 @@ def get_jobs_by_name(name, system="slurm"):
     else:
         return []
 
+
 def get_jobs_by_name_pbs(name):
     jobs = []
     output = ""
     try:
         output = subprocess.check_output(["qstat", "-f"], universal_newlines=True)
     except:
-        output = subprocess.Popen(["qstat", "-f"],stdout=subprocess.PIPE).communicate()[0]
+        output = subprocess.Popen(["qstat", "-f"], stdout=subprocess.PIPE).communicate()[0]
 
     job_id = ""
     job_name = ""
     for x in output.rstrip().split("\n"):
         line = x.lstrip()
         if line.startswith("Job Id"):
-            job_id = line.rsplit(" ",1)[1]
+            job_id = line.rsplit(" ", 1)[1]
         if line.startswith("Job_Name"):
             job_name = line.split(" = ")[1]
 
@@ -47,6 +48,7 @@ def get_jobs_by_name_pbs(name):
             job_id = ""
             job_name = ""
     return jobs
+
 
 def get_jobs_by_name_slurm(name):
     """Check if slurm job is already running (by name) and return its jobid if it does"""
@@ -65,17 +67,20 @@ def get_jobs_by_name_slurm(name):
     return jobs
 
 
-def submit(job_name, cmd, cores, mem_usage, output_results_folder, dependencies, partitions, userid, timelimit, mail, module_file, sched="slurm"):
+def submit(job_name, cmd, cores, mem_usage, output_results_folder, dependencies, partitions, userid, timelimit, mail,
+           module_file, sched="slurm"):
     if sched == "slurm":
-        _submit_slurm(job_name, cmd, cores, mem_usage, output_results_folder, dependencies, partitions, userid, timelimit, mail, module_file)
+        _submit_slurm(job_name, cmd, cores, mem_usage, output_results_folder, dependencies, partitions, userid,
+                      timelimit, mail, module_file)
     elif sched == "pbs":
         _submit_pbs(job_name, cmd, cores, mem_usage, output_results_folder, dependencies, module_file)
     else:
         _submit_nonqueue(job_name, cmd, module_file)
-    
+
+
 def _submit_nonqueue(job_name, cmd, module_file=""):
-#    if module_file:
-#        cmd = " && ".join(["source " + module_file, " ".join(cmd)]).split(" ")
+    #    if module_file:
+    #        cmd = " && ".join(["source " + module_file, " ".join(cmd)]).split(" ")
     print("Running {}".format(job_name))
     print("CMD: {}".format(" ".join(cmd)))
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=False)
@@ -124,7 +129,8 @@ def _submit_pbs(job_name, cmd, cores, mem_usage, output_results_folder, dependen
         sys.exit(1)
 
 
-def _submit_slurm(job_name, cmd, cores, mem_usage, output_results_folder, dependencies, partitions, userid, timelimit, mail, module_file):
+def _submit_slurm(job_name, cmd, cores, mem_usage, output_results_folder, dependencies, partitions, userid, timelimit,
+                  mail, module_file):
     """This function submits a predefined job with specific SBATCH parameters to the Slurm workload manager system."""
     # add dependencies if necessary
     depend = "\n"
@@ -159,8 +165,9 @@ def _submit_slurm(job_name, cmd, cores, mem_usage, output_results_folder, depend
             mail_type,
             mail_user,
             "set -eo pipefail -o nounset\n",
-	    ". {}\n".format(module_file) if module_file else "\n",
-            "srun echo \"$(date) Slurm job started.\" > {0}.runtime && {1} && echo \"$(date) Slurm job finished.\" >> {0}.runtime\n".format(job_name, cmd)
+            ". {}\n".format(module_file) if module_file else "\n",
+            "srun echo \"$(date) Slurm job started.\" > {0}.runtime && {1} && echo \"$(date) Slurm job finished.\" >> {0}.runtime\n".format(
+                job_name, cmd)
         ])
     # and run it
     try:
@@ -174,14 +181,19 @@ def _submit_slurm(job_name, cmd, cores, mem_usage, output_results_folder, depend
 
 def main():
     parser = ArgumentParser(description='Handle data streams')
-    parser.add_argument('-j', '--job-name', dest='job_name', help='Specify the job name.', required=True )
-    parser.add_argument('-s', '--script', dest='script', help='Specify the script to process.', required=True )
-    parser.add_argument('-c', '--cores', dest='cores', type=int, help='Specify the number of cores to run the script with.', required=True )
-    parser.add_argument('-m', '--memory', dest='memory', type=int, help='Specify the amount of memory to run your script with.', required=True)
+    parser.add_argument('-j', '--job-name', dest='job_name', help='Specify the job name.', required=True)
+    parser.add_argument('-s', '--script', dest='script', help='Specify the script to process.', required=True)
+    parser.add_argument('-c', '--cores', dest='cores', type=int,
+                        help='Specify the number of cores to run the script with.', required=True)
+    parser.add_argument('-m', '--memory', dest='memory', type=int,
+                        help='Specify the amount of memory to run your script with.', required=True)
     parser.add_argument('-o', '--output', dest='output', help='Select the output folder.', required=True)
-    parser.add_argument('-p', '--partitions', dest='partitions', help='Select the slurm partitions for this job.', default='allNodes')
-    parser.add_argument('-u', '--userid', dest='userid', help='Select the slurm account to run the job on.', required=True)
-    parser.add_argument('-t', '--timelimit', dest='timelimit', help='Select the timelimit for the job.', default='30-00:00:0')
+    parser.add_argument('-p', '--partitions', dest='partitions', help='Select the slurm partitions for this job.',
+                        default='allNodes')
+    parser.add_argument('-u', '--userid', dest='userid', help='Select the slurm account to run the job on.',
+                        required=True)
+    parser.add_argument('-t', '--timelimit', dest='timelimit', help='Select the timelimit for the job.',
+                        default='30-00:00:0')
     args = parser.parse_args()
 
     job_name = args.job_name
@@ -190,4 +202,5 @@ def main():
     mem_usage = args.memory
     output_results_folder = args.output
     dependencies = ""
-    submit(job_name, cmd, cores, mem_usage, output_results_folder, dependencies, args.partitions, args.userid, args.timelimit, "", "")
+    submit(job_name, cmd, cores, mem_usage, output_results_folder, dependencies, args.partitions, args.userid,
+           args.timelimit, "", "")

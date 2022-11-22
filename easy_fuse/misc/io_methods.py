@@ -13,6 +13,7 @@ Input/Output method collection
 import os
 import re
 import stat
+
 from logzero import logger
 
 
@@ -52,7 +53,8 @@ def get_fastq_files(input_paths):
                 file_path = os.path.join(path, filename)
                 if os.path.isfile(file_path) and filename.endswith((".fastq.gz", ".fq.gz", ".fq", ".fastq")):
                     if not filename.endswith(".gz"):
-                        logger.info("Warning: Fastq files are supposed to be gzipped! Skipping record {}!".format(filename))
+                        logger.info(
+                            "Warning: Fastq files are supposed to be gzipped! Skipping record {}!".format(filename))
                         continue
                     fastqs.append(file_path)
                 elif os.path.isdir(file_path):
@@ -61,6 +63,7 @@ def get_fastq_files(input_paths):
         elif os.path.isfile(path) and path.endswith((".fastq.gz", ".fq.gz", ".fq", ".fastq")):
             fastqs.append(path)
     return fastqs
+
 
 def pair_fastq_files(fastqs):
     left = []
@@ -91,16 +94,16 @@ def pair_fastq_files(fastqs):
 
     # Check whether file names match between paired files
     sample_list = []
-    #if right:
+    # if right:
     for sample_id_a, fq_file_a in left:
         found = False
         for sample_id_b, fq_file_b in right:
             if sample_id_a == sample_id_b:
-                #print(sample_id_a, fq_file_a, fq_file_b)
+                # print(sample_id_a, fq_file_a, fq_file_b)
                 found = True
                 sample_list.append((sample_id_a, fq_file_a, fq_file_b))
                 break
-            
+
         if not found:
             if logger:
                 logger.error('Could not find a matching FASTQ for {}!'.format(sample_id_a))
@@ -112,11 +115,11 @@ def pair_fastq_files(fastqs):
 
 def load_gene_symbols(infile):
     chr_list = (
-            "1", "2", "3", "4", "5",
-            "6", "7", "8", "9", "10",
-            "11", "12", "13", "14", "15",
-            "16", "17", "18", "19", "20",
-            "21", "22", "X", "Y", "MT"
+        "1", "2", "3", "4", "5",
+        "6", "7", "8", "9", "10",
+        "11", "12", "13", "14", "15",
+        "16", "17", "18", "19", "20",
+        "21", "22", "X", "Y", "MT"
     )
 
     trans_to_gene = {}
@@ -128,7 +131,7 @@ def load_gene_symbols(infile):
                 continue
 
             if elements[2] == "transcript" and elements[0] in chr_list:
-            #if elements[2] == "transcript":
+                # if elements[2] == "transcript":
                 trans_id = ""
                 gene_symbol = ""
                 gene_id = ""

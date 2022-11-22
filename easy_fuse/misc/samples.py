@@ -11,12 +11,13 @@ Data itself can be modified using wrapped SQL queries.
 @author: Tron (PASO), BNT (URLA)
 @version: 20190429
 """
-from argparse import ArgumentParser
 import sqlite3
+from argparse import ArgumentParser
 
 
 class SamplesDB(object):
     """Create and interact with the sample DB"""
+
     def __init__(self, db_path):
         """Parameter initialization and connection to database"""
         self.db_path = db_path
@@ -26,7 +27,8 @@ class SamplesDB(object):
 
     def create_table(self):
         """Creation of samples table if non-existent"""
-        self.cursor.execute("""CREATE TABLE IF NOT EXISTS samples (sample_id text, analysis text, fq1 text, fq2 text)""")
+        self.cursor.execute(
+            """CREATE TABLE IF NOT EXISTS samples (sample_id text, analysis text, fq1 text, fq2 text)""")
         self.commit_changes()
 
     def add_sample(self, sample_id, analysis, fq1, fq2):
@@ -34,7 +36,8 @@ class SamplesDB(object):
         if self.get_sample(sample_id):
             return
         else:
-            self.cursor.execute("INSERT INTO samples VALUES ('{}','{}','{}','{}')".format(sample_id, analysis, fq1, fq2))
+            self.cursor.execute(
+                "INSERT INTO samples VALUES ('{}','{}','{}','{}')".format(sample_id, analysis, fq1, fq2))
             self.commit_changes()
 
     def get_sample(self, sample_id):
@@ -86,7 +89,7 @@ class SamplesDB(object):
                 print("Status: Incomplete")
             total += 1
             print
-        print("Overall: {:.2f}% complete.".format(completed*100.0/total))
+        print("Overall: {:.2f}% complete.".format(completed * 100.0 / total))
 
     def append_state(self, sample_id, analysis):
         """Add analysis to list of performed analyses within sample"""
@@ -108,16 +111,19 @@ class SamplesDB(object):
         """Close DB connection"""
         self.conn.close()
 
+
 def main():
     """Main method, parameter handling"""
     parser = ArgumentParser(description='Handle sample db operations')
 
     parser.add_argument('-i', '--sample_id', dest='sample_id', help='Specify the sample id to process.', required=True)
-    parser.add_argument('-d', '--db_path', dest='db_path', help='Specify the file to save the changes into.', required=True)
+    parser.add_argument('-d', '--db_path', dest='db_path', help='Specify the file to save the changes into.',
+                        required=True)
     parser.add_argument('-t', '--tool', dest='tool', help='The tools name to add to your sample id.', required=True)
-    parser.add_argument('-l', '--action', dest='action', choices=['append_state'], help='Select the action to do with the sample id.', required=True)
+    parser.add_argument('-l', '--action', dest='action', choices=['append_state'],
+                        help='Select the action to do with the sample id.', required=True)
     args = parser.parse_args()
-    
+
     db = SamplesDB(args.db_path)
 
     if args.action == "append_state":

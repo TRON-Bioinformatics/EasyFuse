@@ -1,19 +1,20 @@
 #!/usr/bin/env python
 
-import sys
-import os
 import gzip
+import os
 import subprocess
+import sys
 from argparse import ArgumentParser
 
 
 def main():
     parser = ArgumentParser(description="Wrapper around SOAPfuse.")
-    parser.add_argument("-q","--qc-table", dest="qc_table", help="Specify input QC table")
-    parser.add_argument("-i","--input", dest="input", nargs="+", help="Specify input FASTQ files", required=True)
-    parser.add_argument("-o","--output", dest="output", help="Specify output folder", default=".")
+    parser.add_argument("-q", "--qc-table", dest="qc_table", help="Specify input QC table")
+    parser.add_argument("-i", "--input", dest="input", nargs="+", help="Specify input FASTQ files", required=True)
+    parser.add_argument("-o", "--output", dest="output", help="Specify output folder", default=".")
     parser.add_argument("-b", "--binary", dest="binary", help="Specify Soapfuse binary", required=True)
-    parser.add_argument("-c", "--config-file", dest="config_file", help="Specify Soapfuse config file to use for your analysis", required=True)
+    parser.add_argument("-c", "--config-file", dest="config_file",
+                        help="Specify Soapfuse config file to use for your analysis", required=True)
     args = parser.parse_args()
 
     soapfuse_bin = args.binary
@@ -38,7 +39,6 @@ def main():
             line = inf.readline()
             remaining_len = len(line.rstrip())
 
-    
     cfg_file = os.path.join(args.output, "samples.csv")
     cfg_out = open(cfg_file, "w")
 
@@ -46,7 +46,7 @@ def main():
     cfg_out.close()
     for i, file in enumerate(args.input):
         try:
-            os.symlink(file, os.path.join(cols[0], cols[1], cols[2], "S_{}.fastq.gz".format((i+1))))
+            os.symlink(file, os.path.join(cols[0], cols[1], cols[2], "S_{}.fastq.gz".format((i + 1))))
         except:
             print("Symlink already exists!")
     cmd = "{} -c {} -fd {} -l {} -o {}".format(soapfuse_bin, soapfuse_cfg, cols[0], cfg_file, args.output)
@@ -57,7 +57,6 @@ def main():
     if r != 0:
         print(stderrdata)
         sys.exit(1)
-
 
 
 if __name__ == "__main__":
