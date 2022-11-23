@@ -9,51 +9,34 @@ combine all results
 @author: Tron (PASO), BNT (URLA)
 @version: 20190118
 """
-
-import json
 import math
 import os
 import os.path
 import subprocess
 import sys
 from argparse import ArgumentParser
-from configparser import ConfigParser
 
 import logzero
 from logzero import logger
 
 import easy_fuse.misc.io_methods as IOMethods
 from easy_fuse.misc import queueing
+from easy_fuse.misc.config import EasyFuseConfiguration
 from easy_fuse.misc.samples import SamplesDB
 
 
 class Fetching(object):
     """Run, monitor and schedule fastq processing for fusion gene prediction"""
 
-    def __init__(self, scratch_path, fetchdata_path, sample_id, cfg_file):
+    def __init__(self, scratch_path, fetchdata_path, sample_id, config: EasyFuseConfiguration):
         """Parameter initiation and work folder creation."""
         self.scratch_path = scratch_path
         self.fetchdata_path = fetchdata_path
         self.sample_id = sample_id
         self.samples = SamplesDB(os.path.join(scratch_path, os.path.pardir, "samples.db"))
         logzero.logfile(os.path.join(self.fetchdata_path, "fetchdata.log"))
+        self.cfg = config
 
-        self.cfg = None
-
-        default_cfg_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "config.ini")
-
-        if not cfg_file and os.path.exists(default_cfg_path):
-            cfg_file = default_cfg_path
-        elif not cfg_file and not os.path.exists(default_cfg_path):
-            logger.error("Could not find default config file (path={}). Exiting.".format(default_cfg_path))
-            sys.exit(1)
-
-        if cfg_file.endswith("ini"):
-            self.cfg = ConfigParser()
-            self.cfg.read(cfg_file)
-        elif cfg_file.endswith("json"):
-            with open(cfg_file) as config_file:
-                self.cfg = json.load(config_file)
 
     def get_pseudo_genome_adjustments_for_star(self, num_len_file):
         """Return the genome size of an associated fasta file calculated by urla_GetFusionSequence_latest.R"""
@@ -435,7 +418,7 @@ def main():
     parser.add_argument('-i', '--input', dest='input', help='Data input directory.', required=True)
     parser.add_argument('-o', '--output', dest='output', help='Data output directory.', required=True)
     parser.add_argument('-s', '--sample', dest='sample', help='Specify the sample to process.', required=True)
-    parser.add_argument('-c', '--config-file', dest='config_file',
+    parser.add_argument('-c', '--config-file', dest='config_file', required=True,
                         help='Specify alternative config file to use for your analysis')
     parser.add_argument('--fq1', dest='fq1', help='Input read1 file for re-quantification', default="", required=False)
     parser.add_argument('--fq2', dest='fq2', help='Input read2 file for re-quantification', default="", required=False)
@@ -443,6 +426,7 @@ def main():
                         help='Number of fusion tools which must predict the fusion event', default=1)
     args = parser.parse_args()
 
+    config = EasyFuseConfiguration(args.config_file)
     # processing
     # 1: fusion tool parser
     # 2: get context seqs
@@ -450,7 +434,7 @@ def main():
     # 4: get expression?
     # ...
     for i in range(1, int(args.fusion_support) + 1):
-        proc = Fetching(args.input, args.output, args.sample, os.path.abspath(args.config_file))
+        proc = Fetching(args.input, args.output, args.sample, config)
         proc.run(i, args.fq1, args.fq2)
 
 

@@ -9,14 +9,10 @@ during all steps, perform slurm scheduling and process monitoring
 
 @author: Tron (PASO), BNT (URLA)
 """
-
-import json
 import os
 import os.path
-import sys
 import time
 from argparse import ArgumentParser
-from configparser import ConfigParser
 from shutil import copy
 
 import logzero
@@ -25,13 +21,14 @@ from logzero import logger
 import easy_fuse.misc.io_methods as io_methods
 from easy_fuse import __version__
 from easy_fuse.misc import queueing
+from easy_fuse.misc.config import EasyFuseConfiguration
 from easy_fuse.misc.samples import SamplesDB
 
 
 class Processing(object):
     """Run, monitor and schedule fastq processing for fusion gene prediction"""
 
-    def __init__(self, cmd, input_paths, working_dir, cfg_file, jobname_suffix):
+    def __init__(self, cmd, input_paths, working_dir, config: EasyFuseConfiguration, jobname_suffix):
         """Parameter initiation and work folder creation. Start of progress logging."""
         self.working_dir = os.path.abspath(working_dir)
         logzero.logfile(os.path.join(self.working_dir, "easyfuse_processing.log"))
@@ -41,30 +38,13 @@ class Processing(object):
         self.input_paths = [os.path.abspath(file) for file in input_paths]
         self.samples = SamplesDB(os.path.join(self.working_dir, "samples.db"))
 
-        self.cfg = None
-
-        default_cfg_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "config.ini")
-
-        if not cfg_file and os.path.exists(default_cfg_path):
-            cfg_file = default_cfg_path
-        elif not cfg_file and not os.path.exists(default_cfg_path):
-            logger.error("Could not find default config file (path={}). Exiting.".format(default_cfg_path))
-            sys.exit(1)
-
-        self.cfg_file = cfg_file
-
-        if cfg_file.endswith("ini"):
-            self.cfg = ConfigParser()
-            self.cfg.read(cfg_file)
-        elif cfg_file.endswith("json"):
-            with open(cfg_file) as config_file:
-                self.cfg = json.load(config_file)
-
-        copy(cfg_file, working_dir)
+        self.cfg = config
+        copy(self.cfg.config_file, working_dir)
 
         self.jobname_suffix = None
         if jobname_suffix:
             self.jobname_suffix = jobname_suffix
+
 
     # The run method simply greps and organises fastq input files.
     # Fastq pairs (single end input is currently not supported) are then send to "execute_pipeline"
@@ -100,7 +80,7 @@ class Processing(object):
             cmd_summarize = "summarize_data --input {0}{1} -c {2}".format(
                 self.working_dir,
                 modelling_string,
-                self.cfg_file)
+                self.cfg.config_file)
 
             logger.debug(
                 "Submitting job: CMD - {0}; PATH - {1}; DEPS - {2}".format(cmd_summarize, self.working_dir, dependency))
@@ -198,7 +178,26 @@ class Processing(object):
             qc_table_path = "None"
 
         # (1) Readfilter
-        cmd_star_filter = "{0} --genomeDir {1} --outFileNamePrefix {2}_ --readFilesCommand zcat --readFilesIn {3} {4} --outFilterMultimapNmax 100 --outSAMmultNmax 1 --chimSegmentMin 10 --chimJunctionOverhangMin 10 --alignSJDBoverhangMin 10 --alignMatesGapMax {5} --alignIntronMax {5} --chimSegmentReadGapMax 3 --alignSJstitchMismatchNmax 5 -1 5 5 --seedSearchStartLmax 20 --winAnchorMultimapNmax 50 --outSAMtype BAM Unsorted --chimOutType Junctions WithinBAM --outSAMunmapped Within KeepPairs --runThreadN waiting_for_cpu_number".format(
+        cmd_star_filter = "{0} " \
+                          "--genomeDir {1} " \
+                          "--outFileNamePrefix {2}_ " \
+                          "--readFilesCommand zcat " \
+                          "--readFilesIn {3} {4} " \
+                          "--outFilterMultimapNmax 100 " \
+                          "--outSAMmultNmax 1 " \
+                          "--chimSegmentMin 10 " \
+                          "--chimJunctionOverhangMin 10 " \
+                          "--alignSJDBoverhangMin 10 " \
+                          "--alignMatesGapMax {5} " \
+                          "--alignIntronMax {5} " \
+                          "--chimSegmentReadGapMax 3 " \
+                          "--alignSJstitchMismatchNmax 5 -1 5 5 " \
+                          "--seedSearchStartLmax 20 " \
+                          "--winAnchorMultimapNmax 50 " \
+                          "--outSAMtype BAM Unsorted " \
+                          "--chimOutType Junctions WithinBAM " \
+                          "--outSAMunmapped Within KeepPairs " \
+                          "--runThreadN waiting_for_cpu_number".format(
             cmds["star"], star_index_path, os.path.join(filtered_reads_path, sample_id), fq1, fq2,
             self.cfg["general"]["max_dist_proper_pair"])
 
@@ -249,7 +248,7 @@ class Processing(object):
 
         # (8) Data collection
         cmd_fetchdata = "fetchdata -i {0} -o {1} -s {2} -c {3} --fq1 {4} --fq2 {5} --fusion_support {6}".format(
-            output_results_path, fetchdata_path, sample_id, self.cfg_file, fq1, fq2, tool_num_cutoff)
+            output_results_path, fetchdata_path, sample_id, self.cfg.config_file, fq1, fq2, tool_num_cutoff)
 
         # (X) Sample monitoring
         cmd_samples = "samples --db_path={0} --sample_id={1} --action=append_state --tool=".format(
@@ -403,7 +402,7 @@ def main():
     parser.add_argument('-o', '--output-folder', dest='output_folder',
                         help='Specify full path of the folder to save the results into.', required=True)
     # optional arguments
-    parser.add_argument('-c', '--config-file', dest='config_file',
+    parser.add_argument('-c', '--config-file', dest='config_file', required=True,
                         help='Specify alternative config file to use for your analysis')
     parser.add_argument('--tool_support', dest='tool_support',
                         help='The number of tools which are required to support a fusion event.', default="1")
@@ -417,21 +416,23 @@ def main():
     if args.jobname_suffix:
         jobname_suffix = "-p {}".format(args.jobname_suffix)
 
-    config = ""
-    cfg_file = None
-    if args.config_file:
-        cfg_file = os.path.abspath(args.config_file)
-        config = "-c {}".format(cfg_file)
+    config = EasyFuseConfiguration(args.config_file)
 
-    script_call = "python {} -i {} {} {} -o {}".format(os.path.realpath(__file__),
-                                                       " ".join([os.path.abspath(x) for x in args.input_paths]), config,
-                                                       jobname_suffix, os.path.abspath(args.output_folder))
-
-    proc = Processing(script_call, args.input_paths, args.output_folder, cfg_file, args.jobname_suffix)
-    proc.run(args.tool_support)
-
+    # records CLI call
+    # TODO: think of better ways of recording what the content of files (ie: config, FASTQs, etc.) was as files do
+    #  change and only paths are recorded here
+    script_call = "easy-fuse -i {} {} {} -o {}".format(
+        " ".join([os.path.abspath(x) for x in args.input_paths]),
+        "-c {}".format(config.config_file),
+        jobname_suffix,
+        os.path.abspath(args.output_folder))
     with open(os.path.join(args.output_folder, "process.sh"), "w") as outf:
         outf.write("#!/bin/sh\n\n{}".format(script_call))
+
+    proc = Processing(script_call, args.input_paths, args.output_folder, config, args.jobname_suffix)
+    proc.run(args.tool_support)
+
+
 
 # if __name__ == '__main__':
 #    main()

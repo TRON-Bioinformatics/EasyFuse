@@ -8,23 +8,21 @@ Filtering of the final data table
 @author: TRON (PASO), BNT (URLA)
 @version: 20221005
 """
-
-import json
 import os
 import sys
-from configparser import ConfigParser
 
 import pandas as pd
 import pkg_resources
 
 import easy_fuse
 from easy_fuse.misc import queueing
+from easy_fuse.misc.config import EasyFuseConfiguration
 
 
 class DataJoining(object):
     """Select alignments belonging to putative fusions from an s/bam file"""
 
-    def __init__(self, input_dir, id1, id2, output, model_predictions, cfg_file):
+    def __init__(self, input_dir, id1, id2, output, model_predictions, config: EasyFuseConfiguration):
         """Parameter initialization"""
         self.input_dir = input_dir
         self.id1 = id1
@@ -34,20 +32,7 @@ class DataJoining(object):
         pd.options.mode.chained_assignment = None
         self.input_read_count = 0
         self.blacklist = []
-
-        self.cfg = None
-
-        if not cfg_file:
-            cfg_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), "config.ini")
-
-        self.cfg_file = cfg_file
-
-        if cfg_file.endswith("ini"):
-            self.cfg = ConfigParser()
-            self.cfg.read(cfg_file)
-        elif cfg_file.endswith("json"):
-            with open(cfg_file) as config_file:
-                self.cfg = json.load(config_file)
+        self.cfg = config
 
     def append_tool_cnts_to_context_file(self, context_data, detected_fusions, fusion_tool_list):
         """Add data to context seq table"""

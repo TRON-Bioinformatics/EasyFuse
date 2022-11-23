@@ -4,45 +4,24 @@
 @author: BNT (URLA), TRON (PASO)
 @version: 20190118
 """
-
-import json
 import os
 import os.path
-import sys
 import time
 from argparse import ArgumentParser
-from configparser import ConfigParser
 
 import easy_fuse.misc.io_methods as IOMethods
 from easy_fuse.join_data import DataJoining
+from easy_fuse.misc.config import EasyFuseConfiguration
 from easy_fuse.misc.samples import SamplesDB
 
 
 class FusionSummary(object):
     """Collect stats of the run and write them to file"""
 
-    def __init__(self, input_path, cfg_file):
+    def __init__(self, input_path, config: EasyFuseConfiguration):
         self.input_path = input_path
         self.samples = SamplesDB(os.path.join(input_path, "samples.db"))
-
-        self.cfg = None
-
-        default_cfg_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "config.ini")
-
-        if not cfg_file and os.path.exists(default_cfg_path):
-            cfg_file = default_cfg_path
-        elif not cfg_file and not os.path.exists(default_cfg_path):
-            self.logger.error("Could not find default config file (path={}). Exiting.".format(default_cfg_path))
-            sys.exit(1)
-
-        self.cfg_file = cfg_file
-
-        if cfg_file.endswith("ini"):
-            self.cfg = ConfigParser()
-            self.cfg.read(cfg_file)
-        elif cfg_file.endswith("json"):
-            with open(cfg_file) as config_file:
-                self.cfg = json.load(config_file)
+        self.cfg = config
 
     def run(self, model_predictions):
         """Execute individual methods"""
@@ -88,7 +67,7 @@ class FusionSummary(object):
                 start_time = time.time()
                 fusion_data_summary = DataJoining(self.input_path, sample, "",
                                                   os.path.join(fusion_data_summary_path, sample), model_predictions,
-                                                  self.cfg_file).run()
+                                                  self.cfg).run()
                 fusion_frequency_all = self.add_to_fus_dict(fusion_data_summary[1], fusion_frequency_all)
                 filtering_data_1[sample] = fusion_data_summary[0]
 
@@ -115,13 +94,14 @@ def main():
 
     parser.add_argument('-i', '--input', dest='input',
                         help='Specify the easyfuse root dir of the run you want to process.', required=True)
-    parser.add_argument('-c', '--config-file', dest='config_file',
+    parser.add_argument('-c', '--config-file', dest='config_file', required=True,
                         help='Specify alternative config file to use for your analysis')
 
     parser.add_argument('--model_predictions', default=False, action='store_true',
                         help='Score predictions based on pre-train model')
     args = parser.parse_args()
-    stats = FusionSummary(args.input, args.config_file)
+    config = EasyFuseConfiguration(args.config_file)
+    stats = FusionSummary(args.input, config)
     stats.run(args.model_predictions)
 
 
