@@ -21,12 +21,13 @@ import pandas as pd
 from logzero import logger
 
 import easy_fuse.misc.queueing as Queueing
+from easy_fuse.misc.config import EasyFuseConfiguration
 
 
 class FusionLiftover(object):
     """Select alignments belonging to putative fusions from an s/bam file"""
 
-    def __init__(self, in_fus_detect, logger):
+    def __init__(self, in_fus_detect, logger, config_file):
         self.in_fus_detect = in_fus_detect
         logzero.logfile(logger)
         copyfile(in_fus_detect, "{}.bak".format(in_fus_detect))
@@ -37,7 +38,7 @@ class FusionLiftover(object):
             "16", "17", "18", "19", "20",
             "21", "22", "X", "Y", "MT"
         ]
-        self.cfg = None
+        self.cfg = EasyFuseConfiguration(config_file=config_file)
 
     def liftcoords(self):
         """Parse ensembl transcriptome fasta file and modify header"""
@@ -137,7 +138,9 @@ def main():
     parser = ArgumentParser(description="Generate mapping stats for fusion detection")
     parser.add_argument('-i', '--input', dest='input', help='Detected fusions file', required=True)
     parser.add_argument('-l', '--logger', dest='logger', help='Logging of processing steps', default="")
+    parser.add_argument('-c', '--config-file', dest='config_file', required=True,
+                        help='Config file to use for your analysis')
     args = parser.parse_args()
 
-    flo = FusionLiftover(args.input, args.logger)
+    flo = FusionLiftover(args.input, args.logger, args.config_file)
     flo.liftcoords()

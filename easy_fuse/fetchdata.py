@@ -178,9 +178,11 @@ class Fetching(object):
 
         cmd_liftover = "liftover " \
                        "-i {0} " \
-                       "-l {1}".format(
+                       "-l {1} " \
+                       "-c {2}".format(
             detected_fusions_file,
-            logger._logfile)
+            logger._logfile,
+            self.cfg.config_file)
 
         cmd_contextseq = "fusionannotation " \
                          "--detected_fusions {0} " \
