@@ -348,7 +348,7 @@ class Processing(object):
                     dependency = queueing.get_jobs_by_name(sample_id, que_sys)
                 elif tool == "assembly":
                     dependency = queueing.get_jobs_by_name("fetchdata-{0}".format(sample_id), que_sys)
-                elif tool == "readFilter":
+                elif tool == "readfilter":
                     dependency = queueing.get_jobs_by_name("qc-{0}".format(sample_id), que_sys)
                 dependency.extend(queueing.get_jobs_by_name("readfilter-{0}".format(sample_id), que_sys))
                 dependency.extend(queueing.get_jobs_by_name("qc-{0}".format(sample_id), que_sys))
