@@ -1,3 +1,4 @@
+numpy==1.21.6
 pandas==0.24.0
 #python-lzo==1.12
 xxhash==1.4.3
