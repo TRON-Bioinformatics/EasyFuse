@@ -288,7 +288,7 @@ class Fetching(object):
 
         # re-define fastq's if filtering is on (default)
         fq0 = ""
-        if "Readfilter" in fusion_tools:
+        if "readfilter" in fusion_tools:
             fq0 = os.path.join(filtered_reads_path, os.path.basename(fq1).replace("R1", "R0").replace(".fastq.gz",
                                                                                                       "_filtered2_singles.fastq.gz"))
             fq1 = os.path.join(filtered_reads_path, os.path.basename(fq1).replace(".fastq.gz", "_filtered2.fastq.gz"))
