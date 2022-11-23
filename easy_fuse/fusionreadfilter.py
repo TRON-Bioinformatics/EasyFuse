@@ -55,6 +55,9 @@ class Fusionreadfilter(object):
         """Classify a read pairs into different groups"""
         self.counter[1] += 1
 
+        if read1 is None or read2 is None:
+            return False
+
         # count star chimeric
         if member_count > 2:
             self.counter[4] += 1
