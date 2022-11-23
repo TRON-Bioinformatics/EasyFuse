@@ -28,12 +28,12 @@ from easy_fuse.misc.samples import SamplesDB
 class Fetching(object):
     """Run, monitor and schedule fastq processing for fusion gene prediction"""
 
-    def __init__(self, scratch_path, fetchdata_path, sample_id, config: EasyFuseConfiguration):
+    def __init__(self, sample_path, fetchdata_path, sample_id, config: EasyFuseConfiguration):
         """Parameter initiation and work folder creation."""
-        self.scratch_path = scratch_path
+        self.sample_path = sample_path
         self.fetchdata_path = fetchdata_path
         self.sample_id = sample_id
-        self.samples = SamplesDB(os.path.join(scratch_path, os.path.pardir, "samples.db"))
+        self.samples = SamplesDB(os.path.join(sample_path, os.path.pardir, "samples.db"))
         logzero.logfile(os.path.join(self.fetchdata_path, "fetchdata.log"))
         self.cfg = config
 
@@ -97,26 +97,24 @@ class Fetching(object):
         genes_adb_path = self.cfg["references"]["genes_adb"]
         genes_tsl_path = self.cfg["references"]["genes_tsl"]
 
-        fetchdata_current_path = os.path.join(self.fetchdata_path, "fd_{}_tool".format(fusion_support))
-        detected_fusions_path = os.path.join(fetchdata_current_path, "fetched_fusions")
+        detected_fusions_path = os.path.join(self.fetchdata_path, "fetched_fusions")
         detected_fusions_file = os.path.join(detected_fusions_path, "Detected_Fusions.csv")
-        context_seq_path = os.path.join(fetchdata_current_path, "fetched_contextseqs")
+        context_seq_path = os.path.join(self.fetchdata_path, "fetched_contextseqs")
         context_seq_file = os.path.join(context_seq_path, "Context_Seqs.csv")
-        filtered_reads_path = os.path.join(self.scratch_path, "filtered_reads")
+        filtered_reads_path = os.path.join(self.sample_path, "filtered_reads")
         star_genome_path = os.path.join(context_seq_path, "STAR_idx")
         star_align_path = os.path.join(context_seq_path, "STAR_align")
         star_align_file = os.path.join(star_align_path, "{}_".format(self.sample_id))
-        classification_path = os.path.join(fetchdata_current_path, "classification")
+        classification_path = os.path.join(self.fetchdata_path, "classification")
         classification_file = os.path.join(classification_path, "classification")
 
         for folder in [
-            fetchdata_current_path,
-            detected_fusions_path,
-            context_seq_path,
-            star_genome_path,
-            star_align_path,
-            classification_path
-        ]:
+                self.fetchdata_path,
+                detected_fusions_path, 
+                context_seq_path,
+                star_genome_path, 
+                star_align_path,
+                classification_path]:
             IOMethods.create_folder(folder)
 
         # processing steps to perform
@@ -125,8 +123,8 @@ class Fetching(object):
         cmds = self.cfg["commands"]
         # In case of a liftover, some reference and path must be changed accordingly
         cmd_contextseq_org = ""
-        if "Liftover" in tools:
-            tools.insert(2, "ContextSeqBak")
+        if "liftover" in tools:
+            tools.insert(2, "contextSeqBak")
             # for read grepping, we need the original reference on which the first mapping was performed
             cmd_contextseq_org = "fusionannotation " \
                                  "--detected_fusions {0}.bak " \
@@ -147,6 +145,8 @@ class Fetching(object):
                 self.cfg["general"]["tsl_filter"])
 
             # now, references need to be updated according to the target liftover
+            crossmap_chain = self.cfg["liftover"]["crossmap_chain"]
+            ref_genome_dest = os.path.basename(crossmap_chain).replace(".", "_").split("_")[2].lower()
             logger.debug(
                 "Creating a copy of the detected fusions file due to selection of liftover. Old ({0}) data will be "
                 "kept in \"{1}.bak\"".format(ref_genome, detected_fusions_file))
@@ -338,23 +338,23 @@ class Fetching(object):
 
         # set final lists of executable tools and path
         exe_tools = [
-            "Fusiongrep",  # 1
-            "Liftover",  # 2
-            "ContextSeqBak",
-            "Contextseq",  # 3
-            "Starindex",  # 4
-            "StaralignFltr",  # 5
-            "BamindexFltr",  # 6
-            "RequantifyFltr",  # 7
-            "StaralignOrg",  # 8
-            "BamindexOrg",  # 9
-            "RequantifyOrg",  # 10
-            "ReadFilter2",  # 11
-            "ReadFilter2b",  # 12
-            "StaralignBest",  # 13
-            "BamindexBest",  # 14
-            "RequantifyBest"  # 15
-        ]
+            "fusiongrep", #1
+            "liftover", #2
+            "contextSeqBak",
+            "contextseq", #3
+            "starindex", #4
+            "staralignFltr", #5
+            "bamindexFltr", #6
+            "requantifyFltr", #7
+            "staralignOrg", #8
+            "bamindexOrg", #9
+            "requantifyOrg", #10
+            "readFilter2", #11
+            "readFilter2b", #12
+            "staralignBest", #13
+            "bamindexBest", #14
+            "requantifyBest" #15
+            ]
         exe_cmds = [
             cmd_fusiondata,  # 1
             cmd_liftover,  # 2
@@ -398,7 +398,7 @@ class Fetching(object):
             if tool in tools:
                 if not exe_dependencies[i] or os.path.exists(exe_dependencies[i]):
                     logger.info("Starting {}".format(tool))
-                    if tool == "Starindex":  # the genome size required for the genomeSAindexNbases parameter is not known before now
+                    if tool == "starindex":  # the genome size required for the genomeSAindexNbases parameter is not known before now
                         (star_bin, star_sa) = self.get_pseudo_genome_adjustments_for_star(
                             "{0}{1}".format(context_seq_file, ".fasta.info"))
                         exe_cmds[i] = exe_cmds[i].replace("waiting_for_bin_size_input", star_bin)

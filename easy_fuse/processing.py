@@ -68,11 +68,11 @@ class Processing(object):
                 self.execute_pipeline(sample[1], sample[2], sample[0], ref_genome, ref_trans, tool_num_cutoff)
 
         # summarize all data if selected
-        if "Summary" in self.cfg["general"]["tools"].split(","):
+        if "summary" in self.cfg["general"]["tools"].split(","):
             dependency = []
             for sample in sample_list:
                 dependency.extend(
-                    queueing.get_jobs_by_name("Fetchdata-{}".format(sample[0]), self.cfg["general"]["queueing_system"]))
+                    queueing.get_jobs_by_name("fetchdata-{}".format(sample[0]), self.cfg["general"]["queueing_system"]))
             modelling_string = ""
             if self.cfg["other_files"]["easyfuse_model"]:
                 modelling_string = " --model_predictions"
@@ -127,7 +127,7 @@ class Processing(object):
         starfusion_path = os.path.join(fusion_path, "starfusion")
         infusion_path = os.path.join(fusion_path, "infusion")
         soapfuse_path = os.path.join(fusion_path, "soapfuse")
-        fetchdata_path = os.path.join(self.working_dir, "Sample_{}".format(sample_id), "fetchdata")
+        fetchdata_path = os.path.join(output_results_path, "fetchdata")
         fastqc_1 = os.path.join(qc_path, os.path.basename(fq1).rstrip(".fastq.gz") + "_fastqc", "fastqc_data.txt")
         fastqc_2 = os.path.join(qc_path, os.path.basename(fq2).rstrip(".fastq.gz") + "_fastqc", "fastqc_data.txt")
 
@@ -170,7 +170,7 @@ class Processing(object):
             self.cfg["commands"]["skewer"], self.cfg["general"]["min_read_len_perc"])
 
         fq0 = ""
-        if "QC" in tools:
+        if "qc" in tools:
             fq0 = os.path.join(skewer_path, "out_file-trimmed.fastq.gz")
             fq1 = os.path.join(skewer_path, "out_file-trimmed-pair1.fastq.gz")
             fq2 = os.path.join(skewer_path, "out_file-trimmed-pair2.fastq.gz")
@@ -206,9 +206,10 @@ class Processing(object):
 
         # re-define fastq's if filtering is on (default)
         fq0 = ""
-        if "Readfilter" in tools:
-            fq0 = os.path.join(filtered_reads_path, os.path.basename(fq1).replace("R1", "R0").replace(".fastq.gz",
-                                                                                                      "_filtered_singles.fastq.gz"))
+        if "readfilter" in tools:
+            fq0 = os.path.join(
+                filtered_reads_path, os.path.basename(fq1).replace("R1", "R0").replace(
+                    ".fastq.gz", "_filtered_singles.fastq.gz"))
             fq1 = os.path.join(filtered_reads_path, os.path.basename(fq1).replace(".fastq.gz", "_filtered.fastq.gz"))
             fq2 = os.path.join(filtered_reads_path, os.path.basename(fq2).replace(".fastq.gz", "_filtered.fastq.gz"))
 
@@ -220,14 +221,12 @@ class Processing(object):
             cmds["star"], star_index_path, fq1, fq2, self.cfg["general"]["max_dist_proper_pair"])
 
         # (3) Mapslice
-        # urla: the "keep" parameter requires gunzip >= 1.6
-        cmd_extr_fastq1 = "gunzip --keep {0}".format(fq1)
-        cmd_extr_fastq2 = "gunzip --keep {0}".format(fq2)
+        # Using "gunzip -c" instead of "gunzip --keep" to keep compatibility with older machines
+        cmd_extr_fastq1 = "gunzip -c -f {0} > {1}".format(fq1, fq1[:-3])
+        cmd_extr_fastq2 = "gunzip -c -f {0} > {1}".format(fq2, fq2[:-3])
 
         # Added python interpreter to circumvent external hardcoded shell script
-        cmd_mapsplice = "python2 {0} --chromosome-dir {1} -x {2} -1 {3} -2 {4} --threads waiting_for_cpu_number --output {5} --qual-scale phred33 --bam --seglen 20 --min-map-len 40 --gene-gtf {6} --fusion".format(
-            cmds["mapsplice"], genome_chrs_path, bowtie_index_path, fq1[:-3], fq2[:-3], mapsplice_path, genes_gtf_path)
-
+        cmd_mapsplice = "{0} --chromosome-dir {1} -x {2} -1 {3} -2 {4} --threads waiting_for_cpu_number --output {5} --qual-scale phred33 --bam --seglen 20 --min-map-len 40 --gene-gtf {6} --fusion".format(cmds["mapsplice"], genome_chrs_path, bowtie_index_path, fq1[:-3], fq2[:-3], mapsplice_path, genes_gtf_path)
         # (4) Fusioncatcher
         cmd_fusioncatcher = "{0} --input {1} --data {2} --output {3} -p waiting_for_cpu_number".format(
             cmds["fusioncatcher"], ",".join([fq1, fq2]), fusioncatcher_index_path, fusioncatcher_path)
@@ -238,14 +237,14 @@ class Processing(object):
             starfusion_index_path, starfusion_path)
 
         # (6) Infusion
-        cmd_infusion = "{0} -1 {1} -2 {2} --skip-finished --min-unique-alignment-rate 0 --min-unique-split-reads 0 --allow-non-coding --out-dir {3} {4}".format(
-            cmds["infusion"], fq1, fq2, infusion_path, infusion_cfg_path)
-
+        # TODO: Use these command line args for better results:
+        # --min-split-reads 0 --min-fragments 0 --min-not-rescued 2
+        cmd_infusion = "{0} {1} -1 {2} -2 {3} --skip-finished --min-unique-alignment-rate 0 --min-unique-split-reads 0 --allow-non-coding --out-dir {4} {5}".format(cmds["python2"], cmds["infusion"], fq1, fq2, infusion_path, infusion_cfg_path)
         # (7) Soapfuse
         cmd_soapfuse = "soapfuse_wrapper -q {0} -i {1} -o {2} -b {3} -c {4}".format(
             qc_table_path, " ".join([fq1, fq2]),
-            soapfuse_path, self.cfg["commands"]["soapfuse"], self.cfg["other_files"]["soapfuse_cfg"])
-
+            soapfuse_path, self.cfg["commands"]["soapfuse"],
+            self.cfg["other_files"]["soapfuse_cfg"])
         # (8) Data collection
         cmd_fetchdata = "fetchdata -i {0} -o {1} -s {2} -c {3} --fq1 {4} --fq2 {5} --fusion_support {6}".format(
             output_results_path, fetchdata_path, sample_id, self.cfg.config_file, fq1, fq2, tool_num_cutoff)
@@ -256,16 +255,16 @@ class Processing(object):
 
         # set final lists of executable tools and path
         exe_tools = [
-            "QC",  # 0
-            "Readfilter",  # 1
-            "Star",  # 2
-            "Mapsplice",  # 3
-            "Fusioncatcher",  # 4
-            "Starfusion",  # 5
-            "Infusion",  # 6
-            "Soapfuse",  # 7
-            "Fetchdata"  # 8
-        ]
+            "qc", #0
+            "readfilter", #1
+            "star", #2
+            "mapsplice", #3
+            "fusioncatcher", #4
+            "starfusion", #5
+            "infusion", #6
+            "soapfuse", #7
+            "fetchdata" #8
+            ]
         exe_cmds = [
             " && ".join([cmd_fastqc, cmd_qc_parser, cmd_skewer]),  # 0
             " && ".join([cmd_star_filter, cmd_read_filter, cmd_bam_to_fastq]),  # 1
@@ -302,33 +301,29 @@ class Processing(object):
                             tool, exe_path[i]))
                     continue
                 else:
-                    if tool == "Readfilter" and "Readfilter" not in tools:
+                    if tool == "readfilter" and "readfilter" not in tools:
                         logger.error(
-                            """Error 99: Sample {} will be skipped due to missing read filtering.\n
-                            Read filtering is currently a mandatory step for the processing.\n
-                            Because you haven't run it before for this sample, you have to include \"Readfilter\" in the tool selection in your config.\n
-                            """.format(sample_id))
+                                """Error 99: Sample {} will be skipped due to missing read filtering.\n
+                                Read filtering is currently a mandatory step for the processing.\n
+                                Because you haven't run it before for this sample, you have to include \"Readfilter\" in the tool selection in your config.\n
+                                """.format(sample_id))
                         print("Error 99: Sample {} will be skipped due to missing read filtering.".format(sample_id))
                         return 0
-                    elif tool == "Pizzly" and "Kallisto" not in tools:
+                    elif tool == "pizzly" and "kallisto" not in tools:
                         logger.error(
-                            """Error 99: Running {0} for Sample {1} will be skipped due to a missing dependency.\n
-                            Pizzly builds on Kallisto and it is therefore mandatory to run this first.\n
-                            Because you haven't run it before for this sample, you have to include \"Kallisto\" in the tool selection in your config.\n
-                            """.format(sample_id))
-                        print(
-                            "Error 99: Running {0} for Sample {1} will be skipped due to a missing dependency.".format(
-                                tool, sample_id))
+                                """Error 99: Running {0} for Sample {1} will be skipped due to a missing dependency.\n
+                                Pizzly builds on Kallisto and it is therefore mandatory to run this first.\n
+                                Because you haven't run it before for this sample, you have to include \"Kallisto\" in the tool selection in your config.\n
+                                """.format(sample_id))
+                        print("Error 99: Running {0} for Sample {1} will be skipped due to a missing dependency.".format(tool, sample_id))
                         continue
-                    elif (tool == "Starfusion" or tool == "Starchip") and "Star" not in tools:
+                    elif (tool == "starfusion" or tool == "starchip") and "star" not in tools:
                         logger.error(
-                            """Error 99: Running {0} for Sample {1} will be skipped due to a missing dependency.\n
-                            {0} builds on Star and it is therefore mandatory to run this first.\n
-                            Because you haven't run it before for this sample, you have to include \"Star\" in the tool selection in your config.\n
-                            """.format(sample_id))
-                        print(
-                            "Error 99: Running {0} for Sample {1} will be skipped due to a missing dependency.".format(
-                                tool, sample_id))
+                                """Error 99: Running {0} for Sample {1} will be skipped due to a missing dependency.\n
+                                {0} builds on Star and it is therefore mandatory to run this first.\n
+                                Because you haven't run it before for this sample, you have to include \"Star\" in the tool selection in your config.\n
+                                """.format(sample_id))
+                        print("Error 99: Running {0} for Sample {1} will be skipped due to a missing dependency.".format(tool, sample_id))
                         continue
 
                 # prepare slurm jobs: get ressources, create uid, set output path and check dependencies
@@ -337,28 +332,26 @@ class Processing(object):
                 cpu = cpumem[0]
                 mem = cpumem[1]
                 uid = "-".join([self.cfg["general"]["pipeline_name"], tool, sample_id])
-                if tool == "Star":
-                    exe_cmds[i] = exe_cmds[i].replace("waiting_for_output_string",
-                                                      "{}_".format(os.path.join(exe_path[i], sample_id))).replace(
-                        "waiting_for_cpu_number", str(cpu))
+                if tool == "star":
+                    exe_cmds[i] = exe_cmds[i].replace("waiting_for_output_string", "{}_".format(os.path.join(exe_path[i], sample_id))).replace("waiting_for_cpu_number", str(cpu))
                 else:
                     exe_cmds[i] = exe_cmds[i].replace("waiting_for_output_string", exe_path[i]).replace(
                         "waiting_for_cpu_number", str(cpu))
                 cmd = " && ".join([exe_cmds[i], cmd_samples + tool])
                 # Managing slurm dependencies
                 que_sys = self.cfg["general"]["queueing_system"]
-                if tool == "Pizzly":
-                    dependency = queueing.get_jobs_by_name("Kallisto-{0}".format(sample_id), que_sys)
-                elif tool == "Starfusion" or tool == "Starchip":
-                    dependency = queueing.get_jobs_by_name("Star-{0}".format(sample_id), que_sys)
-                elif tool == "Fetchdata":
+                if tool == "pizzly":
+                    dependency = queueing.get_jobs_by_name("kallisto-{0}".format(sample_id), que_sys)
+                elif tool == "starfusion" or tool == "starchip":
+                    dependency = queueing.get_jobs_by_name("star-{0}".format(sample_id), que_sys)
+                elif tool == "fetchdata":
                     dependency = queueing.get_jobs_by_name(sample_id, que_sys)
-                elif tool == "Assembly":
-                    dependency = queueing.get_jobs_by_name("Fetchdata-{0}".format(sample_id), que_sys)
-                elif tool == "ReadFilter":
-                    dependency = queueing.get_jobs_by_name("QC-{0}".format(sample_id), que_sys)
-                dependency.extend(queueing.get_jobs_by_name("Readfilter-{0}".format(sample_id), que_sys))
-                dependency.extend(queueing.get_jobs_by_name("QC-{0}".format(sample_id), que_sys))
+                elif tool == "assembly":
+                    dependency = queueing.get_jobs_by_name("fetchdata-{0}".format(sample_id), que_sys)
+                elif tool == "readFilter":
+                    dependency = queueing.get_jobs_by_name("qc-{0}".format(sample_id), que_sys)
+                dependency.extend(queueing.get_jobs_by_name("readfilter-{0}".format(sample_id), que_sys))
+                dependency.extend(queueing.get_jobs_by_name("qc-{0}".format(sample_id), que_sys))
                 logger.debug("Submitting job: CMD - {0}; PATH - {1}; DEPS - {2}".format(cmd, exe_path[i], dependency))
                 self.submit_job(uid, cmd, cpu, mem, exe_path[i], dependency, "")
             else:
@@ -431,8 +424,3 @@ def main():
 
     proc = Processing(script_call, args.input_paths, args.output_folder, config, args.jobname_suffix)
     proc.run(args.tool_support)
-
-
-
-# if __name__ == '__main__':
-#    main()
