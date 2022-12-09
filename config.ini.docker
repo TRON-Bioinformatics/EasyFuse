@@ -44,6 +44,9 @@ summary = 1,16
 
 # execution command for individual programs (what you write here should be identical to what is typed in the console)
 [commands]
+# for python
+python2 = /code/miniconda3/envs/py27/bin/python
+python3 = /code/miniconda3/bin/python
 # for qc
 fastqc = fastqc
 skewer = /code/skewer-0.2.2/skewer
