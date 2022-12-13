@@ -10,3 +10,4 @@ test_local/
 *.egg-info
 dist
 build
+venv

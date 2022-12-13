@@ -34,9 +34,9 @@ class Fetching(object):
         self.fetchdata_path = fetchdata_path
         self.sample_id = sample_id
         self.samples = SamplesDB(os.path.join(sample_path, os.path.pardir, "samples.db"))
-        logzero.logfile(os.path.join(self.fetchdata_path, "fetchdata.log"))
+        self.log_file = os.path.join(self.fetchdata_path, "fetchdata.log")
+        logzero.logfile(self.log_file)
         self.cfg = config
-
 
     def get_pseudo_genome_adjustments_for_star(self, num_len_file):
         """Return the genome size of an associated fasta file calculated by urla_GetFusionSequence_latest.R"""
@@ -174,14 +174,14 @@ class Fetching(object):
             self.sample_id,
             fusion_support,
             self.cfg["general"]["fusiontools"],
-            logger._logfile)
+            self.log_file)
 
         cmd_liftover = "liftover " \
                        "-i {0} " \
                        "-l {1} " \
                        "-c {2}".format(
             detected_fusions_file,
-            logger._logfile,
+            self.log_file,
             self.cfg.config_file)
 
         cmd_contextseq = "fusionannotation " \
