@@ -24,6 +24,8 @@ from easy_fuse.misc import queueing
 from easy_fuse.misc.config import EasyFuseConfiguration
 from easy_fuse.misc.samples import SamplesDB
 
+READ_FILTER_STEP = "readfilter"
+
 
 class Processing(object):
     """Run, monitor and schedule fastq processing for fusion gene prediction"""
@@ -206,7 +208,7 @@ class Processing(object):
 
         # re-define fastq's if filtering is on (default)
         fq0 = ""
-        if "readfilter" in tools:
+        if READ_FILTER_STEP in tools:
             fq0 = os.path.join(
                 filtered_reads_path, os.path.basename(fq1).replace("R1", "R0").replace(
                     ".fastq.gz", "_filtered_singles.fastq.gz"))
@@ -256,7 +258,7 @@ class Processing(object):
         # set final lists of executable tools and path
         exe_tools = [
             "qc", #0
-            "readfilter", #1
+            READ_FILTER_STEP, #1
             "star", #2
             "mapsplice", #3
             "fusioncatcher", #4
@@ -301,7 +303,7 @@ class Processing(object):
                             tool, exe_path[i]))
                     continue
                 else:
-                    if tool == "readfilter" and "readfilter" not in tools:
+                    if tool == READ_FILTER_STEP and READ_FILTER_STEP not in tools:
                         logger.error(
                                 """Error 99: Sample {} will be skipped due to missing read filtering.\n
                                 Read filtering is currently a mandatory step for the processing.\n
@@ -348,7 +350,7 @@ class Processing(object):
                     dependency = queueing.get_jobs_by_name(sample_id, que_sys)
                 elif tool == "assembly":
                     dependency = queueing.get_jobs_by_name("fetchdata-{0}".format(sample_id), que_sys)
-                elif tool == "readfilter":
+                elif tool == READ_FILTER_STEP:
                     dependency = queueing.get_jobs_by_name("qc-{0}".format(sample_id), que_sys)
                 dependency.extend(queueing.get_jobs_by_name("readfilter-{0}".format(sample_id), que_sys))
                 dependency.extend(queueing.get_jobs_by_name("qc-{0}".format(sample_id), que_sys))
