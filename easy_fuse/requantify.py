@@ -9,7 +9,7 @@ Junction/Spanning read pair counting
 
 import os.path
 from argparse import ArgumentParser
-
+from logzero import logger
 import pysam
 
 
@@ -147,7 +147,7 @@ class Requantification(object):
 
     def run(self):
         """Walk linewise through a s/bam file and send reads mapping to the same fusion/wt context to counting"""
-        # self.logger.info("Starting fusion read filtering")
+        logger.info("Starting fusion read filtering")
         count_lines = 0
         count_processed_refs = 0
         # the read buffer is a dict of lists. The dict has query names as keys and a list of corresponding reads as values.

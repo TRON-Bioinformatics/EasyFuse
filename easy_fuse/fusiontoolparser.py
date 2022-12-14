@@ -55,7 +55,7 @@ class FusionParser(object):
     def get_tool_results(self, input_path, output_path, tool):
         """Return results as dict for a fusion tool"""
 
-        self.logger.info("Parsing results for {}".format(tool))
+        logger.info("Parsing results for {}".format(tool))
 
         fusion_map = parse_results(input_path, tool)
 
