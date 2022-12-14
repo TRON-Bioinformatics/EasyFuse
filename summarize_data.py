@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """
 @author: BNT (URLA), TRON (PASO)
@@ -85,7 +85,7 @@ class FusionSummary(object):
             sample_date_dict[sample] = "NA"
             # count the numbers of fusion tools that have been run on this sample
             sample_toolCnt_dict[sample] = len([tool for tool in fusion_tools if tool in self.samples.get_tool_list_from_state(sample)])
-            if "Fetchdata" in self.samples.get_tool_list_from_state(sample):
+            if "fetchdata" in self.samples.get_tool_list_from_state(sample):
                 count_valid_sample += 1
         print("Found {0} (partially) processed samples in {1}. Data will be collected from {2} samples for which fetchdata has been run.".format(i, self.input_path, count_valid_sample))
 
@@ -93,8 +93,8 @@ class FusionSummary(object):
         count_processed = 0
 
         for sample in sid_list:
-            #                    try:
-            if "Fetchdata" in self.samples.get_tool_list_from_state(sample):
+
+            if "fetchdata" in self.samples.get_tool_list_from_state(sample):
                 count_processed += 1
                 print("Processing sample {0} (dataset {1}/{2})".format(sample, count_processed, len(sid_list)))
                 start_time = time.time()
@@ -106,10 +106,7 @@ class FusionSummary(object):
                 average_time = (average_time * (count_processed-1) + time_taken) / count_processed
                 estimated_end = average_time * (count_valid_sample - count_processed)
                 print("done. Processing time: {0:.2f}s; Average processing time: {1:.2f}s; Estimated end of processing in {2:.2f}s)\n".format(time_taken, average_time, estimated_end))
-                #except:
-                #    print("Sample {} could not be processed! Please look into detail".format(sample))
 
-                #colnames_filtering = ["all fusions", "in/out/neo frame", "both on exon boundary", "with neo peptide", "not black-listed", "by 2-tools", "all together"]
 
     @staticmethod
     def add_to_fus_dict(input_set, fusion_dict):

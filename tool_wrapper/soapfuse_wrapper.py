@@ -7,7 +7,6 @@ import subprocess
 
 from argparse import ArgumentParser
 
-#sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
 def main():
     parser = ArgumentParser(description="Wrapper around SOAPfuse.")
@@ -22,7 +21,6 @@ def main():
     soapfuse_cfg = args.config_file
 
     cols = args.input[0].rsplit("/", 3)
-#    print(cols)
     remaining_len = 1000
     read_len = 0
     if args.qc_table != "None":
@@ -36,13 +34,11 @@ def main():
                 if remaining < remaining_len:
                     remaining_len = remaining
     else:
-#        print(args.input[0])
         with gzip.open(args.input[0]) as inf:
             next(inf)
             line = inf.readline()
             remaining_len = len(line.rstrip())
 
-#    print(remaining_len)
     
     cfg_file = os.path.join(args.output, "samples.csv")
     cfg_out = open(cfg_file, "w")
@@ -55,18 +51,13 @@ def main():
         except:
             print("Symlink already exists!")
     cmd = "{} -c {} -fd {} -l {} -o {}".format(soapfuse_bin, soapfuse_cfg, cols[0], cfg_file, args.output)
-#    print cmd
+
     proc = subprocess.Popen(cmd, shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
     (stdoutdata, stderrdata) = proc.communicate()
     r = proc.returncode
     if r != 0:
         print(stderrdata)
         sys.exit(1)
-    else:
-        for line in stdoutdata.split("\n"):
-            print(line)
-        for line in stderrdata.split("\n"):
-            print(line)
 
 
 
