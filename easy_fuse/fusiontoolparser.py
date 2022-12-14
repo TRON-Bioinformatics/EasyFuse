@@ -15,7 +15,7 @@ from argparse import ArgumentParser
 import logzero
 from logzero import logger
 
-from fusiontoolparser_helper import *
+from easy_fuse.fusiontoolparser_helper import *
 
 
 # pylint: disable=line-too-long
