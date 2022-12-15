@@ -47,7 +47,8 @@ class FusionSummary(object):
 
     def run(self, model_predictions):
         """Execute individual methods"""
-        fusion_tools = self.cfg["general"]["fusiontools"].split(",")
+        #fusion_tools = self.cfg["general"]["fusiontools"].split(",")
+        fusion_tools = self.cfg["general"]["tools"].split(",")
         fusion_data_summary_path = os.path.join(self.input_path, "FusionSummary")
         IOMethods.create_folder(fusion_data_summary_path)
 
@@ -94,7 +95,7 @@ class FusionSummary(object):
 
         for sample in sid_list:
 
-            if "fetchdata" in self.samples.get_tool_list_from_state(sample):
+            if "requantifyBest" in self.samples.get_tool_list_from_state(sample):
                 count_processed += 1
                 print("Processing sample {0} (dataset {1}/{2})".format(sample, count_processed, len(sid_list)))
                 start_time = time.time()
