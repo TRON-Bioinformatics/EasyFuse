@@ -169,7 +169,7 @@ class Fetching(object):
                          "-t {3} " \
                          "-f {4} " \
                          "-l {5}".format(
-            self.fetchdata_path,
+            self.sample_path,
             detected_fusions_path,
             self.sample_id,
             fusion_support,
