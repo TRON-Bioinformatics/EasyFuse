@@ -116,7 +116,8 @@ class DataJoining(object):
         """run the data concatenation"""
         fusion_tools = self.cfg["general"]["fusiontools"].split(",")
         requant_mode = self.cfg["general"]["requant_mode"]
-        self.load_blacklist(self.cfg["general"]["blacklist"])
+        blacklist_file = self.cfg.get("general", "blacklist", fallback=None)
+        self.load_blacklist(blacklist_file)
         # urla - note: with icam_run set to True, two results from technical replicates are expected as input
         print("Looking for required files...")
         # check whether output already exists
@@ -180,11 +181,12 @@ class DataJoining(object):
 
     def load_blacklist(self, blacklist_file):
         """ Read blacklist data from file """
-        with open(blacklist_file, "r") as bl_file:
-            for line in bl_file:
-                if line.startswith("#"):
-                    continue
-                self.blacklist.append(line.strip())
+        if blacklist_file is not None:
+            with open(blacklist_file, "r") as bl_file:
+                for line in bl_file:
+                    if line.startswith("#"):
+                        continue
+                    self.blacklist.append(line.strip())
 
     def count_records(self, pd_data_frame, is_merged, name):
         """ stub """
