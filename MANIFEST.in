@@ -1,2 +1,2 @@
-include easy_fuse/resources/*
+include easy_fuse/resources/R/*
 include easy_fuse/tests/resources/*
