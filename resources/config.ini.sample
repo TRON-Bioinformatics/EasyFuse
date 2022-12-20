@@ -86,4 +86,3 @@ fusioncatcher = /path/to/fusioncatcher_index/
 infusion_cfg = /path/to/infusion_index/infusion.cfg
 soapfuse_cfg = /path/to/soapfuse_config/config_h<release>.txt
 soapfuse_cfg_mm10 = /path/to/soapfuse_config/config_m<release>.txt
-easyfuse_model = /path/to/easyfuse_model.rds
