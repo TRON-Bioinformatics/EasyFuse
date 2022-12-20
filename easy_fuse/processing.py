@@ -75,6 +75,8 @@ class Processing(object):
             for sample in sample_list:
                 dependency.extend(
                     queueing.get_jobs_by_name("fetchdata-{}".format(sample[0]), self.cfg["general"]["queueing_system"]))
+
+            # TODO: add support for running without model and multiple models
             modelling_string = " --model_predictions"
 
             cmd_summarize = "summarize_data --input {0}{1} -c {2}".format(
