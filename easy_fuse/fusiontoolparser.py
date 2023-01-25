@@ -24,12 +24,11 @@ class FusionParser(object):
     """Get and parse results from previously run programs (fusion prediction, hla typing, expression estimation)"""
 
     # Initialization of parameters
-    def __init__(self, input_path, output_path, sample_id, tool_num_cutoff, fusiontool_list, sample_log):
+    def __init__(self, input_path, output_path, sample_id, fusiontool_list, sample_log):
         """Parameter initiation and work folder creation."""
         self.input_path = input_path
         self.output_path = output_path
         self.sample_id = sample_id
-        self.tool_num_cutoff = int(tool_num_cutoff)
         self.tools = fusiontool_list.split(",")
         logzero.logfile(sample_log)
 
@@ -78,10 +77,9 @@ def main():
     parser.add_argument('-i', '--input_path', dest='input_path', help='Specify the folder of the sample.', required=True)
     parser.add_argument('-o', '--output_path', dest='output_path', help='Specify the fusion output folder of the sample.', required=True)
     parser.add_argument('-s', '--sample', dest='sample', help='Specify the sample to process.', required=True)
-    parser.add_argument('-t', '--toolcutoff', dest='toolcutoff', help='The minimal of tools that must support a fusion in order to be considered further.', required=True)
     parser.add_argument('-f', '--fusionlist', dest='fusionlist', help='A list of fusion prediction tools that where run on the sample.', required=True)
     parser.add_argument('-l', '--logger', dest='logger', help='Logging of processing steps', default="")
     args = parser.parse_args()
 
-    res_parse_1 = FusionParser(args.input_path, args.output_path, args.sample, args.toolcutoff, args.fusionlist, args.logger)
+    res_parse_1 = FusionParser(args.input_path, args.output_path, args.sample, args.fusionlist, args.logger)
     res_parse_1.run()

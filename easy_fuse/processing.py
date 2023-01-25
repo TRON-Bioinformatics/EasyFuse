@@ -33,7 +33,8 @@ class Processing(object):
     def __init__(self, cmd, input_paths, working_dir, config: EasyFuseConfiguration, jobname_suffix):
         """Parameter initiation and work folder creation. Start of progress logging."""
         self.working_dir = os.path.abspath(working_dir)
-        logzero.logfile(os.path.join(self.working_dir, "easyfuse_processing.log"))
+        self.log_path = os.path.join(self.working_dir, "easyfuse_processing.log")
+        logzero.logfile(self.log_path)
         io_methods.create_folder(self.working_dir)
 
         logger.info("Starting easyfuse: CMD - {}".format(cmd))
@@ -50,7 +51,7 @@ class Processing(object):
 
     # The run method simply greps and organises fastq input files.
     # Fastq pairs (single end input is currently not supported) are then send to "execute_pipeline"
-    def run(self, tool_num_cutoff):
+    def run(self):
         """General parameter setting, identification of fastq files and initiation of processing"""
         logger.info("Pipeline Version: {}".format(__version__))
 
@@ -67,14 +68,14 @@ class Processing(object):
                 logger.info("Processing Sample ID: {} (paired end)".format(sample[0]))
                 logger.info("Sample 1: {}".format(sample[1]))
                 logger.info("Sample 2: {}".format(sample[2]))
-                self.execute_pipeline(sample[1], sample[2], sample[0], ref_genome, ref_trans, tool_num_cutoff)
+                self.execute_pipeline(sample[1], sample[2], sample[0], ref_genome, ref_trans)
 
         # summarize all data if selected
         if "summary" in self.cfg["general"]["tools"].split(","):
             dependency = []
             for sample in sample_list:
                 dependency.extend(
-                    queueing.get_jobs_by_name("fetchdata-{}".format(sample[0]), self.cfg["general"]["queueing_system"]))
+                    queueing.get_jobs_by_name("requantifyBest-{}".format(sample[0]), self.cfg["general"]["queueing_system"]))
 
             # TODO: add support for running without model and multiple models
             modelling_string = " --model_predictions"
@@ -93,15 +94,19 @@ class Processing(object):
                             cmd_summarize, cpu, mem, self.working_dir, dependency, self.cfg["general"]["receiver"])
 
     # Per sample, define input parameters and execution commands, create a folder tree and submit runs to slurm
-    def execute_pipeline(self, fq1, fq2, sample_id, ref_genome, ref_trans, tool_num_cutoff):
+    def execute_pipeline(self, fq1, fq2, sample_id, ref_genome, ref_trans):
         """Create sample specific subfolder structure and run tools on fastq files"""
         self.samples.add_sample(sample_id, "NA", fq1, fq2)
 
         refs = self.cfg["references"]
 
         # Genome/Gene references to use
+        genome_fasta = refs["genome_fasta"]
         genome_chrs_path = refs["genome_fastadir"]
         genes_gtf_path = refs["genes_gtf"]
+        genes_tsl_path = refs["genes_tsl"]
+        genes_adb_path = refs["genes_adb"]
+
 
         # Path' to specific indices
         indices = self.cfg["indices"]
@@ -130,6 +135,18 @@ class Processing(object):
         infusion_path = os.path.join(fusion_path, "infusion")
         soapfuse_path = os.path.join(fusion_path, "soapfuse")
         fetchdata_path = os.path.join(output_results_path, "fetchdata")
+        # former fetchdata.py
+        detected_fusions_path = os.path.join(fetchdata_path, "fetched_fusions")
+        detected_fusions_file = os.path.join(detected_fusions_path, "Detected_Fusions.csv")
+        context_seq_path = os.path.join(fetchdata_path, "fetched_contextseqs")
+        context_seq_file = os.path.join(context_seq_path, "Context_Seqs.csv")
+        context_seq_fasta = os.path.join(context_seq_path, "Context_Seqs.csv.fasta")
+        star_genome_path = os.path.join(context_seq_path, "STAR_idx")
+        star_align_path = os.path.join(context_seq_path, "STAR_align")
+        star_align_file = os.path.join(star_align_path, "{}_".format(sample_id))
+        classification_path = os.path.join(fetchdata_path, "classification")
+        classification_file = os.path.join(classification_path, "classification")
+
         fastqc_1 = os.path.join(qc_path, os.path.basename(fq1).rstrip(".fastq.gz") + "_fastqc", "fastqc_data.txt")
         fastqc_2 = os.path.join(qc_path, os.path.basename(fq2).rstrip(".fastq.gz") + "_fastqc", "fastqc_data.txt")
 
@@ -146,7 +163,12 @@ class Processing(object):
             starfusion_path,
             infusion_path,
             soapfuse_path,
-            fetchdata_path
+            fetchdata_path,
+            detected_fusions_path,
+            context_seq_path,
+            star_genome_path,
+            star_align_path,
+            classification_path
         ]:
             io_methods.create_folder(folder)
 
@@ -171,7 +193,7 @@ class Processing(object):
             qc_table_path, fq1, fq2, skewer_path,
             self.cfg["commands"]["skewer"], self.cfg["general"]["min_read_len_perc"])
 
-        fq0 = ""
+        fq0 = ""    # TODO: change by None or get rid of
         if "qc" in tools:
             fq0 = os.path.join(skewer_path, "out_file-trimmed.fastq.gz")
             fq1 = os.path.join(skewer_path, "out_file-trimmed-pair1.fastq.gz")
@@ -223,7 +245,7 @@ class Processing(object):
             cmds["star"], star_index_path, fq1, fq2, self.cfg["general"]["max_dist_proper_pair"])
 
         # (3) Mapslice
-        # Using "gunzip -c" instead of "gunzip --keep" to keep compatibility with older machines
+        # Using "gunzip -c" instead of "gunzip --keep" to keep compatibility with gunzip versions
         cmd_extr_fastq1 = "gunzip -c -f {0} > {1}".format(fq1, fq1[:-3])
         cmd_extr_fastq2 = "gunzip -c -f {0} > {1}".format(fq2, fq2[:-3])
 
@@ -239,17 +261,132 @@ class Processing(object):
             starfusion_index_path, starfusion_path)
 
         # (6) Infusion
-        # TODO: Use these command line args for better results:
+        # TODO: Use these command line args for more sensitive results:
         # --min-split-reads 0 --min-fragments 0 --min-not-rescued 2
-        cmd_infusion = "{0} {1} -1 {2} -2 {3} --skip-finished --min-unique-alignment-rate 0 --min-unique-split-reads 0 --allow-non-coding --out-dir {4} {5}".format(cmds["python2"], cmds["infusion"], fq1, fq2, infusion_path, infusion_cfg_path)
+        cmd_infusion = "{0} {1} -1 {2} -2 {3} --skip-finished --min-unique-alignment-rate 0 " \
+                       "--min-unique-split-reads 0 --allow-non-coding --out-dir {4} {5}".format(
+            cmds["python2"],
+            cmds["infusion"],
+            fq1,
+            fq2,
+            infusion_path,
+            infusion_cfg_path)
+
         # (7) Soapfuse
         cmd_soapfuse = "soapfuse_wrapper -q {0} -i {1} -o {2} -b {3} -c {4}".format(
             qc_table_path, " ".join([fq1, fq2]),
             soapfuse_path, self.cfg["commands"]["soapfuse"],
             self.cfg["other_files"]["soapfuse_cfg"])
+
         # (8) Data collection
-        cmd_fetchdata = "fetchdata -i {0} -o {1} -s {2} -c {3} --fq1 {4} --fq2 {5} --fusion_support {6}".format(
-            output_results_path, fetchdata_path, sample_id, self.cfg.config_file, fq1, fq2, tool_num_cutoff)
+        # TODO: embed this as operations within the package
+        cmd_readcounts = "count_input_reads " \
+                         "-i {0} " \
+                         "-f {1} " \
+                         "-o {2}".format(
+            os.path.join(filtered_reads_path, "{}_Log.final.out".format(sample_id)),
+            "star",
+            os.path.join(classification_path, "Star_org_input_reads.txt"))
+
+        cmd_fusiondata = "fusiontoolparser " \
+                         "-i {0} " \
+                         "-o {1} " \
+                         "-s {2} " \
+                         "-f {3} " \
+                         "-l {4}".format(
+            output_results_path,
+            detected_fusions_path,
+            sample_id,
+            self.cfg["general"]["fusiontools"],
+            self.log_path)
+
+        cmd_contextseq = "fusionannotation " \
+                         "--detected_fusions {0} " \
+                         "--annotation_db {1} " \
+                         "--out_csv {2} " \
+                         "--genome_fasta {3} " \
+                         "--tsl_info {4} " \
+                         "--cis_near_dist {5} " \
+                         "--context_seq_len {6} " \
+                         "--tsl_filter_level {7}".format(
+            detected_fusions_file,
+            genes_adb_path,
+            context_seq_file,
+            genome_fasta,
+            genes_tsl_path,
+            self.cfg["general"]["cis_near_distance"],
+            self.cfg["general"]["context_seq_len"],
+            self.cfg["general"]["tsl_filter"])
+
+        cmd_starindex = "star_custom_index -i {0} -o {1} -t waiting_for_cpu_number -b {2}".format(
+            context_seq_fasta,
+            star_genome_path,
+            cmds["star"])
+
+        cmd_staralign_fltr = "{0} --genomeDir {1} --readFilesCommand zcat --readFilesIn {2} {3} " \
+                             "--outSAMtype BAM SortedByCoordinate --outFilterMultimapNmax -1 " \
+                             "--outSAMattributes Standard --outSAMunmapped None " \
+                             "--outFilterMismatchNoverLmax 0.02 --runThreadN waiting_for_cpu_number " \
+                             "--outFileNamePrefix {4}fltr_ --limitBAMsortRAM 48000000000".format(
+            cmds["star"],
+            star_genome_path,
+            fq1,
+            fq2,
+            star_align_file)
+
+        cmd_bamindex_fltr = "{0} index {1}fltr_Aligned.sortedByCoord.out.bam".format(
+            cmds["samtools"],
+            star_align_file)
+
+        cmd_requantify_fltr = "requantify " \
+                              "-i {0}fltr_Aligned.sortedByCoord.out.bam " \
+                              "-o {1}_fltr.tdt " \
+                              "-d 10".format(
+            star_align_file,
+            classification_file)
+
+        (fq1, fq2) = self.samples.get_fastq_files(sample_id)
+
+        cmd_staralign_org = "{0} --genomeDir {1} --readFilesCommand zcat --readFilesIn {2} {3} " \
+                            "--outSAMtype BAM SortedByCoordinate --outFilterMultimapNmax -1 " \
+                            "--outSAMattributes Standard --outSAMunmapped None --outFilterMismatchNoverLmax 0.02 " \
+                            "--runThreadN waiting_for_cpu_number --outFileNamePrefix {4}org_ " \
+                            "--limitBAMsortRAM 48000000000".format(
+            cmds["star"],
+            star_genome_path,
+            fq1,
+            fq2,
+            star_align_file)
+
+        cmd_bamindex_org = "{0} index {1}org_Aligned.sortedByCoord.out.bam".format(
+            cmds["samtools"],
+            star_align_file)
+
+        cmd_requantify_org = "requantify " \
+                             "-i {0}org_Aligned.sortedByCoord.out.bam " \
+                             "-o {1}_org.tdt -d 10".format(
+            star_align_file,
+            classification_file)
+
+        # for testing, based on debug. should be removed if merged to original
+        cmd_read_filter2 = "getRequantReads " \
+                           "--input {0}_Aligned.out.bam " \
+                           "--input2 {1}.debug " \
+                           "--output {0}_Aligned.out.filtered2.bam".format(
+            os.path.join(filtered_reads_path, sample_id),
+            context_seq_file)
+
+        # re-define fastq's if filtering is on (default)
+        fq0 = ""
+        if "readfilter" in tools:
+            fq0 = os.path.join(filtered_reads_path, os.path.basename(fq1).replace("R1", "R0").replace(".fastq.gz", "_filtered2_singles.fastq.gz"))
+            fq1 = os.path.join(filtered_reads_path, os.path.basename(fq1).replace(".fastq.gz", "_filtered2.fastq.gz"))
+            fq2 = os.path.join(filtered_reads_path, os.path.basename(fq2).replace(".fastq.gz", "_filtered2.fastq.gz"))
+        cmd_bam_to_fastq_fd = "{0} fastq -0 {1} -1 {2} -2 {3} --threads waiting_for_cpu_number {4}_Aligned.out.filtered2.bam".format(cmds["samtools"], fq0, fq1, fq2, os.path.join(filtered_reads_path, sample_id))
+        # allow soft-clipping? Specificity? --alignEndsType EndToEnd
+        cmd_staralign_best = "{0} --genomeDir {1} --readFilesCommand zcat --readFilesIn {2} {3} --outSAMtype BAM SortedByCoordinate --outFilterMultimapNmax -1 --outSAMattributes Standard --outSAMunmapped None --outFilterMismatchNoverLmax 0.02 --runThreadN waiting_for_cpu_number --outFileNamePrefix {4}best_ --limitBAMsortRAM 48000000000".format(cmds["star"], star_genome_path, fq1, fq2, star_align_file)
+        cmd_bamindex_best = "{0} index {1}best_Aligned.sortedByCoord.out.bam".format(cmds["samtools"], star_align_file)
+        cmd_requantify_best = "{0} {1} -i {2}best_Aligned.sortedByCoord.out.bam -o {3}_best.tdt -d 10".format(cmds["python3"], os.path.join(module_dir, "requantify.py"), star_align_file, classification_file)
 
         # (X) Sample monitoring
         cmd_samples = "samples --db_path={0} --sample_id={1} --action=append_state --tool=".format(
@@ -259,41 +396,82 @@ class Processing(object):
         exe_tools = [
             "qc", #0
             READ_FILTER_STEP, #1
-            "star", #2
-            "mapsplice", #3
-            "fusioncatcher", #4
-            "starfusion", #5
-            "infusion", #6
-            "soapfuse", #7
-            "fetchdata" #8
+            "star",
+            "mapsplice",
+            "fusioncatcher",
+            "starfusion",
+            "infusion",
+            "soapfuse",
+            "readcounts",
+            "fusiongrep",
+            "contextseq",
+            "starindex",
+            "staralignFltr",
+            "bamindexFltr",
+            "requantifyFltr",
+            "staralignOrg",
+            "bamindexOrg",
+            "requantifyOrg",
+            "readFilter2",
+            "readFilter2b",
+            "staralignBest",
+            "bamindexBest",
+            "requantifyBest"
             ]
         exe_cmds = [
-            " && ".join([cmd_fastqc, cmd_qc_parser, cmd_skewer]),  # 0
-            " && ".join([cmd_star_filter, cmd_read_filter, cmd_bam_to_fastq]),  # 1
-            cmd_star,  # 2
-            " && ".join([cmd_extr_fastq1, cmd_extr_fastq2, cmd_mapsplice]),  # 3
-            cmd_fusioncatcher,  # 4
-            cmd_starfusion,  # 5
-            cmd_infusion,  # 6
-            cmd_soapfuse,  # 7
-            cmd_fetchdata  # 8
-        ]
+            " && ".join([cmd_fastqc, cmd_qc_parser, cmd_skewer]),
+            " && ".join([cmd_star_filter, cmd_read_filter, cmd_bam_to_fastq]),
+            cmd_star,
+            " && ".join([cmd_extr_fastq1, cmd_extr_fastq2, cmd_mapsplice]),
+            cmd_fusioncatcher,
+            cmd_starfusion,
+            cmd_infusion,
+            cmd_soapfuse,
+            cmd_readcounts,
+            cmd_fusiondata,
+            cmd_contextseq,
+            cmd_starindex,
+            cmd_staralign_fltr,
+            cmd_bamindex_fltr,
+            cmd_requantify_fltr,
+            cmd_staralign_org,
+            cmd_bamindex_org,
+            cmd_requantify_org,
+            cmd_read_filter2,
+            cmd_bam_to_fastq_fd,
+            cmd_staralign_best,
+            cmd_bamindex_best,
+            cmd_requantify_best
+            ]
         exe_path = [
-            qc_path,  # 0
-            filtered_reads_path,  # 1
-            star_path,  # 2
-            mapsplice_path,  # 3
-            fusioncatcher_path,  # 4
-            starfusion_path,  # 5
-            infusion_path,  # 6
-            soapfuse_path,  # 7
-            fetchdata_path  # 8
-        ]
+            qc_path,
+            filtered_reads_path,
+            star_path,
+            mapsplice_path,
+            fusioncatcher_path,
+            starfusion_path,
+            infusion_path,
+            soapfuse_path,
+            classification_path,
+            detected_fusions_path,
+            context_seq_path,
+            star_genome_path,
+            star_align_path,
+            star_align_path,
+            classification_path,
+            star_align_path,
+            star_align_path,
+            classification_path,
+            filtered_reads_path,
+            filtered_reads_path,
+            star_align_path,
+            star_align_path,
+            classification_path
+            ]
 
         # create and submit slurm job if the tool is requested and hasn't been run before
         for i, tool in enumerate(exe_tools, 0):
             if tool in tools:
-                dependency = []
                 # check dependencies of the pipeline.
                 # Besides tool dependencies (Pizzly -> Kallisto, Starfusion/Starchip -> Star), read filtering is mandatory
                 # Processing will be skipped if a certain dependency was not found (either pre-processed data of the configs tool string are checked)
@@ -340,24 +518,15 @@ class Processing(object):
                     exe_cmds[i] = exe_cmds[i].replace("waiting_for_output_string", exe_path[i]).replace(
                         "waiting_for_cpu_number", str(cpu))
                 cmd = " && ".join([exe_cmds[i], cmd_samples + tool])
-                # Managing slurm dependencies
-                que_sys = self.cfg["general"]["queueing_system"]
-                if tool == "pizzly":
-                    dependency = queueing.get_jobs_by_name("kallisto-{0}".format(sample_id), que_sys)
-                elif tool == "starfusion" or tool == "starchip":
-                    dependency = queueing.get_jobs_by_name("star-{0}".format(sample_id), que_sys)
-                elif tool == "fetchdata":
-                    dependency = queueing.get_jobs_by_name(sample_id, que_sys)
-                elif tool == "assembly":
-                    dependency = queueing.get_jobs_by_name("fetchdata-{0}".format(sample_id), que_sys)
-                elif tool == READ_FILTER_STEP:
-                    dependency = queueing.get_jobs_by_name("qc-{0}".format(sample_id), que_sys)
-                dependency.extend(queueing.get_jobs_by_name("readfilter-{0}".format(sample_id), que_sys))
-                dependency.extend(queueing.get_jobs_by_name("qc-{0}".format(sample_id), que_sys))
-                logger.debug("Submitting job: CMD - {0}; PATH - {1}; DEPS - {2}".format(cmd, exe_path[i], dependency))
-                self.submit_job(uid, cmd, cpu, mem, exe_path[i], dependency, "")
+
+                # Build slurm dependencies
+                dependencies = self.build_dependencies(tool, sample_id)
+
+                logger.debug("Submitting job: CMD - {0}; PATH - {1}; DEPS - {2}".format(cmd, exe_path[i], dependencies))
+                self.submit_job(uid, cmd, cpu, mem, exe_path[i], dependencies, "")
             else:
                 logger.info("Skipping {0} as it is not selected for execution (Selected are: {1})".format(tool, tools))
+
 
     def submit_job(self, uid, cmd, cores, mem_usage, output_results_folder, dependencies, mail):
         """Submit job to for process generation"""
@@ -388,6 +557,36 @@ class Processing(object):
                     uid))
 
 
+
+    def build_dependencies(self, tool, sample_id):
+        slurm_dep = {
+            "qc": [],
+            "readfilter": ["qc"],
+            "star": ["readfilter"],
+            "readcounts": ["star"],
+            "starfusion": ["star"],
+            "mapsplice": ["readfilter"],
+            "fusioncatcher": ["readfilter"],
+            "infusion": ["readfilter"],
+            "soapfuse": ["readfilter"],
+            "fusiongrep": ["starfusion", "mapsplice", "fusioncatcher", "infusion", "soapfuse"],
+            "contextseq": ["fusiongrep"],
+            "starindex": ["readcounts", "contextseq"],
+            "readFilter2": ["contextseq"],
+            "readFilter2b": ["readFilter2"],
+            "staralignBest": ["starindex", "readFilter2b"],
+            "bamindexBest": ["staralignBest"],
+            "requantifyBest": ["bamindexBest"]
+        }
+        dependencies = []
+        que_sys = self.cfg["general"]["queueing_system"]
+
+        for pre_tool in slurm_dep[tool]:
+            dependencies.extend(queueing.get_jobs_by_name("{}-{}".format(pre_tool, sample_id), que_sys))
+
+        return dependencies
+
+
 def main():
     """Parse command line arguments and start script"""
     parser = ArgumentParser(prog='EasyFuse', description='Run EasyFuse pipeline')
@@ -399,8 +598,6 @@ def main():
     # optional arguments
     parser.add_argument('-c', '--config-file', dest='config_file', required=True,
                         help='Specify alternative config file to use for your analysis')
-    parser.add_argument('--tool_support', dest='tool_support',
-                        help='The number of tools which are required to support a fusion event.', default="1")
     parser.add_argument('-p', '--jobname_suffix', dest='jobname_suffix',
                         help='Specify a jobname suffix for running jobs on a queueing system', default='')
     parser.add_argument('-V', '--version', dest='version', action='version',
@@ -425,4 +622,4 @@ def main():
         outf.write("#!/bin/sh\n\n{}".format(script_call))
 
     proc = Processing(script_call, args.input_paths, args.output_folder, config, args.jobname_suffix)
-    proc.run(args.tool_support)
+    proc.run()

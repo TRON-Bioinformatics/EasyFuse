@@ -30,7 +30,8 @@ setup(
             "summarize_data=easy_fuse.summarize_data:main",
             "skewer_wrapper=easy_fuse.tool_wrapper.skewer_wrapper:main",
             "soapfuse_wrapper=easy_fuse.tool_wrapper.soapfuse_wrapper:main",
-
+            "star_custom_index=easy_fuse.tool_wrapper.star_custom_index:main",
+            "count_input_reads=easy_fuse.misc.count_input_reads:main",
         ],
     },
     author_email="patrick.sorn@tron-mainz.de",

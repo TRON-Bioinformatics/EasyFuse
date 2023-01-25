@@ -61,7 +61,7 @@ class FusionSummary(object):
 
         for sample in sid_list:
 
-            if "fetchdata" in self.samples.get_tool_list_from_state(sample):
+            if "requantifyBest" in self.samples.get_tool_list_from_state(sample):
                 count_processed += 1
                 print("Processing sample {0} (dataset {1}/{2})".format(sample, count_processed, len(sid_list)))
                 start_time = time.time()
