@@ -24,7 +24,7 @@ from easy_fuse.misc import queueing
 from easy_fuse.misc.config import EasyFuseConfiguration
 from easy_fuse.misc.samples import SamplesDB
 
-DEFAULT_CPU_MEM = "1, 16"
+DEFAULT_CPU_MEM = "1,16"
 
 READ_FILTER_STEP = "readfilter"
 
