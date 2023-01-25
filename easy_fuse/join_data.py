@@ -137,7 +137,7 @@ class DataJoining(object):
             if self.model_predictions and self.check_files(summary_file, True):
                 model_path = pkg_resources.resource_filename(
                     easy_fuse.__name__,
-                    "data/model/Fusion_modeling_FFPE_train_v33.random_forest.model_full_data.EF_full.rds")
+                    "resources/model/Fusion_modeling_FFPE_train_v33.random_forest.model_full_data.EF_full.rds")
                 model_threshold = self.cfg["general"]["model_pred_threshold"]
 
                 # append prediction scores based on pre-calculated model
