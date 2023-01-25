@@ -24,6 +24,8 @@ from easy_fuse.misc import queueing
 from easy_fuse.misc.config import EasyFuseConfiguration
 from easy_fuse.misc.samples import SamplesDB
 
+DEFAULT_CPU_MEM = "1, 16"
+
 READ_FILTER_STEP = "readfilter"
 
 
@@ -534,7 +536,7 @@ class Processing(object):
 
                 # prepare slurm jobs: get ressources, create uid, set output path and check dependencies
                 logger.debug("Submitting {} run".format(tool))
-                cpumem = self.cfg["resources"][tool.lower()].split(",")
+                cpumem = self.cfg["resources"].get(tool.lower(), DEFAULT_CPU_MEM).split(",")
                 cpu = cpumem[0]
                 mem = cpumem[1]
                 uid = "-".join([self.cfg["general"]["pipeline_name"], tool, sample_id])
