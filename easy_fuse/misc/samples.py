@@ -13,6 +13,7 @@ Data itself can be modified using wrapped SQL queries.
 """
 import sqlite3
 from argparse import ArgumentParser
+from logzero import logger
 
 
 class SamplesDB(object):
@@ -57,6 +58,9 @@ class SamplesDB(object):
 
     def get_fastq_files(self, sample_id):
         """Get fastq files from sample"""
+        logger.debug("Either ReadFile 1 or 2 or both are missing, trying to get original files from samples.csv")
+        logger.debug(sample_id)
+        logger.debug(self.db_path)
         self.cursor.execute("SELECT fq1, fq2 FROM samples WHERE sample_id = '{}'".format(sample_id))
         (fq1, fq2) = self.cursor.fetchone()
         return (fq1, fq2)

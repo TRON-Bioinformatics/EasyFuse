@@ -6,9 +6,9 @@
 
 [general]
 pipeline_name = EasyFuse
-tools = QC,Readfilter,Fusioncatcher,Star,Starfusion,Infusion,Mapsplice,Soapfuse,Fetchdata,Summary
-fusiontools = Fusioncatcher,Starfusion,Infusion,Mapsplice,Soapfuse
-fd_tools = Fusiongrep,Contextseq,Starindex,ReadFilter2,ReadFilter2b,StaralignBest,BamindexBest,RequantifyBest
+tools = qc,readfilter,fusioncatcher,star,starfusion,infusion,mapsplice,soapfuse,fetchdata,summary
+fusiontools = fusioncatcher,starfusion,infusion,mapsplice,soapfuse
+fd_tools = fusiongrep,contextseq,starindex,readFilter2,readFilter2b,staralignBest,bamindexBest,requantifyBest
 sender = sender@mail.com
 receiver = receiver@mail.com
 min_read_len_perc = 0.75
@@ -45,6 +45,7 @@ summary = 1,16
 
 # execution command for individual programs (what you write here should be identical to what is typed in the console)
 [commands]
+python2 = /code/miniconda3/envs/py27/bin/python
 # for qc
 fastqc = fastqc
 skewer = /code/skewer-0.2.2/skewer

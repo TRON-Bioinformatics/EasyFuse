@@ -79,10 +79,7 @@ class Fetching(object):
         # sampleID = ...
         logger.info("Fetching in sample {}".format(self.sample_id))
         if not fq1 or not fq2:
-            logger.debug("Either ReadFile 1 or 2 or both are missing, trying to get original files from samples.csv")
-            logger.debug(self.sample_id)
-            logger.debug(self.samples.db_path)
-            (fq1, fq2) = self.samples.get_fastq_files(self.sample_id)
+            fq1, fq2 = self.samples.get_fastq_files(self.sample_id)
         self.execute_pipeline(fq1, fq2, fusion_support)
 
     # urla: there are a lot of local variables declarated in the following method.
@@ -247,7 +244,8 @@ class Fetching(object):
             star_align_file,
             classification_file)
 
-        (fq1, fq2) = self.samples.get_fastq_files(self.sample_id)
+        if fq1 is None or fq2 is None:
+            fq1, fq2 = self.samples.get_fastq_files(self.sample_id)
 
         cmd_staralign_org = "{0} " \
                             "--genomeDir {1} " \
