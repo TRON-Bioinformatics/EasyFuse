@@ -383,10 +383,36 @@ class Processing(object):
             fq1 = os.path.join(filtered_reads_path, os.path.basename(fq1).replace(".fastq.gz", "_filtered2.fastq.gz"))
             fq2 = os.path.join(filtered_reads_path, os.path.basename(fq2).replace(".fastq.gz", "_filtered2.fastq.gz"))
         cmd_bam_to_fastq_fd = "{0} fastq -0 {1} -1 {2} -2 {3} --threads waiting_for_cpu_number {4}_Aligned.out.filtered2.bam".format(cmds["samtools"], fq0, fq1, fq2, os.path.join(filtered_reads_path, sample_id))
+
         # allow soft-clipping? Specificity? --alignEndsType EndToEnd
-        cmd_staralign_best = "{0} --genomeDir {1} --readFilesCommand zcat --readFilesIn {2} {3} --outSAMtype BAM SortedByCoordinate --outFilterMultimapNmax -1 --outSAMattributes Standard --outSAMunmapped None --outFilterMismatchNoverLmax 0.02 --runThreadN waiting_for_cpu_number --outFileNamePrefix {4}best_ --limitBAMsortRAM 48000000000".format(cmds["star"], star_genome_path, fq1, fq2, star_align_file)
-        cmd_bamindex_best = "{0} index {1}best_Aligned.sortedByCoord.out.bam".format(cmds["samtools"], star_align_file)
-        cmd_requantify_best = "{0} {1} -i {2}best_Aligned.sortedByCoord.out.bam -o {3}_best.tdt -d 10".format(cmds["python3"], os.path.join(module_dir, "requantify.py"), star_align_file, classification_file)
+        cmd_staralign_best = "{0} " \
+                             "--genomeDir {1} " \
+                             "--readFilesCommand zcat " \
+                             "--readFilesIn {2} {3} " \
+                             "--outSAMtype BAM SortedByCoordinate " \
+                             "--outFilterMultimapNmax -1 " \
+                             "--outSAMattributes Standard " \
+                             "--outSAMunmapped None " \
+                             "--outFilterMismatchNoverLmax 0.02 " \
+                             "--runThreadN waiting_for_cpu_number " \
+                             "--outFileNamePrefix {4}best_ " \
+                             "--limitBAMsortRAM 48000000000".format(
+            cmds["star"],
+            star_genome_path,
+            fq1,
+            fq2,
+            star_align_file)
+
+        cmd_bamindex_best = "{0} index " \
+                            "{1}best_Aligned.sortedByCoord.out.bam".format(
+            cmds["samtools"],
+            star_align_file)
+
+        cmd_requantify_best = "requantify " \
+                              "-i {0}best_Aligned.sortedByCoord.out.bam " \
+                              "-o {1}_best.tdt -d 10".format(
+            star_align_file,
+            classification_file)
 
         # (X) Sample monitoring
         cmd_samples = "samples --db_path={0} --sample_id={1} --action=append_state --tool=".format(
