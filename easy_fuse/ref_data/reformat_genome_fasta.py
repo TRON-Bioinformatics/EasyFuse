@@ -16,6 +16,8 @@ from __future__ import print_function
 import os.path
 from argparse import ArgumentParser
 
+from logzero import logger
+
 
 class GenomeRefParser(object):
     """Initialize class variables"""
@@ -30,7 +32,7 @@ class GenomeRefParser(object):
         with open(self.in_fasta, "r") as fasin, open(out_fasta, "w") as fasout:
             for line in fasin:
                 if line.startswith(">"):
-                    print("Changing header from \"{0}\" to \"{1}\"".format(
+                    logger.info("Changing header from \"{0}\" to \"{1}\"".format(
                         line.rstrip("\n"),
                         line.split()[0]))
                     fasout.write("{}\n".format(line.split()[0]))
@@ -48,7 +50,7 @@ class GenomeRefParser(object):
                         fasout.close()
                     out_file_name = os.path.join(self.out_dir, "{}.fa".format(
                         line.split()[0][1:]))
-                    print("Writing fasta record \"{0}\" to file \"{1}\"".format(
+                    logger.info("Writing fasta record \"{0}\" to file \"{1}\"".format(
                         line.rstrip("\n"),
                         out_file_name))
                     fasout = open(out_file_name, "w")

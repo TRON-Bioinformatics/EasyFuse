@@ -55,7 +55,6 @@ class ReadSelection(object):
 
         self.coord_dict = {}
         self.get_ranges(context_file)
-        # print(self.coord_dict)
 
     def get_ranges(self, context_file):
         """ vlkfh """

@@ -5,6 +5,8 @@ import os
 import subprocess
 import sys
 
+from logzero import logger
+
 
 def run_soapfuse(binary, config_file, qc_table, input, output):
 
@@ -34,14 +36,14 @@ def run_soapfuse(binary, config_file, qc_table, input, output):
         try:
             os.symlink(file, os.path.join(cols[0], cols[1], cols[2], "S_{}.fastq.gz".format((i + 1))))
         except:
-            print("Symlink already exists!")
+            logger.info("Symlink already exists!")
     cmd = "{} -c {} -fd {} -l {} -o {}".format(binary, config_file, cols[0], cfg_file, output)
 
     proc = subprocess.Popen(cmd, shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
     (stdoutdata, stderrdata) = proc.communicate()
     r = proc.returncode
     if r != 0:
-        print(stderrdata)
+        logger.error(stderrdata)
         sys.exit(1)
 
 

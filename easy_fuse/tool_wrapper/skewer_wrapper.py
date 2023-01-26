@@ -29,26 +29,26 @@ def run_skewer(skewer_bin, min_rl_perc, qc_table, input, output):
         (stdoutdata, stderrdata) = proc.communicate()
         r = proc.returncode
         if r != 0:
-            sys.stderr.write("Error within skewer\n")
-            sys.stderr.write(stderrdata)
+            logger.error("Error within skewer")
+            logger.error(stderrdata)
             sys.exit(1)
 
     elif remaining_len < min_rl_perc * read_len:
-        sys.stderr.write("Trim length too long. Discarding fastqs ({}).".format(args.input))
+        logger.error("Trim length too long. Discarding fastqs ({}).".format(input))
         open(os.path.join(output, "to_be_discarded"), "a").close()
         sys.exit(1)
     elif remaining_len == read_len:
         if len(input) == 2:
             out_1 = os.path.join(output, "out_file-trimmed-pair1.fastq.gz")
             out_2 = os.path.join(output, "out_file-trimmed-pair2.fastq.gz")
-            sys.stdout.write("Nothing to trim. Copying FASTQs\n")
-            sys.stdout.write("cp {} {}\n".format(input[0], out_1))
-            sys.stdout.write("cp {} {}\n".format(input[1], out_2))
+            logger.info("Nothing to trim. Copying FASTQs")
+            logger.info("cp {} {}".format(input[0], out_1))
+            logger.info("cp {} {}".format(input[1], out_2))
             try:
                 copyfile(input[0], out_1)
             #                os.symlink(args.input[0], out_1)
             except OSError:
-                print("Copy of {} already exists".format(out_1))
+                logger.error("Copy of {} already exists".format(out_1))
             try:
                 copyfile(input[1], out_2)
             #                os.symlink(args.input[1], out_2)

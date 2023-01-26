@@ -15,6 +15,8 @@ import subprocess
 import sys
 from argparse import ArgumentParser
 
+from logzero import logger
+
 
 def get_jobs_by_name(name, system="slurm"):
     """This function returns a list of job ids for a given job name."""
@@ -56,7 +58,7 @@ def get_jobs_by_name_slurm(name):
     try:
         output = subprocess.check_output(["squeue", "-o %i %j"], universal_newlines=True)
     except subprocess.CalledProcessError as call_error:
-        print(call_error.output)
+        logger.error(call_error.output)
         output = subprocess.Popen(["squeue", "-o %i %j"], stdout=subprocess.PIPE).communicate()[0]
     jobs = []
     for job_list in output.rstrip().split("\n")[1:]:
@@ -72,19 +74,16 @@ def submit(job_name, cmd, cores, mem_usage, output_results_folder, dependencies,
     if sched == "slurm":
         _submit_slurm(job_name, cmd, cores, mem_usage, output_results_folder, dependencies, partitions, userid,
                       timelimit, mail, module_file)
-    elif sched == "pbs":
-        _submit_pbs(job_name, cmd, cores, mem_usage, output_results_folder, dependencies, module_file)
     else:
-        _submit_nonqueue(job_name, cmd, module_file)
+        _submit_nonqueue(job_name, cmd)
 
 
-def _submit_nonqueue(job_name, cmd, module_file=""):
+def _submit_nonqueue(job_name, cmd):
     #    if module_file:
     #        cmd = " && ".join(["source " + module_file, " ".join(cmd)]).split(" ")
-    print("Running {}".format(job_name))
-    print("CMD: {}".format(" ".join(cmd)))
+    logger.info("Running {}".format(job_name))
+    logger.info("CMD: {}".format(" ".join(cmd)))
     if ">" in cmd:
-        output_file = ""
         index = cmd.index(">")
         output_file = cmd[index+1]
         adj_cmd = cmd[:index]
@@ -95,44 +94,9 @@ def _submit_nonqueue(job_name, cmd, module_file=""):
         (stdoutdata, stderrdata) = p.communicate()
         r = p.returncode
         if r != 0:
-            print("Error: Command \"{}\" returned non-zero exit status".format(cmd))
-            print(stderrdata)
+            logger.error("Error: Command \"{}\" returned non-zero exit status".format(cmd))
+            logger.error(stderrdata)
             sys.exit(1)
-
-
-def _submit_pbs(job_name, cmd, cores, mem_usage, output_results_folder, dependencies):
-    """This function submits a predefined job with specific PBS parameters to the Portable Batch System (PBS)."""
-
-    depend = "\n"
-    if len(dependencies) != 0:
-        depend = "#PBS -W depend=afterok:{}\n".format(":".join(dependencies))
-
-    error_file = os.path.join(output_results_folder, "error.log")
-    output_file = os.path.join(output_results_folder, "output.log")
-
-    # Generate pbs script for your job in working dir
-    pbs_script = os.path.join(output_results_folder, job_name + ".pbs")
-    with open(pbs_script, "w") as pbs:
-        pbs.writelines([
-            "#!/bin/bash\n",
-            "#PBS -N {}\n".format(),
-            "#PBS -l walltime=999:00:00",
-            "#PBS -l nodes=1:ppn={},mem={}gb,vmem={}gb\n".format(cores, mem_usage, mem_usage),
-            depend,
-            "#PBS -d {}\n".format(output_results_folder),
-            "#PBS -e {}\n".format(error_file),
-            "#PBS -o {}\n".format(output_file),
-            "{}".format(cmd)
-        ])
-
-    # and run it
-    try:
-        output = subprocess.check_output(["qsub", pbs_script])
-        print("{} ({})\n".format(output.rstrip(), job_name))
-    except subprocess.CalledProcessError as call_error:
-        print(call_error.output)
-        print("Could not start pbs script {}".format(pbs_script))
-        sys.exit(1)
 
 
 def _submit_slurm(job_name, cmd, cores, mem_usage, output_results_folder, dependencies, partitions, userid, timelimit,
@@ -178,10 +142,10 @@ def _submit_slurm(job_name, cmd, cores, mem_usage, output_results_folder, depend
     # and run it
     try:
         output = subprocess.check_output(["sbatch", slurm_script])
-        print("{} ({})\n".format(output.rstrip(), job_name))
+        logger.info("{} ({})".format(output.rstrip(), job_name))
     except subprocess.CalledProcessError as call_error:
-        print(call_error.output)
-        print("Could not start slurm script {}".format(slurm_script))
+        logger.error(call_error.output)
+        logger.error("Could not start slurm script {}".format(slurm_script))
         sys.exit(1)
 
 

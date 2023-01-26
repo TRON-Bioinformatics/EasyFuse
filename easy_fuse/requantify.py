@@ -57,8 +57,6 @@ class Requantification(object):
                                                                                       12], junction_wt2, spanning_wt2,
                                                                                   anchor_wt2)
 
-            # print("stored before: {}".format(self.fusion_seq_dict[reference_base]))
-            # print("jft: {}, sft: {}, jwt: {}, swt: {}".format(is_junction_ft, is_spanning_ft, is_junction_wt, is_spanning_wt))
             # update junction and spanning counts
             self.update_counts(reference_base, junction_ft, spanning_ft, 1)
             self.update_counts(reference_base, junction_wt1, spanning_wt1, 7)
@@ -67,7 +65,6 @@ class Requantification(object):
         self.fusion_seq_dict[reference_base][5] = anchor_ft
         self.fusion_seq_dict[reference_base][11] = anchor_wt1
         self.fusion_seq_dict[reference_base][17] = anchor_wt2
-        # print("stored after: {}".format(self.fusion_seq_dict[reference_base]))
 
     def count_junc_span(self, read, breakpoint_pos, junction_count, spanning_counts, anchor):
         """Identify whether a read belongs to a junction or spanning pair"""
@@ -142,7 +139,7 @@ class Requantification(object):
             elif id_split[-1] == "wt2":
                 self.fusion_seq_dict[base_name][12] = int(id_split[-2])
 
-        print("Found {} potential fusion sequences".format(len(self.fusion_seq_dict)))
+        logger.info("Found {} potential fusion sequences".format(len(self.fusion_seq_dict)))
 
     def run(self):
         """Walk linewise through a s/bam file and send reads mapping to the same fusion/wt context to counting"""
@@ -160,7 +157,7 @@ class Requantification(object):
                 self.quantify_read_groups(read_buffer, last_reference)
                 count_processed_refs += 1
                 if count_processed_refs % (len(self.fusion_seq_dict) / 10) == 0:
-                    print("At least {}% completed...".format(count_processed_refs / (len(self.fusion_seq_dict) / 100)))
+                    logger.info("At least {}% completed...".format(count_processed_refs / (len(self.fusion_seq_dict) / 100)))
                 read_buffer.clear()
             if not read.query_name in read_buffer:
                 read_buffer[read.query_name] = []
@@ -174,7 +171,7 @@ class Requantification(object):
 
         # process the last read_buffer
         self.quantify_read_groups(read_buffer, last_reference)
-        print("All done! Reads did not map to ~{}% of the reference input".format(
+        logger.info("All done! Reads did not map to ~{}% of the reference input".format(
             100.0 - (float(count_processed_refs) / (len(self.fusion_seq_dict) / 100.0))))
         # close reading/writing stream
         self.in_bam.close()

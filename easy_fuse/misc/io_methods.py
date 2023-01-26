@@ -22,15 +22,9 @@ def create_folder(path):
     if not os.path.exists(path):
         os.makedirs(path)
         grant_permissions(path, stat.S_IRWXU | stat.S_IRWXG | stat.S_IROTH | stat.S_IXOTH)
-        if logger:
-            logger.debug("Created folder {}".format(path))
-        else:
-            print("Created folder {}".format(path))
+        logger.debug("Created folder {}".format(path))
     else:
-        if logger:
-            logger.debug("Folder {} already exists".format(path))
-        else:
-            print("Folder {} already exists".format(path))
+        logger.debug("Folder {} already exists".format(path))
 
 
 def grant_permissions(path, mode):
@@ -68,11 +62,10 @@ def get_fastq_files(input_paths):
 def pair_fastq_files(fastqs):
     left = []
     right = []
-    sample_id = []
     # iterate over the sorted list of file names and check for left/right pair file
-    print("\nGoing to process the following read files...")
+    logger.info("Going to process the following read files...")
     for i, fq_file in enumerate(sorted(fastqs)):
-        print("Fastq file {0}: {1}".format(i, fq_file))
+        logger.info("Fastq file {0}: {1}".format(i, fq_file))
         try:
             # Search for 1 or 2 between "_R|_" and "_|.f" in the basename of the file
             filename = os.path.basename(fq_file)
@@ -99,15 +92,12 @@ def pair_fastq_files(fastqs):
         found = False
         for sample_id_b, fq_file_b in right:
             if sample_id_a == sample_id_b:
-                # print(sample_id_a, fq_file_a, fq_file_b)
                 found = True
                 sample_list.append((sample_id_a, fq_file_a, fq_file_b))
                 break
 
         if not found:
-            if logger:
-                logger.error('Could not find a matching FASTQ for {}!'.format(sample_id_a))
-            print('Could not find a matching FASTQ for {}!'.format(sample_id_a))
+            logger.info('Could not find a matching FASTQ for {}!'.format(sample_id_a))
             sample_list.append((sample_id_a, fq_file_a, ""))
 
     return sample_list

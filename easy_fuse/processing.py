@@ -499,7 +499,7 @@ class Processing(object):
                             Read filtering is currently a mandatory step for the processing.\n
                             Because you haven't run it before for this sample, you have to include \"Readfilter\" in the tool selection in your config.\n
                             """.format(sample_id))
-                    print("Error 99: Sample {} will be skipped due to missing read filtering.".format(sample_id))
+                    logger.error("Error 99: Sample {} will be skipped due to missing read filtering.".format(sample_id))
                     return 0
                 elif tool == "pizzly" and "kallisto" not in tools:
                     logger.error(
@@ -507,7 +507,7 @@ class Processing(object):
                             Pizzly builds on Kallisto and it is therefore mandatory to run this first.\n
                             Because you haven't run it before for this sample, you have to include \"Kallisto\" in the tool selection in your config.\n
                             """.format(sample_id))
-                    print("Error 99: Running {0} for Sample {1} will be skipped due to a missing dependency.".format(tool, sample_id))
+                    logger.error("Error 99: Running {0} for Sample {1} will be skipped due to a missing dependency.".format(tool, sample_id))
                     continue
                 elif (tool == "starfusion" or tool == "starchip") and "star" not in tools:
                     logger.error(
@@ -515,7 +515,7 @@ class Processing(object):
                             {0} builds on Star and it is therefore mandatory to run this first.\n
                             Because you haven't run it before for this sample, you have to include \"Star\" in the tool selection in your config.\n
                             """.format(sample_id))
-                    print("Error 99: Running {0} for Sample {1} will be skipped due to a missing dependency.".format(tool, sample_id))
+                    logger.error("Error 99: Running {0} for Sample {1} will be skipped due to a missing dependency.".format(tool, sample_id))
                     continue
 
                 # prepare slurm jobs: get ressources, create uid, set output path and check dependencies

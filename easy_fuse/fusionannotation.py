@@ -22,6 +22,7 @@ from Bio import SeqIO
 from Bio.Alphabet import generic_dna
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
+from logzero import logger
 
 
 class FusionAnnotation(object):
@@ -39,7 +40,7 @@ class FusionAnnotation(object):
     def load_featuredb(db_in_file):
         """ Perform a simple check to confirm that the database input is a database """
         if not db_in_file.endswith("db"):
-            print("Not a valid database file: {}".format(db_in_file))
+            logger.error("Not a valid database file: {}".format(db_in_file))
         # return the db
         return gffutils.FeatureDB(db_in_file)
 
@@ -201,8 +202,8 @@ class FusionAnnotation(object):
                 except KeyError:
                     description = "NA"
         if count_parents > 2:
-            print(
-                "Warning: {0} has more than two parents. Please check that gene_id {1} and trans_id {2} are correct for the exon at position {3}-{4}.".format(
+            logger.warning(
+                "{0} has more than two parents. Please check that gene_id {1} and trans_id {2} are correct for the exon at position {3}-{4}.".format(
                     efeature.id, gene_id, trans_id, efeature.start, efeature.stop))
         return trans_id, trans_biotype, gene_name, gene_biotype, description
 
@@ -399,7 +400,7 @@ class FusionAnnotation(object):
 
         # get features overlapping with the bp from the db
         for bpid in sorted(self.bp_dict):
-            print("Annotating \"{}\"...".format(bpid))
+            logger.debug("Annotating \"{}\"...".format(bpid))
             # split breakpoint info
             bp1 = self.bp_dict[bpid][0]
             bp2 = self.bp_dict[bpid][1]
@@ -532,7 +533,7 @@ class FusionAnnotation(object):
         #            An additinal check at the end is not required as slicing stops anyway at the end of sequence
         for record in SeqIO.parse(genome_fasta, "fasta"):
             if record.id in self.cds_seq_dict:
-                print("Grepping candidate regions from chromosome {}".format(record.id))
+                logger.info("Grepping candidate regions from chromosome {}".format(record.id))
 
                 self.cds_seq_dict[record.id][1] = [record.seq[max(0, val[0] - 1):val[1]] for val in
                                                    self.cds_seq_dict[record.id][0]]

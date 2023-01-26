@@ -135,9 +135,6 @@ class FusionReadFilter(object):
                         "Neither r1 nor r2??? Read: {0}; R1: {1}; R2: {2}; bamLine: {3}".format(read, read1, read2,
                                                                                                 self.counter[0]))
                     sys.exit(1)
-            # urla: uncomment the following, if you'd like to have stats updates during the run and not only at the end
-            #            if count_input_alignments % 1000000 == 0:
-            #                self.print_stats(count_input_alignments)
             last_query = read.query_name
 
         # once EOF is reached, the very last pair has to be classified additionally

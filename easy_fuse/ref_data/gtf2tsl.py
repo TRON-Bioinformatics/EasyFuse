@@ -10,6 +10,8 @@ Get Transcript Support Level (TSL) info from an ensembl GTF file
 import argparse
 import sys
 
+from logzero import logger
+
 
 class Gtf2Tsl(object):
     """stub"""
@@ -44,10 +46,10 @@ class Gtf2Tsl(object):
                         gene_biotype = self.get_field_value(gene_biotype, field, "gene_biotype")
                         tsl = self.get_field_value(tsl, field, "transcript_support_level")
 
-                    print("{}_{}_{}_{}".format(transcript_id, trans_biotype, gene_biotype, tsl))
+                    logger.info("{}_{}_{}_{}".format(transcript_id, trans_biotype, gene_biotype, tsl))
                     # check again, that what we have is what we expect
                     if not (transcript_id[0:3] == "ENS" or transcript_id[0:4] == "MGP_"):
-                        print(
+                        logger.error(
                             "This does not look like a valid ensembl id: {}. Is this a valid ensembl gtf line: {}?".format(
                                 transcript_id, line))
                         sys.exit(99)
@@ -62,7 +64,7 @@ class Gtf2Tsl(object):
             for transcript_id in tsl_dict:
                 out_file.write("{}\t{}\n".format(transcript_id, "\t".join(tsl_dict[transcript_id])))
         # list of available feature strings
-        print(feature_list)
+        logger.info(feature_list)
 
     def get_field_value(self, old_value, field_string, lookup_string):
         """ Helper method to get the value from a key-value pair in the form of: ( this the value "and this the key") """

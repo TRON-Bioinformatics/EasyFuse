@@ -13,6 +13,7 @@ import sys
 
 import pandas as pd
 import pkg_resources
+from logzero import logger
 
 import easy_fuse
 from easy_fuse.misc import queueing
@@ -79,14 +80,14 @@ class DataJoining(object):
         input_read_file = os.path.join(self.input_dir, "Sample_{}".format(sample_id), "fetchdata",
                                        "classification", "Star_org_input_reads.txt")
 
-        print("Loading data for sample {} into memory...".format(sample_id))
+        logger.info("Loading data for sample {} into memory...".format(sample_id))
         if self.check_files(context_seq_file, False):
             context_data = pd.read_csv(context_seq_file, sep=";")
         # append key for later join with requant data
         context_data["ftid_plus"] = context_data["FTID"] + "_" + context_data["context_sequence_id"]
         redundant_header = list(context_data)
 
-        print("Appending normalized fusion counts from {} to the data table.".format(fusion_tools))
+        logger.info("Appending normalized fusion counts from {} to the data table.".format(fusion_tools))
         # read the original input read count and append CPM values from individual fusion prediction tools to context data
         if self.check_files(input_read_file, False):
             with open(input_read_file, "r") as rfile:
@@ -95,7 +96,7 @@ class DataJoining(object):
             detect_data = pd.read_csv(detect_fusion_file, sep=";")
         context_data = self.append_tool_cnts_to_context_file(context_data, detect_data, fusion_tools)
 
-        print("Appending (normalized) requantification counts from filtered and original mapping to the data table.")
+        logger.info("Appending (normalized) requantification counts from filtered and original mapping to the data table.")
         # perform subsequent joins on ftid_plus
         context_data.set_index("ftid_plus", inplace=True)
         # read and append normalized (cpm) and raw (counts) requantification data to context data
@@ -119,7 +120,7 @@ class DataJoining(object):
         blacklist_file = self.cfg.get("general", "blacklist", fallback=None)
         self.load_blacklist(blacklist_file)
         # urla - note: with icam_run set to True, two results from technical replicates are expected as input
-        print("Looking for required files...")
+        logger.info("Looking for required files...")
         # check whether output already exists
         cols_to_aggregate_on = ["BPID", "context_sequence_id", "FTID"]
 
@@ -174,11 +175,11 @@ class DataJoining(object):
             if dont_quit:
                 return False
             else:
-                print("Error 99: File or directory not found or just not at the expected location. Looked at {}".format(
+                logger.error("Error 99: File or directory not found or just not at the expected location. Looked at {}".format(
                     file_path))
                 sys.exit(99)
         else:
-            print("Found {}".format(file_path))
+            logger.info("Found {}".format(file_path))
         return True
 
     def load_blacklist(self, blacklist_file):
@@ -192,7 +193,7 @@ class DataJoining(object):
 
     def count_records(self, pd_data_frame, is_merged, name):
         """ stub """
-        print("Processing: {}".format(name))
+        logger.info("Processing: {}".format(name))
         #        blacklist = ["HLA", "IG"]
         # list of sets to store (un)filtered fusion gene names
         # 0:unfiltered; 1:type; 2:boundary; 3:frame; 4:pepseq; 5:counts;
@@ -224,15 +225,15 @@ class DataJoining(object):
                             ftid_dict[ftid] = fusion_gene
                             break
                     except ValueError:
-                        print(
-                            "Warning: Fusion gene is in an unexpected format (If you have gene names containing underscores, please contact the authors!)")
+                        logger.warning(
+                            "Fusion gene is in an unexpected format (If you have gene names containing underscores, please contact the authors!)")
                 # if none of the fusion_gene records fit to the ftid, take the shortest and print a warning
                 if type(ftid_dict[ftid]) == list:
-                    print(
-                        "Warning: Unresolvable annotation bias detected between ftid \"{0}\" and fusion_gene records \"{1}\"".format(
+                    logger.warning(
+                        "Unresolvable annotation bias detected between ftid \"{0}\" and fusion_gene records \"{1}\"".format(
                             ftid, ftid_dict[ftid]))
                     ftid_dict[ftid] = min(ftid_dict[ftid], key=len)
-                    print("Warning: Chosing {} as fusion_gene record which might be wrong.".format(ftid_dict[ftid]))
+                    logger.warning("Chosing {} as fusion_gene record which might be wrong.".format(ftid_dict[ftid]))
             else:
                 ftid_dict[ftid] = ftid_dict[ftid][0]
 

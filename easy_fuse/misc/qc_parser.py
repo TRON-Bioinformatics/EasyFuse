@@ -25,7 +25,6 @@ class Parser(object):
                 if check and line.startswith(">>END_MODULE"):
                     check = False
                 if check and not line.startswith(">>END_MODULE"):
-                    #                    print line
                     elements = line.rstrip().split("\t")
                     base = elements[0]
                     if base != "#Base":

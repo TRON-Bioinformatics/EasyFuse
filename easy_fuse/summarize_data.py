@@ -39,7 +39,7 @@ class FusionSummary(object):
 
         for sample in self.samples:
             count_processed += 1
-            print("Processing sample {0} (dataset {1}/{2})".format(sample, count_processed, len(self.samples)))
+            logger.info("Processing sample {0} (dataset {1}/{2})".format(sample, count_processed, len(self.samples)))
             start_time = time.time()
             fusion_data_summary = DataJoining(self.input_path, sample, "",
                                               os.path.join(fusion_data_summary_path, sample), model_predictions,
@@ -50,7 +50,7 @@ class FusionSummary(object):
             time_taken = time.time() - start_time
             average_time = (average_time * (count_processed - 1) + time_taken) / count_processed
             logger.info(
-                "Done. Processing time: {0:.2f}s; Average processing time: {1:.2f}s)\n".format(
+                "Done. Processing time: {0:.2f}s; Average processing time: {1:.2f}s)".format(
                     time_taken, average_time))
 
     @staticmethod
