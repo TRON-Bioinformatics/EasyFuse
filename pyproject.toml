@@ -42,5 +42,5 @@ logzero = "1.7.0"
 [tool.setuptools.dynamic]
 version = {attr = "easy_fuse.__version__"}
 
-[project.scripts]
+[tool.poetry.scripts]
 easy-fuse = "easy_fuse.command_line:easy_fuse_cli"

@@ -1,1 +1,3 @@
-__version__ = "2.0.0a1"
+import importlib_metadata
+
+__version__ = importlib_metadata.version("easy-fuse")
