@@ -3,6 +3,7 @@ import argparse
 from easy_fuse.misc.count_input_reads import add_count_reads_args
 from easy_fuse.misc.qc_parser import add_qc_parser_args
 from easy_fuse.read_selection import add_read_selection_args
+from easy_fuse.requantify import add_requantify_args
 from easy_fuse.summarize_data import add_summarize_data_args
 from easy_fuse.fusionreadfilter import add_read_filter_args
 from easy_fuse.fusiontoolparser import add_fusion_parse_args
@@ -73,7 +74,7 @@ def easy_fuse_cli():
         description="Requantifies based on junction/spanning reads",
         epilog=epilog,
     )
-    add_qc_parser_args(requantify_parser)
+    add_requantify_args(requantify_parser)
 
     read_selection_parser = subparsers.add_parser(
         "read-selection",

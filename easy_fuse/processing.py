@@ -80,7 +80,7 @@ class Processing(object):
             # TODO: add support for running without model and multiple models
             modelling_string = " --model_predictions"
 
-            cmd_summarize = "summarize_data --input {0}{1} -c {2} --samples {3}".format(
+            cmd_summarize = "easy-fuse summarize-data --input {0}{1} -c {2} --samples {3}".format(
                 self.working_dir,
                 modelling_string,
                 self.cfg.config_file,
