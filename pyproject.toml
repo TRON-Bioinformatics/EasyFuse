@@ -1,21 +1,21 @@
 [build-system]
-requires = ["setuptools", "setuptools-scm"]
-build-backend = "setuptools.build_meta"
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
 
-[project]
+[tool.poetry]
 name = "easy-fuse"
+version = "2.0.0a1"
 authors = [
-    {name = "Patrick Sorn", email = "patrick.sorn@tron-mainz.edu"},
-    {name = "Jonas Ibn-Salem", email = "jonas.ibn-salem@tron-mainz.edu"},
-    {name = "Christoph Holsträter", email = "christoph.holstraeter@tron-mainz.edu"},
-    {name = "David Weber", email = "david.weber@tron-mainz.edu"},
-    {name = "Pablo Riesgo-Ferreiro", email = "pablo.riesgo-ferreiro@tron-mainz.edu"},
+    "Patrick Sorn <patrick.sorn@tron-mainz.edu>",
+    "Jonas Ibn-Salem <jonas.ibn-salem@tron-mainz.edu>",
+    "Christoph Holsträter <christoph.holstraeter@tron-mainz.edu>",
+    "David Weber <david.weber@tron-mainz.edu>",
+    "Pablo Riesgo-Ferreiro <pablo.riesgo-ferreiro@tron-mainz.edu>",
 ]
 description = "EasyFuse is a pipeline to detect fusion transcripts from RNA-seq data with high accuracy."
 readme = "README.md"
-requires-python = ">=3.7,<3.8"
 keywords = ["bioinformatics", "fusions", "RNA-seq", "transcriptomics"]
-license = {file = "LICENSE"}
+license = "LICENSE"
 classifiers = [
     "Development Status :: 3 - Alpha",  # Chose either "3 - Alpha", "4 - Beta" or "5 - Production/Stable" as the current state of your package
     "Intended Audience :: Healthcare Industry",
@@ -23,21 +23,21 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Bio-Informatics",
     "Programming Language :: Python :: 3.7",
 ]
-dependencies = [
-    "numpy==1.21.6",
-    "pandas==0.24.0",
-    #python-lzo==1.12
-    "xxhash==1.4.3",
-    "biopython==1.73",
-    "pysam==0.15.2",
-    "gffutils==0.10.1",
-    "bx-python==0.8.2",
-    "logzero==1.7.0",
-]
-dynamic = ["version"]
+packages = [{include = "easy_fuse"}]
 
 [tool.setuptools]
 py-modules = ["easy_fuse"]
+
+[tool.poetry.dependencies]
+python = ">=3.7,<3.8"
+numpy = "1.21.6"
+pandas = "0.24.0"
+xxhash = "1.4.3"
+biopython = "1.73"
+pysam = "0.15.2"
+gffutils = "0.10.1"
+bx-python = "0.8.2"
+logzero = "1.7.0"
 
 [tool.setuptools.dynamic]
 version = {attr = "easy_fuse.__version__"}
