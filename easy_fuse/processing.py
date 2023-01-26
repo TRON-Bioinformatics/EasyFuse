@@ -181,14 +181,14 @@ class Processing(object):
         #       process substitution do somehow not work from this script - c/p the command line to the terminal, however, works w/o issues?!
         # (0) QC
         cmd_fastqc = "{0} --nogroup --extract -t 6 -o {1} {2} {3}".format(cmds["fastqc"], qc_path, fq1, fq2)
-        cmd_qc_parser = "qc_parser " \
+        cmd_qc_parser = "easy-fuse qc-parser " \
                         "-i {0} {1} " \
                         "-o {2}".format(
             fastqc_1,
             fastqc_2,
             qc_table_path)
 
-        cmd_skewer = "skewer_wrapper -q {0} -i {1} {2} -o {3} -b {4} -m {5}".format(
+        cmd_skewer = "easy-fuse skewer-wrapper -q {0} -i {1} {2} -o {3} -b {4} -m {5}".format(
             qc_table_path, fq1, fq2, skewer_path,
             self.cfg["commands"]["skewer"], self.cfg["general"]["min_read_len_perc"])
 
@@ -224,7 +224,7 @@ class Processing(object):
             cmds["star"], star_index_path, os.path.join(filtered_reads_path, sample_id), fq1, fq2,
             self.cfg["general"]["max_dist_proper_pair"])
 
-        cmd_read_filter = "fusionreadfilter --input {0}_Aligned.out.bam --output {0}_Aligned.out.filtered.bam".format(
+        cmd_read_filter = "easy-fuse read-filter --input {0}_Aligned.out.bam --output {0}_Aligned.out.filtered.bam".format(
             os.path.join(filtered_reads_path, sample_id))
 
         # re-define fastq's if filtering is on (default)
@@ -272,14 +272,14 @@ class Processing(object):
             infusion_cfg_path)
 
         # (7) Soapfuse
-        cmd_soapfuse = "soapfuse_wrapper -q {0} -i {1} -o {2} -b {3} -c {4}".format(
+        cmd_soapfuse = "easy-fuse soapfuse-wrapper -q {0} -i {1} -o {2} -b {3} -c {4}".format(
             qc_table_path, " ".join([fq1, fq2]),
             soapfuse_path, self.cfg["commands"]["soapfuse"],
             self.cfg["other_files"]["soapfuse_cfg"])
 
         # (8) Data collection
         # TODO: embed this as operations within the package
-        cmd_readcounts = "count_input_reads " \
+        cmd_readcounts = "easy-fuse count-reads " \
                          "-i {0} " \
                          "-f {1} " \
                          "-o {2}".format(
@@ -287,7 +287,7 @@ class Processing(object):
             "star",
             os.path.join(classification_path, "Star_org_input_reads.txt"))
 
-        cmd_fusiondata = "fusiontoolparser " \
+        cmd_fusiondata = "easy-fuse fusion-parser " \
                          "-i {0} " \
                          "-o {1} " \
                          "-s {2} " \
@@ -299,7 +299,7 @@ class Processing(object):
             self.cfg["general"]["fusiontools"],
             self.log_path)
 
-        cmd_contextseq = "fusionannotation " \
+        cmd_contextseq = "easy-fuse annotation " \
                          "--detected_fusions {0} " \
                          "--annotation_db {1} " \
                          "--out_csv {2} " \
@@ -317,7 +317,7 @@ class Processing(object):
             self.cfg["general"]["context_seq_len"],
             self.cfg["general"]["tsl_filter"])
 
-        cmd_starindex = "star_custom_index -i {0} -o {1} -t waiting_for_cpu_number -b {2}".format(
+        cmd_starindex = "easy-fuse star-index -i {0} -o {1} -t waiting_for_cpu_number -b {2}".format(
             context_seq_fasta,
             star_genome_path,
             cmds["star"])
@@ -337,7 +337,7 @@ class Processing(object):
             cmds["samtools"],
             star_align_file)
 
-        cmd_requantify_fltr = "requantify " \
+        cmd_requantify_fltr = "easy-fuse requantify " \
                               "-i {0}fltr_Aligned.sortedByCoord.out.bam " \
                               "-o {1}_fltr.tdt " \
                               "-d 10".format(
@@ -359,14 +359,14 @@ class Processing(object):
             cmds["samtools"],
             star_align_file)
 
-        cmd_requantify_org = "requantify " \
+        cmd_requantify_org = "easy-fuse requantify " \
                              "-i {0}org_Aligned.sortedByCoord.out.bam " \
                              "-o {1}_org.tdt -d 10".format(
             star_align_file,
             classification_file)
 
         # for testing, based on debug. should be removed if merged to original
-        cmd_read_filter2 = "getRequantReads " \
+        cmd_read_filter2 = "easy-fuse read-selection " \
                            "--input {0}_Aligned.out.bam " \
                            "--input2 {1}.debug " \
                            "--output {0}_Aligned.out.filtered2.bam".format(
@@ -405,7 +405,7 @@ class Processing(object):
             cmds["samtools"],
             star_align_file)
 
-        cmd_requantify_best = "requantify " \
+        cmd_requantify_best = "easy-fuse requantify " \
                               "-i {0}best_Aligned.sortedByCoord.out.bam " \
                               "-o {1}_best.tdt -d 10".format(
             star_align_file,

@@ -97,7 +97,7 @@ def easy_fuse_cli():
     add_soapfuse_wrapper_args(soapfuse_wrapper_parser)
 
     star_index_parser = subparsers.add_parser(
-        "star_index",
+        "star-index",
         description="Runs a custom STAR index",
         epilog=epilog,
     )

@@ -22,7 +22,6 @@ A log file is generated after successful completion which contains information a
 
 import sys
 import time
-from argparse import ArgumentParser
 
 import logzero
 import pysam
