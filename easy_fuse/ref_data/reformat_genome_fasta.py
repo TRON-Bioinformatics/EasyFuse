@@ -32,9 +32,11 @@ class GenomeRefParser(object):
         with open(self.in_fasta, "r") as fasin, open(out_fasta, "w") as fasout:
             for line in fasin:
                 if line.startswith(">"):
-                    logger.info("Changing header from \"{0}\" to \"{1}\"".format(
-                        line.rstrip("\n"),
-                        line.split()[0]))
+                    logger.info(
+                        'Changing header from "{0}" to "{1}"'.format(
+                            line.rstrip("\n"), line.split()[0]
+                        )
+                    )
                     fasout.write("{}\n".format(line.split()[0]))
                 else:
                     fasout.write(line)
@@ -48,11 +50,14 @@ class GenomeRefParser(object):
                 if line.startswith(">"):
                     if fasout:
                         fasout.close()
-                    out_file_name = os.path.join(self.out_dir, "{}.fa".format(
-                        line.split()[0][1:]))
-                    logger.info("Writing fasta record \"{0}\" to file \"{1}\"".format(
-                        line.rstrip("\n"),
-                        out_file_name))
+                    out_file_name = os.path.join(
+                        self.out_dir, "{}.fa".format(line.split()[0][1:])
+                    )
+                    logger.info(
+                        'Writing fasta record "{0}" to file "{1}"'.format(
+                            line.rstrip("\n"), out_file_name
+                        )
+                    )
                     fasout = open(out_file_name, "w")
                 fasout.write(line)
             if fasout:
@@ -62,8 +67,12 @@ class GenomeRefParser(object):
 def main():
     """Parse command line arguments and start script"""
     parser = ArgumentParser(description="Generate mapping stats for fusion detection")
-    parser.add_argument('-i', '--input', dest='input', help='multi fasta file', required=True)
-    parser.add_argument('-o', '--output', dest='output', help='Output directory', required=True)
+    parser.add_argument(
+        "-i", "--input", dest="input", help="multi fasta file", required=True
+    )
+    parser.add_argument(
+        "-o", "--output", dest="output", help="Output directory", required=True
+    )
     args = parser.parse_args()
 
     grp = GenomeRefParser(args.input, args.output)
@@ -71,5 +80,5 @@ def main():
     grp.split()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

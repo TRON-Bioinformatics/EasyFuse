@@ -42,14 +42,24 @@ class FusionParser(object):
 
         with open(detected_fusions_file, "w") as fus_file:
             # write header
-            fus_file.write("BPID;Fusion_Gene;Breakpoint1;Breakpoint2;Junction_Reads;Spanning_Reads;Sample;Tool\n")
+            fus_file.write(
+                "BPID;Fusion_Gene;Breakpoint1;Breakpoint2;Junction_Reads;Spanning_Reads;Sample;Tool\n"
+            )
 
             for tool in self.tools:
                 fusion_map = self.get_tool_results(input_path, output_path, tool)
                 for bpid in fusion_map:
                     count += 1
-                    fus_file.write("{};{};{};{}\n".format(bpid, ";".join(fusion_map[bpid]), self.sample_id, tool))
-        logger.info("Wrote {0} detected fusion genes to {1}.".format(count, detected_fusions_file))
+                    fus_file.write(
+                        "{};{};{};{}\n".format(
+                            bpid, ";".join(fusion_map[bpid]), self.sample_id, tool
+                        )
+                    )
+        logger.info(
+            "Wrote {0} detected fusion genes to {1}.".format(
+                count, detected_fusions_file
+            )
+        )
 
     def get_tool_results(self, input_path, output_path, tool):
         """Return results as dict for a fusion tool"""
@@ -60,7 +70,9 @@ class FusionParser(object):
 
         tool_res_file = os.path.join(output_path, tool.lower() + ".csv")
         with open(tool_res_file, "w") as tool_outf:
-            tool_outf.write("bpid;fusion_gene;breakpoint1;breakpoint2;junc_reads;span_reads\n")
+            tool_outf.write(
+                "bpid;fusion_gene;breakpoint1;breakpoint2;junc_reads;span_reads\n"
+            )
             for key in fusion_map:
                 tool_outf.write("{};{}\n".format(key, ";".join(fusion_map[key])))
         return fusion_map

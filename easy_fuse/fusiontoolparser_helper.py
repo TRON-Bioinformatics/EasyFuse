@@ -15,25 +15,56 @@ import operator
 
 
 chr_list = (
-    "1", "2", "3", "4", "5",
-    "6", "7", "8", "9", "10",
-    "11", "12", "13", "14", "15",
-    "16", "17", "18", "19", "20",
-    "21", "22", "X", "Y", "MT"
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "17",
+    "18",
+    "19",
+    "20",
+    "21",
+    "22",
+    "X",
+    "Y",
+    "MT",
 )
 
 
 def parse_results(output_path, tool):
     """Load and parse results from tool"""
 
-
-    fusioncatcher_results_path_1 = os.path.join(output_path, "fusion", "fusioncatcher", "summary_candidate_fusions.txt")
-    fusioncatcher_results_path_2 = os.path.join(output_path, "fusion", "fusioncatcher", "final-list_candidate-fusion-genes.txt")
-    starfusion_results_path = os.path.join(output_path, "fusion", "starfusion", "star-fusion.fusion_predictions.tsv")
-    mapsplice_results_path = os.path.join(output_path, "fusion", "mapsplice", "fusions_well_annotated.txt")
-    infusion_results_path = os.path.join(output_path, "fusion", "infusion", "fusions.detailed.txt")
+    fusioncatcher_results_path_1 = os.path.join(
+        output_path, "fusion", "fusioncatcher", "summary_candidate_fusions.txt"
+    )
+    fusioncatcher_results_path_2 = os.path.join(
+        output_path, "fusion", "fusioncatcher", "final-list_candidate-fusion-genes.txt"
+    )
+    starfusion_results_path = os.path.join(
+        output_path, "fusion", "starfusion", "star-fusion.fusion_predictions.tsv"
+    )
+    mapsplice_results_path = os.path.join(
+        output_path, "fusion", "mapsplice", "fusions_well_annotated.txt"
+    )
+    infusion_results_path = os.path.join(
+        output_path, "fusion", "infusion", "fusions.detailed.txt"
+    )
     soapfuse_results_path = ""
-    folder_to_scan = os.path.join(output_path, "fusion", "soapfuse", "final_fusion_genes")
+    folder_to_scan = os.path.join(
+        output_path, "fusion", "soapfuse", "final_fusion_genes"
+    )
     for filename in os.listdir(folder_to_scan):
         folder_path = os.path.join(folder_to_scan, filename)
         if os.path.isdir(folder_path):
@@ -41,11 +72,14 @@ def parse_results(output_path, tool):
                 if res.endswith(".final.Fusion.specific.for.genes"):
                     soapfuse_results_path = os.path.join(folder_path, res)
 
-    starchip_results_path = os.path.join(output_path, "fusion", "starchip", "starchip.summary")
+    starchip_results_path = os.path.join(
+        output_path, "fusion", "starchip", "starchip.summary"
+    )
 
-    
     if tool == "fusioncatcher":
-        return parse_fusioncatcher_results(fusioncatcher_results_path_1, fusioncatcher_results_path_2)
+        return parse_fusioncatcher_results(
+            fusioncatcher_results_path_1, fusioncatcher_results_path_2
+        )
     elif tool == "starfusion":
         return parse_starfusion_results(starfusion_results_path)
     elif tool == "mapsplice":
@@ -66,22 +100,25 @@ def parse_fusioncatcher_results(infile1, infile2):
     with open(infile1) as predict_summary:
         for line in predict_summary:
             if line.strip().startswith("*"):
-                fusion_gene = re.search(r'\*\s([\S]*)', line).group(1)
+                fusion_gene = re.search(r"\*\s([\S]*)", line).group(1)
                 if "reciprocal" in line:
                     reciprocal_fusions.append(fusion_gene.replace("--", "_").upper())
     fusion_map = {}
     with open(infile2) as prediction:
-        next(prediction) # skip header line
+        next(prediction)  # skip header line
         for line in prediction:
             elements = line.rstrip().split("\t")
-            
+
             fusion_gene = (elements[0] + "_" + elements[1]).upper()
             # if the fusion gene is reciprocal, the fusion id is reversed? <- what for??
             if fusion_gene in reciprocal_fusions:
                 fusion_gene = (elements[1] + "_" + elements[0]).upper()
 
             # skip all prediction not on standard chromosomes
-            if elements[8].split(":")[0] not in chr_list or elements[9].split(":")[0] not in chr_list:
+            if (
+                elements[8].split(":")[0] not in chr_list
+                or elements[9].split(":")[0] not in chr_list
+            ):
                 continue
 
             bpid = elements[8] + "_" + elements[9]
@@ -91,7 +128,7 @@ def parse_fusioncatcher_results(infile1, infile2):
                 elements[8],  # up_gene_bp
                 elements[9],  # dn_gene_bp
                 elements[5],  # junc_reads_num
-                elements[4]  # span_reads_num
+                elements[4],  # span_reads_num
             ]
     return fusion_map
 
@@ -100,13 +137,16 @@ def parse_starfusion_results(infile):
     """Load and parse results from star-fusion"""
     fusion_map = {}
     with open(infile, "r") as prediction:
-        next(prediction) # skip header line
+        next(prediction)  # skip header line
         for line in prediction:
             elements = line.rstrip().split("\t")
 
             fusion_gene = elements[0].replace("--", "_").upper()
             # check whether fusion gene is not on primary chr
-            if elements[5].split(":")[0] not in chr_list or elements[7].split(":")[0] not in chr_list:
+            if (
+                elements[5].split(":")[0] not in chr_list
+                or elements[7].split(":")[0] not in chr_list
+            ):
                 continue
 
             bpid = elements[5] + "_" + elements[7]
@@ -116,7 +156,7 @@ def parse_starfusion_results(infile):
                 elements[5],  # up_gene_bp
                 elements[7],  # dn_gene_bp
                 elements[1],  # junc_reads_num
-                elements[2]  # span_reads_num
+                elements[2],  # span_reads_num
             ]
     return fusion_map
 
@@ -128,23 +168,32 @@ def parse_mapsplice_results(infile):
         for line in prediction:
             elements = line.rstrip().split("\t")
 
-            fusion_gene = (elements[60].split(",")[0] + "_" + elements[61].split(",")[0]).upper()
+            fusion_gene = (
+                elements[60].split(",")[0] + "_" + elements[61].split(",")[0]
+            ).upper()
 
             # element[0] = chr num, [1/2] = breakpoints, [5] = strands
-            up_gene_id = elements[0].split("~")[0] + ":" + elements[1] + ":" + elements[5][0]
-            dn_gene_id = elements[0].split("~")[1] + ":" + elements[2] + ":" + elements[5][1]
+            up_gene_id = (
+                elements[0].split("~")[0] + ":" + elements[1] + ":" + elements[5][0]
+            )
+            dn_gene_id = (
+                elements[0].split("~")[1] + ":" + elements[2] + ":" + elements[5][1]
+            )
 
-            if up_gene_id.split(":")[0] not in chr_list or dn_gene_id.split(":")[0] not in chr_list:
+            if (
+                up_gene_id.split(":")[0] not in chr_list
+                or dn_gene_id.split(":")[0] not in chr_list
+            ):
                 continue
 
             bpid = up_gene_id + "_" + dn_gene_id
 
             fusion_map[bpid] = [
-                fusion_gene,   # fusion_gene
-                up_gene_id,    # up_gene_bp
-                dn_gene_id,    # dn_gene_bp
-                elements[4],   # junc_reads_num
-                elements[27]  # span_reads_num
+                fusion_gene,  # fusion_gene
+                up_gene_id,  # up_gene_bp
+                dn_gene_id,  # dn_gene_bp
+                elements[4],  # junc_reads_num
+                elements[27],  # span_reads_num
             ]
     return fusion_map
 
@@ -153,14 +202,17 @@ def parse_starchip_results(infile):
     """Load and parse results from starchip"""
     fusion_map = {}
     with open(infile) as prediction:
-        next(prediction) # skip header line
+        next(prediction)  # skip header line
         for line in prediction:
             elements = line.rstrip().split("\t")
 
             fusion_gene = "{0}_{1}".format(elements[5], elements[7]).upper()
 
             # check whether fusion gene is not on primary chr
-            if elements[0].split(":")[0] not in self.chr_list or elements[1].split(":")[0] not in self.chr_list:
+            if (
+                elements[0].split(":")[0] not in self.chr_list
+                or elements[1].split(":")[0] not in self.chr_list
+            ):
                 continue
 
             bpid = elements[0] + "_" + elements[1]
@@ -171,7 +223,7 @@ def parse_starchip_results(infile):
                 elements[1],  # dn_gene_bp
                 elements[3],  # junc_reads_num
                 elements[2],  # span_reads_num
-                "Starchip"
+                "Starchip",
             ]
     return fusion_map
 
@@ -180,11 +232,14 @@ def parse_infusion_results(infile):
     """Load and parse results from starchip"""
     fusion_map = {}
     with open(infile) as prediction:
-        next(prediction) # skip header line
+        next(prediction)  # skip header line
         for line in prediction:
             elements = line.rstrip().split("\t")
 
-            fusion_gene = "{0}_{1}".format(get_fusion_gene_id_infusion(elements[21], elements[22]), get_fusion_gene_id_infusion(elements[27], elements[28])).upper()
+            fusion_gene = "{0}_{1}".format(
+                get_fusion_gene_id_infusion(elements[21], elements[22]),
+                get_fusion_gene_id_infusion(elements[27], elements[28]),
+            ).upper()
 
             # element[1/4] = chr num, [2/5] = breakpoints, [23/29] = strands
             up_gene_id = elements[1] + ":" + elements[2] + ":" + elements[23]
@@ -201,7 +256,7 @@ def parse_infusion_results(infile):
                 up_gene_id,  # up_gene_bp
                 dn_gene_id,  # dn_gene_bp
                 elements[7],  # junc_reads_num
-                elements[8]  # span_reads_num
+                elements[8],  # span_reads_num
             ]
     return fusion_map
 
@@ -229,7 +284,7 @@ def parse_soapfuse_results(infile):
 
     fusion_map = {}
     with open(infile) as prediction:
-        next(prediction) # skip header line
+        next(prediction)  # skip header line
         for line in prediction:
             elements = line.rstrip().split("\t")
 
@@ -238,7 +293,7 @@ def parse_soapfuse_results(infile):
             # element[1/6] = chr num, [3/8] = breakpoints, [2/7] = strands
             up_gene_id = elements[1] + ":" + elements[3] + ":" + elements[2]
             dn_gene_id = elements[6] + ":" + elements[8] + ":" + elements[7]
-            
+
             # check whether fusion gene is not on primary chr
             if elements[1] not in chr_list or elements[6] not in chr_list:
                 continue
@@ -250,6 +305,6 @@ def parse_soapfuse_results(infile):
                 up_gene_id,  # up_gene_bp
                 dn_gene_id,  # dn_gene_bp
                 elements[11],  # junc_reads_num
-                elements[10]  # span_reads_num
+                elements[10],  # span_reads_num
             ]
     return fusion_map

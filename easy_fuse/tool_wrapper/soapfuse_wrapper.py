@@ -34,12 +34,21 @@ def run_soapfuse(binary, config_file, qc_table, input, output):
     cfg_out.close()
     for i, file in enumerate(input):
         try:
-            os.symlink(file, os.path.join(cols[0], cols[1], cols[2], "S_{}.fastq.gz".format((i + 1))))
+            os.symlink(
+                file,
+                os.path.join(
+                    cols[0], cols[1], cols[2], "S_{}.fastq.gz".format((i + 1))
+                ),
+            )
         except:
             logger.info("Symlink already exists!")
-    cmd = "{} -c {} -fd {} -l {} -o {}".format(binary, config_file, cols[0], cfg_file, output)
+    cmd = "{} -c {} -fd {} -l {} -o {}".format(
+        binary, config_file, cols[0], cfg_file, output
+    )
 
-    proc = subprocess.Popen(cmd, shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+    proc = subprocess.Popen(
+        cmd, shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE
+    )
     (stdoutdata, stderrdata) = proc.communicate()
     r = proc.returncode
     if r != 0:
@@ -48,12 +57,30 @@ def run_soapfuse(binary, config_file, qc_table, input, output):
 
 
 def add_soapfuse_wrapper_args(parser):
-    parser.add_argument("-q", "--qc-table", dest="qc_table", help="Specify input QC table")
-    parser.add_argument("-i", "--input", dest="input", nargs="+", help="Specify input FASTQ files", required=True)
-    parser.add_argument("-o", "--output", dest="output", help="Specify output folder", default=".")
-    parser.add_argument("-b", "--binary", dest="binary", help="Specify Soapfuse binary", required=True)
-    parser.add_argument("-c", "--config-file", dest="config_file",
-                        help="Specify Soapfuse config file to use for your analysis", required=True)
+    parser.add_argument(
+        "-q", "--qc-table", dest="qc_table", help="Specify input QC table"
+    )
+    parser.add_argument(
+        "-i",
+        "--input",
+        dest="input",
+        nargs="+",
+        help="Specify input FASTQ files",
+        required=True,
+    )
+    parser.add_argument(
+        "-o", "--output", dest="output", help="Specify output folder", default="."
+    )
+    parser.add_argument(
+        "-b", "--binary", dest="binary", help="Specify Soapfuse binary", required=True
+    )
+    parser.add_argument(
+        "-c",
+        "--config-file",
+        dest="config_file",
+        help="Specify Soapfuse config file to use for your analysis",
+        required=True,
+    )
     parser.set_defaults(func=soapfuse_wrapper_command)
 
 
@@ -63,5 +90,5 @@ def soapfuse_wrapper_command(args):
         config_file=args.config_file,
         qc_table=args.qc_table,
         input=args.input,
-        output=args.output
+        output=args.output,
     )

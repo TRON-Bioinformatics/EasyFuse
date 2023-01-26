@@ -30,7 +30,9 @@ class Parser(object):
                     if base != "#Base":
                         mean = float(elements[1])
                         median = float(elements[2])
-                        lower_quartile = float(elements[3])  # min 20, so suggested trim length is not too strict
+                        lower_quartile = float(
+                            elements[3]
+                        )  # min 20, so suggested trim length is not too strict
                         upper_quartile = float(elements[4])
                         percentile_10 = float(elements[5])
                         percentile_90 = float(elements[6])
@@ -42,7 +44,7 @@ class Parser(object):
                             lower_quartile,
                             upper_quartile,
                             percentile_10,
-                            percentile_90
+                            percentile_90,
                         ]
                 if line.startswith(">>Per base sequence quality"):
                     check = True
@@ -67,23 +69,39 @@ class Parser(object):
             actual = counter
         total_sequences = self.parse_total_sequences(infile)
         # TODO: introduce something better to write a CSV file, eg: pandas or some CSV library
-        with open(outfile, 'a') as outf:
+        with open(outfile, "a") as outf:
             outf.write(
-                "{},{},{},{},{},{},{}\n".format(infile, read_length, counter, remaining, actual, len(badass_bases),
-                                                total_sequences))
+                "{},{},{},{},{},{},{}\n".format(
+                    infile,
+                    read_length,
+                    counter,
+                    remaining,
+                    actual,
+                    len(badass_bases),
+                    total_sequences,
+                )
+            )
         return seq_map
 
 
 def add_qc_parser_args(parser):
-    parser.add_argument('-i', '--input', dest='input', nargs='+',
-                        help='Specify input file(s) (fastqc_data.txt in fastqc folder(s))')
-    parser.add_argument('-o', '--qc-table', dest='qc_table', help='Specify output QC table')
+    parser.add_argument(
+        "-i",
+        "--input",
+        dest="input",
+        nargs="+",
+        help="Specify input file(s) (fastqc_data.txt in fastqc folder(s))",
+    )
+    parser.add_argument(
+        "-o", "--qc-table", dest="qc_table", help="Specify output QC table"
+    )
     parser.set_defaults(func=qc_parser_command)
 
 
 def qc_parser_command(args):
     open(args.qc_table, "w").write(
-        "filename,read_length,suggested_trim_length,remaining_read_length,actual_trim_length,badass_bases,total_sequences\n")
+        "filename,read_length,suggested_trim_length,remaining_read_length,actual_trim_length,badass_bases,total_sequences\n"
+    )
     p = Parser()
 
     for file in args.input:

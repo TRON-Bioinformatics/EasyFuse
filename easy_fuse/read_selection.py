@@ -57,7 +57,7 @@ class ReadSelection(object):
         self.get_ranges(context_file)
 
     def get_ranges(self, context_file):
-        """ vlkfh """
+        """vlkfh"""
         with open(context_file, "r") as cfile:
             next(cfile)  # skip header
             for line in cfile:
@@ -67,14 +67,14 @@ class ReadSelection(object):
         self.merge_ranges()
 
     def ranges_to_dict(self, context_range):
-        """ stub """
+        """stub"""
         chrom, start, stop = context_range.rstrip().split(":")
         if not chrom in self.coord_dict:
             self.coord_dict[chrom] = []
         self.coord_dict[chrom].append([int(start), int(stop)])
 
     def merge_ranges(self):
-        """ stub """
+        """stub"""
         for chrom in self.coord_dict:
             chr_coords = self.coord_dict[chrom]
             chr_coords.sort(key=lambda start: start[0])
@@ -107,21 +107,27 @@ class ReadSelection(object):
             self.counter[8] += 1
             return True
         # check if 10 (default) or more soft-clippings (S) are in the alignment
-        if read1.query_alignment_length + 10 <= read1.query_length or read2.query_alignment_length + 10 <= read2.query_length:
+        if (
+            read1.query_alignment_length + 10 <= read1.query_length
+            or read2.query_alignment_length + 10 <= read2.query_length
+        ):
             self.counter[7] += 1
             return True
 
-        # now check whether one of the reads is overlapping 
+        # now check whether one of the reads is overlapping
         if self.get_region_overlap(read1) or self.get_region_overlap(read2):
             self.counter[9] += 1
             return True
         return False
 
     def get_region_overlap(self, read):
-        """ bla """
+        """bla"""
         try:
             for (region_start, region_stop) in self.coord_dict[read.reference_name]:
-                if region_start <= read.reference_start <= region_stop or region_start <= read.reference_end <= region_stop:
+                if (
+                    region_start <= read.reference_start <= region_stop
+                    or region_start <= read.reference_end <= region_stop
+                ):
                     return True
         except KeyError:
             # A key error indicates that the read maps to a chromosome which contains no region of interest.
@@ -144,12 +150,15 @@ class ReadSelection(object):
         #       a strong effect on runtimes! (2) with the chimeric multi-mapping setting in the most recent star versions. This should actually
         #       work directly as star chimeric classification outranks multi-mapping disposal. It has, however, not been throughly evaluated by the star community
         for read in self.in_bam.fetch(
-                until_eof=True):  # iterate through alignments as they appear in the file (this is mandatory becaue (a) we cannot create an index, (b) want to include unmapped reads and (c) have many references in the header during 2nd filtering)
+            until_eof=True
+        ):  # iterate through alignments as they appear in the file (this is mandatory becaue (a) we cannot create an index, (b) want to include unmapped reads and (c) have many references in the header during 2nd filtering)
             self.counter[0] += 1
             read_flag = read.flag
 
             if last_query != read.query_name and self.counter[0] > 1:
-                if self.check_overlap(read1, read2, read1_flag, read2_flag, count_current_query_member):
+                if self.check_overlap(
+                    read1, read2, read1_flag, read2_flag, count_current_query_member
+                ):
                     self.filtered_bam.write(read1)
                     self.filtered_bam.write(read2)
                     self.counter[2] += 1
@@ -177,8 +186,10 @@ class ReadSelection(object):
                     read2_flag = read_flag
                 else:
                     logger.error(
-                        "Neither r1 nor r2??? Read: {0}; R1: {1}; R2: {2}; bamLine: {3}".format(read, read1, read2,
-                                                                                                self.counter[0]))
+                        "Neither r1 nor r2??? Read: {0}; R1: {1}; R2: {2}; bamLine: {3}".format(
+                            read, read1, read2, self.counter[0]
+                        )
+                    )
                     sys.exit(1)
             # urla: uncomment the following, if you'd like to have stats updates during the run and not only at the end
             if self.counter[0] % 1000000 == 0:
@@ -186,7 +197,9 @@ class ReadSelection(object):
             last_query = read.query_name
 
         # once EOF is reached, the very last pair has to be classified additionally
-        if self.check_overlap(read1, read2, read1_flag, read2_flag, count_current_query_member):
+        if self.check_overlap(
+            read1, read2, read1_flag, read2_flag, count_current_query_member
+        ):
             self.filtered_bam.write(read1)
             self.filtered_bam.write(read2)
             self.counter[2] += 1
@@ -210,13 +223,17 @@ class ReadSelection(object):
                 self.counter[1],
                 float(self.counter[2]) / float(self.counter[1]),
                 time_taken_1m,
-                time_taken))
+                time_taken,
+            )
+        )
 
         qc1 = False
         if self.get_input_read_count_from_star() == self.counter[1]:
             qc1 = True
         qc2 = False
-        if (self.counter[4] == self.counter[5]) and ((self.counter[0] - self.counter[5]) * 0.5 == self.counter[1]):
+        if (self.counter[4] == self.counter[5]) and (
+            (self.counter[0] - self.counter[5]) * 0.5 == self.counter[1]
+        ):
             qc2 = True
 
         # 0: count_input_alignments
@@ -228,16 +245,51 @@ class ReadSelection(object):
         # 6: count_unmapped
         # 7: count_10bp_s_clip
         # 8: count_proper_pair
-        logger.info("Star_chimeric (chim alignment from star):\t{} pairs (filtered)".format(self.counter[4]))
         logger.info(
-            "QC'd (additional Star_chimeric alignment):\t{} alignments (included in above)".format(self.counter[5]))
-        logger.info("Multimapped (1 < x <= 100 equal mappings):\t{} pairs (discarded)".format(self.counter[3]))
-        logger.info("Unmapped (no mapping or >100 multi map):\t{} pairs (filtered)".format(self.counter[6]))
-        logger.info("No proper pair (unexpected read distance):\t{} pairs (filtered)".format(self.counter[8]))
-        logger.info("10bp_s_clip (>9bp soft-clipped in cigar):\t{} pairs (filtered)".format(self.counter[7]))
-        logger.info("Unlikely chimeric (\"normal\" mappings): \t{} pairs (discarded)".format(
-            self.counter[1] - self.counter[4] - self.counter[3] - self.counter[6] - self.counter[8] - self.counter[7]))
-        logger.info("Not filtered, but mapped to fusion gene:\t{} pairs (filtered)".format(self.counter[9]))
+            "Star_chimeric (chim alignment from star):\t{} pairs (filtered)".format(
+                self.counter[4]
+            )
+        )
+        logger.info(
+            "QC'd (additional Star_chimeric alignment):\t{} alignments (included in above)".format(
+                self.counter[5]
+            )
+        )
+        logger.info(
+            "Multimapped (1 < x <= 100 equal mappings):\t{} pairs (discarded)".format(
+                self.counter[3]
+            )
+        )
+        logger.info(
+            "Unmapped (no mapping or >100 multi map):\t{} pairs (filtered)".format(
+                self.counter[6]
+            )
+        )
+        logger.info(
+            "No proper pair (unexpected read distance):\t{} pairs (filtered)".format(
+                self.counter[8]
+            )
+        )
+        logger.info(
+            "10bp_s_clip (>9bp soft-clipped in cigar):\t{} pairs (filtered)".format(
+                self.counter[7]
+            )
+        )
+        logger.info(
+            'Unlikely chimeric ("normal" mappings): \t{} pairs (discarded)'.format(
+                self.counter[1]
+                - self.counter[4]
+                - self.counter[3]
+                - self.counter[6]
+                - self.counter[8]
+                - self.counter[7]
+            )
+        )
+        logger.info(
+            "Not filtered, but mapped to fusion gene:\t{} pairs (filtered)".format(
+                self.counter[9]
+            )
+        )
         logger.info("Filter QC1 (fq reads = bam alignments):\t{}".format(qc1))
         logger.info("Filter QC2 (QC'd alignments are chimeric):\t{}".format(qc2))
 
@@ -253,9 +305,11 @@ class ReadSelection(object):
 
 def add_read_selection_args(parser):
     """Add read selection arguments to parser"""
-    parser.add_argument('-i', '--input', dest='input', help='Specify input BAM file')
-    parser.add_argument('-i2', '--input2', dest='input2', help='Specify context_seq file file')
-    parser.add_argument('-o', '--output', dest='output', help='Specify output prefix')
+    parser.add_argument("-i", "--input", dest="input", help="Specify input BAM file")
+    parser.add_argument(
+        "-i2", "--input2", dest="input2", help="Specify context_seq file file"
+    )
+    parser.add_argument("-o", "--output", dest="output", help="Specify output prefix")
     parser.set_defaults(func=read_selection_command)
 
 

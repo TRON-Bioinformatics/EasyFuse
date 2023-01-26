@@ -33,8 +33,10 @@ class Requantification(object):
         # reads from this read group can map independently to ft, wt1 and wt2
         for read_group in read_buffer:
             junction_ft = 0  # 0 = no junction overlapping read, 1+ = at least one of the paired reads is a junction read
-            spanning_ft = [0,
-                           0]  # left: paired read cnt fully left of the fusion bp, right: paired read cnt fulls right of the fusion bp
+            spanning_ft = [
+                0,
+                0,
+            ]  # left: paired read cnt fully left of the fusion bp, right: paired read cnt fulls right of the fusion bp
             junction_wt1 = 0  # like is_junction_ft but for wt1
             spanning_wt1 = [0, 0]  # like is_spanning_ft but for wt1
             junction_wt2 = 0  # like is_junction_ft but for wt2
@@ -43,19 +45,29 @@ class Requantification(object):
             # each processed read belongs to one of the three defined read_groups
             for read in read_buffer[read_group]:
                 if read.reference_name.endswith("ft"):
-                    junction_ft, spanning_ft, anchor_ft = self.count_junc_span(read,
-                                                                               self.fusion_seq_dict[reference_base][0],
-                                                                               junction_ft, spanning_ft, anchor_ft)
+                    junction_ft, spanning_ft, anchor_ft = self.count_junc_span(
+                        read,
+                        self.fusion_seq_dict[reference_base][0],
+                        junction_ft,
+                        spanning_ft,
+                        anchor_ft,
+                    )
                 elif read.reference_name.endswith("wt1"):
-                    junction_wt1, spanning_wt1, anchor_wt1 = self.count_junc_span(read,
-                                                                                  self.fusion_seq_dict[reference_base][
-                                                                                      6], junction_wt1, spanning_wt1,
-                                                                                  anchor_wt1)
+                    junction_wt1, spanning_wt1, anchor_wt1 = self.count_junc_span(
+                        read,
+                        self.fusion_seq_dict[reference_base][6],
+                        junction_wt1,
+                        spanning_wt1,
+                        anchor_wt1,
+                    )
                 elif read.reference_name.endswith("wt2"):
-                    junction_wt2, spanning_wt2, anchor_wt2 = self.count_junc_span(read,
-                                                                                  self.fusion_seq_dict[reference_base][
-                                                                                      12], junction_wt2, spanning_wt2,
-                                                                                  anchor_wt2)
+                    junction_wt2, spanning_wt2, anchor_wt2 = self.count_junc_span(
+                        read,
+                        self.fusion_seq_dict[reference_base][12],
+                        junction_wt2,
+                        spanning_wt2,
+                        anchor_wt2,
+                    )
 
             # update junction and spanning counts
             self.update_counts(reference_base, junction_ft, spanning_ft, 1)
@@ -66,14 +78,27 @@ class Requantification(object):
         self.fusion_seq_dict[reference_base][11] = anchor_wt1
         self.fusion_seq_dict[reference_base][17] = anchor_wt2
 
-    def count_junc_span(self, read, breakpoint_pos, junction_count, spanning_counts, anchor):
+    def count_junc_span(
+        self, read, breakpoint_pos, junction_count, spanning_counts, anchor
+    ):
         """Identify whether a read belongs to a junction or spanning pair"""
         # read overlaps the fusion breakpoint
-        if breakpoint_pos >= self.bp_distance_threshold and read.get_overlap(
+        if (
+            breakpoint_pos >= self.bp_distance_threshold
+            and read.get_overlap(
                 breakpoint_pos - self.bp_distance_threshold,
-                breakpoint_pos + self.bp_distance_threshold) == 2 * self.bp_distance_threshold:
+                breakpoint_pos + self.bp_distance_threshold,
+            )
+            == 2 * self.bp_distance_threshold
+        ):
             junction_count += 1
-            anchor = max(anchor, min(read.reference_end - breakpoint_pos, breakpoint_pos - read.reference_start))
+            anchor = max(
+                anchor,
+                min(
+                    read.reference_end - breakpoint_pos,
+                    breakpoint_pos - read.reference_start,
+                ),
+            )
         # read maps left of the fusion breakpoint
         if read.reference_end < (breakpoint_pos + self.bp_distance_threshold):
             spanning_counts[0] += 1
@@ -131,7 +156,26 @@ class Requantification(object):
             base_name = "_".join(id_split[:-2])
             # initialize the counter list for the respective fusion context
             if base_name not in self.fusion_seq_dict:
-                self.fusion_seq_dict[base_name] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+                self.fusion_seq_dict[base_name] = [
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                ]
             if id_split[-1] == "ft":
                 self.fusion_seq_dict[base_name][0] = int(id_split[-2])
             elif id_split[-1] == "wt1":
@@ -139,7 +183,9 @@ class Requantification(object):
             elif id_split[-1] == "wt2":
                 self.fusion_seq_dict[base_name][12] = int(id_split[-2])
 
-        logger.info("Found {} potential fusion sequences".format(len(self.fusion_seq_dict)))
+        logger.info(
+            "Found {} potential fusion sequences".format(len(self.fusion_seq_dict))
+        )
 
     def run(self):
         """Walk linewise through a s/bam file and send reads mapping to the same fusion/wt context to counting"""
@@ -157,7 +203,11 @@ class Requantification(object):
                 self.quantify_read_groups(read_buffer, last_reference)
                 count_processed_refs += 1
                 if count_processed_refs % (len(self.fusion_seq_dict) / 10) == 0:
-                    logger.info("At least {}% completed...".format(count_processed_refs / (len(self.fusion_seq_dict) / 100)))
+                    logger.info(
+                        "At least {}% completed...".format(
+                            count_processed_refs / (len(self.fusion_seq_dict) / 100)
+                        )
+                    )
                 read_buffer.clear()
             if not read.query_name in read_buffer:
                 read_buffer[read.query_name] = []
@@ -171,46 +221,93 @@ class Requantification(object):
 
         # process the last read_buffer
         self.quantify_read_groups(read_buffer, last_reference)
-        logger.info("All done! Reads did not map to ~{}% of the reference input".format(
-            100.0 - (float(count_processed_refs) / (len(self.fusion_seq_dict) / 100.0))))
+        logger.info(
+            "All done! Reads did not map to ~{}% of the reference input".format(
+                100.0
+                - (float(count_processed_refs) / (len(self.fusion_seq_dict) / 100.0))
+            )
+        )
         # close reading/writing stream
         self.in_bam.close()
         # write data to file. Change out_file_sep to ";" to create a csv file
 
         # get input read count
-        with open(os.path.join(os.path.dirname(self.output), "Star_org_input_reads.txt"), "r") as rfile:
+        with open(
+            os.path.join(os.path.dirname(self.output), "Star_org_input_reads.txt"), "r"
+        ) as rfile:
             self.input_read_count = int(rfile.readline().rstrip())
 
         out_file_sep = ";"
         header_string = out_file_sep.join(
-            ["ftid_plus",
-             "ft_bp", "ft_a", "ft_b", "ft_junc", "ft_span", "ft_anch",
-             "wt1_bp", "wt1_a", "wt1_b", "wt1_junc", "wt1_span", "wt1_anch",
-             "wt2_bp", "wt2_a", "wt2_b", "wt2_junc", "wt2_span", "wt2_anch"])
+            [
+                "ftid_plus",
+                "ft_bp",
+                "ft_a",
+                "ft_b",
+                "ft_junc",
+                "ft_span",
+                "ft_anch",
+                "wt1_bp",
+                "wt1_a",
+                "wt1_b",
+                "wt1_junc",
+                "wt1_span",
+                "wt1_anch",
+                "wt2_bp",
+                "wt2_a",
+                "wt2_b",
+                "wt2_junc",
+                "wt2_span",
+                "wt2_anch",
+            ]
+        )
         # write counts and normalized counts
         # for normalization, breakpoint and anchor must not be converted: list positions 0, 5, 10, 15
         no_norm = {0, 5, 6, 11, 12, 17}
-        with open("{}.counts".format(self.output), "w") as out_counts, open(self.output, "w") as out_norm:
+        with open("{}.counts".format(self.output), "w") as out_counts, open(
+            self.output, "w"
+        ) as out_norm:
             out_counts.write("{}\n".format(header_string))
             out_norm.write("{}\n".format(header_string))
             for key in self.fusion_seq_dict:
                 out_counts.write("{}{}".format(key, out_file_sep))
                 out_norm.write("{}{}".format(key, out_file_sep))
                 # write counts directly
-                out_counts.write("{}\n".format(out_file_sep.join(map(str, self.fusion_seq_dict[key]))))
+                out_counts.write(
+                    "{}\n".format(
+                        out_file_sep.join(map(str, self.fusion_seq_dict[key]))
+                    )
+                )
                 # normalize and write normalized counts
-                self.fusion_seq_dict[key] = [read_count if i in no_norm else self.normalize_counts_cpm(read_count) for
-                                             i, read_count in enumerate(self.fusion_seq_dict[key])]
+                self.fusion_seq_dict[key] = [
+                    read_count
+                    if i in no_norm
+                    else self.normalize_counts_cpm(read_count)
+                    for i, read_count in enumerate(self.fusion_seq_dict[key])
+                ]
                 # self.fusion_seq_dict[key] = map(self.normalize_counts_cpm, self.fusion_seq_dict[key])
-                out_norm.write("{}\n".format(out_file_sep.join(map(str, self.fusion_seq_dict[key]))))
+                out_norm.write(
+                    "{}\n".format(
+                        out_file_sep.join(map(str, self.fusion_seq_dict[key]))
+                    )
+                )
 
 
 def add_requantify_args(parser):
     """Add arguments for requantification to a parser"""
-    parser.add_argument('-i', '--input', dest='input', help='Specify input BAM file', required=True)
-    parser.add_argument('-o', '--output', dest='output', help='Specify output file', required=True)
-    parser.add_argument('-d', '--bp_distance', dest='bp_distance',
-                        help='Threshold of bases around the breakpoint for junction/spanning counting', default="3")
+    parser.add_argument(
+        "-i", "--input", dest="input", help="Specify input BAM file", required=True
+    )
+    parser.add_argument(
+        "-o", "--output", dest="output", help="Specify output file", required=True
+    )
+    parser.add_argument(
+        "-d",
+        "--bp_distance",
+        dest="bp_distance",
+        help="Threshold of bases around the breakpoint for junction/spanning counting",
+        default="3",
+    )
     parser.set_defaults(func=requantify_command)
 
 

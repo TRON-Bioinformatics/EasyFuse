@@ -18,17 +18,19 @@ from logzero import logger
 
 
 def create_folder(path):
-    '''This function creates a specified folder, if not already existing and grants the respective permission.'''
+    """This function creates a specified folder, if not already existing and grants the respective permission."""
     if not os.path.exists(path):
         os.makedirs(path)
-        grant_permissions(path, stat.S_IRWXU | stat.S_IRWXG | stat.S_IROTH | stat.S_IXOTH)
+        grant_permissions(
+            path, stat.S_IRWXU | stat.S_IRWXG | stat.S_IROTH | stat.S_IXOTH
+        )
         logger.debug("Created folder {}".format(path))
     else:
         logger.debug("Folder {} already exists".format(path))
 
 
 def grant_permissions(path, mode):
-    '''This function grants specific permissions for a given folder or file.'''
+    """This function grants specific permissions for a given folder or file."""
     for _, dirs, files in os.walk(path, topdown=False):
         for dir in dirs:
             os.chmod(dir, mode)
@@ -45,16 +47,23 @@ def get_fastq_files(input_paths):
             files = os.listdir(path)
             for filename in files:
                 file_path = os.path.join(path, filename)
-                if os.path.isfile(file_path) and filename.endswith((".fastq.gz", ".fq.gz", ".fq", ".fastq")):
+                if os.path.isfile(file_path) and filename.endswith(
+                    (".fastq.gz", ".fq.gz", ".fq", ".fastq")
+                ):
                     if not filename.endswith(".gz"):
                         logger.info(
-                            "Warning: Fastq files are supposed to be gzipped! Skipping record {}!".format(filename))
+                            "Warning: Fastq files are supposed to be gzipped! Skipping record {}!".format(
+                                filename
+                            )
+                        )
                         continue
                     fastqs.append(file_path)
                 elif os.path.isdir(file_path):
                     fastqs_tmp = get_fastq_files([file_path])
                     fastqs.extend(fastqs_tmp)
-        elif os.path.isfile(path) and path.endswith((".fastq.gz", ".fq.gz", ".fq", ".fastq")):
+        elif os.path.isfile(path) and path.endswith(
+            (".fastq.gz", ".fq.gz", ".fq", ".fastq")
+        ):
             fastqs.append(path)
     return fastqs
 
@@ -69,21 +78,22 @@ def pair_fastq_files(fastqs):
         try:
             # Search for 1 or 2 between "_R|_" and "_|.f" in the basename of the file
             filename = os.path.basename(fq_file)
-            matches = re.search('(.*)(_R?[1-2])(_|[.])', filename)
+            matches = re.search("(.*)(_R?[1-2])(_|[.])", filename)
             if matches:
                 sample_id = matches.group(1)
                 forrev = matches.group(2)
             else:
-                raise ValueError("File failed to match name pattern: {}".format(filename))
+                raise ValueError(
+                    "File failed to match name pattern: {}".format(filename)
+                )
 
             if forrev == "_1" or forrev == "_R1":
                 left.append((sample_id, fq_file))
             elif forrev == "_2" or forrev == "_R2":
                 right.append((sample_id, fq_file))
 
-
         except AttributeError:
-            forrev = '-1'
+            forrev = "-1"
 
     # Check whether file names match between paired files
     sample_list = []
@@ -97,7 +107,7 @@ def pair_fastq_files(fastqs):
                 break
 
         if not found:
-            logger.info('Could not find a matching FASTQ for {}!'.format(sample_id_a))
+            logger.info("Could not find a matching FASTQ for {}!".format(sample_id_a))
             sample_list.append((sample_id_a, fq_file_a, ""))
 
     return sample_list

@@ -21,11 +21,16 @@ def run_skewer(skewer_bin, min_rl_perc, qc_table, input, output):
                 remaining_len = remaining
 
     if remaining_len != read_len and remaining_len >= (min_rl_perc * read_len):
-        cmd = "{} -l {} -q 28 -m pe -t 6 -k 5 -z -o {} {}".format(skewer_bin, remaining_len,
-                                                                  os.path.join(args.output, "out_file"),
-                                                                  " ".join(args.input))
+        cmd = "{} -l {} -q 28 -m pe -t 6 -k 5 -z -o {} {}".format(
+            skewer_bin,
+            remaining_len,
+            os.path.join(args.output, "out_file"),
+            " ".join(args.input),
+        )
 
-        proc = subprocess.Popen(cmd, shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+        proc = subprocess.Popen(
+            cmd, shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE
+        )
         (stdoutdata, stderrdata) = proc.communicate()
         r = proc.returncode
         if r != 0:
@@ -57,12 +62,35 @@ def run_skewer(skewer_bin, min_rl_perc, qc_table, input, output):
 
 
 def add_skewer_args(parser):
-    parser.add_argument("-q", "--qc-table", dest="qc_table", help="Specify input QC table", required=True)
-    parser.add_argument("-i", "--input", dest="input", nargs="+", help="Specify input FASTQ files", required=True)
-    parser.add_argument("-o", "--output", dest="output", help="Specify output folder", default=".")
-    parser.add_argument("-b", "--binary", dest="binary", help="Specify Skewer binary", required=True)
-    parser.add_argument("-m", "--min-read-len-perc", dest="min_read_len_perc", type=float,
-                        help="Specify minimum read length percentage", default=0.75)
+    parser.add_argument(
+        "-q",
+        "--qc-table",
+        dest="qc_table",
+        help="Specify input QC table",
+        required=True,
+    )
+    parser.add_argument(
+        "-i",
+        "--input",
+        dest="input",
+        nargs="+",
+        help="Specify input FASTQ files",
+        required=True,
+    )
+    parser.add_argument(
+        "-o", "--output", dest="output", help="Specify output folder", default="."
+    )
+    parser.add_argument(
+        "-b", "--binary", dest="binary", help="Specify Skewer binary", required=True
+    )
+    parser.add_argument(
+        "-m",
+        "--min-read-len-perc",
+        dest="min_read_len_perc",
+        type=float,
+        help="Specify minimum read length percentage",
+        default=0.75,
+    )
     parser.set_defaults(func=skewer_command)
 
 
@@ -72,4 +100,5 @@ def skewer_command(args):
         min_rl_perc=args.min_read_len_perc,
         qc_table=args.qc_table,
         input=args.input,
-        output=args.output)
+        output=args.output,
+    )

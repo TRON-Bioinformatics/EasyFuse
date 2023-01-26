@@ -39,19 +39,34 @@ class FusionSummary(object):
 
         for sample in self.samples:
             count_processed += 1
-            logger.info("Processing sample {0} (dataset {1}/{2})".format(sample, count_processed, len(self.samples)))
+            logger.info(
+                "Processing sample {0} (dataset {1}/{2})".format(
+                    sample, count_processed, len(self.samples)
+                )
+            )
             start_time = time.time()
-            fusion_data_summary = DataJoining(self.input_path, sample, "",
-                                              os.path.join(fusion_data_summary_path, sample), model_predictions,
-                                              self.cfg).run()
-            fusion_frequency_all = self.add_to_fus_dict(fusion_data_summary[1], fusion_frequency_all)
+            fusion_data_summary = DataJoining(
+                self.input_path,
+                sample,
+                "",
+                os.path.join(fusion_data_summary_path, sample),
+                model_predictions,
+                self.cfg,
+            ).run()
+            fusion_frequency_all = self.add_to_fus_dict(
+                fusion_data_summary[1], fusion_frequency_all
+            )
             filtering_data_1[sample] = fusion_data_summary[0]
 
             time_taken = time.time() - start_time
-            average_time = (average_time * (count_processed - 1) + time_taken) / count_processed
+            average_time = (
+                average_time * (count_processed - 1) + time_taken
+            ) / count_processed
             logger.info(
                 "Done. Processing time: {0:.2f}s; Average processing time: {1:.2f}s)".format(
-                    time_taken, average_time))
+                    time_taken, average_time
+                )
+            )
 
     @staticmethod
     def add_to_fus_dict(input_set, fusion_dict):
@@ -64,15 +79,30 @@ class FusionSummary(object):
 
 
 def add_summarize_data_args(parser):
-    parser.add_argument('-i', '--input', dest='input',
-                        help='Specify the easyfuse root dir of the run you want to process.', required=True)
-    parser.add_argument('-c', '--config-file', dest='config_file', required=True,
-                        help='Specify alternative config file to use for your analysis')
+    parser.add_argument(
+        "-i",
+        "--input",
+        dest="input",
+        help="Specify the easyfuse root dir of the run you want to process.",
+        required=True,
+    )
+    parser.add_argument(
+        "-c",
+        "--config-file",
+        dest="config_file",
+        required=True,
+        help="Specify alternative config file to use for your analysis",
+    )
 
-    parser.add_argument('--model_predictions', default=False, action='store_true',
-                        help='Score predictions based on pre-train model')
-    parser.add_argument('--samples', default=False, nargs='+',
-                        help='List of samples to analyze')
+    parser.add_argument(
+        "--model_predictions",
+        default=False,
+        action="store_true",
+        help="Score predictions based on pre-train model",
+    )
+    parser.add_argument(
+        "--samples", default=False, nargs="+", help="List of samples to analyze"
+    )
     parser.set_defaults(func=summarize_data_command)
 
 
