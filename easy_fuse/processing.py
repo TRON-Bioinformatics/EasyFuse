@@ -660,6 +660,4 @@ def pipeline_command(args):
     with open(os.path.join(args.output_folder, "process.sh"), "w") as outf:
         outf.write("#!/bin/sh\n\n{}".format(script_call))
 
-    Processing(
-        script_call, args.input_paths, args.output_folder, config, args.jobname_suffix
-    )
+    Processing(script_call, args.input_paths, args.output_folder, config, args.jobname_suffix).run()
