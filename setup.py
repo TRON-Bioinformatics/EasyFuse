@@ -17,21 +17,7 @@ setup(
     include_package_data=True,
     entry_points={
         "console_scripts": [
-            "easy-fuse=easy_fuse.processing:main",
-            "fusionannotation=easy_fuse.fusionannotation:main",
-            "fusiontoolparser=easy_fuse.fusiontoolparser:main",
-            "fusionreadfilter=easy_fuse.fusionreadfilter:main",
-            "fetchdata=easy_fuse.fetchdata:main",
-            "liftover=easy_fuse.misc.liftover:main",
-            "qc_parser=easy_fuse.misc.qc_parser:main",
-            "samples=easy_fuse.misc.samples:main",
-            "requantify=easy_fuse.requantify:main",
-            "getRequantReads=easy_fuse.getRequantReads:main",
-            "summarize_data=easy_fuse.summarize_data:main",
-            "skewer_wrapper=easy_fuse.tool_wrapper.skewer_wrapper:main",
-            "soapfuse_wrapper=easy_fuse.tool_wrapper.soapfuse_wrapper:main",
-            "star_custom_index=easy_fuse.tool_wrapper.star_custom_index:main",
-            "count_input_reads=easy_fuse.misc.count_input_reads:main",
+            "easy-fuse=easy_fuse.command_line:easy_fuse_cli"
         ],
     },
     author_email="patrick.sorn@tron-mainz.de",

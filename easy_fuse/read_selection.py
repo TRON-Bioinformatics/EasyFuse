@@ -253,19 +253,15 @@ class ReadSelection(object):
         return -1
 
 
-def main():
-    """Parse command line arguments and start script"""
-    parser = ArgumentParser(description="Generate mapping stats for fusion detection")
+def add_read_selection_args(parser):
+    """Add read selection arguments to parser"""
     parser.add_argument('-i', '--input', dest='input', help='Specify input BAM file')
     parser.add_argument('-i2', '--input2', dest='input2', help='Specify context_seq file file')
     parser.add_argument('-o', '--output', dest='output', help='Specify output prefix')
-    args = parser.parse_args()
+    parser.set_defaults(func=read_selection_command)
 
+
+def read_selection_command(args):
+    """Run read selection"""
     stats = ReadSelection(args.input, args.output, args.input2)
     stats.run()
-
-
-#    stats.run_unsorted_chimeric()
-
-if __name__ == '__main__':
-    main()

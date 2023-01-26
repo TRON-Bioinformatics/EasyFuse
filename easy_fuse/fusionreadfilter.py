@@ -29,7 +29,7 @@ import pysam
 from logzero import logger
 
 
-class Fusionreadfilter(object):
+class FusionReadFilter(object):
     """Select alignments belonging to putative fusions from an s/bam file"""
 
     def __init__(self, bam, output):
@@ -213,18 +213,12 @@ class Fusionreadfilter(object):
         return -1
 
 
-def main():
-    """Parse command line arguments and start script"""
-    parser = ArgumentParser(description="Generate mapping stats for fusion detection")
+def add_read_filter_args(parser):
     parser.add_argument('-i', '--input', dest='input', help='Specify input BAM file')
     parser.add_argument('-o', '--output', dest='output', help='Specify output prefix')
-    args = parser.parse_args()
-
-    stats = Fusionreadfilter(args.input, args.output)
-    stats.run()
+    parser.set_defaults(func=read_filter_command)
 
 
-#    stats.run_unsorted_chimeric()
-
-if __name__ == '__main__':
-    main()
+def read_filter_command(args):
+    read_filter = FusionReadFilter(args.input, args.output)
+    read_filter.run()

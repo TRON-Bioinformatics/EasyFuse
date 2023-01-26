@@ -209,14 +209,16 @@ class Requantification(object):
                 out_norm.write("{}\n".format(out_file_sep.join(map(str, self.fusion_seq_dict[key]))))
 
 
-def main():
-    """Parse command line arguments and start script"""
-    parser = ArgumentParser(description="Generate mapping stats for fusion detection")
+def add_requantify_args(parser):
+    """Add arguments for requantification to a parser"""
     parser.add_argument('-i', '--input', dest='input', help='Specify input BAM file', required=True)
     parser.add_argument('-o', '--output', dest='output', help='Specify output file', required=True)
     parser.add_argument('-d', '--bp_distance', dest='bp_distance',
                         help='Threshold of bases around the breakpoint for junction/spanning counting', default="3")
-    args = parser.parse_args()
+    parser.set_defaults(func=requantify_command)
 
+
+def requantify_command(args):
+    """Run requantification from command line"""
     requant = Requantification(args.input, args.output, args.bp_distance)
     requant.run()

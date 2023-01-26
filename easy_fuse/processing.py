@@ -12,17 +12,16 @@ during all steps, perform slurm scheduling and process monitoring
 import os
 import os.path
 import time
-from argparse import ArgumentParser
 from shutil import copy
 
 import logzero
 from logzero import logger
 
+import easy_fuse
 import easy_fuse.misc.io_methods as io_methods
 from easy_fuse import __version__
 from easy_fuse.misc import queueing
 from easy_fuse.misc.config import EasyFuseConfiguration
-from easy_fuse.misc.samples import SamplesDB
 
 DEFAULT_CPU_MEM = "1,16"
 
@@ -41,7 +40,6 @@ class Processing(object):
 
         logger.info("Starting easyfuse: CMD - {}".format(cmd))
         self.input_paths = [os.path.abspath(file) for file in input_paths]
-        self.samples = SamplesDB(os.path.join(self.working_dir, "samples.db"))
 
         self.cfg = config
         copy(self.cfg.config_file, working_dir)
@@ -65,12 +63,12 @@ class Processing(object):
         # get fastq files
         fastqs = io_methods.get_fastq_files(self.input_paths)
         sample_list = io_methods.pair_fastq_files(fastqs)
-        for sample in sample_list:
-            if sample[1] and sample[2]:
-                logger.info("Processing Sample ID: {} (paired end)".format(sample[0]))
-                logger.info("Sample 1: {}".format(sample[1]))
-                logger.info("Sample 2: {}".format(sample[2]))
-                self.execute_pipeline(sample[1], sample[2], sample[0], ref_genome, ref_trans)
+        for sample_id, fq1, fq2 in sample_list:
+            if fq1 and fq2:
+                logger.info("Processing Sample ID: {} (paired end)".format(sample_id))
+                logger.info("Sample 1: {}".format(fq1))
+                logger.info("Sample 2: {}".format(fq2))
+                self.execute_pipeline(fq1, fq2, sample_id, ref_genome, ref_trans)
 
         # summarize all data if selected
         if "summary" in self.cfg["general"]["tools"].split(","):
@@ -82,10 +80,12 @@ class Processing(object):
             # TODO: add support for running without model and multiple models
             modelling_string = " --model_predictions"
 
-            cmd_summarize = "summarize_data --input {0}{1} -c {2}".format(
+            cmd_summarize = "summarize_data --input {0}{1} -c {2} --samples {3}".format(
                 self.working_dir,
                 modelling_string,
-                self.cfg.config_file)
+                self.cfg.config_file,
+                " ".join([sample_id for sample_id, _, _ in sample_list])
+            )
 
             logger.debug(
                 "Submitting job: CMD - {0}; PATH - {1}; DEPS - {2}".format(cmd_summarize, self.working_dir, dependency))
@@ -98,7 +98,6 @@ class Processing(object):
     # Per sample, define input parameters and execution commands, create a folder tree and submit runs to slurm
     def execute_pipeline(self, fq1, fq2, sample_id, ref_genome, ref_trans):
         """Create sample specific subfolder structure and run tools on fastq files"""
-        self.samples.add_sample(sample_id, "NA", fq1, fq2)
 
         refs = self.cfg["references"]
 
@@ -174,8 +173,6 @@ class Processing(object):
         ]:
             io_methods.create_folder(folder)
 
-        # get a list of tools from the samples.db file that have been run previously on this sample
-        state_tools = self.samples.get_tool_list_from_state(sample_id)
         # get a list of tools from the config file which shall be run on this sample
         tools = self.cfg["general"]["tools"].split(",")
         cmds = self.cfg["commands"]
@@ -347,8 +344,6 @@ class Processing(object):
             star_align_file,
             classification_file)
 
-        (fq1, fq2) = self.samples.get_fastq_files(sample_id)
-
         cmd_staralign_org = "{0} --genomeDir {1} --readFilesCommand zcat --readFilesIn {2} {3} " \
                             "--outSAMtype BAM SortedByCoordinate --outFilterMultimapNmax -1 " \
                             "--outSAMattributes Standard --outSAMunmapped None --outFilterMismatchNoverLmax 0.02 " \
@@ -415,10 +410,6 @@ class Processing(object):
                               "-o {1}_best.tdt -d 10".format(
             star_align_file,
             classification_file)
-
-        # (X) Sample monitoring
-        cmd_samples = "samples --db_path={0} --sample_id={1} --action=append_state --tool=".format(
-            self.samples.db_path, sample_id)
 
         # set final lists of executable tools and path
         exe_tools = [
@@ -502,37 +493,30 @@ class Processing(object):
             if tool in tools:
                 # check dependencies of the pipeline.
                 # Besides tool dependencies (Pizzly -> Kallisto, Starfusion/Starchip -> Star), read filtering is mandatory
-                # Processing will be skipped if a certain dependency was not found (either pre-processed data of the configs tool string are checked)
-                if tool in state_tools:
-                    logger.info(
-                        "Skipping {0} as it looks like a previous run finished successfully. Results should be in {1}".format(
-                            tool, exe_path[i]))
+                if tool == READ_FILTER_STEP and READ_FILTER_STEP not in tools:
+                    logger.error(
+                            """Error 99: Sample {} will be skipped due to missing read filtering.\n
+                            Read filtering is currently a mandatory step for the processing.\n
+                            Because you haven't run it before for this sample, you have to include \"Readfilter\" in the tool selection in your config.\n
+                            """.format(sample_id))
+                    print("Error 99: Sample {} will be skipped due to missing read filtering.".format(sample_id))
+                    return 0
+                elif tool == "pizzly" and "kallisto" not in tools:
+                    logger.error(
+                            """Error 99: Running {0} for Sample {1} will be skipped due to a missing dependency.\n
+                            Pizzly builds on Kallisto and it is therefore mandatory to run this first.\n
+                            Because you haven't run it before for this sample, you have to include \"Kallisto\" in the tool selection in your config.\n
+                            """.format(sample_id))
+                    print("Error 99: Running {0} for Sample {1} will be skipped due to a missing dependency.".format(tool, sample_id))
                     continue
-                else:
-                    if tool == READ_FILTER_STEP and READ_FILTER_STEP not in tools:
-                        logger.error(
-                                """Error 99: Sample {} will be skipped due to missing read filtering.\n
-                                Read filtering is currently a mandatory step for the processing.\n
-                                Because you haven't run it before for this sample, you have to include \"Readfilter\" in the tool selection in your config.\n
-                                """.format(sample_id))
-                        print("Error 99: Sample {} will be skipped due to missing read filtering.".format(sample_id))
-                        return 0
-                    elif tool == "pizzly" and "kallisto" not in tools:
-                        logger.error(
-                                """Error 99: Running {0} for Sample {1} will be skipped due to a missing dependency.\n
-                                Pizzly builds on Kallisto and it is therefore mandatory to run this first.\n
-                                Because you haven't run it before for this sample, you have to include \"Kallisto\" in the tool selection in your config.\n
-                                """.format(sample_id))
-                        print("Error 99: Running {0} for Sample {1} will be skipped due to a missing dependency.".format(tool, sample_id))
-                        continue
-                    elif (tool == "starfusion" or tool == "starchip") and "star" not in tools:
-                        logger.error(
-                                """Error 99: Running {0} for Sample {1} will be skipped due to a missing dependency.\n
-                                {0} builds on Star and it is therefore mandatory to run this first.\n
-                                Because you haven't run it before for this sample, you have to include \"Star\" in the tool selection in your config.\n
-                                """.format(sample_id))
-                        print("Error 99: Running {0} for Sample {1} will be skipped due to a missing dependency.".format(tool, sample_id))
-                        continue
+                elif (tool == "starfusion" or tool == "starchip") and "star" not in tools:
+                    logger.error(
+                            """Error 99: Running {0} for Sample {1} will be skipped due to a missing dependency.\n
+                            {0} builds on Star and it is therefore mandatory to run this first.\n
+                            Because you haven't run it before for this sample, you have to include \"Star\" in the tool selection in your config.\n
+                            """.format(sample_id))
+                    print("Error 99: Running {0} for Sample {1} will be skipped due to a missing dependency.".format(tool, sample_id))
+                    continue
 
                 # prepare slurm jobs: get ressources, create uid, set output path and check dependencies
                 logger.debug("Submitting {} run".format(tool))
@@ -545,7 +529,7 @@ class Processing(object):
                 else:
                     exe_cmds[i] = exe_cmds[i].replace("waiting_for_output_string", exe_path[i]).replace(
                         "waiting_for_cpu_number", str(cpu))
-                cmd = " && ".join([exe_cmds[i], cmd_samples + tool])
+                cmd = exe_cmds[i]
 
                 # Build slurm dependencies
                 dependencies = self.build_dependencies(tool, sample_id)
@@ -615,23 +599,49 @@ class Processing(object):
         return dependencies
 
 
-def main():
-    """Parse command line arguments and start script"""
-    parser = ArgumentParser(prog='EasyFuse', description='Run EasyFuse pipeline')
-    # required arguments
-    parser.add_argument('-i', '--input', dest='input_paths', nargs='+',
-                        help='Specify full path of the fastq folder to process.', required=True)
-    parser.add_argument('-o', '--output-folder', dest='output_folder',
-                        help='Specify full path of the folder to save the results into.', required=True)
+def add_pipeline_parser_args(pipeline_parser):
+    pipeline_parser.add_argument(
+        "-i",
+        "--input",
+        dest="input_paths",
+        nargs="+",
+        help="Specify full path of the fastq folder to process.",
+        required=True,
+    )
+    pipeline_parser.add_argument(
+        "-o",
+        "--output-folder",
+        dest="output_folder",
+        help="Specify full path of the folder to save the results into.",
+        required=True,
+    )
     # optional arguments
-    parser.add_argument('-c', '--config-file', dest='config_file', required=True,
-                        help='Specify alternative config file to use for your analysis')
-    parser.add_argument('-p', '--jobname_suffix', dest='jobname_suffix',
-                        help='Specify a jobname suffix for running jobs on a queueing system', default='')
-    parser.add_argument('-V', '--version', dest='version', action='version',
-                        version="%(prog)s {version}".format(version=__version__), help='Get version info')
-    args = parser.parse_args()
+    pipeline_parser.add_argument(
+        "-c",
+        "--config-file",
+        dest="config_file",
+        required=True,
+        help="Specify alternative config file to use for your analysis",
+    )
+    pipeline_parser.add_argument(
+        "-p",
+        "--jobname_suffix",
+        dest="jobname_suffix",
+        help="Specify a jobname suffix for running jobs on a queueing system",
+        default="",
+    )
+    pipeline_parser.add_argument(
+        "-V",
+        "--version",
+        dest="version",
+        action="version",
+        version="%(prog)s {version}".format(version=easy_fuse.__version__),
+        help="Get version info",
+    )
+    pipeline_parser.set_defaults(func=pipeline_command)
 
+
+def pipeline_command(args):
     jobname_suffix = ""
     if args.jobname_suffix:
         jobname_suffix = "-p {}".format(args.jobname_suffix)
@@ -645,9 +655,11 @@ def main():
         " ".join([os.path.abspath(x) for x in args.input_paths]),
         "-c {}".format(config.config_file),
         jobname_suffix,
-        os.path.abspath(args.output_folder))
+        os.path.abspath(args.output_folder),
+    )
     with open(os.path.join(args.output_folder, "process.sh"), "w") as outf:
         outf.write("#!/bin/sh\n\n{}".format(script_call))
 
-    proc = Processing(script_call, args.input_paths, args.output_folder, config, args.jobname_suffix)
-    proc.run()
+    Processing(
+        script_call, args.input_paths, args.output_folder, config, args.jobname_suffix
+    )

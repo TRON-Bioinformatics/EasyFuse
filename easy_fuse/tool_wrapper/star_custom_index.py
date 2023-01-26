@@ -35,15 +35,13 @@ def run(input_fasta, genome_dir, threads, star_binary):
 
     subprocess.run(cmd_starindex.split(" "))
 
-    
 
-def main():
-    parser = ArgumentParser(description="STAR index generation with custom fasta")
+def add_star_custom_index_args(parser):
     parser.add_argument("-i", "--input_fasta", dest="input_fasta", help="Specify input fasta file", required=True)
     parser.add_argument("-o", "--genome_dir", dest="genome_dir", help="Specify path to output genome dir", required=True)
     parser.add_argument("-t", "--threads", dest="threads", help="Specify amount of threads to be used during runtime", default=1)
     parser.add_argument("-b", "--star_binary", dest="star_binary", help="Specify path to STAR binary for execution", default="STAR")
+    parser.set_defaults(func=star_custom_index_command)
 
-    args = parser.parse_args()
-
+def star_custom_index_command(args):
     run(args.input_fasta, args.genome_dir, args.threads, args.star_binary)

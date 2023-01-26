@@ -71,15 +71,43 @@ class FusionParser(object):
         self.concatenate_fusion_results(self.input_path, self.output_path)
 
 
-def main():
-    """Main"""
-    parser = ArgumentParser(description='Extracts information on fusion genes')
-    parser.add_argument('-i', '--input_path', dest='input_path', help='Specify the folder of the sample.', required=True)
-    parser.add_argument('-o', '--output_path', dest='output_path', help='Specify the fusion output folder of the sample.', required=True)
-    parser.add_argument('-s', '--sample', dest='sample', help='Specify the sample to process.', required=True)
-    parser.add_argument('-f', '--fusionlist', dest='fusionlist', help='A list of fusion prediction tools that where run on the sample.', required=True)
-    parser.add_argument('-l', '--logger', dest='logger', help='Logging of processing steps', default="")
-    args = parser.parse_args()
+def add_fusion_parse_args(parser):
+    parser.add_argument(
+        "-i",
+        "--input_path",
+        dest="input_path",
+        help="Specify the folder of the sample.",
+        required=True,
+    )
+    parser.add_argument(
+        "-o",
+        "--output_path",
+        dest="output_path",
+        help="Specify the fusion output folder of the sample.",
+        required=True,
+    )
+    parser.add_argument(
+        "-s",
+        "--sample",
+        dest="sample",
+        help="Specify the sample to process.",
+        required=True,
+    )
+    parser.add_argument(
+        "-f",
+        "--fusionlist",
+        dest="fusionlist",
+        help="A list of fusion prediction tools that where run on the sample.",
+        required=True,
+    )
+    parser.add_argument(
+        "-l", "--logger", dest="logger", help="Logging of processing steps", default=""
+    )
+    parser.set_defaults(func=fusion_parser_command)
 
-    res_parse_1 = FusionParser(args.input_path, args.output_path, args.sample, args.fusionlist, args.logger)
-    res_parse_1.run()
+
+def fusion_parser_command(args):
+    fusion_parser = FusionParser(
+        args.input_path, args.output_path, args.sample, args.fusionlist, args.logger
+    )
+    fusion_parser.run()
