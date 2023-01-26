@@ -618,7 +618,7 @@ class Processing(object):
         for i, tool in enumerate(exe_tools, 0):
             if tool in tools:
                 # check dependencies of the pipeline.
-                # Besides tool dependencies (Pizzly -> Kallisto, Starfusion/Starchip -> Star), read filtering is mandatory
+                # Besides tool dependencies (Starfusion/Starchip -> Star), read filtering is mandatory
                 if tool == READ_FILTER_STEP and READ_FILTER_STEP not in tools:
                     logger.error(
                         """Error 99: Sample {} will be skipped due to missing read filtering.\n
@@ -634,21 +634,6 @@ class Processing(object):
                         )
                     )
                     return 0
-                elif tool == "pizzly" and "kallisto" not in tools:
-                    logger.error(
-                        """Error 99: Running {0} for Sample {1} will be skipped due to a missing dependency.\n
-                            Pizzly builds on Kallisto and it is therefore mandatory to run this first.\n
-                            Because you haven't run it before for this sample, you have to include \"Kallisto\" in the tool selection in your config.\n
-                            """.format(
-                            sample_id
-                        )
-                    )
-                    logger.error(
-                        "Error 99: Running {0} for Sample {1} will be skipped due to a missing dependency.".format(
-                            tool, sample_id
-                        )
-                    )
-                    continue
                 elif (
                     tool == "starfusion" or tool == "starchip"
                 ) and "star" not in tools:
