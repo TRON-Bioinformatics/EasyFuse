@@ -29,7 +29,7 @@ jobs:
         easy-fuse summarize-data --help
         easy-fuse qc-parser --help
         easy-fuse requantify --help
-        easy-fuse read-selection --help
+        easy-fuse requantify-filter --help
         easy-fuse skewer-wrapper --help
         easy-fuse soapfuse-wrapper --help
         easy-fuse count-reads --help
