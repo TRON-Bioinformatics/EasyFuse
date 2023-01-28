@@ -34,54 +34,12 @@ def easy_fuse_cli():
     )
     add_pipeline_parser_args(pipeline_parser)
 
-    annotation_parser = subparsers.add_parser(
-        "annotation",
-        description="Generate mapping stats for fusion detection",
-        epilog=epilog,
-    )
-    add_annotation_parser_args(annotation_parser)
-
-    fusion_parser = subparsers.add_parser(
-        "fusion-parser",
-        description="Parse predicted gene fusions from tools",
-        epilog=epilog,
-    )
-    add_fusion_parse_args(fusion_parser)
-
-    read_filter_parser = subparsers.add_parser(
-        "read-filter",
-        description="Filter reads adequate for fusion detection",
-        epilog=epilog,
-    )
-    add_read_filter_args(read_filter_parser)
-
-    summarize_data_parser = subparsers.add_parser(
-        "summarize-data",
-        description="Collect stats from fusion detection tools",
-        epilog=epilog,
-    )
-    add_summarize_data_args(summarize_data_parser)
-
     qc_parser_parser = subparsers.add_parser(
         "qc-parser",
         description="Parses QC data",
         epilog=epilog,
     )
     add_qc_parser_args(qc_parser_parser)
-
-    requantify_parser = subparsers.add_parser(
-        "requantify",
-        description="Requantifies based on junction/spanning reads",
-        epilog=epilog,
-    )
-    add_requantify_args(requantify_parser)
-
-    read_selection_parser = subparsers.add_parser(
-        "read-selection",
-        description="Read selection",
-        epilog=epilog,
-    )
-    add_read_selection_args(read_selection_parser)
 
     skewer_wrapper_parser = subparsers.add_parser(
         "skewer-wrapper",
@@ -90,12 +48,40 @@ def easy_fuse_cli():
     )
     add_skewer_args(skewer_wrapper_parser)
 
+    read_filter_parser = subparsers.add_parser(
+        "read-filter",
+        description="Filter wild-type reads before fusion detection",
+        epilog=epilog,
+    )
+    add_read_filter_args(read_filter_parser)
+
     soapfuse_wrapper_parser = subparsers.add_parser(
         "soapfuse-wrapper",
         description="Runs soapfuse",
         epilog=epilog,
     )
     add_soapfuse_wrapper_args(soapfuse_wrapper_parser)
+
+    fusion_parser = subparsers.add_parser(
+        "fusion-parser",
+        description="Parse predicted gene fusions from tools into common breakpoint format",
+        epilog=epilog,
+    )
+    add_fusion_parse_args(fusion_parser)
+
+    annotation_parser = subparsers.add_parser(
+        "annotation",
+        description="Annotates transcript-level breakpoints based on gene model",
+        epilog=epilog,
+    )
+    add_annotation_parser_args(annotation_parser)
+
+    count_reads_parser = subparsers.add_parser(
+        "count-reads",
+        description="Generates stats for STAR index generation",
+        epilog=epilog,
+    )
+    add_count_reads_args(count_reads_parser)
 
     star_index_parser = subparsers.add_parser(
         "star-index",
@@ -104,12 +90,27 @@ def easy_fuse_cli():
     )
     add_star_custom_index_args(star_index_parser)
 
-    count_reads_parser = subparsers.add_parser(
-        "count-reads",
-        description="Read count",
+    requantify_parser = subparsers.add_parser(
+        "requantify",
+        description="Counts junction and spanning reads from targeted STAR mapping (requantification)",
         epilog=epilog,
     )
-    add_count_reads_args(count_reads_parser)
+    add_requantify_args(requantify_parser)
+
+    read_selection_parser = subparsers.add_parser(
+        "requantify-filter",
+        description="Requantificaiton with more strict read filtering",
+        epilog=epilog,
+    )
+    add_read_selection_args(read_selection_parser)
+
+    summarize_data_parser = subparsers.add_parser(
+        "summarize-data",
+        description="Collect anotations and read counts from fusion detection tools and re-quantification. "
+                    "Calls prediction model",
+        epilog=epilog,
+    )
+    add_summarize_data_args(summarize_data_parser)
 
     args = parser.parse_args()
 
