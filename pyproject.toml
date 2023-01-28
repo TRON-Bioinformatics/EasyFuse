@@ -38,6 +38,7 @@ pysam = "0.15.2"
 gffutils = "0.10.1"
 bx-python = "0.8.2"
 logzero = "1.7.0"
+pytz = "2022.7.1"
 
 [tool.setuptools.dynamic]
 version = {attr = "easy_fuse.__version__"}

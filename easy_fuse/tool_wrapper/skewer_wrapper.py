@@ -24,14 +24,14 @@ def run_skewer(skewer_bin, min_rl_perc, qc_table, input, output):
         cmd = "{} -l {} -q 28 -m pe -t 6 -k 5 -z -o {} {}".format(
             skewer_bin,
             remaining_len,
-            os.path.join(args.output, "out_file"),
-            " ".join(args.input),
+            os.path.join(output, "out_file"),
+            " ".join(input),
         )
 
         proc = subprocess.Popen(
             cmd, shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE
         )
-        (stdoutdata, stderrdata) = proc.communicate()
+        (_, stderrdata) = proc.communicate()
         r = proc.returncode
         if r != 0:
             logger.error("Error within skewer")

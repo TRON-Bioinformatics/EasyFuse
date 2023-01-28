@@ -49,7 +49,7 @@ def run_soapfuse(binary, config_file, qc_table, input, output):
     proc = subprocess.Popen(
         cmd, shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE
     )
-    (stdoutdata, stderrdata) = proc.communicate()
+    (_, stderrdata) = proc.communicate()
     r = proc.returncode
     if r != 0:
         logger.error(stderrdata)

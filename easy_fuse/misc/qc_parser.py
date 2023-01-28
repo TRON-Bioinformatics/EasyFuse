@@ -105,4 +105,4 @@ def qc_parser_command(args):
     p = Parser()
 
     for file in args.input:
-        qmap = p.parse_quality(file, args.qc_table)
+        p.parse_quality(file, args.qc_table)

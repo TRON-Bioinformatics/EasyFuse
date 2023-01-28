@@ -122,7 +122,7 @@ def _submit_nonqueue(job_name, cmd):
         p = subprocess.Popen(
             cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=False
         )
-        (stdoutdata, stderrdata) = p.communicate()
+        (_, stderrdata) = p.communicate()
         r = p.returncode
         if r != 0:
             logger.error(
