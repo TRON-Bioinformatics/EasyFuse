@@ -1,6 +1,8 @@
 
 all : clean integration_tests
 
+.PHONY: all clean integration_tests
+
 clean:
 	rm -rf output
 
