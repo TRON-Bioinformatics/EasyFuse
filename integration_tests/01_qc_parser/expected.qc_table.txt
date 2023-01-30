@@ -1,0 +1,3 @@
+filename,read_length,suggested_trim_length,remaining_read_length,actual_trim_length,badass_bases,total_sequences
+/home/priesgof/src/EasyFuse/test_run/output32/Sample_SRR1659960_05pc/qc/SRR1659960_05pc_R1_fastqc/fastqc_data.txt,50,0,50,0,0,899282
+/home/priesgof/src/EasyFuse/test_run/output32/Sample_SRR1659960_05pc/qc/SRR1659960_05pc_R2_fastqc/fastqc_data.txt,50,0,50,0,0,899282
