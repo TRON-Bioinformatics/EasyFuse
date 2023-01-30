@@ -476,7 +476,7 @@ class Processing(object):
 
         # for testing, based on debug. should be removed if merged to original
         cmd_read_filter2 = (
-            "easy-fuse read-selection "
+            "easy-fuse requantify-filter "
             "--input {0}_Aligned.out.bam "
             "--input2 {1}.debug "
             "--output {0}_Aligned.out.filtered2.bam".format(
