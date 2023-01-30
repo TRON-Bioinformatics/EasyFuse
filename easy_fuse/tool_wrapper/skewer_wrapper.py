@@ -3,26 +3,15 @@
 import os
 import subprocess
 import sys
-from argparse import ArgumentParser
 from shutil import copyfile
+from logzero import logger
 
 
-def main():
-    parser = ArgumentParser(description="Wrapper around skewer.")
-    parser.add_argument("-q", "--qc-table", dest="qc_table", help="Specify input QC table", required=True)
-    parser.add_argument("-i", "--input", dest="input", nargs="+", help="Specify input FASTQ files", required=True)
-    parser.add_argument("-o", "--output", dest="output", help="Specify output folder", default=".")
-    parser.add_argument("-b", "--binary", dest="binary", help="Specify Skewer binary", required=True)
-    parser.add_argument("-m", "--min-read-len-perc", dest="min_read_len_perc", type=float,
-                        help="Specify minimum read length percentage", default=0.75)
+def run_skewer(skewer_bin, min_rl_perc, qc_table, input, output):
 
-    args = parser.parse_args()
-
-    skewer_bin = args.binary
-    min_rl_perc = args.min_read_len_perc
     remaining_len = 1000
     read_len = 0
-    with open(args.qc_table) as inf:
+    with open(qc_table) as inf:
         next(inf)
         for line in inf:
             elements = line.rstrip().split(",")
@@ -32,47 +21,84 @@ def main():
                 remaining_len = remaining
 
     if remaining_len != read_len and remaining_len >= (min_rl_perc * read_len):
-        cmd = "{} -l {} -q 28 -m pe -t 6 -k 5 -z -o {} {}".format(skewer_bin, remaining_len,
-                                                                  os.path.join(args.output, "out_file"),
-                                                                  " ".join(args.input))
+        cmd = "{} -l {} -q 28 -m pe -t 6 -k 5 -z -o {} {}".format(
+            skewer_bin,
+            remaining_len,
+            os.path.join(output, "out_file"),
+            " ".join(input),
+        )
 
-        proc = subprocess.Popen(cmd, shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
-        (stdoutdata, stderrdata) = proc.communicate()
+        proc = subprocess.Popen(
+            cmd, shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE
+        )
+        (_, stderrdata) = proc.communicate()
         r = proc.returncode
         if r != 0:
-            sys.stderr.write("Error within skewer\n")
-            sys.stderr.write(stderrdata)
+            logger.error("Error within skewer")
+            logger.error(stderrdata)
             sys.exit(1)
 
     elif remaining_len < min_rl_perc * read_len:
-        sys.stderr.write("Trim length too long. Discarding fastqs ({}).".format(args.input))
-        open(os.path.join(args.output, "to_be_discarded"), "a").close()
+        logger.error("Trim length too long. Discarding fastqs ({}).".format(input))
+        open(os.path.join(output, "to_be_discarded"), "a").close()
         sys.exit(1)
     elif remaining_len == read_len:
-        if len(args.input) == 2:
-            out_1 = os.path.join(args.output, "out_file-trimmed-pair1.fastq.gz")
-            out_2 = os.path.join(args.output, "out_file-trimmed-pair2.fastq.gz")
-            sys.stdout.write("Nothing to trim. Copying FASTQs\n")
-            sys.stdout.write("cp {} {}\n".format(args.input[0], out_1))
-            sys.stdout.write("cp {} {}\n".format(args.input[1], out_2))
+        if len(input) == 2:
+            out_1 = os.path.join(output, "out_file-trimmed-pair1.fastq.gz")
+            out_2 = os.path.join(output, "out_file-trimmed-pair2.fastq.gz")
+            logger.info("Nothing to trim. Copying FASTQs")
+            logger.info("cp {} {}".format(input[0], out_1))
+            logger.info("cp {} {}".format(input[1], out_2))
             try:
-                copyfile(args.input[0], out_1)
+                copyfile(input[0], out_1)
             #                os.symlink(args.input[0], out_1)
             except OSError:
-                print("Copy of {} already exists".format(out_1))
+                logger.error("Copy of {} already exists".format(out_1))
             try:
-                copyfile(args.input[1], out_2)
+                copyfile(input[1], out_2)
             #                os.symlink(args.input[1], out_2)
             except OSError:
-                print("Copy of {} already exists".format(out_2))
+                logger.error("Copy of {} already exists".format(out_2))
 
 
-#        else:
-#            out = os.path.join(args.output, "out_file-trimmed.fastq.gz")
-#            sys.stdout.write("Nothing to trim. Creating symlink\n")
-#            sys.stdout.write("ln -s {} {}\n".format(args.input[0], out))
-#            os.symlink(args.input[0], out)
+def add_skewer_args(parser):
+    parser.add_argument(
+        "-q",
+        "--qc-table",
+        dest="qc_table",
+        help="Specify input QC table",
+        required=True,
+    )
+    parser.add_argument(
+        "-i",
+        "--input",
+        dest="input",
+        nargs="+",
+        help="Specify input FASTQ files",
+        required=True,
+    )
+    parser.add_argument(
+        "-o", "--output", dest="output", help="Specify output folder", default="."
+    )
+    parser.add_argument(
+        "-b", "--binary", dest="binary", help="Specify Skewer binary", required=True
+    )
+    parser.add_argument(
+        "-m",
+        "--min-read-len-perc",
+        dest="min_read_len_perc",
+        type=float,
+        help="Specify minimum read length percentage",
+        default=0.75,
+    )
+    parser.set_defaults(func=skewer_command)
 
 
-if __name__ == "__main__":
-    main()
+def skewer_command(args):
+    run_skewer(
+        skewer_bin=args.binary,
+        min_rl_perc=args.min_read_len_perc,
+        qc_table=args.qc_table,
+        input=args.input,
+        output=args.output,
+    )

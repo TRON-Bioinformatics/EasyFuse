@@ -42,14 +42,24 @@ class FusionParser(object):
 
         with open(detected_fusions_file, "w") as fus_file:
             # write header
-            fus_file.write("BPID;Fusion_Gene;Breakpoint1;Breakpoint2;Junction_Reads;Spanning_Reads;Sample;Tool\n")
+            fus_file.write(
+                "BPID;Fusion_Gene;Breakpoint1;Breakpoint2;Junction_Reads;Spanning_Reads;Sample;Tool\n"
+            )
 
             for tool in self.tools:
                 fusion_map = self.get_tool_results(input_path, output_path, tool)
                 for bpid in fusion_map:
                     count += 1
-                    fus_file.write("{};{};{};{}\n".format(bpid, ";".join(fusion_map[bpid]), self.sample_id, tool))
-        logger.info("Wrote {0} detected fusion genes to {1}.".format(count, detected_fusions_file))
+                    fus_file.write(
+                        "{};{};{};{}\n".format(
+                            bpid, ";".join(fusion_map[bpid]), self.sample_id, tool
+                        )
+                    )
+        logger.info(
+            "Wrote {0} detected fusion genes to {1}.".format(
+                count, detected_fusions_file
+            )
+        )
 
     def get_tool_results(self, input_path, output_path, tool):
         """Return results as dict for a fusion tool"""
@@ -60,7 +70,9 @@ class FusionParser(object):
 
         tool_res_file = os.path.join(output_path, tool.lower() + ".csv")
         with open(tool_res_file, "w") as tool_outf:
-            tool_outf.write("bpid;fusion_gene;breakpoint1;breakpoint2;junc_reads;span_reads\n")
+            tool_outf.write(
+                "bpid;fusion_gene;breakpoint1;breakpoint2;junc_reads;span_reads\n"
+            )
             for key in fusion_map:
                 tool_outf.write("{};{}\n".format(key, ";".join(fusion_map[key])))
         return fusion_map
@@ -71,15 +83,43 @@ class FusionParser(object):
         self.concatenate_fusion_results(self.input_path, self.output_path)
 
 
-def main():
-    """Main"""
-    parser = ArgumentParser(description='Extracts information on fusion genes')
-    parser.add_argument('-i', '--input_path', dest='input_path', help='Specify the folder of the sample.', required=True)
-    parser.add_argument('-o', '--output_path', dest='output_path', help='Specify the fusion output folder of the sample.', required=True)
-    parser.add_argument('-s', '--sample', dest='sample', help='Specify the sample to process.', required=True)
-    parser.add_argument('-f', '--fusionlist', dest='fusionlist', help='A list of fusion prediction tools that where run on the sample.', required=True)
-    parser.add_argument('-l', '--logger', dest='logger', help='Logging of processing steps', default="")
-    args = parser.parse_args()
+def add_fusion_parse_args(parser):
+    parser.add_argument(
+        "-i",
+        "--input_path",
+        dest="input_path",
+        help="Specify the folder of the sample.",
+        required=True,
+    )
+    parser.add_argument(
+        "-o",
+        "--output_path",
+        dest="output_path",
+        help="Specify the fusion output folder of the sample.",
+        required=True,
+    )
+    parser.add_argument(
+        "-s",
+        "--sample",
+        dest="sample",
+        help="Specify the sample to process.",
+        required=True,
+    )
+    parser.add_argument(
+        "-f",
+        "--fusionlist",
+        dest="fusionlist",
+        help="A list of fusion prediction tools that where run on the sample.",
+        required=True,
+    )
+    parser.add_argument(
+        "-l", "--logger", dest="logger", help="Logging of processing steps", default=""
+    )
+    parser.set_defaults(func=fusion_parser_command)
 
-    res_parse_1 = FusionParser(args.input_path, args.output_path, args.sample, args.fusionlist, args.logger)
-    res_parse_1.run()
+
+def fusion_parser_command(args):
+    fusion_parser = FusionParser(
+        args.input_path, args.output_path, args.sample, args.fusionlist, args.logger
+    )
+    fusion_parser.run()

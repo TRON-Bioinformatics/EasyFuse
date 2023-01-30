@@ -1,2 +1,3 @@
-__version_info__ = (1, 3, 8)
-__version__ = '.'.join(map(str, __version_info__))
+import importlib_metadata
+
+__version__ = importlib_metadata.version("easy-fuse")

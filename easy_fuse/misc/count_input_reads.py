@@ -28,7 +28,7 @@ def _get_input_read_count_from_fastq(infile):
 
 def get_input_read_count(infile, file_format):
     """Parses input file to get read count"""
-    
+
     if file_format == "star":
         return _get_input_read_count_from_star(infile)
     elif file_format == "fastq":
@@ -40,12 +40,18 @@ def run(infile, informat, outfile):
         outf.write(str(get_input_read_count(infile, informat)))
 
 
+def add_count_reads_args(parser):
+    parser.add_argument(
+        "-i", "--input_file", dest="input_file", help="Specify input file"
+    )
+    parser.add_argument(
+        "-f", "--input_format", dest="input_format", help="Specify input file format"
+    )
+    parser.add_argument(
+        "-o", "--output_file", dest="output_file", help="Specify output file"
+    )
+    parser.set_defaults(func=count_reads_command)
 
-def main():
-    parser = ArgumentParser(description="Get read counts from FASTQ or Alignment Log")
-    parser.add_argument("-i", "--input_file", dest="input_file", help="Specify input file")
-    parser.add_argument("-f", "--input_format", dest="input_format", help="Specify input file format")
-    parser.add_argument("-o", "--output_file", dest="output_file", help="Specify output file")
-    args = parser.parse_args()
 
+def count_reads_command(args):
     run(args.input_file, args.input_format, args.output_file)
