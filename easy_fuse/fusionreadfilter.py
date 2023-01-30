@@ -182,9 +182,6 @@ class FusionReadFilter(object):
             )
         )
 
-        qc1 = False
-        if self.get_input_read_count_from_star() == self.counter[1]:
-            qc1 = True
         qc2 = False
         if (self.counter[4] == self.counter[5]) and (
             (self.counter[0] - self.counter[5]) * 0.5 == self.counter[1]
@@ -240,17 +237,7 @@ class FusionReadFilter(object):
                 - self.counter[7]
             )
         )
-        logger.info("Filter QC1 (fq reads = bam alignments):\t{}".format(qc1))
         logger.info("Filter QC2 (QC'd alignments are chimeric):\t{}".format(qc2))
-
-    def get_input_read_count_from_star(self):
-        """Parses a star output log file to get input read counts from the fastq origin"""
-        log_file = "{}Log.final.out".format(self.bam_file.rstrip("Aligned.out.bam"))
-        with open(log_file, "r") as star_log:
-            for line in star_log:
-                if line.split("|")[0].strip() == "Number of input reads":
-                    return int(line.split("|")[1].strip())
-        return -1
 
 
 def add_read_filter_args(parser):

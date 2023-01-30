@@ -13,12 +13,13 @@ jobs:
         python-version: '3.7'
     - name: Install dependencies
       run: |
+        sudo apt-get update && sudo apt-get --assume-yes install samtools
         python -m pip install --upgrade pip
         pip install poetry
     - name: Build and install
       run: |
         poetry build
         pip install dist/easy_fuse*.whl
-    - name: Check the CLI entry point is there
+    - name: Run integration tests
       run: |
         make clean integration_tests
