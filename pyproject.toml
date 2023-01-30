@@ -24,6 +24,14 @@ classifiers = [
     "Programming Language :: Python :: 3.7",
 ]
 packages = [{include = "easy_fuse"}]
+[tool.poetry.group.dev.dependencies]
+coverage = {extras = ["toml"], version = "^7.1.0"}
+
+[tool.coverage.run]
+omit = [".*", "*/site-packages/*"]
+
+[tool.coverage.report]
+fail_under = 80
 
 [tool.setuptools]
 py-modules = ["easy_fuse"]

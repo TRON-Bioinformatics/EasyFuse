@@ -18,4 +18,6 @@ jobs:
     - name: Build, install and run unit tests
       run: |
         poetry install
-        poetry run python -m unittest discover easy_fuse.tests
+        poetry run coverage -m unittest discover easy_fuse.tests
+    - name: Upload Coverage to Codecov
+      uses: codecov/codecov-action@v3
