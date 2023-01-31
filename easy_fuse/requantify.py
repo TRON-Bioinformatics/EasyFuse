@@ -6,8 +6,8 @@ Junction/Spanning read pair counting
 @author: TRON (PASO), BNT (URLA)
 @version: 20221005
 """
+import os
 
-import os.path
 from logzero import logger
 import pysam
 
@@ -15,13 +15,19 @@ import pysam
 class Requantification(object):
     """Select alignments belonging to putative fusions from an s/bam file"""
 
-    def __init__(self, bam, output, bp_distance_threshold):
+    def __init__(self, bam, output, bp_distance_threshold, input_reads_stats,):
         """Parameter initialization"""
         self.in_bam = pysam.AlignmentFile(bam, "rb")
         self.output = output
         self.bp_distance_threshold = int(bp_distance_threshold)
         self.fusion_seq_dict = {}
-        self.input_read_count = 0
+        assert os.path.exists(input_reads_stats) and os.path.isfile(input_reads_stats), \
+            "Read stats file not found: {}".format(input_reads_stats)
+        self.input_reads_stats = input_reads_stats
+
+        # loads data
+        with open(input_reads_stats, "r") as rfile:
+            self.input_read_count = int(rfile.readline())
 
     def quantify_read_groups(self, read_buffer, reference_base):
         """Count junction/spanning pairs on ft and wt1/2"""
@@ -231,12 +237,6 @@ class Requantification(object):
         self.in_bam.close()
         # write data to file. Change out_file_sep to ";" to create a csv file
 
-        # get input read count
-        with open(
-            os.path.join(os.path.dirname(self.output), "Star_org_input_reads.txt"), "r"
-        ) as rfile:
-            self.input_read_count = int(rfile.readline().rstrip())
-
         out_file_sep = ";"
         header_string = out_file_sep.join(
             [
@@ -308,10 +308,16 @@ def add_requantify_args(parser):
         help="Threshold of bases around the breakpoint for junction/spanning counting",
         default="3",
     )
+    parser.add_argument(
+        "--input-reads-stats",
+        dest="input_reads_stats",
+        required=True,
+        help="Path to input file with reads stats",
+    )
     parser.set_defaults(func=requantify_command)
 
 
 def requantify_command(args):
     """Run requantification from command line"""
-    requant = Requantification(args.input, args.output, args.bp_distance)
+    requant = Requantification(args.input, args.output, args.bp_distance, args.count_reads)
     requant.run()
