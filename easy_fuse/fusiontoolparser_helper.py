@@ -66,11 +66,6 @@ def parse_results(output_path, tool):
             output_path, "fusion", "mapsplice", "fusions_well_annotated.txt"
         )
         return parse_mapsplice_results(mapsplice_results_path)
-    elif tool == "starchip":
-        starchip_results_path = os.path.join(
-            output_path, "fusion", "starchip", "starchip.summary"
-        )
-        return parse_starchip_results(starchip_results_path)
     elif tool == "infusion":
         infusion_results_path = os.path.join(
             output_path, "fusion", "infusion", "fusions.detailed.txt"
@@ -192,36 +187,6 @@ def parse_mapsplice_results(infile):
                 dn_gene_id,  # dn_gene_bp
                 elements[4],  # junc_reads_num
                 elements[27],  # span_reads_num
-            ]
-    return fusion_map
-
-
-def parse_starchip_results(infile):
-    """Load and parse results from starchip"""
-    fusion_map = {}
-    with open(infile) as prediction:
-        next(prediction)  # skip header line
-        for line in prediction:
-            elements = line.rstrip().split("\t")
-
-            fusion_gene = "{0}_{1}".format(elements[5], elements[7]).upper()
-
-            # check whether fusion gene is not on primary chr
-            if (
-                elements[0].split(":")[0] not in self.chr_list
-                or elements[1].split(":")[0] not in self.chr_list
-            ):
-                continue
-
-            bpid = elements[0] + "_" + elements[1]
-
-            fusion_map[bpid] = [
-                fusion_gene,  # fusion_gene
-                elements[0],  # up_gene_bp
-                elements[1],  # dn_gene_bp
-                elements[3],  # junc_reads_num
-                elements[2],  # span_reads_num
-                "Starchip",
             ]
     return fusion_map
 
