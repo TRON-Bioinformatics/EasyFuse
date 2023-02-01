@@ -11,6 +11,8 @@ import os
 from logzero import logger
 import pysam
 
+from easy_fuse.misc.count_input_reads import get_input_read_count_from_star
+
 
 class Requantification(object):
     """Select alignments belonging to putative fusions from an s/bam file"""
@@ -21,13 +23,11 @@ class Requantification(object):
         self.output = output
         self.bp_distance_threshold = int(bp_distance_threshold)
         self.fusion_seq_dict = {}
+
+        # loads read counts
         assert os.path.exists(input_reads_stats) and os.path.isfile(input_reads_stats), \
             "Read stats file not found: {}".format(input_reads_stats)
-        self.input_reads_stats = input_reads_stats
-
-        # loads data
-        with open(input_reads_stats, "r") as rfile:
-            self.input_read_count = int(rfile.readline())
+        self.input_read_count = get_input_read_count_from_star(input_reads_stats)
 
     def quantify_read_groups(self, read_buffer, reference_base):
         """Count junction/spanning pairs on ft and wt1/2"""
@@ -319,5 +319,5 @@ def add_requantify_args(parser):
 
 def requantify_command(args):
     """Run requantification from command line"""
-    requant = Requantification(args.input, args.output, args.bp_distance, args.count_reads)
+    requant = Requantification(args.input, args.output, args.bp_distance, args.input_reads_stats)
     requant.run()
