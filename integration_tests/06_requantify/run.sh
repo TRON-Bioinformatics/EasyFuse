@@ -14,4 +14,4 @@ easy-fuse requantify \
   --input-reads-stats $input_reads_stats
 
 test -s $output || { echo "Missing requantified output file!"; exit 1; }
-assert_eq `wc -l` 100 "Wrong number of reads"
+assert_eq `wc -l $output | cut -d " " -f 1` 2 "Wrong number of reads"
