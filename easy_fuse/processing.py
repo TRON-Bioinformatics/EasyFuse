@@ -43,16 +43,16 @@ class Processing(object):
     ):
         """Parameter initiation and work folder creation. Start of progress logging."""
         self.working_dir = os.path.join(os.path.abspath(working_dir), sample_id)
+        io_methods.create_folder(self.working_dir)
         self.log_path = os.path.join(self.working_dir, "easyfuse_processing.log")
         logzero.logfile(self.log_path)
-        io_methods.create_folder(self.working_dir)
 
         logger.info("Starting easyfuse!")
         self.sample_id = sample_id
         assert os.path.exists(fastq1), "Fastq file {} does not exist!".format(fastq1)
         assert os.path.exists(fastq2), "Fastq file {} does not exist!".format(fastq2)
-        self.fastq1 = fastq1
-        self.fastq2 = fastq2
+        self.fastq1 = os.path.abspath(fastq1)
+        self.fastq2 = os.path.abspath(fastq2)
 
         self.cfg = config
         copy(self.cfg.config_file, working_dir)
@@ -157,16 +157,14 @@ class Processing(object):
             "--input-reads-stats {input_reads_stats} "
             "--model_predictions "
             "--output-folder {output_folder} "
-            "--config-file {config} "
-            "--count-reads {count_reads}".format(
+            "--config-file {config}".format(
                 input_fusions=detect_fusion_file,
                 input_fusion_context_seqs=context_seq_file,
                 input_requant_cpm=requant_cpm_file,
                 input_requant_counts=requant_cnt_file,
                 input_reads_stats=input_reads_stats_file,
                 output_folder=fusion_summary_output_folder,
-                config=self.cfg.config_file,
-                count_reads=self.count_reads
+                config=self.cfg.config_file
             )
         )
         return cmd_summarize
@@ -585,7 +583,6 @@ class Processing(object):
             "starfusion",
             "infusion",
             "soapfuse",
-            "readcounts",
             "fusiongrep",
             "contextseq",
             "starindex",
@@ -789,7 +786,6 @@ class Processing(object):
             "qc": [],
             "readfilter": ["qc"],
             "star": ["readfilter"],
-            "readcounts": ["star"],
             "starfusion": ["star"],
             "mapsplice": ["readfilter"],
             "fusioncatcher": ["readfilter"],
@@ -803,7 +799,7 @@ class Processing(object):
                 "soapfuse",
             ],
             "contextseq": ["fusiongrep"],
-            "starindex": ["readcounts", "contextseq"],
+            "starindex": ["contextseq"],
             "readFilter2": ["contextseq"],
             "readFilter2b": ["readFilter2"],
             "staralignBest": ["starindex", "readFilter2b"],
@@ -882,19 +878,6 @@ def pipeline_command(args):
         jobname_suffix = "-p {}".format(args.jobname_suffix)
 
     config = EasyFuseConfiguration(args.config_file)
-
-    # records CLI call
-    # TODO: think of better ways of recording what the content of files (ie: config, FASTQs, etc.) was as files do
-    #  change and only paths are recorded here
-    script_call = "easy-fuse -i {} {} {} -o {}".format(
-        " ".join([os.path.abspath(x) for x in args.input_paths]),
-        "-c {}".format(config.config_file),
-        jobname_suffix,
-        os.path.abspath(args.output_folder),
-    )
-    with open(os.path.join(args.output_folder, "process.sh"), "w") as outf:
-        outf.write("#!/bin/sh\n\n{}".format(script_call))
-
     Processing(
         args.sample_id, args.fastq1, args.fastq2, args.output_folder, config, args.jobname_suffix
     ).run()
