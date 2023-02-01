@@ -192,7 +192,7 @@ def parse_mapsplice_results(infile):
 
 
 def parse_infusion_results(infile):
-    """Load and parse results from starchip"""
+    """Load and parse results from infusion"""
     fusion_map = {}
     with open(infile) as prediction:
         next(prediction)  # skip header line

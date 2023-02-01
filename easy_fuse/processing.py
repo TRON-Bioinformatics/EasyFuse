@@ -650,7 +650,7 @@ class Processing(object):
         for i, tool in enumerate(exe_tools, 0):
             if tool in tools:
                 # check dependencies of the pipeline.
-                # Besides tool dependencies (Starfusion/Starchip -> Star), read filtering is mandatory
+                # Besides tool dependencies (Starfusion -> Star), read filtering is mandatory
                 if tool == READ_FILTER_STEP and READ_FILTER_STEP not in tools:
                     logger.error(
                         """Error 99: Sample {} will be skipped due to missing read filtering.\n
@@ -666,9 +666,7 @@ class Processing(object):
                         )
                     )
                     return 0
-                elif (
-                    tool == "starfusion" or tool == "starchip"
-                ) and "star" not in tools:
+                elif tool == "starfusion" and "star" not in tools:
                     logger.error(
                         """Error 99: Running {0} for Sample {1} will be skipped due to a missing dependency.\n
                             {0} builds on Star and it is therefore mandatory to run this first.\n
