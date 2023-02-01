@@ -107,7 +107,7 @@ class Processing(object):
                 cmd_summarize,
                 cpu,
                 mem,
-                self.working_dir,
+                os.path.join(self.working_dir, "fusion_summary"),
                 dependency,
                 self.cfg["general"]["receiver"],
             )
