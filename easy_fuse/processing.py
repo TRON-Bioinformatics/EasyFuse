@@ -418,18 +418,45 @@ class Processing(object):
             )
         )
 
+        fusioncatcher_results_path_1 = os.path.join(
+            self.working_dir, "fusion", "fusioncatcher", "summary_candidate_fusions.txt"
+        )
+        fusioncatcher_results_path_2 = os.path.join(
+            self.working_dir, "fusion", "fusioncatcher", "final-list_candidate-fusion-genes.txt"
+        )
+        starfusion_results_path = os.path.join(
+            self.working_dir, "fusion", "starfusion", "star-fusion.fusion_predictions.tsv"
+        )
+        mapsplice_results_path = os.path.join(
+            self.working_dir, "fusion", "mapsplice", "fusions_well_annotated.txt"
+        )
+        infusion_results_path = os.path.join(
+            self.working_dir, "fusion", "infusion", "fusions.detailed.txt"
+        )
+        soapfuse_results_path = os.path.join(
+            self.working_dir, "fusion", "soapfuse", "final_fusion_genes", self.sample_id,
+            "{}.final.Fusion.specific.for.genes".format(self.sample_id)
+        )
         cmd_fusiondata = (
             "easy-fuse fusion-parser "
-            "--input {0} "
-            "--output {1} "
-            "--sample {2} "
-            "--fusionlist {3} "
-            "--logger {4}".format(
-                self.working_dir,
-                detected_fusions_path,
-                sample_id,
-                self.cfg["general"]["fusiontools"],
-                self.log_path,
+            "--input-fusioncatcher {input_fusion_catcher} "
+            "--input-fusioncatcher2 {input_fusion_catcher2} "
+            "--input-starfusion {input_star_fusion} "
+            "--input-mapsplice {input_mapsplice} "
+            "--input-infusion {input_infusion} "
+            "--input-soapfuse {input_soapfuse} "
+            "--output {output_folder} "
+            "--sample {sample} "
+            "--logger {logfile}".format(
+                output_folder=detected_fusions_path,
+                sample=sample_id,
+                logfile=self.log_path,
+                input_fusion_catcher=fusioncatcher_results_path_1,
+                input_fusion_catcher2=fusioncatcher_results_path_2,
+                input_star_fusion=starfusion_results_path,
+                input_mapsplice=mapsplice_results_path,
+                input_infusion=infusion_results_path,
+                input_soapfuse=soapfuse_results_path
             )
         )
 
