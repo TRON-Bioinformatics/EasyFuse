@@ -19,7 +19,7 @@ A log file is generated after successful completion which contains information a
 @author: Tron (PASO), BNT (URLA)
 @version: 20181126
 """
-
+import os
 import sys
 import time
 
@@ -27,13 +27,15 @@ import logzero
 import pysam  # pysam is not available for windows (where I run pylint) => pylint: disable=E0401
 from logzero import logger
 
+from easy_fuse.misc.count_input_reads import get_input_read_count_from_star
+
 
 # pylint: disable=line-too-long
 #         yes they are partially, but I do not consider this to be relevant here
 class ReadSelection(object):
     """Select alignments belonging to putative fusions from an s/bam file"""
 
-    def __init__(self, bam, output, context_file):
+    def __init__(self, bam, output, context_file, input_reads_stats):
         """Parameter initialization"""
         self.bam_file = bam
         self.in_bam = pysam.AlignmentFile(bam, "rb")
@@ -52,6 +54,11 @@ class ReadSelection(object):
         self.counter = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         self.last_time = 0
         logzero.logfile("{}.fusionReadFilterLog".format(output))
+
+        # loads read counts
+        assert os.path.exists(input_reads_stats) and os.path.isfile(input_reads_stats), \
+            "Read stats file not found: {}".format(input_reads_stats)
+        self.input_read_count = get_input_read_count_from_star(input_reads_stats)
 
         self.coord_dict = {}
         self.get_ranges(context_file)
@@ -228,7 +235,7 @@ class ReadSelection(object):
         )
 
         qc1 = False
-        if self.get_input_read_count_from_star() == self.counter[1]:
+        if self.input_read_count == self.counter[1]:
             qc1 = True
         qc2 = False
         if (self.counter[4] == self.counter[5]) and (
@@ -293,14 +300,6 @@ class ReadSelection(object):
         logger.info("Filter QC1 (fq reads = bam alignments):\t{}".format(qc1))
         logger.info("Filter QC2 (QC'd alignments are chimeric):\t{}".format(qc2))
 
-    def get_input_read_count_from_star(self):
-        """Parses a star output log file to get input read counts from the fastq origin"""
-        log_file = "{}Log.final.out".format(self.bam_file.rstrip("Aligned.out.bam"))
-        with open(log_file, "r") as star_log:
-            for line in star_log:
-                if line.split("|")[0].strip() == "Number of input reads":
-                    return int(line.split("|")[1].strip())
-        return -1
 
 
 def add_read_selection_args(parser):
@@ -309,11 +308,17 @@ def add_read_selection_args(parser):
     parser.add_argument(
         "-i2", "--input2", dest="input2", help="Specify context_seq file file"
     )
+    parser.add_argument(
+        "--input-reads-stats",
+        dest="input_reads_stats",
+        required=True,
+        help="Path to input file with reads stats",
+    )
     parser.add_argument("-o", "--output", dest="output", help="Specify output prefix")
     parser.set_defaults(func=read_selection_command)
 
 
 def read_selection_command(args):
     """Run read selection"""
-    stats = ReadSelection(args.input, args.output, args.input2)
+    stats = ReadSelection(args.input, args.output, args.input2, args.input_reads_stats)
     stats.run()

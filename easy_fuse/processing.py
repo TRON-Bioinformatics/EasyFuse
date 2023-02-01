@@ -538,8 +538,11 @@ class Processing(object):
             "easy-fuse requantify-filter "
             "--input {0}_Aligned.out.bam "
             "--input2 {1}.debug "
+            "--input-reads-stats {2} "
             "--output {0}_Aligned.out.filtered2.bam".format(
-                os.path.join(filtered_reads_path, sample_id), context_seq_file
+                os.path.join(filtered_reads_path, sample_id),
+                context_seq_file,
+                input_reads_stats_file
             )
         )
 
