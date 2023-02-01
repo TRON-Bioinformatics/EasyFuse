@@ -1,0 +1,1 @@
+#id	ref1	break_pos1	region1	ref2	break_pos2	region2	num_split	num_paired	num_split_with_pair	num_split_rescued	num_uniq_starts	pap_rate	mean_split_pos	split_pos_std	homogeneity	coverage_context	ssp	fusion_class	break_on_exon	feature_1	gene_1	transcript_1	gene_1_strand	biotype_1	expression_1	feature_2	gene_2	transcript_2	gene_2_strand	biotype_2	expression_2	splice_motif	filters
