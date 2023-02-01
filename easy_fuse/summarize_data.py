@@ -125,14 +125,15 @@ class FusionSummary(object):
         joined_table_1b = self.data.groupby(
             by=cols_to_aggregate_on, sort=False, as_index=False
         )
+        ranked_fusions_file = os.path.join(self.output_folder, "ranked_fusions_1.csv")
         joined_table_1b.agg(self.custom_data_aggregation).to_csv(
-            "{}_fusRank_1.csv".format(self.output_folder), sep=";", index=False
+            ranked_fusions_file, sep=";", index=False
         )
 
-        joined_table_1 = pd.read_csv("{}_fusRank_1.csv".format(self.output_folder), sep=";")
+        joined_table_1 = pd.read_csv(ranked_fusions_file, sep=";")
 
         for table in ["1", "2"]:
-            summary_file = "{}_fusRank_{}.csv".format(self.output_folder, table)
+            summary_file = os.path.join(self.output_folder, "ranked_fusions_{}.csv".format(table))
             if model_predictions and os.path.exists(summary_file) and os.path.isfile(summary_file):
                 model_path = pkg_resources.resource_filename(
                     easy_fuse.__name__,
@@ -141,6 +142,7 @@ class FusionSummary(object):
                 model_threshold = self.cfg["general"]["model_pred_threshold"]
 
                 # append prediction scores based on pre-calculated model
+                predicted_fusions_file = os.path.join(self.output_folder, "predicted_fusions.csv")
                 cmd_model = "{0} --fusion_summary {1} --model_file {2} --prediction_threshold {3} --output {4}".format(
                     pkg_resources.resource_filename(
                         easy_fuse.__name__, "resources/R/R_model_prediction.R"
@@ -148,7 +150,7 @@ class FusionSummary(object):
                     summary_file,
                     model_path,
                     model_threshold,
-                    "{}.pred.csv".format(summary_file[:-4]),
+                    predicted_fusions_file,
                 )
 
                 queueing.submit(
@@ -158,7 +160,7 @@ class FusionSummary(object):
                 # urla - note: there is probably a more elegant way using getattr/setattr but I'm not at all familiar with its pros/cons
                 if table == "1":
                     joined_table_1 = pd.read_csv(
-                        "{}_fusRank_1.pred.csv".format(self.output_folder), sep=";"
+                        predicted_fusions_file, sep=";"
                     )
 
         joined_table_1.set_index(keys=cols_to_aggregate_on, drop=False, inplace=True)
