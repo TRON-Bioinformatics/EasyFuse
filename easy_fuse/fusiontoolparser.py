@@ -32,13 +32,13 @@ class FusionParser(object):
         self.tools = fusiontool_list.split(",")
         logzero.logfile(sample_log)
 
-    def concatenate_fusion_results(self, input_path, output_path):
+    def run(self):
         """Parse output of fusion tools and save them into output file"""
 
         count = 0
 
         logger.debug("Generating Detected Fusions table")
-        detected_fusions_file = os.path.join(output_path, "Detected_Fusions.csv")
+        detected_fusions_file = os.path.join(self.output_path, "Detected_Fusions.csv")
 
         with open(detected_fusions_file, "w") as fus_file:
             # write header
@@ -47,7 +47,7 @@ class FusionParser(object):
             )
 
             for tool in self.tools:
-                fusion_map = self.get_tool_results(input_path, output_path, tool)
+                fusion_map = self.get_tool_results(tool)
                 for bpid in fusion_map:
                     count += 1
                     fus_file.write(
@@ -61,14 +61,14 @@ class FusionParser(object):
             )
         )
 
-    def get_tool_results(self, input_path, output_path, tool):
+    def get_tool_results(self, tool):
         """Return results as dict for a fusion tool"""
 
         logger.info("Parsing results for {}".format(tool))
 
-        fusion_map = parse_results(input_path, tool)
+        fusion_map = parse_results(self.input_path, tool)
 
-        tool_res_file = os.path.join(output_path, tool.lower() + ".csv")
+        tool_res_file = os.path.join(self.output_path, tool.lower() + ".csv")
         with open(tool_res_file, "w") as tool_outf:
             tool_outf.write(
                 "bpid;fusion_gene;breakpoint1;breakpoint2;junc_reads;span_reads\n"
@@ -77,23 +77,18 @@ class FusionParser(object):
                 tool_outf.write("{};{}\n".format(key, ";".join(fusion_map[key])))
         return fusion_map
 
-    def run(self):
-        """This method will parse the results for all individual tools and saves them into a concatenated file"""
-
-        self.concatenate_fusion_results(self.input_path, self.output_path)
-
 
 def add_fusion_parse_args(parser):
     parser.add_argument(
         "-i",
-        "--input_path",
+        "--input",
         dest="input_path",
         help="Specify the folder of the sample.",
         required=True,
     )
     parser.add_argument(
         "-o",
-        "--output_path",
+        "--output",
         dest="output_path",
         help="Specify the fusion output folder of the sample.",
         required=True,

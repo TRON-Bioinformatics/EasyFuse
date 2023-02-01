@@ -420,11 +420,11 @@ class Processing(object):
 
         cmd_fusiondata = (
             "easy-fuse fusion-parser "
-            "-i {0} "
-            "-o {1} "
-            "-s {2} "
-            "-f {3} "
-            "-l {4}".format(
+            "--input {0} "
+            "--output {1} "
+            "--sample {2} "
+            "--fusionlist {3} "
+            "--logger {4}".format(
                 self.working_dir,
                 detected_fusions_path,
                 sample_id,

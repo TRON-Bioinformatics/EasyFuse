@@ -46,49 +46,47 @@ chr_list = (
 def parse_results(output_path, tool):
     """Load and parse results from tool"""
 
-    fusioncatcher_results_path_1 = os.path.join(
-        output_path, "fusion", "fusioncatcher", "summary_candidate_fusions.txt"
-    )
-    fusioncatcher_results_path_2 = os.path.join(
-        output_path, "fusion", "fusioncatcher", "final-list_candidate-fusion-genes.txt"
-    )
-    starfusion_results_path = os.path.join(
-        output_path, "fusion", "starfusion", "star-fusion.fusion_predictions.tsv"
-    )
-    mapsplice_results_path = os.path.join(
-        output_path, "fusion", "mapsplice", "fusions_well_annotated.txt"
-    )
-    infusion_results_path = os.path.join(
-        output_path, "fusion", "infusion", "fusions.detailed.txt"
-    )
-    soapfuse_results_path = ""
-    folder_to_scan = os.path.join(
-        output_path, "fusion", "soapfuse", "final_fusion_genes"
-    )
-    for filename in os.listdir(folder_to_scan):
-        folder_path = os.path.join(folder_to_scan, filename)
-        if os.path.isdir(folder_path):
-            for res in os.listdir(folder_path):
-                if res.endswith(".final.Fusion.specific.for.genes"):
-                    soapfuse_results_path = os.path.join(folder_path, res)
-
-    starchip_results_path = os.path.join(
-        output_path, "fusion", "starchip", "starchip.summary"
-    )
-
     if tool == "fusioncatcher":
+        fusioncatcher_results_path_1 = os.path.join(
+            output_path, "fusion", "fusioncatcher", "summary_candidate_fusions.txt"
+        )
+        fusioncatcher_results_path_2 = os.path.join(
+            output_path, "fusion", "fusioncatcher", "final-list_candidate-fusion-genes.txt"
+        )
         return parse_fusioncatcher_results(
             fusioncatcher_results_path_1, fusioncatcher_results_path_2
         )
     elif tool == "starfusion":
+        starfusion_results_path = os.path.join(
+            output_path, "fusion", "starfusion", "star-fusion.fusion_predictions.tsv"
+        )
         return parse_starfusion_results(starfusion_results_path)
     elif tool == "mapsplice":
+        mapsplice_results_path = os.path.join(
+            output_path, "fusion", "mapsplice", "fusions_well_annotated.txt"
+        )
         return parse_mapsplice_results(mapsplice_results_path)
     elif tool == "starchip":
+        starchip_results_path = os.path.join(
+            output_path, "fusion", "starchip", "starchip.summary"
+        )
         return parse_starchip_results(starchip_results_path)
     elif tool == "infusion":
+        infusion_results_path = os.path.join(
+            output_path, "fusion", "infusion", "fusions.detailed.txt"
+        )
         return parse_infusion_results(infusion_results_path)
     elif tool == "soapfuse":
+        soapfuse_results_path = ""
+        folder_to_scan = os.path.join(
+            output_path, "fusion", "soapfuse", "final_fusion_genes"
+        )
+        for filename in os.listdir(folder_to_scan):
+            folder_path = os.path.join(folder_to_scan, filename)
+            if os.path.isdir(folder_path):
+                for res in os.listdir(folder_path):
+                    if res.endswith(".final.Fusion.specific.for.genes"):
+                        soapfuse_results_path = os.path.join(folder_path, res)
         return parse_soapfuse_results(soapfuse_results_path)
     return None
 
