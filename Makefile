@@ -12,3 +12,4 @@ integration_tests:
 	bash integration_tests/02_read_filter/run.sh
 	bash integration_tests/03_fusion_parser/run.sh
 	bash integration_tests/06_requantify/run.sh
+	bash integration_tests/07_requantify_filter/run.sh
