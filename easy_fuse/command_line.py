@@ -1,6 +1,5 @@
 import argparse
 
-from easy_fuse.misc.count_input_reads import add_count_reads_args
 from easy_fuse.misc.qc_parser import add_qc_parser_args
 from easy_fuse.read_selection import add_read_selection_args
 from easy_fuse.requantify import add_requantify_args
@@ -75,13 +74,6 @@ def easy_fuse_cli():
         epilog=epilog,
     )
     add_annotation_parser_args(annotation_parser)
-
-    count_reads_parser = subparsers.add_parser(
-        "count-reads",
-        description="Generates stats for STAR index generation",
-        epilog=epilog,
-    )
-    add_count_reads_args(count_reads_parser)
 
     star_index_parser = subparsers.add_parser(
         "star-index",

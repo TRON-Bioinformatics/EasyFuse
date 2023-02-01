@@ -14,6 +14,7 @@ from logzero import logger
 import pandas as pd
 from easy_fuse.misc import queueing
 from easy_fuse.misc.config import EasyFuseConfiguration
+from easy_fuse.misc.count_input_reads import get_input_read_count_from_star
 
 
 class FusionSummary(object):
@@ -49,9 +50,12 @@ class FusionSummary(object):
         self.output_folder = output_folder
         self.cfg = config
 
-        # loads data
-        with open(input_reads_stats, "r") as rfile:
-            self.input_read_count = int(rfile.readline())
+        # loads read counts
+        assert os.path.exists(input_reads_stats) and os.path.isfile(input_reads_stats), \
+            "Read stats file not found: {}".format(input_reads_stats)
+        self.input_read_count = get_input_read_count_from_star(input_reads_stats)
+
+        # loads more data
         fusion_tools = self.cfg["general"]["fusiontools"].split(",")
         requant_mode = self.cfg["general"]["requant_mode"]
         self.data = self.load_data(fusion_tools=fusion_tools, requant_mode=requant_mode)

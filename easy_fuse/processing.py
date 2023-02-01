@@ -141,10 +141,10 @@ class Processing(object):
         )
         input_reads_stats_file = os.path.join(
             self.working_dir,
-            "fetchdata",
-            "classification",
-            "Star_org_input_reads.txt",
+            "filtered_reads",
+            "{}_Log.final.out".format(self.sample_id)
         )
+
         # summarize data output folder
         fusion_summary_output_folder = os.path.join(self.working_dir, "fusion_summary")
         io_methods.create_folder(fusion_summary_output_folder)
@@ -473,10 +473,8 @@ class Processing(object):
         )
 
         input_reads_stats_file = os.path.join(
-            self.working_dir,
-            "fetchdata",
-            "classification",
-            "Star_org_input_reads.txt",
+            filtered_reads_path,
+            "{}_Log.final.out".format(sample_id)
         )
         cmd_requantify_fltr = (
             "easy-fuse requantify "
@@ -569,7 +567,7 @@ class Processing(object):
             "easy-fuse requantify "
             "-i {0}best_Aligned.sortedByCoord.out.bam "
             "-o {1}_best.tdt "
-            "-d 10"
+            "-d 10 "
             "--input-reads-stats {2}".format(star_align_file, classification_file, input_reads_stats_file)
         )
 
