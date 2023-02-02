@@ -28,7 +28,8 @@ class FusionSummary(object):
             input_requant_counts,
             input_reads_stats,
             output_folder,
-            config: EasyFuseConfiguration):
+            requant_mode: str,
+            model_pred_threshold: float):
 
         assert os.path.exists(input_fusions) and os.path.isfile(input_fusions), \
             "Fusion file not found: {}".format(input_fusions)
@@ -48,7 +49,7 @@ class FusionSummary(object):
         assert os.path.exists(output_folder) and os.path.isdir(output_folder), \
             "Output folder not found: {}".format(output_folder)
         self.output_folder = output_folder
-        self.cfg = config
+        self.model_pred_threshold = model_pred_threshold
 
         # loads read counts
         assert os.path.exists(input_reads_stats) and os.path.isfile(input_reads_stats), \
@@ -56,14 +57,13 @@ class FusionSummary(object):
         self.input_read_count = get_input_read_count_from_star(input_reads_stats)
 
         # loads more data
-        fusion_tools = self.cfg["general"]["fusiontools"].split(",")
-        requant_mode = self.cfg["general"]["requant_mode"]
-        self.data = self.load_data(fusion_tools=fusion_tools, requant_mode=requant_mode)
+        self.data = self.load_data(requant_mode=requant_mode)
 
         pd.options.mode.chained_assignment = None
+        # TODO: we are not using this blacklist, reconsider if we need this
         self.blacklist = []
 
-    def load_data(self, fusion_tools, requant_mode):
+    def load_data(self, requant_mode):
         """Join the three data tables context_seq, detected_fusions and requantification"""
         # define path' to the context seq, detected fusion and re-quantification files
 
@@ -73,16 +73,16 @@ class FusionSummary(object):
                 context_data["FTID"] + "_" + context_data["context_sequence_id"]
         )
 
+        # read the original append CPM values from individual fusion prediction tools to context data
+        detect_data = pd.read_csv(self.input_fusions, sep=";")
         logger.info(
             "Appending normalized fusion counts from {} to the data table.".format(
-                fusion_tools
+                ",".join(list(detect_data['Tool'].unique()))
             )
         )
 
-        # read the original append CPM values from individual fusion prediction tools to context data
-        detect_data = pd.read_csv(self.input_fusions, sep=";")
         context_data = self.append_tool_cnts_to_context_file(
-            context_data, detect_data, fusion_tools
+            context_data, detect_data
         )
 
         logger.info(
@@ -114,8 +114,6 @@ class FusionSummary(object):
         # 7:exonError; 8:unfiltered; 9:allFilter; 10:allButPredFilter
 
         start_time = time.time()
-        blacklist_file = self.cfg.get("general", "blacklist", fallback=None)
-        self.load_blacklist(blacklist_file)
 
         # check whether output already exists
         cols_to_aggregate_on = ["BPID", "context_sequence_id", "FTID"]
@@ -125,7 +123,7 @@ class FusionSummary(object):
         joined_table_1b = self.data.groupby(
             by=cols_to_aggregate_on, sort=False, as_index=False
         )
-        ranked_fusions_file = os.path.join(self.output_folder, "ranked_fusions_1.csv")
+        ranked_fusions_file = os.path.join(self.output_folder, "fusions_1.csv")
         joined_table_1b.agg(self.custom_data_aggregation).to_csv(
             ranked_fusions_file, sep=";", index=False
         )
@@ -133,23 +131,22 @@ class FusionSummary(object):
         joined_table_1 = pd.read_csv(ranked_fusions_file, sep=";")
 
         for table in ["1", "2"]:
-            summary_file = os.path.join(self.output_folder, "ranked_fusions_{}.csv".format(table))
+            summary_file = os.path.join(self.output_folder, "fusions_{}.csv".format(table))
             if model_predictions and os.path.exists(summary_file) and os.path.isfile(summary_file):
                 model_path = pkg_resources.resource_filename(
                     easy_fuse.__name__,
                     "resources/model/Fusion_modeling_FFPE_train_v35.random_forest.model_full_data.EF_full.rds",
                 )
-                model_threshold = self.cfg["general"]["model_pred_threshold"]
 
                 # append prediction scores based on pre-calculated model
-                predicted_fusions_file = os.path.join(self.output_folder, "predicted_fusions.csv")
+                predicted_fusions_file = os.path.join(self.output_folder, "fusions.pass.csv")
                 cmd_model = "{0} --fusion_summary {1} --model_file {2} --prediction_threshold {3} --output {4}".format(
                     pkg_resources.resource_filename(
                         easy_fuse.__name__, "resources/R/R_model_prediction.R"
                     ),
                     summary_file,
                     model_path,
-                    model_threshold,
+                    self.model_pred_threshold,
                     predicted_fusions_file,
                 )
 
@@ -353,11 +350,11 @@ class FusionSummary(object):
         return map(len, fusion_gene_set_list), fusion_gene_filter_wo_pred
 
     def append_tool_cnts_to_context_file(
-        self, context_data, detected_fusions, fusion_tool_list
+        self, context_data, detected_fusions
     ):
         """Add data to context seq table"""
         # Init new columns
-        for tool in fusion_tool_list:
+        for tool in detected_fusions['Tool'].unique():
             context_data["{}_detected".format(tool.lower())] = 0
             context_data["{}_junc".format(tool.lower())] = 0
             context_data["{}_span".format(tool.lower())] = 0
@@ -371,7 +368,7 @@ class FusionSummary(object):
                 detected_fusions["BPID"] == context_data["BPID"][i]
             ]
             # check for each tool, whether a prediction was made by it and update the respective columns
-            for tool in fusion_tool_list:
+            for tool in detected_fusions['Tool'].unique():
                 # pre-set values to 0 or NA indicating no prediction with this tool
                 # line wise initialization shouldn't be required as it was initialized with this values in the beginning
                 for j in tmp_slice.index:
@@ -390,7 +387,7 @@ class FusionSummary(object):
                         context_data.loc[i, "tool_count"] += 1
             context_data.loc[i, "tool_frac"] = float(
                 context_data.loc[i, "tool_count"]
-            ) / float(len(fusion_tool_list))
+            ) / float(len(list(detected_fusions['Tool'].unique())))
         return context_data
 
     def load_blacklist(self, blacklist_file):
@@ -453,13 +450,6 @@ def add_summarize_data_args(parser):
         help="Path to input file with reads stats",
     )
     parser.add_argument(
-        "-c",
-        "--config-file",
-        dest="config_file",
-        required=True,
-        help="Specify alternative config file to use for your analysis",
-    )
-    parser.add_argument(
         "--model_predictions",
         default=False,
         action="store_true",
@@ -471,11 +461,20 @@ def add_summarize_data_args(parser):
         dest="output_folder",
         help="Specify the output folder for the summary files."
     )
+    parser.add_argument(
+        "--requant-mode",
+        dest="requant_mode",
+        help="Requantification mode (one of 'best', 'org' or 'fltr')."
+    )
+    parser.add_argument(
+        "--model-pred-threshold",
+        dest="model_pred_threshold",
+        help="Fusion prediction model threshold."
+    )
     parser.set_defaults(func=summarize_data_command)
 
 
 def summarize_data_command(args):
-    config = EasyFuseConfiguration(args.config_file)
     summary = FusionSummary(
         input_fusions=args.input_fusions,
         input_fusion_context_seqs=args.input_fusion_context_seqs,
@@ -483,5 +482,6 @@ def summarize_data_command(args):
         input_requant_counts=args.input_requant_counts,
         input_reads_stats=args.input_reads_stats,
         output_folder=args.output_folder,
-        config=config)
+        requant_mode=args.requant_mode,
+        model_pred_threshold=float(args.model_pred_threshold))
     summary.run(args.model_predictions)

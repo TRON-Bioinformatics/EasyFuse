@@ -157,14 +157,16 @@ class Processing(object):
             "--input-reads-stats {input_reads_stats} "
             "--model_predictions "
             "--output-folder {output_folder} "
-            "--config-file {config}".format(
+            "--requant-mode {requant_mode} "
+            "--model-pred-threshold {model_pred_threshold}".format(
                 input_fusions=detect_fusion_file,
                 input_fusion_context_seqs=context_seq_file,
                 input_requant_cpm=requant_cpm_file,
                 input_requant_counts=requant_cnt_file,
                 input_reads_stats=input_reads_stats_file,
                 output_folder=fusion_summary_output_folder,
-                config=self.cfg.config_file
+                requant_mode=requant_mode,
+                model_pred_threshold=self.cfg["general"]["model_pred_threshold"]
             )
         )
         return cmd_summarize
