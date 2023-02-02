@@ -2,7 +2,11 @@
 
 # load libraries ---------------------------------------------------------------
 library(optparse, quietly = TRUE)
-library(tidyverse, quietly = TRUE)
+library(dplyr, quietly = TRUE)
+library(readr, quietly = TRUE)
+library(tidyr, quietly = TRUE)
+library(tidyselect, quietly = TRUE)
+library(stringr, quietly = TRUE)
 library(randomForest, quietly = TRUE)
 
 # Parse commandline arguments --------------------------------------------------

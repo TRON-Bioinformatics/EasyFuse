@@ -19,7 +19,11 @@ jobs:
         cache-version: 2
         packages: |
           any::optparse
-          any::tidyverse
+          any::dplyr
+          any::tidyr
+          any::tidyselect
+          any::readr
+          any::stringr
           any::XML
           any::randomForest
     - name: Install dependencies
