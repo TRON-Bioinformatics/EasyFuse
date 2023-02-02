@@ -23,4 +23,5 @@ easy-fuse summarize-data \
   --model-pred-threshold 0.5
 
 test -s $test_folder/observed/fusions.pass.csv || { echo "Missing predicted fusions output file!"; exit 1; }
-assert_eq `wc -l $test_folder/observed/fusions.pass.csv | cut -d " " -f 1` 170 "Wrong number of fusions"
+assert_eq `wc -l $test_folder/observed/fusions.pass.csv` 170 "Wrong number of fusions"
+#  | cut -d " " -f 1
