@@ -1,4 +1,3 @@
-import os
 import unittest
 
 import easy_fuse.tests

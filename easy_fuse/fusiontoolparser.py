@@ -10,7 +10,6 @@ output folders and writes the "Detected_Fusions.csv"
 @version: 20181126
 """
 import os
-from argparse import ArgumentParser
 from typing import Dict
 
 import logzero

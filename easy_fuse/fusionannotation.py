@@ -14,7 +14,6 @@ Annotate predicted fusion genes. This involves:
 @version: 221006
 """
 
-from argparse import ArgumentParser
 
 import gffutils
 import xxhash
