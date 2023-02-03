@@ -23,6 +23,10 @@ Run:
 poetry run python -m unittest discover tests
 ```
 
+## Run the integration tests
+
+See the [integration tests README](integration_tests/README.md).
+
 ## Build, distribute and install
 
 To build the package into a wheel file run: `poetry build`

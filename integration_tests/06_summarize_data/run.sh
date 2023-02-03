@@ -24,5 +24,5 @@ easy-fuse summarize-data \
 
 test -s $test_folder/observed/fusions.pass.csv || { echo "Missing predicted fusions output file!"; exit 1; }
 cat $test_folder/observed/fusions.pass.csv
-assert_eq `wc -l $test_folder/observed/fusions.pass.csv | cut -d " " -f 1` 1 "Wrong number of fusions"
+assert_eq `wc -l $test_folder/observed/fusions.pass.csv | cut -d " " -f 1` 170 "Wrong number of fusions"
 #
