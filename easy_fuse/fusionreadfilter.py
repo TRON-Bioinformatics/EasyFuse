@@ -241,7 +241,7 @@ class FusionReadFilter(object):
 
 
 def add_read_filter_args(parser):
-    parser.add_argument("-i", "--input", dest="input", help="Specify input BAM file")
+    parser.add_argument("-i", "--input", dest="input", help="Specify input BAM file. Must be sorted by query name")
     parser.add_argument("-o", "--output", dest="output", help="Specify output prefix")
     parser.set_defaults(func=read_filter_command)
 

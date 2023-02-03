@@ -304,7 +304,7 @@ class ReadSelection(object):
 
 def add_read_selection_args(parser):
     """Add read selection arguments to parser"""
-    parser.add_argument("-i", "--input", dest="input", help="Specify input BAM file")
+    parser.add_argument("-i", "--input", dest="input", help="Specify input BAM file. Must be indexed and sorted by coordinate.")
     parser.add_argument(
         "-i2", "--input2", dest="input2", help="Specify context_seq file file"
     )
