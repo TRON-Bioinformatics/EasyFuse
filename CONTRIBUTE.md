@@ -48,3 +48,6 @@ Then just run `black easy_fuse` to reformat the code.
 Vulture enables inspecting the code base for dead code. Install vulture with `pip install vulture`. 
 Then run as follows: `vulture easy_fuse`. Do not trust a vulture blindly.
 
+Autoflake is a tool to remove unused imports. Install it with `pip install autoflake`. 
+Then run as follows: `autoflake --in-place --remove-all-unused-imports --remove-unused-variables -r easy_fuse`
+
