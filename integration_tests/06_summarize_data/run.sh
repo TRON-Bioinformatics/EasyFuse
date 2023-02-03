@@ -20,7 +20,8 @@ easy-fuse summarize-data \
   --model_predictions \
   --output-folder $test_folder/observed \
   --requant-mode best \
-  --model-pred-threshold 0.5
+  --model-pred-threshold 0.5 \
+  --fusion-tools fusioncatcher,starfusion,infusion,mapsplice,soapfuse
 
 test -s $test_folder/observed/fusions.pass.csv || { echo "Missing predicted fusions output file!"; exit 1; }
 cat $test_folder/observed/fusions.pass.csv

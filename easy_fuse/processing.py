@@ -158,7 +158,8 @@ class Processing(object):
             "--model_predictions "
             "--output-folder {output_folder} "
             "--requant-mode {requant_mode} "
-            "--model-pred-threshold {model_pred_threshold}".format(
+            "--model-pred-threshold {model_pred_threshold} "
+            "--fusion-tools {fusion_tools}".format(
                 input_fusions=detect_fusion_file,
                 input_fusion_context_seqs=context_seq_file,
                 input_requant_cpm=requant_cpm_file,
@@ -166,7 +167,8 @@ class Processing(object):
                 input_reads_stats=input_reads_stats_file,
                 output_folder=fusion_summary_output_folder,
                 requant_mode=requant_mode,
-                model_pred_threshold=self.cfg["general"]["model_pred_threshold"]
+                model_pred_threshold=self.cfg["general"]["model_pred_threshold"],
+                fusion_tools=self.cfg["general"]["fusiontools"],
             )
         )
         return cmd_summarize

@@ -29,7 +29,9 @@ class FusionSummary(object):
             input_reads_stats,
             output_folder,
             requant_mode: str,
-            model_pred_threshold: float):
+            model_pred_threshold: float,
+            fusion_tools: list
+    ):
 
         assert os.path.exists(input_fusions) and os.path.isfile(input_fusions), \
             "Fusion file not found: {}".format(input_fusions)
@@ -50,6 +52,7 @@ class FusionSummary(object):
             "Output folder not found: {}".format(output_folder)
         self.output_folder = output_folder
         self.model_pred_threshold = model_pred_threshold
+        self.fusion_tools = fusion_tools
 
         # loads read counts
         assert os.path.exists(input_reads_stats) and os.path.isfile(input_reads_stats), \
@@ -77,7 +80,7 @@ class FusionSummary(object):
         detect_data = pd.read_csv(self.input_fusions, sep=";")
         logger.info(
             "Appending normalized fusion counts from {} to the data table.".format(
-                ",".join(list(detect_data['Tool'].unique()))
+                ",".join(self.fusion_tools)
             )
         )
 
@@ -354,7 +357,7 @@ class FusionSummary(object):
     ):
         """Add data to context seq table"""
         # Init new columns
-        for tool in detected_fusions['Tool'].unique():
+        for tool in self.fusion_tools:
             context_data["{}_detected".format(tool.lower())] = 0
             context_data["{}_junc".format(tool.lower())] = 0
             context_data["{}_span".format(tool.lower())] = 0
@@ -368,7 +371,7 @@ class FusionSummary(object):
                 detected_fusions["BPID"] == context_data["BPID"][i]
             ]
             # check for each tool, whether a prediction was made by it and update the respective columns
-            for tool in detected_fusions['Tool'].unique():
+            for tool in self.fusion_tools:
                 # pre-set values to 0 or NA indicating no prediction with this tool
                 # line wise initialization shouldn't be required as it was initialized with this values in the beginning
                 for j in tmp_slice.index:
@@ -387,7 +390,7 @@ class FusionSummary(object):
                         context_data.loc[i, "tool_count"] += 1
             context_data.loc[i, "tool_frac"] = float(
                 context_data.loc[i, "tool_count"]
-            ) / float(len(list(detected_fusions['Tool'].unique())))
+            ) / float(len(self.fusion_tools))
         return context_data
 
     def load_blacklist(self, blacklist_file):
@@ -471,6 +474,11 @@ def add_summarize_data_args(parser):
         dest="model_pred_threshold",
         help="Fusion prediction model threshold."
     )
+    parser.add_argument(
+        "--fusion-tools",
+        dest="fusion_tools",
+        help="Fusion tools."
+    )
     parser.set_defaults(func=summarize_data_command)
 
 
@@ -483,5 +491,7 @@ def summarize_data_command(args):
         input_reads_stats=args.input_reads_stats,
         output_folder=args.output_folder,
         requant_mode=args.requant_mode,
-        model_pred_threshold=float(args.model_pred_threshold))
+        model_pred_threshold=float(args.model_pred_threshold),
+        fusion_tools=args.fusion_tools.split(","),
+    )
     summary.run(args.model_predictions)
