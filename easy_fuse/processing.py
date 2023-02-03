@@ -15,7 +15,6 @@ import time
 from shutil import copy
 
 import logzero
-from easy_fuse.misc.count_input_reads import get_input_read_count
 from logzero import logger
 
 import easy_fuse
@@ -903,9 +902,8 @@ def add_pipeline_parser_args(pipeline_parser):
 
 
 def pipeline_command(args):
-    jobname_suffix = ""
     if args.jobname_suffix:
-        jobname_suffix = "-p {}".format(args.jobname_suffix)
+        "-p {}".format(args.jobname_suffix)
 
     config = EasyFuseConfiguration(args.config_file)
     Processing(

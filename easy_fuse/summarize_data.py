@@ -13,7 +13,6 @@ import pkg_resources
 from logzero import logger
 import pandas as pd
 from easy_fuse.misc import queueing
-from easy_fuse.misc.config import EasyFuseConfiguration
 from easy_fuse.misc.count_input_reads import get_input_read_count_from_star
 
 
