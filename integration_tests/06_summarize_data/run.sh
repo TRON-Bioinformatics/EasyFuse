@@ -2,7 +2,7 @@
 
 
 source integration_tests/assert.sh
-test_folder=integration_tests/08_summarize_data
+test_folder=integration_tests/06_summarize_data
 input_fusions=$test_folder/input.fusions.csv
 input_fusions_contexts=$test_folder/input.fusions_context_sequences.csv
 input_requant_cpm=$test_folder/input.requant_cpm.tdt

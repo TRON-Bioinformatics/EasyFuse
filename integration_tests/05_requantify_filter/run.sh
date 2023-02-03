@@ -2,7 +2,7 @@
 
 
 source integration_tests/assert.sh
-test_folder=integration_tests/07_requantify_filter
+test_folder=integration_tests/05_requantify_filter
 input=$test_folder/input.SRR1659960_05pc_Aligned.out.downsampled.bam
 input2=$test_folder/input.context_seqs.csv.debug
 output=$test_folder/observed.bam
