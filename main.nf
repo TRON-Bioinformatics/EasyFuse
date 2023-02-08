@@ -38,6 +38,6 @@ workflow {
     // QC
     FASTQC(input_files)
     EASYFUSE_QC_PARSER(FASTQC.out.qc_data)
-    EASY_FUSE_SKEWER(input_files.group(EASYFUSE_QC_PARSER.out.qc_table))
+    EASY_FUSE_SKEWER(input_files.join(EASYFUSE_QC_PARSER.out.qc_table))
 
 }

@@ -1,0 +1,1 @@
+sample_name	/home/priesgof/src/easyfuse-pipeline/test/data/SRR1659960_05pc_R1.fastq.gz	/home/priesgof/src/easyfuse-pipeline/test/data/SRR1659960_05pc_R2.fastq.gz
