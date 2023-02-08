@@ -64,7 +64,7 @@ process STAR_FUSION {
       tuple val(name), path(chimeric_reads)
 
     output:
-      tuple val("${name}"), path("final-list_candidate-fusion-genes.txt"), emit: fusions
+      tuple val("${name}"), path("star-fusion.fusion_predictions.tsv"), emit: fusions
 
     script:
     """
