@@ -23,8 +23,8 @@ process MAPSPLICE {
     mapsplice.py \
     --chromosome-dir ${params.chromosome_dir} \
     -x ${params.bowtie_index} \
-    -1 <(gunzip -c -f ${fastq1}) \
-    -2 <(gunzip -c -f ${fastq2}) \
+    -1 <(zcat ${fastq1}) \
+    -2 <(zcat ${fastq2}) \
     --threads ${task.cpus} \
     --output . \
     --qual-scale phred33 \
