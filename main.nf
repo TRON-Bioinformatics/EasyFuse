@@ -4,7 +4,7 @@ nextflow.enable.dsl = 2
 
 include { FASTQC ; EASYFUSE_QC_PARSER ; EASYFUSE_SKEWER } from './modules/01_qc'
 include { STAR ; EASYFUSE_READ_FILTER ; BAM2FASTQ } from './modules/02_alignment'
-include { MAPSPLICE } from './modules/03_fusion_callers'
+include { MAPSPLICE ; FUSION_CATCHER ; STAR_FUSION} from './modules/03_fusion_callers'
 
 params.help= false
 params.input_files = false
@@ -12,6 +12,8 @@ params.reference = false
 params.chromosome_dir = "/projects/data/human/ensembl/GRCh38.86/fasta"
 params.bowtie_index = "/projects/data/human/ensembl/GRCh38.86/bowtie_index/hg38"
 params.gtf = "/projects/data/human/ensembl/GRCh38.86/Homo_sapiens.GRCh38.86.gtf"
+params.fusioncatcher_index = "/scratch/info/data/easyfuse/easyfuse_ref/fusioncatcher_index/"
+params.starfusion_index = "/projects/data/human/ensembl/GRCh38.86/starfusion_index/"
 params.output = false
 
 def helpMessage() {
@@ -59,4 +61,6 @@ workflow {
 
     // Fusions
     MAPSPLICE(BAM2FASTQ.out.fastqs)
+    FUSION_CATCHER(BAM2FASTQ.out.fastqs)
+    STAR_FUSION(STAR.out.chimeric_reads)
 }
