@@ -20,11 +20,14 @@ process MAPSPLICE {
 
     script:
     """
+    gunzip -c -f ${fastq1} > ${name}_1.fastq
+    gunzip -c -f ${fastq2} > ${name}_2.fastq
+
     mapsplice.py \
     --chromosome-dir ${params.chromosome_dir} \
     -x ${params.bowtie_index} \
-    -1 <(zcat ${fastq1}) \
-    -2 <(zcat ${fastq2}) \
+    -1 ${name}_1.fastq \
+    -2 ${name}_2.fastq \
     --threads ${task.cpus} \
     --output . \
     --qual-scale phred33 \
@@ -32,6 +35,9 @@ process MAPSPLICE {
     --seglen 20 \
     --min-map-len 40 \
     --gene-gtf ${params.gtf}
+
+    rm -f ${name}_1.fastq
+    rm -f ${name}_2.fastq
     """
 }
 
