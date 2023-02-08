@@ -2,7 +2,8 @@
 
 nextflow.enable.dsl = 2
 
-include { FASTQC ; EASYFUSE_QC_PARSER ; EASY_FUSE_SKEWER } from './modules/01_qc'
+include { FASTQC ; EASYFUSE_QC_PARSER ; EASYFUSE_SKEWER } from './modules/01_qc'
+include { STAR ; EASYFUSE_READ_FILTER ; BAM2FASTQ } from './modules/02_alignment'
 
 params.help= false
 params.input_files = false
@@ -38,6 +39,10 @@ workflow {
     // QC
     FASTQC(input_files)
     EASYFUSE_QC_PARSER(FASTQC.out.qc_data)
-    EASY_FUSE_SKEWER(input_files.join(EASYFUSE_QC_PARSER.out.qc_table))
+    EASYFUSE_SKEWER(input_files.join(EASYFUSE_QC_PARSER.out.qc_table))
 
+    // Alignment
+    STAR(EASY_FUSE_SKEWER.out.trimmed_fastq)
+    EASYFUSE_READ_FILTER(STAR.out.bams)
+    BAM2FASTQ(EASYFUSE_READ_FILTER.out.bams)
 }

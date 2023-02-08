@@ -46,7 +46,7 @@ process EASYFUSE_QC_PARSER {
     """
 }
 
-process EASY_FUSE_SKEWER {
+process EASYFUSE_SKEWER {
     cpus 2
     memory "8g"
     tag "${name}"
