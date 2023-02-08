@@ -71,7 +71,7 @@ process BAM2FASTQ {
       tuple val(name), path(bam)
 
     output:
-      tuple val("${name}"), path("${name}.filtered.bam"), emit: fastqs
+      tuple val("${name}"), path("${name}.read1.fastq.gz"), path("${name}.read2.fastq.gz"), emit: fastqs
 
     script:
     """
