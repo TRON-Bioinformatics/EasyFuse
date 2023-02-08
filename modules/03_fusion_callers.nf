@@ -1,4 +1,9 @@
-
+params.reference = false
+params.chromosome_dir = "/projects/data/human/ensembl/GRCh38.86/fasta"
+params.bowtie_index = "/projects/data/human/ensembl/GRCh38.86/bowtie_index/hg38"
+params.gtf = "/projects/data/human/ensembl/GRCh38.86/Homo_sapiens.GRCh38.86.gtf"
+params.fusioncatcher_index = "/scratch/info/data/easyfuse/easyfuse_ref/fusioncatcher_index/"
+params.starfusion_index = "/projects/data/human/ensembl/GRCh38.86/starfusion_index/"
 
 process MAPSPLICE {
     cpus 6
@@ -16,7 +21,7 @@ process MAPSPLICE {
     script:
     """
     mapsplice.py \
-    --chromosome-dir ${params.chromsome_dir} \
+    --chromosome-dir ${params.chromosome_dir} \
     -x ${params.bowtie_index} \
     -1 <(gunzip -c -f ${fastq1}) \
     -2 <(gunzip -c -f ${fastq2}) \
