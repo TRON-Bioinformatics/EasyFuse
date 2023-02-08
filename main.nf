@@ -42,7 +42,7 @@ workflow {
     EASYFUSE_SKEWER(input_files.join(EASYFUSE_QC_PARSER.out.qc_table))
 
     // Alignment
-    STAR(EASY_FUSE_SKEWER.out.trimmed_fastq)
+    STAR(EASYFUSE_SKEWER.out.trimmed_fastq)
     EASYFUSE_READ_FILTER(STAR.out.bams)
     BAM2FASTQ(EASYFUSE_READ_FILTER.out.bams)
 }
