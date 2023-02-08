@@ -3,7 +3,6 @@ process FASTQC {
     cpus 2
     memory "8g"
     tag "${name}"
-    publishDir "${params.output}/${name}", mode: "copy"
 
     conda (params.enable_conda ? "bioconda::fastqc=0.11.9" : null)
 
@@ -28,7 +27,6 @@ process EASYFUSE_QC_PARSER {
     cpus 2
     memory "8g"
     tag "${name}"
-    publishDir "${params.output}/${name}", mode: "copy"
 
     conda (params.enable_conda ? "bioconda::fastqc=0.11.9" : null)
 

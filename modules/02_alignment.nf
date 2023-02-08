@@ -54,7 +54,7 @@ process EASYFUSE_READ_FILTER {
 
     script:
     """
-    easyfuse read-filter \
+    easy-fuse read-filter \
     --input ${bam} \
     --output ${name}.filtered.bam
     """

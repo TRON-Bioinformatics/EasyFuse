@@ -7,6 +7,8 @@ include { STAR ; EASYFUSE_READ_FILTER ; BAM2FASTQ } from './modules/02_alignment
 
 params.help= false
 params.input_files = false
+params.reference = false
+params.output = false
 
 def helpMessage() {
     log.info params.help_message
@@ -19,6 +21,11 @@ if (params.help) {
 
 if (!params.reference) {
     log.error "--reference is required"
+    exit 1
+}
+
+if (!params.output) {
+    log.error "--output is required"
     exit 1
 }
 
