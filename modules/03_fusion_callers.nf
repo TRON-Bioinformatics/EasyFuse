@@ -16,7 +16,7 @@ process FUSION_CATCHER {
       tuple val(name), path(fastq1), file(fastq2)
 
     output:
-      tuple val("${name}"), path("final-list_candidate-fusion-genes.txt"), emit: fusions
+      tuple val("${name}"), path("summary_candidate_fusions.txt"), path("final-list_candidate-fusion-genes.txt"), emit: fusions
 
     script:
     """
