@@ -4,11 +4,12 @@ nextflow.enable.dsl = 2
 
 include { FASTQC ; EASYFUSE_QC_PARSER ; EASYFUSE_SKEWER } from './modules/01_qc'
 include { STAR ; EASYFUSE_READ_FILTER ; BAM2FASTQ } from './modules/02_alignment'
-include { FUSION_CATCHER ; STAR_FUSION} from './modules/03_fusion_callers'
+include { FUSION_CATCHER ; STAR_FUSION ; FUSION_CATCHER_INDEX} from './modules/03_fusion_callers'
 include { EASYFUSE_FUSION_PARSER ; EASYFUSE_FUSION_ANNOTATION ; EASYFUSE_STAR_INDEX ;
             EASYFUSE_REQUANTIFY_FILTER} from './modules/04_joint_fusion_calling'
 
-params.help= false
+params.help = false
+params.index = false
 params.input_files = false
 params.reference = false
 params.chromosome_dir = "/projects/data/human/ensembl/GRCh38.86/fasta"
@@ -27,12 +28,12 @@ if (params.help) {
     exit 0
 }
 
-if (!params.reference) {
+if (!params.index && !params.reference) {
     log.error "--reference is required"
     exit 1
 }
 
-if (!params.output) {
+if (!params.index && !params.output) {
     log.error "--output is required"
     exit 1
 }
@@ -77,23 +78,33 @@ workflow ALIGNMENT {
     read_stats = STAR.out.read_stats
 }
 
+workflow INDEX {
+
+    main:
+    FUSION_CATCHER_INDEX()
+}
+
 
 workflow {
 
-    QC(input_files)
+    if params.index {
+        INDEX()
+    } else {
+        QC(input_files)
 
-    ALIGNMENT(QC.out.trimmed_fastq)
+        ALIGNMENT(QC.out.trimmed_fastq)
 
-    // Fusions
-    //FUSION_CATCHER(ALIGNMENT.out.fastqs)
-    STAR_FUSION(ALIGNMENT.out.chimeric_reads)
+        // Fusions
+        //FUSION_CATCHER(ALIGNMENT.out.fastqs)
+        STAR_FUSION(ALIGNMENT.out.chimeric_reads)
 
-    // joint fusion calling
-    //EASYFUSE_FUSION_PARSER(FUSION_CATCHER.out.fusions.join(STAR_FUSION.out.fusions))
-    EASYFUSE_FUSION_PARSER(STAR_FUSION.out.fusions)
-    EASYFUSE_FUSION_ANNOTATION(EASYFUSE_FUSION_PARSER.out.fusions)
-    EASYFUSE_STAR_INDEX(EASYFUSE_FUSION_ANNOTATION.out.fusions)
-    EASYFUSE_REQUANTIFY_FILTER(ALIGNMENT.out.bams.join(
-        EASYFUSE_FUSION_ANNOTATION.out.fusions_long).join(
-        ALIGNMENT.out.read_stats))
+        // joint fusion calling
+        //EASYFUSE_FUSION_PARSER(FUSION_CATCHER.out.fusions.join(STAR_FUSION.out.fusions))
+        EASYFUSE_FUSION_PARSER(STAR_FUSION.out.fusions)
+        EASYFUSE_FUSION_ANNOTATION(EASYFUSE_FUSION_PARSER.out.fusions)
+        EASYFUSE_STAR_INDEX(EASYFUSE_FUSION_ANNOTATION.out.fusions)
+        EASYFUSE_REQUANTIFY_FILTER(ALIGNMENT.out.bams.join(
+            EASYFUSE_FUSION_ANNOTATION.out.fusions_long).join(
+            ALIGNMENT.out.read_stats))
+    }
 }

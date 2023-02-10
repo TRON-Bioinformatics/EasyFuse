@@ -5,6 +5,21 @@ params.gtf = "/projects/data/human/ensembl/GRCh38.86/Homo_sapiens.GRCh38.86.gtf"
 params.fusioncatcher_index = "/scratch/info/data/easyfuse/easyfuse_ref/fusioncatcher_index/"
 params.starfusion_index = "/projects/data/human/ensembl/GRCh38.86/starfusion_index/"
 
+
+process FUSION_CATCHER_INDEX {
+    cpus 6
+    memory "32g"
+    tag "${name}"
+
+    conda (params.enable_conda ? "bioconda::fusioncatcher=1.33" : null)
+
+    script:
+    """
+    download-human-db.sh
+    """
+}
+
+
 process FUSION_CATCHER {
     cpus 6
     memory "32g"
@@ -20,9 +35,9 @@ process FUSION_CATCHER {
 
     script:
     """
+    # --data ${params.fusioncatcher_index} \
     fusioncatcher \
         --input ${fastq1},${fastq2} \
-        --data ${params.fusioncatcher_index} \
         --output . \
         -p ${task.cpus}
     """
