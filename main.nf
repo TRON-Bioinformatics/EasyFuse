@@ -45,7 +45,7 @@ if (params.input_files) {
     .splitCsv(header: ['name', 'fastq1', 'fastq2'], sep: "\t")
     .map{ row-> tuple(row.name, row.fastq1, row.fastq2) }
     .set { input_files }
-} else {
+} else if (!params.index) {
   exit 1, "Input file not specified!"
 }
 
