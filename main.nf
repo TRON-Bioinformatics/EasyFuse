@@ -85,11 +85,12 @@ workflow {
     ALIGNMENT(QC.out.trimmed_fastq)
 
     // Fusions
-    FUSION_CATCHER(ALIGNMENT.out.fastqs)
+    //FUSION_CATCHER(ALIGNMENT.out.fastqs)
     STAR_FUSION(ALIGNMENT.out.chimeric_reads)
 
     // joint fusion calling
-    EASYFUSE_FUSION_PARSER(FUSION_CATCHER.out.fusions.join(STAR_FUSION.out.fusions))
+    //EASYFUSE_FUSION_PARSER(FUSION_CATCHER.out.fusions.join(STAR_FUSION.out.fusions))
+    EASYFUSE_FUSION_PARSER(STAR_FUSION.out.fusions)
     EASYFUSE_FUSION_ANNOTATION(EASYFUSE_FUSION_PARSER.out.fusions)
     EASYFUSE_STAR_INDEX(EASYFUSE_FUSION_ANNOTATION.out.fusions)
     EASYFUSE_REQUANTIFY_FILTER(ALIGNMENT.out.bams.join(
