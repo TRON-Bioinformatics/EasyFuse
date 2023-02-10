@@ -4,7 +4,7 @@ nextflow.enable.dsl = 2
 
 include { FASTQC ; EASYFUSE_QC_PARSER ; EASYFUSE_SKEWER } from './modules/01_qc'
 include { STAR ; EASYFUSE_READ_FILTER ; BAM2FASTQ } from './modules/02_alignment'
-include { MAPSPLICE ; FUSION_CATCHER ; STAR_FUSION} from './modules/03_fusion_callers'
+include { FUSION_CATCHER ; STAR_FUSION} from './modules/03_fusion_callers'
 
 params.help= false
 params.input_files = false
@@ -60,7 +60,6 @@ workflow {
     BAM2FASTQ(EASYFUSE_READ_FILTER.out.bams)
 
     // Fusions
-    MAPSPLICE(BAM2FASTQ.out.fastqs)
     FUSION_CATCHER(BAM2FASTQ.out.fastqs)
     STAR_FUSION(STAR.out.chimeric_reads)
 }
