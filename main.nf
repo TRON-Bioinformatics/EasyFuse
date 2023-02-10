@@ -46,16 +46,26 @@ if (params.input_files) {
   exit 1, "Input file not specified!"
 }
 
+workflow QC {
+    take:
+    input_files
 
-workflow {
-
-    // QC
+    main:
     FASTQC(input_files)
     EASYFUSE_QC_PARSER(FASTQC.out.qc_data)
     EASYFUSE_SKEWER(input_files.join(EASYFUSE_QC_PARSER.out.qc_table))
 
+    emit:
+    trimmed_fastq = EASYFUSE_SKEWER.out.trimmed_fastq
+}
+
+
+workflow {
+
+    QC(input_files)
+
     // Alignment
-    STAR(EASYFUSE_SKEWER.out.trimmed_fastq)
+    STAR(QC.out.trimmed_fastq)
     EASYFUSE_READ_FILTER(STAR.out.bams)
     BAM2FASTQ(EASYFUSE_READ_FILTER.out.bams)
 
