@@ -78,17 +78,11 @@ workflow ALIGNMENT {
     read_stats = STAR.out.read_stats
 }
 
-workflow INDEX {
-
-    main:
-    FUSION_CATCHER_INDEX()
-}
-
 
 workflow {
 
     if params.index {
-        INDEX()
+        FUSION_CATCHER_INDEX()
     } else {
         QC(input_files)
 
