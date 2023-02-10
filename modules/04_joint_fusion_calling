@@ -11,8 +11,10 @@ process EASYFUSE_FUSION_PARSER {
 
     input:
       //path(fusion_catcher_1), path(fusion_catcher_2),
+      //path(star_fusion)
       tuple val(name),
-        path(star_fusion)
+        path(fusion_catcher_1), path(fusion_catcher_2),
+
 
     output:
       tuple val("${name}"), path("Detected_Fusions.csv"), emit: fusions
@@ -22,8 +24,10 @@ process EASYFUSE_FUSION_PARSER {
     """
     # --input-fusioncatcher ${fusion_catcher_1} \
     # --input-fusioncatcher2 ${fusion_catcher_2} \
+    # --input-starfusion ${star_fusion} \
     easy-fuse fusion-parser \
-        --input-starfusion ${star_fusion} \
+        --input-fusioncatcher ${fusion_catcher_1} \
+        --input-fusioncatcher2 ${fusion_catcher_2} \
         --output . \
         --sample ${name}
     """
