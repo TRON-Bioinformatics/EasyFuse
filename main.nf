@@ -4,7 +4,7 @@ nextflow.enable.dsl = 2
 
 include { FASTQC ; EASYFUSE_QC_PARSER ; EASYFUSE_SKEWER } from './modules/01_qc'
 include { STAR ; EASYFUSE_READ_FILTER ; BAM2FASTQ } from './modules/02_alignment'
-include { FUSION_CATCHER ; STAR_FUSION ; FUSION_CATCHER_INDEX} from './modules/03_fusion_callers'
+include { FUSION_CATCHER ; STAR_FUSION ; FUSION_CATCHER_INDEX } from './modules/03_fusion_callers'
 include { EASYFUSE_FUSION_PARSER ; EASYFUSE_FUSION_ANNOTATION ; EASYFUSE_STAR_INDEX ;
             EASYFUSE_REQUANTIFY_FILTER} from './modules/04_joint_fusion_calling'
 
@@ -81,7 +81,7 @@ workflow ALIGNMENT {
 
 workflow {
 
-    if params.index {
+    if (params.index) {
         FUSION_CATCHER_INDEX()
     } else {
         QC(input_files)
