@@ -40,6 +40,7 @@ process EASYFUSE_FUSION_ANNOTATION {
 
     output:
       tuple val("${name}"), path("annotated_fusions.csv"), emit: fusions
+      tuple val("${name}"), path("annotated_fusions.csv.debug"), emit: fusions_long
 
     script:
 
@@ -78,5 +79,29 @@ process EASYFUSE_STAR_INDEX {
         -o ./star_index \
         -t 1 \
         -b STAR
+    """
+}
+
+process EASYFUSE_REQUANTIFY_FILTER {
+    cpus 2
+    memory "8g"
+    tag "${name}"
+
+    //conda (params.enable_conda ? "bioconda::easyfuse=0.1.0" : null)
+
+    input:
+      tuple val(name), path(bam), path(fusions_long), path(read_stats)
+
+    output:
+      tuple val("${name}"), path("${name}.requantified.bam"), emit: bams
+
+    script:
+
+    """
+    easy-fuse requantify-filter \
+        --input ${bam} \
+        --input2 ${fusions_long} \
+        --input-reads-stats ${read_stats} \
+        --output ${name}.requantified.bam
     """
 }

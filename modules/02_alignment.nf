@@ -13,6 +13,7 @@ process STAR {
     output:
       tuple val("${name}"), path("${name}.bam"), emit: bams
       tuple val("${name}"), path("${name}.Chimeric.out.junction"), emit: chimeric_reads
+      tuple val("${name}"), path("${name}.Log.final.out"), emit: read_stats
 
     script:
     """
