@@ -15,8 +15,8 @@ process MAPSPLICE {
     input:
       tuple val(name), path(fastq1), file(fastq2)
 
-    output:
-      tuple val("${name}"), path("fusions_candidates.txt"), emit: fusions
+    //output:
+    //  tuple val("${name}"), path("fusions_candidates.txt"), emit: fusions
 
     script:
     """
