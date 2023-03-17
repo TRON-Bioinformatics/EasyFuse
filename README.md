@@ -87,9 +87,9 @@ Before executing the example command
 ```
 python processing.py -i test_case/SRR1659960_05pc_* -o test_easyfuse_1.3.1/
 ```
-#NextFlow
+## NextFlow
 
-##Background
+### Background
 NextFlow is a workflow engine that allows to define and run workflows with multiple steps using a Domain Specific Language (DSL). It provides an expressive syntax that allows to parallelize tasks, scale out by parallelization across multiple machines seamlessly, define computational requirements with a high granularity, audit workflow performance, virtualise hardware and software requirements and improve reproducibility across different users and environments. Nextflow integrates with several queue batch processors and in particular with slurm. 
 Installation and setup
 NextFlow runs as a process for each workflow being executed, there is no need to setup any service.
@@ -138,7 +138,7 @@ cleanup = true
 ```
 For further details on configuration see https://www.nextflow.io/docs/latest/config.html#configuration-file
 
-##Sample workflow
+## Sample workflow
 The following is a sample process that receives a BAM file and a name prefix as input and outputs the deduplicated BAM with its index and a file of duplicate reads.
 ```
 process picardDeduplication {
@@ -228,7 +228,7 @@ process indelVariantCalling {
 }
 ```
 
-##Run a workflow
+## Run a workflow
 To run a workflow we just need to call the binary nextflow with the workflow file and the required parameters, such as:
 
 ```
