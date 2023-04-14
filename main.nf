@@ -7,17 +7,7 @@ include { STAR ; EASYFUSE_READ_FILTER ; BAM2FASTQ } from './modules/02_alignment
 include { FUSION_CATCHER ; STAR_FUSION ; FUSION_CATCHER_INDEX } from './modules/03_fusion_callers'
 include { EASYFUSE_FUSION_PARSER ; EASYFUSE_FUSION_ANNOTATION ; EASYFUSE_STAR_INDEX ;
             EASYFUSE_REQUANTIFY_FILTER} from './modules/04_joint_fusion_calling'
-
-params.help = false
-params.index = false
-params.input_files = false
-params.reference = false
-params.chromosome_dir = "/projects/data/human/ensembl/GRCh38.86/fasta"
-params.bowtie_index = "/projects/data/human/ensembl/GRCh38.86/bowtie_index/hg38"
-params.gtf = "/projects/data/human/ensembl/GRCh38.86/Homo_sapiens.GRCh38.86.gtf"
-params.fusioncatcher_index = "/scratch/info/data/easyfuse/easyfuse_ref/fusioncatcher_index/"
-params.starfusion_index = "/projects/data/human/ensembl/GRCh38.86/starfusion_index/"
-params.output = false
+	    
 
 def helpMessage() {
     log.info params.help_message
@@ -90,16 +80,16 @@ workflow {
 
         // Fusions
         FUSION_CATCHER(ALIGNMENT.out.fastqs)
-        //STAR_FUSION(ALIGNMENT.out.chimeric_reads)
+	STAR_FUSION(ALIGNMENT.out.chimeric_reads)
 
         // joint fusion calling
-        //EASYFUSE_FUSION_PARSER(FUSION_CATCHER.out.fusions.join(STAR_FUSION.out.fusions))
+        EASYFUSE_FUSION_PARSER(FUSION_CATCHER.out.fusions.join(STAR_FUSION.out.fusions))
         //EASYFUSE_FUSION_PARSER(STAR_FUSION.out.fusions)
-        EASYFUSE_FUSION_PARSER(FUSION_CATCHER.out.fusions)
+        //EASYFUSE_FUSION_PARSER(FUSION_CATCHER.out.fusions)
         EASYFUSE_FUSION_ANNOTATION(EASYFUSE_FUSION_PARSER.out.fusions)
         EASYFUSE_STAR_INDEX(EASYFUSE_FUSION_ANNOTATION.out.fusions)
         EASYFUSE_REQUANTIFY_FILTER(ALIGNMENT.out.bams.join(
-            EASYFUSE_FUSION_ANNOTATION.out.fusions_long).join(
+            EASYFUSE_FUSION_ANNOTATION.out.fusions).join(
             ALIGNMENT.out.read_stats))
     }
 }
