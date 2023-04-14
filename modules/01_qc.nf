@@ -28,7 +28,7 @@ process EASYFUSE_QC_PARSER {
     memory "8g"
     tag "${name}"
 
-    conda (params.enable_conda ? "bioconda::fastqc=0.11.9" : null)
+//    conda (params.enable_conda ? "bioconda::fastqc=0.11.9" : null)
 
     input:
     tuple val(name),

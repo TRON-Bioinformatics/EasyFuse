@@ -1,11 +1,10 @@
 
-
 process STAR {
     cpus 6
     memory "32g"
     tag "${name}"
 
-    conda (params.enable_conda ? "bioconda::star=2.6.1b" : null)
+    conda (params.enable_conda ? "bioconda::star=2.6.1d" : null)
 
     input:
       tuple val(name), path(fastq1), file(fastq2)
@@ -17,7 +16,7 @@ process STAR {
 
     script:
     """
-    STAR --genomeDir /projects/data/human/ensembl/GRCh38.86/STAR_idx/ \
+    STAR --genomeDir ${params.star_index} \
         --outFileNamePrefix ${name}. \
         --readFilesCommand zcat \
         --readFilesIn ${fastq1} ${fastq2} \

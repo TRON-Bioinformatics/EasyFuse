@@ -1,6 +1,3 @@
-params.annotation_db = "/projects/data/human/ensembl/GRCh38.86/Homo_sapiens.GRCh38.86.gff3.db"
-params.fasta = "/projects/data/human/ensembl/GRCh38.86/Homo_sapiens.GRCh38.dna.primary_assembly.fa"
-params.reference_tsl = "/projects/data/human/ensembl/GRCh38.86/Homo_sapiens.GRCh38.86.gtf.tsl"
 
 process EASYFUSE_FUSION_PARSER {
     cpus 2
@@ -10,9 +7,7 @@ process EASYFUSE_FUSION_PARSER {
     //conda (params.enable_conda ? "bioconda::easyfuse=0.1.0" : null)
 
     input:
-      //path(fusion_catcher_1), path(fusion_catcher_2),
-      //path(star_fusion)
-      tuple val(name), path(fusion_catcher_1), path(fusion_catcher_2)
+      tuple val(name), path(fusion_catcher_1), path(fusion_catcher_2), path(star_fusion)
 
 
     output:
@@ -21,12 +16,10 @@ process EASYFUSE_FUSION_PARSER {
     script:
 
     """
-    # --input-fusioncatcher ${fusion_catcher_1} \
-    # --input-fusioncatcher2 ${fusion_catcher_2} \
-    # --input-starfusion ${star_fusion} \
     easy-fuse fusion-parser \
         --input-fusioncatcher ${fusion_catcher_1} \
         --input-fusioncatcher2 ${fusion_catcher_2} \
+	--input-starfusion ${star_fusion} \
         --output . \
         --sample ${name}
     """
@@ -43,8 +36,8 @@ process EASYFUSE_FUSION_ANNOTATION {
       tuple val(name), path(fusions)
 
     output:
-      tuple val("${name}"), path("annotated_fusions.csv"), emit: fusions
-      tuple val("${name}"), path("annotated_fusions.csv.debug"), emit: fusions_long
+      tuple val("${name}"), path("annotated_fusions.csv.fasta"), emit: fusions
+      
 
     script:
 
@@ -67,10 +60,10 @@ process EASYFUSE_STAR_INDEX {
     tag "${name}"
 
     //conda (params.enable_conda ? "bioconda::easyfuse=0.1.0" : null)
-    conda (params.enable_conda ? "bioconda::star=2.6.1b" : null)
+    conda (params.enable_conda ? "bioconda::star=2.6.1d" : null)
 
     input:
-      tuple val(name), path(annotated_fusions)
+      tuple val(name), path(fusions)
 
     output:
       tuple val("${name}"), path("star_index"), emit: star_index
@@ -79,8 +72,8 @@ process EASYFUSE_STAR_INDEX {
 
     """
     easy-fuse star-index \
-        -i ${annotated_fusions} \
-        -o ./star_index \
+        -i ${fusions} \
+        -o star_index \
         -t 1 \
         -b STAR
     """
@@ -94,7 +87,7 @@ process EASYFUSE_REQUANTIFY_FILTER {
     //conda (params.enable_conda ? "bioconda::easyfuse=0.1.0" : null)
 
     input:
-      tuple val(name), path(bam), path(fusions_long), path(read_stats)
+      tuple val(name), path(bam), path("annotated_fusions.csv.debug"), path(read_stats)
 
     output:
       tuple val("${name}"), path("${name}.requantified.bam"), emit: bams
@@ -104,7 +97,7 @@ process EASYFUSE_REQUANTIFY_FILTER {
     """
     easy-fuse requantify-filter \
         --input ${bam} \
-        --input2 ${fusions_long} \
+        --input2 annotated_fusions.csv.debug \
         --input-reads-stats ${read_stats} \
         --output ${name}.requantified.bam
     """
