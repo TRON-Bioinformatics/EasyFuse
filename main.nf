@@ -18,12 +18,7 @@ if (params.help) {
     exit 0
 }
 
-if (!params.index && !params.reference) {
-    log.error "--reference is required"
-    exit 1
-}
-
-if (!params.index && !params.output) {
+if (!params.output) {
     log.error "--output is required"
     exit 1
 }
@@ -35,7 +30,7 @@ if (params.input_files) {
     .splitCsv(header: ['name', 'fastq1', 'fastq2'], sep: "\t")
     .map{ row-> tuple(row.name, row.fastq1, row.fastq2) }
     .set { input_files }
-} else if (!params.index) {
+} else {
   exit 1, "Input file not specified!"
 }
 
@@ -71,25 +66,20 @@ workflow ALIGNMENT {
 
 workflow {
 
-    if (params.index) {
-        FUSION_CATCHER_INDEX()
-    } else {
-        QC(input_files)
+    QC(input_files)
+    ALIGNMENT(QC.out.trimmed_fastq)
 
-        ALIGNMENT(QC.out.trimmed_fastq)
+    // Fusions
+    FUSION_CATCHER(ALIGNMENT.out.fastqs)
+    STAR_FUSION(ALIGNMENT.out.chimeric_reads)
 
-        // Fusions
-        FUSION_CATCHER(ALIGNMENT.out.fastqs)
-	STAR_FUSION(ALIGNMENT.out.chimeric_reads)
-
-        // joint fusion calling
-        EASYFUSE_FUSION_PARSER(FUSION_CATCHER.out.fusions.join(STAR_FUSION.out.fusions))
-        //EASYFUSE_FUSION_PARSER(STAR_FUSION.out.fusions)
-        //EASYFUSE_FUSION_PARSER(FUSION_CATCHER.out.fusions)
-        EASYFUSE_FUSION_ANNOTATION(EASYFUSE_FUSION_PARSER.out.fusions)
-        EASYFUSE_STAR_INDEX(EASYFUSE_FUSION_ANNOTATION.out.fusions)
-        EASYFUSE_REQUANTIFY_FILTER(ALIGNMENT.out.bams.join(
-            EASYFUSE_FUSION_ANNOTATION.out.fusions).join(
-            ALIGNMENT.out.read_stats))
-    }
+    // joint fusion calling
+    EASYFUSE_FUSION_PARSER(FUSION_CATCHER.out.fusions.join(STAR_FUSION.out.fusions))
+    //EASYFUSE_FUSION_PARSER(STAR_FUSION.out.fusions)
+    //EASYFUSE_FUSION_PARSER(FUSION_CATCHER.out.fusions)
+    EASYFUSE_FUSION_ANNOTATION(EASYFUSE_FUSION_PARSER.out.fusions)
+    EASYFUSE_STAR_INDEX(EASYFUSE_FUSION_ANNOTATION.out.fusions)
+    EASYFUSE_REQUANTIFY_FILTER(ALIGNMENT.out.bams.join(
+        EASYFUSE_FUSION_ANNOTATION.out.fusions).join(
+        ALIGNMENT.out.read_stats))
 }
