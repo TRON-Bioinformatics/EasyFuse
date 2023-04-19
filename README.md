@@ -27,6 +27,30 @@ wget ftp://easyfuse.tron-mainz.de/easyfuse_ref_v2.tar.gz
 tar xvfz easyfuse_ref_v2.tar.gz
 ```
 
+### Download and install EasyFuse Python package
+
+Next, you have to install EasyFuse to get the command line tools.
+
+```
+# Download repo from GitHub
+git clone https://github.com/TRON-Bioinformatics/EasyFuse.git
+
+cd EasyFuse
+
+# Create virtual environment using Python3.7 (only works on Python3.7)
+python3.7 -m venv env/
+
+# Activate environment
+source env/bin/activate
+
+# Install poetry for easy installation
+pip install poetry
+
+# Install EasyFuse package using poetry
+poetry install
+```
+
+
 ### Configuration
 
 Set the paths to your downloaded reference data in your nextflow.config file
