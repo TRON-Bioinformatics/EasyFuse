@@ -36,7 +36,8 @@ process EASYFUSE_FUSION_ANNOTATION {
       tuple val(name), path(fusions)
 
     output:
-      tuple val("${name}"), path("annotated_fusions.csv.fasta"), emit: fusions
+      tuple val("${name}"), path("annotated_fusions.csv.debug"), path("annotated_fusions.csv.fasta"), emit: annot_fusions
+      
       
 
     script:
@@ -51,54 +52,5 @@ process EASYFUSE_FUSION_ANNOTATION {
         --cis_near_dist 1000000 \
         --context_seq_len 400 \
         --tsl_filter_level 4,5,NA
-    """
-}
-
-process EASYFUSE_STAR_INDEX {
-    cpus 2
-    memory "8g"
-    tag "${name}"
-
-    //conda (params.enable_conda ? "bioconda::easyfuse=0.1.0" : null)
-    conda (params.enable_conda ? "bioconda::star=2.6.1d" : null)
-
-    input:
-      tuple val(name), path(fusions)
-
-    output:
-      tuple val("${name}"), path("star_index"), emit: star_index
-
-    script:
-
-    """
-    easy-fuse star-index \
-        -i ${fusions} \
-        -o star_index \
-        -t 1 \
-        -b STAR
-    """
-}
-
-process EASYFUSE_REQUANTIFY_FILTER {
-    cpus 2
-    memory "8g"
-    tag "${name}"
-
-    //conda (params.enable_conda ? "bioconda::easyfuse=0.1.0" : null)
-
-    input:
-      tuple val(name), path(bam), path("annotated_fusions.csv.debug"), path(read_stats)
-
-    output:
-      tuple val("${name}"), path("${name}.requantified.bam"), emit: bams
-
-    script:
-
-    """
-    easy-fuse requantify-filter \
-        --input ${bam} \
-        --input2 annotated_fusions.csv.debug \
-        --input-reads-stats ${read_stats} \
-        --output ${name}.requantified.bam
     """
 }

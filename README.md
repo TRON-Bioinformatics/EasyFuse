@@ -39,24 +39,26 @@ sample_01 /path/to/sample_01_R1.fastq.gz /path/to/sample_01_R2.fastq.gz
 ### Run the pipeline
 
 ```
+echo -e "sample_name\t"`pwd`"/test/data/SRR1659960_05pc_R1.fastq.gz\t"`pwd`"/test/data/SRR1659960_05pc_R2.fastq.gz" > test/data/test_input.txt
+
 nextflow main.nf \
   -profile test,conda \
   -resume \
   --input_files test/data/test_input.txt \
-  --output output/test1
+  --output test/test1
 
 ```
 
 
 ### Output format
 
-EasyFuse creates three output files per sample in the `FusionSummary` folder: 
+EasyFuse creates three output files per sample in the according folder: 
 
- - `<Sample_Name>_fusRank_1.csv`
- - `<Sample_Name>_fusRank_1.pred.csv` 
- - `<Sample_Name>_fusRank_1.pred.all.csv`
+ - `fusions_1.csv`
+ - `fusions_1.pred.csv` 
+ - `fusions_1.pred.all.csv`
  
-Within the files, each line describes a candidate fusion transcript. The prefix `<Sample_Name>` is inferred from the input fastq file names. The file `_fusRank_1.csv` contains only annotated features, while the files `.pred.csv` and `.pred.all.csv` contain additionally the prediction probability assigned by the EasyFuse model as well as the assigned prediction class (*positive* or *negative*). The file `.pred.all.csv` contains information on all considered fusion transcripts, while the file `.pred.csv` contains only those with a *positive* assigned prediction class. 
+Within the files, each line describes a candidate fusion transcript. The name of each sample folder is inferred by first column of the input table. The file `fusions_1.csv` contains only annotated features, while the files `.pred.csv` and `.pred.all.csv` contain additionally the prediction probability assigned by the EasyFuse model as well as the assigned prediction class (*positive* or *negative*). The file `.pred.all.csv` contains information on all considered fusion transcripts, while the file `.pred.csv` contains only those with a *positive* assigned prediction class. 
 
 #### Example Output
 

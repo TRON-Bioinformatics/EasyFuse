@@ -1,0 +1,8 @@
+name: fusioncatcher
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - bioconda::fusioncatcher=1.00
+  - bioconda::java-jdk
