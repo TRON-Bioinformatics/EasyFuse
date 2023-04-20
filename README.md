@@ -15,7 +15,7 @@ EasyFuse uses five fusion gene detection tools, [STAR-Fusion](https://github.com
 ## Usage
 
 
-### Download reference data
+### Download reference data from sFTP
 
 Before running EasyFuse the following reference annotation data needs to be downloaded (~92 GB).
 
@@ -26,6 +26,16 @@ wget ftp://easyfuse.tron-mainz.de/easyfuse_ref_v2.tar.gz
 # Extract reference archive
 tar xvfz easyfuse_ref_v2.tar.gz
 ```
+
+### Download reference data from Ensembl and tool repos
+
+Alternatively, the following script will automatically download the references
+and generate the required indices for the pipeline: 
+
+```
+bash installation.sh
+```
+
 
 ### Download and install EasyFuse Python package
 
