@@ -2,14 +2,12 @@
 
 nextflow.enable.dsl = 2
 
-include { FASTQC ; EASYFUSE_QC_PARSER ; EASYFUSE_SKEWER } from './modules/01_qc'
-include { STAR ; EASYFUSE_READ_FILTER ; BAM2FASTQ } from './modules/02_alignment'
+include { FASTQC ; FASTQC_PARSER ; SKEWER } from './modules/01_qc'
+include { STAR ; READ_FILTER ; BAM2FASTQ } from './modules/02_alignment'
 include { FUSION_CATCHER ; STAR_FUSION ; FUSION_CATCHER_INDEX } from './modules/03_fusion_callers'
-include { EASYFUSE_FUSION_PARSER ; EASYFUSE_FUSION_ANNOTATION } from './modules/04_joint_fusion_calling'
-include { EASYFUSE_REQUANTIFY_STAR_INDEX ; EASYFUSE_REQUANTIFY_FILTER ; 
-    EASYFUSE_REQUANTIFY_BAM2FASTQ ; EASYFUSE_REQUANTIFY_STAR ; 
-    EASYFUSE_REQUANTIFY_COUNT } from './modules/05_requantification'
-include { EASYFUSE_SUMMARIZE_DATA } from './modules/06_summarize'
+include { FUSION_PARSER ; FUSION_ANNOTATION } from './modules/04_joint_fusion_calling'
+include { STAR_INDEX ; FUSION_FILTER ; STAR_CUSTOM ; READ_COUNT } from './modules/05_requantification'
+include { SUMMARIZE_DATA } from './modules/06_summarize'
 	    
 
 def helpMessage() {
@@ -43,11 +41,11 @@ workflow QC {
 
     main:
     FASTQC(input_files)
-    EASYFUSE_QC_PARSER(FASTQC.out.qc_data)
-    EASYFUSE_SKEWER(input_files.join(EASYFUSE_QC_PARSER.out.qc_table))
+    FASTQC_PARSER(FASTQC.out.qc_data)
+    SKEWER(input_files.join(FASTQC_PARSER.out.qc_table))
 
     emit:
-    trimmed_fastq = EASYFUSE_SKEWER.out.trimmed_fastq
+    trimmed_fastq = SKEWER.out.trimmed_fastq
 }
 
 workflow ALIGNMENT {
@@ -56,109 +54,108 @@ workflow ALIGNMENT {
 
     main:
     STAR(trimmed_fastq)
-    EASYFUSE_READ_FILTER(STAR.out.bams)
-    BAM2FASTQ(EASYFUSE_READ_FILTER.out.bams)
+    READ_FILTER(STAR.out.bams)
+    BAM2FASTQ(READ_FILTER.out.bams)
 
     emit:
     chimeric_reads = STAR.out.chimeric_reads
     fastqs = BAM2FASTQ.out.fastqs
-    bams = EASYFUSE_READ_FILTER.out.bams
+    bams = READ_FILTER.out.bams
     read_stats = STAR.out.read_stats
 }
 
 workflow TOOLS {
     take:
-    filtered_fastq
+    filtered_fastqs
     chimeric_reads
 
     main:
-    FUSION_CATCHER(ALIGNMENT.out.fastqs)
-    STAR_FUSION(ALIGNMENT.out.chimeric_reads)
+    FUSION_CATCHER(filtered_fastqs)
+    STAR_FUSION(chimeric_reads)
 
     emit:
-    fusioncatcher_results = FUSIONCATCHER.out.fusions
+    fusioncatcher_results = FUSION_CATCHER.out.fusions
     starfusion_results = STAR_FUSION.out.fusions
 }
 
 workflow ANNOTATION {
     take:
-    fusioncatcher_result
-    starfusion_result
+    fusioncatcher_results
+    starfusion_results
 
     main:
-    EASYFUSE_FUSION_PARSER(
-        fusioncatcher_result.join(
-        starfusion_result
+    FUSION_PARSER(
+        fusioncatcher_results.join(
+        starfusion_results
     ))
-    EASYFUSE_FUSION_ANNOTATION(EASYFUSE_FUSION_PARSER.out.fusions)
+    FUSION_ANNOTATION(FUSION_PARSER.out.fusions)
 
     emit:
-    annotated_fusions = EASYFUSE_FUSION_ANNOTATION.out.annot_fusions
+    fusions = FUSION_PARSER.out.fusions
+    annotated_fusions = FUSION_ANNOTATION.out.annot_fusions
 }
 
-workflow REQUANT {
+workflow REQUANTIFICATION {
     take:
-    filtered_fastq
+    annotated_fusions
+    bams
+    read_stats
 
     main:
-    EASYFUSE_REQUANTIFY_STAR_INDEX(EASYFUSE_FUSION_ANNOTATION.out.annot_fusions)
-    EASYFUSE_REQUANTIFY_FILTER(
-        ALIGNMENT.out.bams.join(
-        EASYFUSE_FUSION_ANNOTATION.out.annot_fusions).join(
-        ALIGNMENT.out.read_stats
+    FUSION_FILTER(
+        bams.join(
+        annotated_fusions).join(
+        read_stats
     ))
-    EASYFUSE_REQUANTIFY_BAM2FASTQ(EASYFUSE_REQUANTIFY_FILTER.out.bams)
-    EASYFUSE_REQUANTIFY_STAR(
-        EASYFUSE_REQUANTIFY_BAM2FASTQ.out.fastqs.join(
-        EASYFUSE_REQUANTIFY_STAR_INDEX.out.star_index
+    BAM2FASTQ(FUSION_FILTER.out.bams)
+    STAR_INDEX(annotated_fusions)
+    STAR_CUSTOM(
+        BAM2FASTQ.out.fastqs.join(
+        STAR_INDEX.out.star_index
     ))
-    EASYFUSE_REQUANTIFY_COUNT(
-        EASYFUSE_REQUANTIFY_STAR.out.bams.join(
-        EASYFUSE_REQUANTIFY_STAR.out.read_stats
+    READ_COUNT(
+        STAR_CUSTOM.out.bams.join(
+        STAR_CUSTOM.out.read_stats
     ))
 
     emit:
-    requant_results = EASYFUSE_REQUANTIFY_COUNT.out.counts
+    counts = READ_COUNT.out.counts
+    read_stats = STAR_CUSTOM.out.read_stats
 }
 
 
 workflow {
 
+    // quality trimming
     QC(input_files)
+
+    // read alignment and read filtering, required as tool input
     ALIGNMENT(QC.out.trimmed_fastq)
 
     // fusion calling
-    FUSION_CATCHER(ALIGNMENT.out.fastqs)
-    STAR_FUSION(ALIGNMENT.out.chimeric_reads)
+    TOOLS(
+        ALIGNMENT.out.fastqs,
+        ALIGNMENT.out.chimeric_reads
+    )
 
     // fusion merging
-    EASYFUSE_FUSION_PARSER(
-        FUSION_CATCHER.out.fusions.join(
-        STAR_FUSION.out.fusions
-    ))
-    EASYFUSE_FUSION_ANNOTATION(EASYFUSE_FUSION_PARSER.out.fusions)
+    ANNOTATION(
+        TOOLS.out.fusioncatcher_results,
+        TOOLS.out.starfusion_results
+    )
 
     // requantification
-    EASYFUSE_REQUANTIFY_STAR_INDEX(EASYFUSE_FUSION_ANNOTATION.out.annot_fusions)
-    EASYFUSE_REQUANTIFY_FILTER(
-        ALIGNMENT.out.bams.join(
-        EASYFUSE_FUSION_ANNOTATION.out.annot_fusions).join(
+    REQUANTIFICATION(
+        ANNOTATION.out.annotated_fusions,
+        ALIGNMENT.out.bams,
         ALIGNMENT.out.read_stats
-    ))
-    EASYFUSE_REQUANTIFY_BAM2FASTQ(EASYFUSE_REQUANTIFY_FILTER.out.bams)
-    EASYFUSE_REQUANTIFY_STAR(
-        EASYFUSE_REQUANTIFY_BAM2FASTQ.out.fastqs.join(
-        EASYFUSE_REQUANTIFY_STAR_INDEX.out.star_index
-    ))
-    EASYFUSE_REQUANTIFY_COUNT(
-        EASYFUSE_REQUANTIFY_STAR.out.bams.join(
-        EASYFUSE_REQUANTIFY_STAR.out.read_stats
-    ))
+    )
 
-    EASYFUSE_SUMMARIZE_DATA(
-        EASYFUSE_FUSION_PARSER.out.fusions.join(
-        EASYFUSE_FUSION_ANNOTATION.out.annot_fusions).join(
-        EASYFUSE_REQUANTIFY_COUNT.out.counts).join(
-        EASYFUSE_REQUANTIFY_STAR.out.read_stats
+    // summarize results
+    SUMMARIZE_DATA(
+        ANNOTATION.out.fusions.join(
+        ANNOTATION.out.annotated_fusions).join(
+        REQUANTIFICATION.out.counts).join(
+        REQUANTIFICATION.out.read_stats
     ))
 }

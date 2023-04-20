@@ -1,5 +1,5 @@
 
-process EASYFUSE_REQUANTIFY_STAR_INDEX {
+process STAR_INDEX {
     cpus 2
     memory "8g"
     tag "${name}"
@@ -25,7 +25,7 @@ process EASYFUSE_REQUANTIFY_STAR_INDEX {
     """
 }
 
-process EASYFUSE_REQUANTIFY_FILTER {
+process FUSION_FILTER {
     cpus 2
     memory "8g"
     tag "${name}"
@@ -49,32 +49,7 @@ process EASYFUSE_REQUANTIFY_FILTER {
     """
 }
 
-
-process EASYFUSE_REQUANTIFY_BAM2FASTQ {
-    cpus 6
-    memory "8g"
-    tag "${name}"
-
-    conda (params.enable_conda ? "environments/requantification.yml" : null)
-
-    input:
-      tuple val(name), path(bam)
-
-    output:
-      tuple val("${name}"), path("${name}.read1.fastq.gz"), path("${name}.read2.fastq.gz"), emit: fastqs
-
-    script:
-    """
-    samtools fastq \
-    -0 ${name}.other.fastq.gz \
-    -1 ${name}.read1.fastq.gz \
-    -2 ${name}.read2.fastq.gz \
-    --threads ${task.cpus} \
-    ${bam}
-    """
-}
-
-process EASYFUSE_REQUANTIFY_STAR {
+process STAR_CUSTOM {
     cpus 6
     memory "32g"
     tag "${name}"
@@ -108,11 +83,11 @@ process EASYFUSE_REQUANTIFY_STAR {
     """
 }
 
-process EASYFUSE_REQUANTIFY_COUNT {
+process READ_COUNT {
   cpus 6
   memory "50g"
   tag "${name}"
-  publishDir "${params.output}/${name}", mode: 'copy'
+  //publishDir "${params.output}/${name}", mode: 'copy'
 
   input:
     tuple val(name), path(bam), path(bam_index), path(read_stats)

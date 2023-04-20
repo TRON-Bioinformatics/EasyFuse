@@ -1,5 +1,5 @@
 
-process EASYFUSE_SUMMARIZE_DATA {
+process SUMMARIZE_DATA {
     cpus 2
     memory "10g"
     tag "${name}"

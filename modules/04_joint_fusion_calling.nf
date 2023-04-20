@@ -1,5 +1,5 @@
 
-process EASYFUSE_FUSION_PARSER {
+process FUSION_PARSER {
     cpus 2
     memory "8g"
     tag "${name}"
@@ -25,7 +25,7 @@ process EASYFUSE_FUSION_PARSER {
     """
 }
 
-process EASYFUSE_FUSION_ANNOTATION {
+process FUSION_ANNOTATION {
     cpus 2
     memory "8g"
     tag "${name}"

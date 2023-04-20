@@ -40,7 +40,7 @@ process STAR {
     """
 }
 
-process EASYFUSE_READ_FILTER {
+process READ_FILTER {
     cpus 2
     memory "8g"
     tag "${name}"

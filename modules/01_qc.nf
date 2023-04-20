@@ -23,7 +23,7 @@ process FASTQC {
     """
 }
 
-process EASYFUSE_QC_PARSER {
+process FASTQC_PARSER {
     cpus 2
     memory "8g"
     tag "${name}"
@@ -44,7 +44,7 @@ process EASYFUSE_QC_PARSER {
     """
 }
 
-process EASYFUSE_SKEWER {
+process SKEWER {
     cpus 2
     memory "8g"
     tag "${name}"
