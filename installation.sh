@@ -20,18 +20,19 @@ if [ ! -f installation/Homo_sapiens.GRCh38.100.gtf ]; then
 fi
 
 # for starfusion
-if [ ! -f installation/GRCh38_gencode_v37_CTAT_lib_Mar012021.plug-n-play ]; then
+if [ ! -d "installation/starfusion_index/" ]; then
     wget https://data.broadinstitute.org/Trinity/CTAT_RESOURCE_LIB/__genome_libs_StarFv1.10/GRCh38_gencode_v37_CTAT_lib_Mar012021.plug-n-play.tar.gz -P installation/
-    tar xvfz installation/GRCh38_gencode_v37_CTAT_lib_Mar012021.plug-n-play.tar.gz
+    tar xvfz "installation/GRCh38_gencode_v37_CTAT_lib_Mar012021.plug-n-play.tar.gz" -C "installation/GRCh38_gencode_v37_CTAT_lib_Mar012021.plug-n-play"
+    mv installation/GRCh38_gencode_v37_CTAT_lib_Mar012021.plug-n-play/ctat_genome_lib_build_dir/ installation/starfusion_index/
 fi
 
 # for fusioncatcher
 if [ ! -d installation/fusioncatcher_index/ ]; then
-    wget --no-check-certificate http://sourceforge.net/projects/fusioncatcher/files/data/human_v102.tar.gz.aa -P installation/
-    wget --no-check-certificate http://sourceforge.net/projects/fusioncatcher/files/data/human_v102.tar.gz.ab -P installation/
-    wget --no-check-certificate http://sourceforge.net/projects/fusioncatcher/files/data/human_v102.tar.gz.ac -P installation/
-    wget --no-check-certificate http://sourceforge.net/projects/fusioncatcher/files/data/human_v102.tar.gz.ad -P installation/
-    wget --no-check-certificate http://sourceforge.net/projects/fusioncatcher/files/data/human_v102.md5 -P installation/
+    wget http://sourceforge.net/projects/fusioncatcher/files/data/human_v102.tar.gz.aa -P installation/
+    wget http://sourceforge.net/projects/fusioncatcher/files/data/human_v102.tar.gz.ab -P installation/
+    wget http://sourceforge.net/projects/fusioncatcher/files/data/human_v102.tar.gz.ac -P installation/
+    wget http://sourceforge.net/projects/fusioncatcher/files/data/human_v102.tar.gz.ad -P installation/
+    wget http://sourceforge.net/projects/fusioncatcher/files/data/human_v102.md5 -P installation/
     md5sum -c installation/human_v102.md5
     if [ "$?" -ne "0" ]; then
 	    echo -e "\n\n\n\033[33;7m   ERROR: The downloaded files from above have errors! MD5 checksums do not match! Please, download them again or re-run this script again!   \033[0m\n"
