@@ -11,7 +11,7 @@ process SUMMARIZE_DATA {
       tuple val(name), path(fusions), path(annot_csv), path(annot_fasta), path(cpms), path(counts), path(read_stats)
 
     output:
-      tuple val("${name}"), path("fusions_1.csv"), emit: predictions
+      tuple val("${name}"), path("fusions.csv"), path("fusions.pass.csv"), emit: predictions
 
     script:
     """
