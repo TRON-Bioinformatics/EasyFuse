@@ -24,6 +24,11 @@ if (!params.output) {
     exit 1
 }
 
+if (!params.reference) {
+    log.error "--reference is required"
+    exit 1
+}
+
 // checks required inputs
 if (params.input_files) {
   Channel

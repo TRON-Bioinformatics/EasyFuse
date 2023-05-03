@@ -8,6 +8,7 @@ nextflow main.nf \
   -profile test,conda \
   --output test/output/test1 \
   --input_files test/data/test_input.txt \
+  --reference /scratch/info/data/easyfuse/easyfuse_ref/ \
   -resume
 
 
