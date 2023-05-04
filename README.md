@@ -27,40 +27,69 @@ wget ftp://easyfuse.tron-mainz.de/easyfuse_ref_v2.tar.gz
 tar xvfz easyfuse_ref_v2.tar.gz
 ```
 
-### Configuration
+### Download and install EasyFuse Python package
 
-Set the paths to your downloaded reference data in your nextflow.config file
+Next, you have to install EasyFuse to get the command line tools.
 
-Generate a tab-delimited input table with your matching FASTQs. The format of the table is: sample_name, fq1, fq2 .
-E.g.:
-sample_01 /path/to/sample_01_R1.fastq.gz /path/to/sample_01_R2.fastq.gz
+```
+# Download repo from GitHub
+git clone https://github.com/TRON-Bioinformatics/EasyFuse.git
+
+cd EasyFuse
+
+# Create virtual environment using Python3.7 (only works on Python3.7)
+python3.7 -m venv env/
+
+# Activate environment
+source env/bin/activate
+
+# Install poetry for easy installation
+pip install poetry
+
+# Install EasyFuse package using poetry
+poetry install
+```
 
 
 ### Run the pipeline
 
+Provide your downloaded reference data with the parameter `--reference`
+
+
+Generate a tab-delimited input table with your matching FASTQs. The format of the table is: sample_name, fq1, fq2 (**without headers**).
+E.g.:
 ```
-nextflow main.nf \
-  -profile test,conda \
-  -resume \
-  --input_files test/data/test_input.txt \
-  --output output/test1
+sample_01	/path/to/sample_01_R1.fastq.gz	/path/to/sample_01_R2.fastq.gz
+```
+
+
+Start the pipeline as follows
 
 ```
+nextflow main.nf \
+  -profile conda \
+  -resume \
+  --reference /your/reference/folder \
+  --input_files test_input.txt \
+  --output test1
+```
+
+**NOTE**: adapt your profiles according to your Nextflow configuration to run the pipeline in a queue system
 
 
 ### Output format
 
-EasyFuse creates three output files per sample in the `FusionSummary` folder: 
+EasyFuse creates three output files per sample in the according folder: 
 
- - `<Sample_Name>_fusRank_1.csv`
- - `<Sample_Name>_fusRank_1.pred.csv` 
- - `<Sample_Name>_fusRank_1.pred.all.csv`
+ - `fusions_1.csv`
+ - `fusions.pass.csv` 
+ - `fusions.pass.all.csv`
  
-Within the files, each line describes a candidate fusion transcript. The prefix `<Sample_Name>` is inferred from the input fastq file names. The file `_fusRank_1.csv` contains only annotated features, while the files `.pred.csv` and `.pred.all.csv` contain additionally the prediction probability assigned by the EasyFuse model as well as the assigned prediction class (*positive* or *negative*). The file `.pred.all.csv` contains information on all considered fusion transcripts, while the file `.pred.csv` contains only those with a *positive* assigned prediction class. 
+Within the files, each line describes a candidate fusion transcript. The name of each sample folder is inferred by first column of the input table. The file `fusions_1.csv` contains only annotated features, while the files `.pass.csv` and `.pass.all.csv` contain additionally the prediction probability assigned by the EasyFuse model as well as the assigned prediction class (*positive* or *negative*). The file `.pass.all.csv` contains information on all considered fusion transcripts, while the file `.pass.csv` contains only those with a *positive* assigned prediction class. 
 
 #### Example Output
 
-The following table shows an example of the `.pred.all.csv` file.:
+The following table shows an example of the `.pass.all.csv` file.:
 
 | BPID | context_sequence_id | FTID | Fusion_Gene | Breakpoint1 | Breakpoint2 | context_sequence_100_id | type | exon_nr | exon_starts | exon_ends | exon_boundary1 | exon_boundary2 | exon_boundary | bp1_frame | bp2_frame | frame | context_sequence | context_sequence_bp | neo_peptide_sequence | neo_peptide_sequence_bp | fusioncatcher_detected | fusioncatcher_junc | fusioncatcher_span | starfusion_detected | starfusion_junc | starfusion_span | infusion_detected | infusion_junc | infusion_span | mapsplice_detected | mapsplice_junc | mapsplice_span | soapfuse_detected | soapfuse_junc | soapfuse_span | tool_count | tool_frac | ft_bp_best | ft_a_best | ft_b_best | ft_junc_best | ft_span_best | ft_anch_best | wt1_bp_best | wt1_a_best | wt1_b_best | wt1_junc_best | wt1_span_best | wt1_anch_best | wt2_bp_best | wt2_a_best | wt2_b_best | wt2_junc_best | wt2_span_best | wt2_anch_best | ft_bp_cnt_best | ft_a_cnt_best | ft_b_cnt_best | ft_junc_cnt_best | ft_span_cnt_best | ft_anch_cnt_best | wt1_bp_cnt_best | wt1_a_cnt_best | wt1_b_cnt_best | wt1_junc_cnt_best | wt1_span_cnt_best | wt1_anch_cnt_best | wt2_bp_cnt_best | wt2_a_cnt_best | wt2_b_cnt_best | wt2_junc_cnt_best | wt2_span_cnt_best | wt2_anch_cnt_best | prediction_prob | prediction_class
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |

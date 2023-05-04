@@ -4,7 +4,7 @@ process FASTQC {
     memory "8g"
     tag "${name}"
 
-    conda (params.enable_conda ? "bioconda::fastqc=0.11.9" : null)
+    conda (params.enable_conda ? "environments/qc.yml" : null)
 
     input:
     tuple val(name),
@@ -23,7 +23,7 @@ process FASTQC {
     """
 }
 
-process EASYFUSE_QC_PARSER {
+process FASTQC_PARSER {
     cpus 2
     memory "8g"
     tag "${name}"
@@ -44,12 +44,12 @@ process EASYFUSE_QC_PARSER {
     """
 }
 
-process EASYFUSE_SKEWER {
+process SKEWER {
     cpus 2
     memory "8g"
     tag "${name}"
 
-    conda (params.enable_conda ? "bioconda::skewer=0.2.2" : null)
+    conda (params.enable_conda ? "environments/qc.yml" : null)
 
     input:
     tuple val(name),

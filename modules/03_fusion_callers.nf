@@ -4,7 +4,7 @@ process FUSION_CATCHER_INDEX {
     memory "32g"
     tag "${name}"
 
-    conda (params.enable_conda ? "bioconda::fusioncatcher=1.00" : null)
+    conda (params.enable_conda ? "environments/fusioncatcher.yml" : null)
 
     script:
     """
@@ -18,7 +18,7 @@ process FUSION_CATCHER {
     memory "32g"
     tag "${name}"
 
-    conda (params.enable_conda ? "bioconda::java-jdk bioconda::fusioncatcher=1.00" : null)
+    conda (params.enable_conda ? "environments/fusioncatcher.yml" : null)
 
     input:
       tuple val(name), path(fastq1), file(fastq2)
@@ -42,7 +42,7 @@ process STAR_FUSION {
     memory "32g"
     tag "${name}"
 
-    conda (params.enable_conda ? "bioconda::star=2.6.1d bioconda::star-fusion=1.4.0" : null)
+    conda (params.enable_conda ? "environments/starfusion.yml" : null)
 
     input:
       tuple val(name), path(chimeric_reads)

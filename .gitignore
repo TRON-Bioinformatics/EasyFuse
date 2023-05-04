@@ -1,1 +1,8 @@
 .idea
+.nextflow/
+.nextflow.log*
+work/
+test/data/test_input.txt
+trace.txt*
+report.html*
+test/output
