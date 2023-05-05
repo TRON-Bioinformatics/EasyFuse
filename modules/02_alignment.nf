@@ -4,7 +4,7 @@ process STAR {
     memory "32g"
     tag "${name}"
 
-    conda (params.enable_conda ? "bioconda::star=2.6.1d" : null)
+    conda (params.enable_conda ? "environments/alignment.yml" : null)
 
     input:
       tuple val(name), path(fastq1), file(fastq2)
@@ -40,7 +40,7 @@ process STAR {
     """
 }
 
-process EASYFUSE_READ_FILTER {
+process READ_FILTER {
     cpus 2
     memory "8g"
     tag "${name}"
@@ -66,7 +66,7 @@ process BAM2FASTQ {
     memory "8g"
     tag "${name}"
 
-    conda (params.enable_conda ? "bioconda::samtools=1.9.0" : null)
+    conda (params.enable_conda ? "environments/alignment.yml" : null)
 
     input:
       tuple val(name), path(bam)
