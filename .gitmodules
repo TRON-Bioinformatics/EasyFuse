@@ -1,0 +1,3 @@
+[submodule "easyfuse_pkg"]
+	path = easyfuse_pkg
+	url = https://github.com/TRON-Bioinformatics/EasyFuse.git
