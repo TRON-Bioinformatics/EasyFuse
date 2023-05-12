@@ -37,15 +37,19 @@ bash installation.sh
 ```
 
 
-### Download and install EasyFuse Python package
+### Download nextflow pipeline and install EasyFuse package
 
-Next, you have to install EasyFuse to get the command line tools.
+Next, you have to download the nextflow pipeline including the EasyFuse package source dir.
 
 ```
-# Download repo from GitHub
-git clone -b dev https://github.com/TRON-Bioinformatics/EasyFuse.git
+git clone https://gitlab.rlp.net/tron/easyfuse-pipeline.git
 
-cd EasyFuse
+cd easyfuse-pipeline
+
+# Update submodule to default branch
+git submodule update --init --recursive
+
+cd easyfuse_pkg
 
 # Create virtual environment using Python3.7 (only works on Python3.7)
 python3.7 -m venv env/
