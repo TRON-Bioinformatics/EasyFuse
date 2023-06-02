@@ -13,9 +13,7 @@ nextflow main.nf \
   -resume
 
 
-test -s test/output/test2/sample_1/fusions_1.csv || { echo "Missing file!"; exit 1; }
+test -s test/output/test2/sample_1/fusions.csv || { echo "Missing file!"; exit 1; }
 test -s test/output/test2/sample_1/fusions.pass.csv || { echo "Missing file!"; exit 1; }
-test -s test/output/test2/sample_1/fusions.pass.all.csv || { echo "Missing file!"; exit 1; }
-test -s test/output/test2/sample_2/fusions_1.csv || { echo "Missing file!"; exit 1; }
+test -s test/output/test2/sample_2/fusions.csv || { echo "Missing file!"; exit 1; }
 test -s test/output/test2/sample_2/fusions.pass.csv || { echo "Missing file!"; exit 1; }
-test -s test/output/test2/sample_2/fusions.pass.all.csv || { echo "Missing file!"; exit 1; }

@@ -4,7 +4,7 @@ process FASTQC {
     memory "8g"
     tag "${name}"
 
-    conda (params.enable_conda ? "environments/qc.yml" : null)
+    conda (params.enable_conda ? "${baseDir}/environments/qc.yml" : null)
 
     input:
     tuple val(name),
@@ -49,7 +49,7 @@ process SKEWER {
     memory "8g"
     tag "${name}"
 
-    conda (params.enable_conda ? "environments/qc.yml" : null)
+    conda (params.enable_conda ? "${baseDir}/environments/qc.yml" : null)
 
     input:
     tuple val(name),

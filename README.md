@@ -37,15 +37,19 @@ bash installation.sh
 ```
 
 
-### Download and install EasyFuse Python package
+### Download nextflow pipeline and install EasyFuse package
 
-Next, you have to install EasyFuse to get the command line tools.
+Next, you have to download the nextflow pipeline including the EasyFuse package source dir.
 
 ```
-# Download repo from GitHub
-git clone https://github.com/TRON-Bioinformatics/EasyFuse.git
+git clone https://gitlab.rlp.net/tron/easyfuse-pipeline.git
 
-cd EasyFuse
+cd easyfuse-pipeline
+
+# Update submodule to default branch
+git submodule update --init --recursive
+
+cd easyfuse_pkg
 
 # Create virtual environment using Python3.7 (only works on Python3.7)
 python3.7 -m venv env/
@@ -89,13 +93,12 @@ nextflow main.nf \
 
 ### Output format
 
-EasyFuse creates three output files per sample in the according folder: 
+EasyFuse creates an output folder for each input sample containing the following files: 
 
- - `fusions_1.csv`
+ - `fusions.csv`
  - `fusions.pass.csv` 
- - `fusions.pass.all.csv`
  
-Within the files, each line describes a candidate fusion transcript. The name of each sample folder is inferred by first column of the input table. The file `fusions_1.csv` contains only annotated features, while the files `.pass.csv` and `.pass.all.csv` contain additionally the prediction probability assigned by the EasyFuse model as well as the assigned prediction class (*positive* or *negative*). The file `.pass.all.csv` contains information on all considered fusion transcripts, while the file `.pass.csv` contains only those with a *positive* assigned prediction class. 
+Within the files, each line describes a candidate fusion transcript. The file `fusions.csv` contains all candidate fusions with annotated features, the prediction probability assigned by the EasyFuse model, and the corresponding prediction class (*positive* or *negative*). The file `fusions.pass.csv` contains only *positive* predicted gene fusions. 
 
 #### Example Output
 
