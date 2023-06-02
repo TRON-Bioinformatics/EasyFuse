@@ -4,7 +4,7 @@ process STAR {
     memory "32g"
     tag "${name}"
 
-    conda (params.enable_conda ? "environments/alignment.yml" : null)
+    conda (params.enable_conda ? "${baseDir}/environments/alignment.yml" : null)
 
     input:
       tuple val(name), path(fastq1), file(fastq2)
@@ -66,7 +66,7 @@ process BAM2FASTQ {
     memory "8g"
     tag "${name}"
 
-    conda (params.enable_conda ? "environments/alignment.yml" : null)
+    conda (params.enable_conda ? "${baseDir}/environments/alignment.yml" : null)
 
     input:
       tuple val(name), path(bam)
