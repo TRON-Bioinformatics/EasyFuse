@@ -42,14 +42,14 @@ bash installation.sh
 Next, you have to download the nextflow pipeline including the EasyFuse package source dir.
 
 ```
-git clone https://gitlab.rlp.net/tron/easyfuse-pipeline.git
+git clone https://github.com/TRON-Bioinformatics/EasyFuse.git
 
-cd easyfuse-pipeline
+cd EasyFuse
 
 # Update submodule to default branch
 git submodule update --init --recursive
 
-cd easyfuse_pkg
+cd easyfuse_src
 
 # Create virtual environment using Python3.7 (only works on Python3.7)
 python3.7 -m venv env/
@@ -179,6 +179,52 @@ Overview of all features/columns annotated by EasyFuse:
 
 - **prediction_prob:** The predicted probability according to the machine learning model that the fusion candidate is a true positive. 
 - **prediction_class:** The predicted class (`negative` or `positive`) according to the machine learning model. This classification relies on a user-defined threshold (default 0.5) applied to the `precition_prob` column. 
+
+
+### Run via Docker
+
+The Docker image can be downloaded from [dockerhub](https://hub.docker.com/r/tronbioinformatics/easyfuse) using the following command:
+
+```
+docker pull tronbioinformatics/easyfuse:latest
+```
+
+EasyFuse will require three folders:
+
+* The input data folder containing FASTQ files, in this example `/path/to/data`.
+* The reference data folder, in this example `/path/to/easyfuse_ref`
+* The output folder, in this example `/path/to/output`
+
+EasyFuse can be started by mapping the input data, references, and output folders.
+
+```
+docker run \
+  --name easyfuse_container \
+  -v /path/to/easyfuse_ref:/ref \
+  -v /path/to/data:/data \
+  -v /path/to/output:/output \
+  --rm \
+  -it easyfuse:latest \
+  python /code/easyfuse/processing.py -i /data -o /output
+
+```
+
+### Run EasyFuse with Singularity
+
+Alternatively, EasyFuse can be executed with [Singularity](https://sylabs.io/docs/) as follows:
+
+```
+singularity exec 
+  --containall \
+  --bind /path/to/easyfuse_ref:/ref \
+  --bind /path/to/data:/data \
+  --bind /path/to/output:/output \  
+  docker://tronbioinformatics/easyfuse:latest \
+  python /code/easyfuse/processing.py -i /data/ -o /output
+
+```
+
+The output can be found in `/path/to/output/FusionSummary`.
 
 
 ## Citation
