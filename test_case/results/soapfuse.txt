@@ -1,9 +1,0 @@
-up_gene	up_chr	up_strand	up_Genome_pos	up_loc	dw_gene	dw_chr	dw_strand	dw_Genome_pos	dw_loc	Span_reads_num	Junc_reads_num	Fusion_Type	down_fusion_part_frame-shift_or_not
-AKAP9	7	+	92003235	E	BRAF	7	-	140787584	E	364	281	INTRACHR-DS	inframe-shift
-BRD4	19	-	15254152	E	NUTM1	15	+	34347969	E	229	153	INTERCHR-DS	inframe-shift
-CD74	5	-	150404680	E	ROS1	6	-	117324415	E	138	193	INTERCHR-SS	inframe-shift
-ETV6	12	+	11869969	E	NTRK3	15	-	87940753	E	321	245	INTERCHR-DS	inframe-shift
-EWSR1	22	+	29287134	E	ATF1	12	+	50814280	E	329	156	INTERCHR-SS	inframe-shift
-EWSR1	22	+	29287134	E	FLI1	11	+	128807180	E	301	188	INTERCHR-SS	inframe-shift
-HOOK3	8	+	42968214	E	RET	10	+	43116584	E	254	118	INTERCHR-SS	inframe-shift
-TMPRSS2	21	-	41494381	M	ETV1	7	-	13935844	M	323	133	INTERCHR-SS	inframe-shift

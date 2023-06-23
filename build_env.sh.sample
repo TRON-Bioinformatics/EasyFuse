@@ -1,7 +1,0 @@
-#!/bin/bash
-
-# Here you can add all commands which should be executed for each individual slurm job
-# e.g. module load R/3.6.0
-
-PYTHONPATH=/path/to/your/python/packages/
-export PATH=$PATH:/path/to/be/added/
