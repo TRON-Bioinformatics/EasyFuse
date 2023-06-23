@@ -11,12 +11,11 @@ EasyFuse uses five fusion gene detection tools, [STAR-Fusion](https://github.com
 
  - Publication: [Weber D, Ibn-Salem J, Sorn P, et al. Nat Biotechnol. 2022](https://doi.org/10.1038/s41587-022-01247-9)
 
-We recommend using EasyFuse with Docker or Singularity.
 
 ## Usage
 
 
-### Download reference data
+### Download reference data from sFTP
 
 Before running EasyFuse the following reference annotation data needs to be downloaded (~92 GB).
 
@@ -28,65 +27,82 @@ wget ftp://easyfuse.tron-mainz.de/easyfuse_ref_v2.tar.gz
 tar xvfz easyfuse_ref_v2.tar.gz
 ```
 
-### Run EasyFuse with Docker
+### Download reference data from Ensembl and tool repos
 
-The Docker image can be downloaded from [dockerhub](https://hub.docker.com/r/tronbioinformatics/easyfuse) using the following command:
-
-```
-docker pull tronbioinformatics/easyfuse:latest
-```
-
-EasyFuse will require three folders:
-
-* The input data folder containing FASTQ files, in this example `/path/to/data`.
-* The reference data folder, in this example `/path/to/easyfuse_ref`
-* The output folder, in this example `/path/to/output`
-
-EasyFuse can be started by mapping the input data, references, and output folders.
+Alternatively, the following script will automatically download the references
+and generate the required indices for the pipeline: 
 
 ```
-docker run \
-  --name easyfuse_container \
-  -v /path/to/easyfuse_ref:/ref \
-  -v /path/to/data:/data \
-  -v /path/to/output:/output \
-  --rm \
-  -it easyfuse:latest \
-  python /code/easyfuse/processing.py -i /data -o /output
-
+bash installation.sh
 ```
 
-### Run EasyFuse with Singularity
 
-Alternatively, EasyFuse can be executed with [Singularity](https://sylabs.io/docs/) as follows:
+### Download nextflow pipeline and install EasyFuse package
 
-```
-singularity exec 
-  --containall \
-  --bind /path/to/easyfuse_ref:/ref \
-  --bind /path/to/data:/data \
-  --bind /path/to/output:/output \  
-  docker://tronbioinformatics/easyfuse:latest \
-  python /code/easyfuse/processing.py -i /data/ -o /output
+Next, you have to download the nextflow pipeline including the EasyFuse package source dir.
 
 ```
+git clone https://gitlab.rlp.net/tron/easyfuse-pipeline.git
 
-The output can be found in `/path/to/output/FusionSummary`.
+cd easyfuse-pipeline
+
+# Update submodule to default branch
+git submodule update --init --recursive
+
+cd easyfuse_pkg
+
+# Create virtual environment using Python3.7 (only works on Python3.7)
+python3.7 -m venv env/
+
+# Activate environment
+source env/bin/activate
+
+# Install poetry for easy installation
+pip install poetry
+
+# Install EasyFuse package using poetry
+poetry install
+```
+
+
+### Run the pipeline
+
+Provide your downloaded reference data with the parameter `--reference`
+
+
+Generate a tab-delimited input table with your matching FASTQs. The format of the table is: sample_name, fq1, fq2 (**without headers**).
+E.g.:
+```
+sample_01	/path/to/sample_01_R1.fastq.gz	/path/to/sample_01_R2.fastq.gz
+```
+
+
+Start the pipeline as follows
+
+```
+nextflow main.nf \
+  -profile conda \
+  -resume \
+  --reference /your/reference/folder \
+  --input_files test_input.txt \
+  --output test1
+```
+
+**NOTE**: adapt your profiles according to your Nextflow configuration to run the pipeline in a queue system
 
 
 ### Output format
 
-EasyFuse creates three output files per sample in the `FusionSummary` folder: 
+EasyFuse creates an output folder for each input sample containing the following files: 
 
- - `<Sample_Name>_fusRank_1.csv`
- - `<Sample_Name>_fusRank_1.pred.csv` 
- - `<Sample_Name>_fusRank_1.pred.all.csv`
+ - `fusions.csv`
+ - `fusions.pass.csv` 
  
-Within the files, each line describes a candidate fusion transcript. The prefix `<Sample_Name>` is inferred from the input fastq file names. The file `_fusRank_1.csv` contains only annotated features, while the files `.pred.csv` and `.pred.all.csv` contain additionally the prediction probability assigned by the EasyFuse model as well as the assigned prediction class (*positive* or *negative*). The file `.pred.all.csv` contains information on all considered fusion transcripts, while the file `.pred.csv` contains only those with a *positive* assigned prediction class. 
+Within the files, each line describes a candidate fusion transcript. The file `fusions.csv` contains all candidate fusions with annotated features, the prediction probability assigned by the EasyFuse model, and the corresponding prediction class (*positive* or *negative*). The file `fusions.pass.csv` contains only *positive* predicted gene fusions. 
 
 #### Example Output
 
-The following table shows an example of the `.pred.all.csv` file.:
+The following table shows an example of the `.pass.all.csv` file.:
 
 | BPID | context_sequence_id | FTID | Fusion_Gene | Breakpoint1 | Breakpoint2 | context_sequence_100_id | type | exon_nr | exon_starts | exon_ends | exon_boundary1 | exon_boundary2 | exon_boundary | bp1_frame | bp2_frame | frame | context_sequence | context_sequence_bp | neo_peptide_sequence | neo_peptide_sequence_bp | fusioncatcher_detected | fusioncatcher_junc | fusioncatcher_span | starfusion_detected | starfusion_junc | starfusion_span | infusion_detected | infusion_junc | infusion_span | mapsplice_detected | mapsplice_junc | mapsplice_span | soapfuse_detected | soapfuse_junc | soapfuse_span | tool_count | tool_frac | ft_bp_best | ft_a_best | ft_b_best | ft_junc_best | ft_span_best | ft_anch_best | wt1_bp_best | wt1_a_best | wt1_b_best | wt1_junc_best | wt1_span_best | wt1_anch_best | wt2_bp_best | wt2_a_best | wt2_b_best | wt2_junc_best | wt2_span_best | wt2_anch_best | ft_bp_cnt_best | ft_a_cnt_best | ft_b_cnt_best | ft_junc_cnt_best | ft_span_cnt_best | ft_anch_cnt_best | wt1_bp_cnt_best | wt1_a_cnt_best | wt1_b_cnt_best | wt1_junc_cnt_best | wt1_span_cnt_best | wt1_anch_cnt_best | wt2_bp_cnt_best | wt2_a_cnt_best | wt2_b_cnt_best | wt2_junc_cnt_best | wt2_span_cnt_best | wt2_anch_cnt_best | prediction_prob | prediction_class
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
