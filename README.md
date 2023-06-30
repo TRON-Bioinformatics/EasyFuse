@@ -42,12 +42,9 @@ bash installation.sh
 Next, you have to download the nextflow pipeline including the EasyFuse package source dir.
 
 ```
-git clone https://github.com/TRON-Bioinformatics/EasyFuse.git
+git clone --recurse-submodules https://github.com/TRON-Bioinformatics/EasyFuse.git
 
 cd EasyFuse
-
-# Update submodule to default branch
-git submodule update --init --recursive
 
 cd easyfuse_src
 
