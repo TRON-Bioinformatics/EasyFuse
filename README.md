@@ -7,17 +7,24 @@
 EasyFuse is a pipeline to detect fusion transcripts from RNA-seq data with high accuracy.
 The current version of EasyFuse uses two fusion gene detection tools, [STAR-Fusion](https://github.com/STAR-Fusion/STAR-Fusion/wiki) and [Fusioncatcher](https://github.com/ndaniel/fusioncatcher) along with a powerful read filtering strategy, stringent re-quantification of supporting reads and machine learning for highly accurate predictions.
 
-Please note that previous versions of EasyFuse including the one in the EasyFuse publication utilized three additional prediction tools: [InFusion](https://bitbucket.org/kokonech/infusion/src/master/), [MapSplice2](http://www.netlab.uky.edu/p/bioinfo/MapSplice2) and [SoapFuse](https://sourceforge.net/p/soapfuse/wiki/Home/) 
+Please note that previous versions of EasyFuse including the one in the EasyFuse publication utilized three additional prediction tools: [InFusion](https://bitbucket.org/kokonech/infusion/src/master/), [MapSplice2](http://www.netlab.uky.edu/p/bioinfo/MapSplice2) and [SoapFuse](https://sourceforge.net/p/soapfuse/wiki/Home/).
+For maximal sensitivity, we recommend using an older EasyFuse release with five tools: [EasyFuse v1.3.7](https://github.com/TRON-Bioinformatics/EasyFuse/tree/v1.3.7)
 
-<p align="center"><img src="img/easyfuse_workflow.png"></p>
+<p align="center"><img src="img/easyfuse_workflow.png" width="240px"></p>
 
  - Publication: [Weber D, Ibn-Salem J, Sorn P, et al. Nat Biotechnol. 2022](https://doi.org/10.1038/s41587-022-01247-9)
 
 
+
+
 ## Usage
 
+### Dependencies
 
-### Download reference data from sFTP
+ - [NextFlow](https://www.nextflow.io/)
+ - [Conda](https://docs.anaconda.com/free/anaconda/install/index.html)
+
+### Download reference data
 
 Before running EasyFuse the following reference annotation data needs to be downloaded (~92 GB).
 
@@ -27,15 +34,6 @@ wget ftp://easyfuse.tron-mainz.de/easyfuse_ref_v2.tar.gz
 
 # Extract reference archive
 tar xvfz easyfuse_ref_v2.tar.gz
-```
-
-### Download reference data from Ensembl and tool repos
-
-Alternatively, the following script will automatically download the references
-and generate the required indices for the pipeline: 
-
-```
-bash installation.sh
 ```
 
 
@@ -81,14 +79,10 @@ Start the pipeline as follows
 ```
 nextflow main.nf \
   -profile conda \
-  -resume \
-  --reference /your/reference/folder \
-  --input_files test_input.txt \
-  --output test1
+  --reference /path/to/reference/folder \
+  --input_files /path/to/input_table_file \
+  --output /path/to/output_folder
 ```
-
-**NOTE**: adapt your profiles according to your Nextflow configuration to run the pipeline in a queue system
-
 
 ### Output format
 
@@ -101,7 +95,7 @@ Within the files, each line describes a candidate fusion transcript. The file `f
 
 #### Example Output
 
-The following table shows an example of the `.pass.all.csv` file.:
+The following table shows an example of the `fusions.csv` file.:
 
 | BPID | context_sequence_id | FTID | Fusion_Gene | Breakpoint1 | Breakpoint2 | context_sequence_100_id | type | exon_nr | exon_starts | exon_ends | exon_boundary1 | exon_boundary2 | exon_boundary | bp1_frame | bp2_frame | frame | context_sequence | context_sequence_bp | neo_peptide_sequence | neo_peptide_sequence_bp | fusioncatcher_detected | fusioncatcher_junc | fusioncatcher_span | starfusion_detected | starfusion_junc | starfusion_span | infusion_detected | infusion_junc | infusion_span | mapsplice_detected | mapsplice_junc | mapsplice_span | soapfuse_detected | soapfuse_junc | soapfuse_span | tool_count | tool_frac | ft_bp_best | ft_a_best | ft_b_best | ft_junc_best | ft_span_best | ft_anch_best | wt1_bp_best | wt1_a_best | wt1_b_best | wt1_junc_best | wt1_span_best | wt1_anch_best | wt2_bp_best | wt2_a_best | wt2_b_best | wt2_junc_best | wt2_span_best | wt2_anch_best | ft_bp_cnt_best | ft_a_cnt_best | ft_b_cnt_best | ft_junc_cnt_best | ft_span_cnt_best | ft_anch_cnt_best | wt1_bp_cnt_best | wt1_a_cnt_best | wt1_b_cnt_best | wt1_junc_cnt_best | wt1_span_cnt_best | wt1_anch_cnt_best | wt2_bp_cnt_best | wt2_a_cnt_best | wt2_b_cnt_best | wt2_junc_cnt_best | wt2_span_cnt_best | wt2_anch_cnt_best | prediction_prob | prediction_class
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -179,6 +173,11 @@ Overview of all features/columns annotated by EasyFuse:
 - **prediction_prob:** The predicted probability according to the machine learning model that the fusion candidate is a true positive. 
 - **prediction_class:** The predicted class (`negative` or `positive`) according to the machine learning model. This classification relies on a user-defined threshold (default 0.5) applied to the `precition_prob` column. 
 
+
+
+## Run EasyFuse 1.3.7
+
+For maximial sensitivity, we currently recommend using [EasyFuse version 1.3.7](https://github.com/TRON-Bioinformatics/EasyFuse/tree/v1.3.7) via Docker or Singularity.
 
 ### Run via Docker
 
