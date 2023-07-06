@@ -61,9 +61,10 @@ class Processing(object):
         elif cfg_file.endswith("json"):
             with open(cfg_file) as config_file:
                 self.cfg = json.load(config_file)
-
-        copy(cfg_file, working_dir)
-
+        try:
+            copy(cfg_file, working_dir)
+        except shutil.SameFileError:
+            pass
 
         self.jobname_suffix = None
         if jobname_suffix:
