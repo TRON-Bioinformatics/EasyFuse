@@ -18,6 +18,7 @@ model_pred_threshold = 0.5
 tsl_filter = 4,5,NA
 requant_mode = best
 context_seq_len = 400
+neo_peptide_len = 13
 ref_genome_build = hg38
 ref_trans_version = ensembl
 queueing_system = none

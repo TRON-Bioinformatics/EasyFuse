@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals
 
 """
 Collect fusion prediction results,
@@ -163,7 +165,7 @@ class Fetching(object):
         # Define cmd strings for each program
         cmd_fusiondata = "{0} {1} -i {2} -o {3} -s {4} -t {5} -f {6} -l {7}".format(cmds["python3"], os.path.join(module_dir, "fusiontoolparser.py"), self.sample_path, detected_fusions_path, self.sample_id, fusion_support, self.cfg["general"]["fusiontools"], self.logger.get_path())
         cmd_liftover = "{0} {1} -i {2} -l {3}".format(cmds["python3"], os.path.join(module_dir, "misc", "liftover.py"), detected_fusions_file, self.logger.get_path())
-        cmd_contextseq = "{0} {1} --detected_fusions {2} --annotation_db {3} --out_csv {4} --genome_fasta {5} --tsl_info {6} --cis_near_dist {7} --context_seq_len {8} --tsl_filter_level {9}".format(cmds["python3"], os.path.join(module_dir, "fusionannotation.py"), detected_fusions_file, genes_adb_path, context_seq_file, genome_fasta_path, genes_tsl_path, self.cfg["general"]["cis_near_distance"], self.cfg["general"]["context_seq_len"], self.cfg["general"]["tsl_filter"])
+        cmd_contextseq = "{0} {1} --detected_fusions {2} --annotation_db {3} --out_csv {4} --genome_fasta {5} --tsl_info {6} --cis_near_dist {7} --context_seq_len {8} --neo_peptide_len {9} --tsl_filter_level {10}".format(cmds["python3"], os.path.join(module_dir, "fusionannotation.py"), detected_fusions_file, genes_adb_path, context_seq_file, genome_fasta_path, genes_tsl_path, self.cfg["general"]["cis_near_distance"], self.cfg["general"]["context_seq_len"], self.cfg["general"]["neo_peptide_len"], self.cfg["general"]["tsl_filter"])
         cpu = self.cfg["resources"]["fetchdata"].split(",")[0]
 #        mem = cfg.resources["fetchdata"]["mem"]
         cmd_starindex = "{0} --runMode genomeGenerate --runThreadN {1} --limitGenomeGenerateRAM 48000000000 --genomeChrBinNbits waiting_for_bin_size_input --genomeSAindexNbases waiting_for_sa_idx_input --genomeDir {2} --genomeFastaFiles {3}".format(cmds["star"], cpu, star_genome_path, "{0}{1}".format(context_seq_file, ".fasta"))
