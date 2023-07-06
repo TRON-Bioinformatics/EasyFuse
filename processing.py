@@ -18,7 +18,8 @@ from configparser import ConfigParser
 import json
 import os
 import os.path
-from shutil import copy
+# from shutil import copy
+import shutil
 import sys
 import time
 
@@ -62,7 +63,7 @@ class Processing(object):
             with open(cfg_file) as config_file:
                 self.cfg = json.load(config_file)
         try:
-            copy(cfg_file, working_dir)
+            shutil.copy(cfg_file, working_dir)
         except shutil.SameFileError:
             pass
 
