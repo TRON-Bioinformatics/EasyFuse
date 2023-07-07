@@ -5,16 +5,24 @@
 [![License](https://img.shields.io/badge/license-GPLv3-green)](https://opensource.org/licenses/GPL-3.0)
 
 EasyFuse is a pipeline to detect fusion transcripts from RNA-seq data with high accuracy.
-EasyFuse uses five fusion gene detection tools, [STAR-Fusion](https://github.com/STAR-Fusion/STAR-Fusion/wiki), [InFusion](https://bitbucket.org/kokonech/infusion/src/master/), [MapSplice2](http://www.netlab.uky.edu/p/bioinfo/MapSplice2), [Fusioncatcher](https://github.com/ndaniel/fusioncatcher), and [SoapFuse](https://sourceforge.net/p/soapfuse/wiki/Home/) along with a powerful read filtering strategy, stringent re-quantification of supporting reads and machine learning for highly accurate predictions.
+The current version of EasyFuse uses two fusion gene detection tools, [STAR-Fusion](https://github.com/STAR-Fusion/STAR-Fusion/wiki) and [Fusioncatcher](https://github.com/ndaniel/fusioncatcher) along with a powerful read filtering strategy, stringent re-quantification of supporting reads and machine learning for highly accurate predictions.
 
-<p align="center"><img src="img/easyfuse_workflow.png"></p>
+Please note that previous versions of EasyFuse including the one in the EasyFuse publication utilized three additional prediction tools: [InFusion](https://bitbucket.org/kokonech/infusion/src/master/), [MapSplice2](http://www.netlab.uky.edu/p/bioinfo/MapSplice2) and [SoapFuse](https://sourceforge.net/p/soapfuse/wiki/Home/).
+For maximal sensitivity, we recommend using an older EasyFuse release with five tools: [EasyFuse v1.3.7](https://github.com/TRON-Bioinformatics/EasyFuse/tree/v1.3.7)
+
+<p align="center"><img src="img/easyfuse_workflow.png" width="240px"></p>
 
  - Publication: [Weber D, Ibn-Salem J, Sorn P, et al. Nat Biotechnol. 2022](https://doi.org/10.1038/s41587-022-01247-9)
 
-We recommend using EasyFuse with Docker or Singularity.
+
+
 
 ## Usage
 
+### Dependencies
+
+ - [NextFlow](https://www.nextflow.io/)
+ - [Conda](https://docs.anaconda.com/free/anaconda/install/index.html)
 
 ### Download reference data
 
@@ -28,65 +36,66 @@ wget ftp://easyfuse.tron-mainz.de/easyfuse_ref_v2.tar.gz
 tar xvfz easyfuse_ref_v2.tar.gz
 ```
 
-### Run EasyFuse with Docker
 
-The Docker image can be downloaded from [dockerhub](https://hub.docker.com/r/tronbioinformatics/easyfuse) using the following command:
+### Download nextflow pipeline and install EasyFuse package
 
-```
-docker pull tronbioinformatics/easyfuse:latest
-```
-
-EasyFuse will require three folders:
-
-* The input data folder containing FASTQ files, in this example `/path/to/data`.
-* The reference data folder, in this example `/path/to/easyfuse_ref`
-* The output folder, in this example `/path/to/output`
-
-EasyFuse can be started by mapping the input data, references, and output folders.
+Next, you have to download the nextflow pipeline including the EasyFuse package source dir.
 
 ```
-docker run \
-  --name easyfuse_container \
-  -v /path/to/easyfuse_ref:/ref \
-  -v /path/to/data:/data \
-  -v /path/to/output:/output \
-  --rm \
-  -it easyfuse:latest \
-  python /code/easyfuse/processing.py -i /data -o /output
+git clone --recurse-submodules https://github.com/TRON-Bioinformatics/EasyFuse.git
 
+cd EasyFuse
+
+cd easyfuse_src
+
+# Create virtual environment using Python3.7 (only works on Python3.7)
+python3.7 -m venv env/
+
+# Activate environment
+source env/bin/activate
+
+# Install poetry for easy installation
+pip install poetry
+
+# Install EasyFuse package using poetry
+poetry install
 ```
 
-### Run EasyFuse with Singularity
 
-Alternatively, EasyFuse can be executed with [Singularity](https://sylabs.io/docs/) as follows:
+### Run the pipeline
 
+Provide your downloaded reference data with the parameter `--reference`
+
+
+Generate a tab-delimited input table with your matching FASTQs. The format of the table is: sample_name, fq1, fq2 (**without headers**).
+E.g.:
 ```
-singularity exec 
-  --containall \
-  --bind /path/to/easyfuse_ref:/ref \
-  --bind /path/to/data:/data \
-  --bind /path/to/output:/output \  
-  docker://tronbioinformatics/easyfuse:latest \
-  python /code/easyfuse/processing.py -i /data/ -o /output
-
+sample_01	/path/to/sample_01_R1.fastq.gz	/path/to/sample_01_R2.fastq.gz
 ```
 
-The output can be found in `/path/to/output/FusionSummary`.
 
+Start the pipeline as follows
+
+```
+nextflow main.nf \
+  -profile conda \
+  --reference /path/to/reference/folder \
+  --input_files /path/to/input_table_file \
+  --output /path/to/output_folder
+```
 
 ### Output format
 
-EasyFuse creates three output files per sample in the `FusionSummary` folder: 
+EasyFuse creates an output folder for each input sample containing the following files: 
 
- - `<Sample_Name>_fusRank_1.csv`
- - `<Sample_Name>_fusRank_1.pred.csv` 
- - `<Sample_Name>_fusRank_1.pred.all.csv`
+ - `fusions.csv`
+ - `fusions.pass.csv` 
  
-Within the files, each line describes a candidate fusion transcript. The prefix `<Sample_Name>` is inferred from the input fastq file names. The file `_fusRank_1.csv` contains only annotated features, while the files `.pred.csv` and `.pred.all.csv` contain additionally the prediction probability assigned by the EasyFuse model as well as the assigned prediction class (*positive* or *negative*). The file `.pred.all.csv` contains information on all considered fusion transcripts, while the file `.pred.csv` contains only those with a *positive* assigned prediction class. 
+Within the files, each line describes a candidate fusion transcript. The file `fusions.csv` contains all candidate fusions with annotated features, the prediction probability assigned by the EasyFuse model, and the corresponding prediction class (*positive* or *negative*). The file `fusions.pass.csv` contains only *positive* predicted gene fusions. 
 
 #### Example Output
 
-The following table shows an example of the `.pred.all.csv` file.:
+The following table shows an example of the `fusions.csv` file.:
 
 | BPID | context_sequence_id | FTID | Fusion_Gene | Breakpoint1 | Breakpoint2 | context_sequence_100_id | type | exon_nr | exon_starts | exon_ends | exon_boundary1 | exon_boundary2 | exon_boundary | bp1_frame | bp2_frame | frame | context_sequence | context_sequence_bp | neo_peptide_sequence | neo_peptide_sequence_bp | fusioncatcher_detected | fusioncatcher_junc | fusioncatcher_span | starfusion_detected | starfusion_junc | starfusion_span | infusion_detected | infusion_junc | infusion_span | mapsplice_detected | mapsplice_junc | mapsplice_span | soapfuse_detected | soapfuse_junc | soapfuse_span | tool_count | tool_frac | ft_bp_best | ft_a_best | ft_b_best | ft_junc_best | ft_span_best | ft_anch_best | wt1_bp_best | wt1_a_best | wt1_b_best | wt1_junc_best | wt1_span_best | wt1_anch_best | wt2_bp_best | wt2_a_best | wt2_b_best | wt2_junc_best | wt2_span_best | wt2_anch_best | ft_bp_cnt_best | ft_a_cnt_best | ft_b_cnt_best | ft_junc_cnt_best | ft_span_cnt_best | ft_anch_cnt_best | wt1_bp_cnt_best | wt1_a_cnt_best | wt1_b_cnt_best | wt1_junc_cnt_best | wt1_span_cnt_best | wt1_anch_cnt_best | wt2_bp_cnt_best | wt2_a_cnt_best | wt2_b_cnt_best | wt2_junc_cnt_best | wt2_span_cnt_best | wt2_anch_cnt_best | prediction_prob | prediction_class
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -165,6 +174,58 @@ Overview of all features/columns annotated by EasyFuse:
 - **prediction_class:** The predicted class (`negative` or `positive`) according to the machine learning model. This classification relies on a user-defined threshold (default 0.5) applied to the `precition_prob` column. 
 
 
+
+## Run EasyFuse 1.3.7
+
+For maximial sensitivity, we currently recommend using [EasyFuse version 1.3.7](https://github.com/TRON-Bioinformatics/EasyFuse/tree/v1.3.7) via Docker or Singularity.
+
+### Run via Docker
+
+The Docker image can be downloaded from [dockerhub](https://hub.docker.com/r/tronbioinformatics/easyfuse) using the following command:
+
+```
+docker pull tronbioinformatics/easyfuse:latest
+```
+
+EasyFuse will require three folders:
+
+* The input data folder containing FASTQ files, in this example `/path/to/data`.
+* The reference data folder, in this example `/path/to/easyfuse_ref`
+* The output folder, in this example `/path/to/output`
+
+EasyFuse can be started by mapping the input data, references, and output folders.
+
+```
+docker run \
+  --name easyfuse_container \
+  -v /path/to/easyfuse_ref:/ref \
+  -v /path/to/data:/data \
+  -v /path/to/output:/output \
+  --rm \
+  -it easyfuse:latest \
+  python /code/easyfuse/processing.py -i /data -o /output
+
+```
+
+### Run EasyFuse with Singularity
+
+Alternatively, EasyFuse can be executed with [Singularity](https://sylabs.io/docs/) as follows:
+
+```
+singularity exec 
+  --containall \
+  --bind /path/to/easyfuse_ref:/ref \
+  --bind /path/to/data:/data \
+  --bind /path/to/output:/output \  
+  docker://tronbioinformatics/easyfuse:latest \
+  python /code/easyfuse/processing.py -i /data/ -o /output
+
+```
+
+The output can be found in `/path/to/output/FusionSummary`.
+
+
 ## Citation
 
 If you use EasyFuse, please cite:  [Weber D, Ibn-Salem J, Sorn P, et al. Nat Biotechnol. 2022](https://doi.org/10.1038/s41587-022-01247-9)
+

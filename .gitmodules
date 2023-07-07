@@ -1,0 +1,4 @@
+[submodule "easyfuse_src"]
+	path = easyfuse_src
+	url = https://github.com/TRON-Bioinformatics/easyfuse-src.git
+	branch = master
