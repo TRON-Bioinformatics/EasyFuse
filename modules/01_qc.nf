@@ -40,7 +40,7 @@ process FASTQC_PARSER {
         path("qc_table.txt"), emit: qc_table
 
     """
-    easy-fuse qc-parser -i $fastq1_qc_data $fastq1_qc_data -o qc_table.txt
+    easy-fuse qc-parser -i $fastq1_qc_data $fastq2_qc_data -o qc_table.txt
     """
 }
 
