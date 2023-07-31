@@ -4,7 +4,10 @@ process STAR_INDEX {
     memory "8g"
     tag "${name}"
 
-    //conda (params.enable_conda ? "bioconda::easyfuse=0.1.0" : null)
+    // TODO: do we really need STAR and samtools here too?
+    // if yes, OK but we need to add these two dependencies to the easyfuse bioconda package
+    // if no, then here we need to use the easyfuse_src.yml environment and we have to remove
+    // pyeasyfuse from requantification.yml
     conda (params.enable_conda ? "${baseDir}/environments/requantification.yml" : null)
 
     input:
@@ -30,7 +33,7 @@ process FUSION_FILTER {
     memory "8g"
     tag "${name}"
 
-    //conda (params.enable_conda ? "bioconda::easyfuse=0.1.0" : null)
+    conda (params.enable_conda ? "${baseDir}/environments/easyfuse_src.yml" : null)
 
     input:
       tuple val(name), path(bam), path(annot_fusions_1), path(annot_fusions_2), path(read_stats)
@@ -87,7 +90,8 @@ process READ_COUNT {
   cpus 6
   memory "50g"
   tag "${name}"
-  //publishDir "${params.output}/${name}", mode: 'copy'
+
+  conda (params.enable_conda ? "${baseDir}/environments/easyfuse_src.yml" : null)
 
   input:
     tuple val(name), path(bam), path(bam_index), path(read_stats)

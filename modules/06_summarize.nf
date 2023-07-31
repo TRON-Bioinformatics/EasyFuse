@@ -5,7 +5,7 @@ process SUMMARIZE_DATA {
     tag "${name}"
     publishDir "${params.output}/${name}", mode: 'copy'
 
-    conda (params.enable_conda ? "${baseDir}/environments/summarize_data.yml" : null)
+    conda (params.enable_conda ? "${baseDir}/environments/easyfuse_src.yml" : null)
 
     input:
       tuple val(name), path(fusions), path(annot_csv), path(annot_fasta), path(cpms), path(counts), path(read_stats)
