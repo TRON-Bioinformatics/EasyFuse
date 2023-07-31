@@ -6,3 +6,7 @@
 After the EasyFuse Python package is installed as described in the README, run the integration tests with `make`.
 
 You may need to edit the test scripts to use an appropriate reference folder in `--reference`.
+
+## Prepare a new release
+
+Increase the version in the property `VERSION` in the file `nextflow.config`.
