@@ -37,29 +37,21 @@ tar xvfz easyfuse_ref_v2.tar.gz
 ```
 
 
-### Download nextflow pipeline and install EasyFuse package
+### Install the nextflow pipeline
 
-Next, you have to download the nextflow pipeline including the EasyFuse package source dir.
+There are two alternatives, manually install the workflow or let Nexftlow handle this via the GitHub repository.
 
+To install manually:
 ```
 git clone --recurse-submodules https://github.com/TRON-Bioinformatics/EasyFuse.git
-
 cd EasyFuse
-
-cd easyfuse_src
-
-# Create virtual environment using Python3.7 (only works on Python3.7)
-python3.7 -m venv env/
-
-# Activate environment
-source env/bin/activate
-
-# Install poetry for easy installation
-pip install poetry
-
-# Install EasyFuse package using poetry
-poetry install
 ```
+
+To install with Netxflow (only available from release 2.0.1):
+```
+nextflow run tron-bioinformatics/easyfuse -t x.y.z --help
+```
+where x.y.z corresponds to an EasyFuse release.
 
 
 ### Run the pipeline
@@ -74,10 +66,20 @@ sample_01	/path/to/sample_01_R1.fastq.gz	/path/to/sample_01_R2.fastq.gz
 ```
 
 
-Start the pipeline as follows
+Start the pipeline as follows if you installed manually
 
 ```
 nextflow main.nf \
+  -profile conda \
+  --reference /path/to/reference/folder \
+  --input_files /path/to/input_table_file \
+  --output /path/to/output_folder
+```
+
+
+Or as follows if you installed it via Nextflow (only available from release 2.0.1):
+```
+nextflow run tron-bioinformatics/easyfuse -t x.y.z \
   -profile conda \
   --reference /path/to/reference/folder \
   --input_files /path/to/input_table_file \
