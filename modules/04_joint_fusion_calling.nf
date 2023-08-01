@@ -4,7 +4,7 @@ process FUSION_PARSER {
     memory "8g"
     tag "${name}"
 
-    conda (params.enable_conda ? "${baseDir}/environments/easyfuse_src.yml" : null)
+    conda (params.enable_conda && ! params.disable_pyeasyfuse_conda ? "${baseDir}/environments/easyfuse_src.yml" : null)
 
     input:
       tuple val(name), path(fusion_catcher_1), path(fusion_catcher_2), path(star_fusion)
@@ -30,7 +30,7 @@ process FUSION_ANNOTATION {
     memory "8g"
     tag "${name}"
 
-    conda (params.enable_conda ? "${baseDir}/environments/easyfuse_src.yml" : null)
+    conda (params.enable_conda && ! params.disable_pyeasyfuse_conda ? "${baseDir}/environments/easyfuse_src.yml" : null)
 
     input:
       tuple val(name), path(fusions)

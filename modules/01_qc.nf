@@ -28,7 +28,7 @@ process FASTQC_PARSER {
     memory "8g"
     tag "${name}"
 
-    conda (params.enable_conda ? "${baseDir}/environments/easyfuse_src.yml" : null)
+    conda (params.enable_conda && ! params.disable_pyeasyfuse_conda ? "${baseDir}/environments/easyfuse_src.yml" : null)
 
     input:
     tuple val(name),
