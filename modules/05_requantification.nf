@@ -4,10 +4,7 @@ process STAR_INDEX {
     memory "8g"
     tag "${name}"
 
-    // TODO: do we really need STAR and samtools here too?
-    // if yes, OK but we need to add these two dependencies to the easyfuse bioconda package
-    // if no, then here we need to use the easyfuse_src.yml environment and we have to remove
-    // pyeasyfuse from requantification.yml
+    // NOTE: we really need STAR and samtools here, these are not added as dependencies to the bioconda package
     conda (params.enable_conda ? "${baseDir}/environments/requantification.yml" : null)
 
     input:
