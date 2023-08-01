@@ -15,8 +15,6 @@ For maximal sensitivity, we recommend using an older EasyFuse release with five 
  - Publication: [Weber D, Ibn-Salem J, Sorn P, et al. Nat Biotechnol. 2022](https://doi.org/10.1038/s41587-022-01247-9)
 
 
-
-
 ## Usage
 
 ### Dependencies
