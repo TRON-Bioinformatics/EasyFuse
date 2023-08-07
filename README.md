@@ -41,11 +41,11 @@ There are two alternatives, manually install the workflow or let Nexftlow handle
 
 To install manually:
 ```
-git clone --recurse-submodules https://github.com/TRON-Bioinformatics/EasyFuse.git
+git clone https://github.com/TRON-Bioinformatics/EasyFuse.git
 cd EasyFuse
 ```
 
-To install with Netxflow (only available from release 2.0.1):
+To install with Nextflow (only available from release 2.0.1):
 ```
 nextflow run tron-bioinformatics/easyfuse -t x.y.z --help
 ```
