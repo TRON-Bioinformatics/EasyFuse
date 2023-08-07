@@ -49,7 +49,7 @@ process SKEWER {
     memory "8g"
     tag "${name}"
 
-    conda (params.enable_conda ? "${baseDir}/environments/qc.yml" : null)
+    conda (params.enable_conda ? "${baseDir}/environments/easyfuse_src.yml" : null)
 
     input:
     tuple val(name),
