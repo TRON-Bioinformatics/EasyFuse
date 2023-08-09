@@ -68,7 +68,7 @@ Start the pipeline as follows if you installed manually
 
 ```
 nextflow main.nf \
-  -profile conda \
+  -profile conda -with-conda \
   --reference /path/to/reference/folder \
   --input_files /path/to/input_table_file \
   --output /path/to/output_folder
@@ -78,7 +78,7 @@ nextflow main.nf \
 Or as follows if you installed it via Nextflow (only available from release 2.0.1):
 ```
 nextflow run tron-bioinformatics/easyfuse -r x.y.z \
-  -profile conda \
+  -profile conda -with-conda \
   --reference /path/to/reference/folder \
   --input_files /path/to/input_table_file \
   --output /path/to/output_folder
