@@ -1,0 +1,9 @@
+easyfuse-pipeline:
+  image: continuumio/miniconda:4.7.10
+  stage: build
+  tags:
+    - docker
+  script:
+    - conda install -c bioconda nextflow
+    - bash test/scripts/test_00.sh
+
