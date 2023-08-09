@@ -2,6 +2,6 @@ easyfuse-pipeline:
   image: continuumio/miniconda:4.7.10
   stage: build
   script:
-    - conda install -c bioconda nextflow
+    - conda install -c bioconda nextflow=20.10.0
     - bash test/scripts/test_00.sh
 
