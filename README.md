@@ -47,7 +47,7 @@ cd EasyFuse
 
 To install with Nextflow (only available from release 2.0.1):
 ```
-nextflow run tron-bioinformatics/easyfuse -t x.y.z --help
+nextflow run tron-bioinformatics/easyfuse -r x.y.z --help
 ```
 where x.y.z corresponds to an EasyFuse release.
 
@@ -77,7 +77,7 @@ nextflow main.nf \
 
 Or as follows if you installed it via Nextflow (only available from release 2.0.1):
 ```
-nextflow run tron-bioinformatics/easyfuse -t x.y.z \
+nextflow run tron-bioinformatics/easyfuse -r x.y.z \
   -profile conda \
   --reference /path/to/reference/folder \
   --input_files /path/to/input_table_file \
