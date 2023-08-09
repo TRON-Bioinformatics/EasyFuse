@@ -4,8 +4,13 @@ process STAR_INDEX {
     memory "8g"
     tag "${name}"
 
-    //conda (params.enable_conda ? "bioconda::easyfuse=0.1.0" : null)
-    conda (params.enable_conda ? "${baseDir}/environments/requantification.yml" : null)
+    // NOTE: we really need STAR and samtools here, these are not added as dependencies to the bioconda package
+    if (params.disable_pyeasyfuse_conda) {
+        conda (params.enable_conda ? "${baseDir}/environments/requantification_wo_easyfuse.yml" : null)
+    }
+    else {
+        conda (params.enable_conda ? "${baseDir}/environments/requantification.yml" : null)
+    }
 
     input:
       tuple val(name), path(annot_csv), path(annot_fasta)
@@ -30,7 +35,7 @@ process FUSION_FILTER {
     memory "8g"
     tag "${name}"
 
-    //conda (params.enable_conda ? "bioconda::easyfuse=0.1.0" : null)
+    conda (params.enable_conda && ! params.disable_pyeasyfuse_conda ? "${baseDir}/environments/easyfuse_src.yml" : null)
 
     input:
       tuple val(name), path(bam), path(annot_fusions_1), path(annot_fusions_2), path(read_stats)
@@ -54,7 +59,7 @@ process STAR_CUSTOM {
     memory "32g"
     tag "${name}"
 
-    conda (params.enable_conda ? "${baseDir}/environments/requantification.yml" : null)
+    conda (params.enable_conda ? "${baseDir}/environments/requantification_wo_easyfuse.yml" : null)
 
     input:
       tuple val(name), path(fastq1), file(fastq2), path(star_index)
@@ -87,7 +92,8 @@ process READ_COUNT {
   cpus 6
   memory "50g"
   tag "${name}"
-  //publishDir "${params.output}/${name}", mode: 'copy'
+
+  conda (params.enable_conda && ! params.disable_pyeasyfuse_conda ? "${baseDir}/environments/easyfuse_src.yml" : null)
 
   input:
     tuple val(name), path(bam), path(bam_index), path(read_stats)

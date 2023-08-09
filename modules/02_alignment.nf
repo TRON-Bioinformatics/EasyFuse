@@ -45,7 +45,7 @@ process READ_FILTER {
     memory "8g"
     tag "${name}"
 
-    //conda (params.enable_conda ? "bioconda::easyfuse=0.1.0" : null)
+    conda (params.enable_conda && ! params.disable_pyeasyfuse_conda ? "${baseDir}/environments/easyfuse_src.yml" : null)
 
     input:
       tuple val(name), path(bam)
