@@ -1,8 +1,8 @@
-name: requantification
+name: easyfuse_src
 channels:
   - conda-forge
   - bioconda
   - defaults
 dependencies:
-  - bioconda::star=2.6.1d
   - bioconda::pyeasyfuse=2.0.3
+  - bioconda::skewer=0.2.2

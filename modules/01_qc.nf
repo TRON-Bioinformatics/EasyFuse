@@ -28,7 +28,7 @@ process FASTQC_PARSER {
     memory "8g"
     tag "${name}"
 
-//    conda (params.enable_conda ? "bioconda::fastqc=0.11.9" : null)
+    conda (params.enable_conda && ! params.disable_pyeasyfuse_conda ? "${baseDir}/environments/easyfuse_src.yml" : null)
 
     input:
     tuple val(name),
@@ -40,7 +40,7 @@ process FASTQC_PARSER {
         path("qc_table.txt"), emit: qc_table
 
     """
-    easy-fuse qc-parser -i $fastq1_qc_data $fastq1_qc_data -o qc_table.txt
+    easy-fuse qc-parser -i $fastq1_qc_data $fastq2_qc_data -o qc_table.txt
     """
 }
 
@@ -49,7 +49,7 @@ process SKEWER {
     memory "8g"
     tag "${name}"
 
-    conda (params.enable_conda ? "${baseDir}/environments/qc.yml" : null)
+    conda (params.enable_conda ? "${baseDir}/environments/easyfuse_src.yml" : null)
 
     input:
     tuple val(name),
