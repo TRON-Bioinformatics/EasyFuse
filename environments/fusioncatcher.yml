@@ -4,5 +4,5 @@ channels:
   - bioconda
   - defaults
 dependencies:
-  - bioconda::fusioncatcher=1.00
+  - bioconda::fusioncatcher=1.33
   - bioconda::java-jdk
