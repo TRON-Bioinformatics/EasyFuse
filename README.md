@@ -54,7 +54,7 @@ cd EasyFuse
 mv ../easyfuse_ref_v3/ test/easyfuse_ref/
 ```
 
-To install with Nextflow (only available from release 2.0.1):
+To install with Nextflow (only available from release 2.0.1 onwards):
 ```
 nextflow run tron-bioinformatics/easyfuse -r x.y.z --help
 ```
@@ -84,7 +84,7 @@ nextflow main.nf \
 ```
 
 
-Or as follows if you installed it via Nextflow (only available from release 2.0.1):
+Or as follows if you installed it via Nextflow (only available from release 2.0.1 onwards):
 ```
 nextflow run tron-bioinformatics/easyfuse -r x.y.z \
   -profile conda -with-conda \
