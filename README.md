@@ -19,19 +19,25 @@ For maximal sensitivity, we recommend using an older EasyFuse release with five 
 
 ### Dependencies
 
- - [NextFlow](https://www.nextflow.io/)
+ - [NextFlow, 21.10.0](https://www.nextflow.io/)
  - [Conda](https://docs.anaconda.com/free/anaconda/install/index.html)
+
+Please have a look at environment.yml.
+The conda environment to run nextflow can be installed with the following command:
+```
+conda env create -f environment.yml --prefix conda_env/
+```
 
 ### Download reference data
 
-Before running EasyFuse the following reference annotation data needs to be downloaded (~92 GB).
+Before running EasyFuse the following reference annotation data needs to be downloaded (~104 GB).
 
 ```
 # Download reference archive
-wget ftp://easyfuse.tron-mainz.de/easyfuse_ref_v2.tar.gz
+wget ftp://easyfuse.tron-mainz.de/easyfuse_ref_v3.tar.gz
 
 # Extract reference archive
-tar xvfz easyfuse_ref_v2.tar.gz
+tar xvfz easyfuse_ref_v3.tar.gz
 ```
 
 
@@ -43,6 +49,9 @@ To install manually:
 ```
 git clone https://github.com/TRON-Bioinformatics/EasyFuse.git
 cd EasyFuse
+
+# In order to run the test script you have to move the reference folder to test/easyfuse_ref/
+mv ../easyfuse_ref_v3/ test/easyfuse_ref/
 ```
 
 To install with Nextflow (only available from release 2.0.1):
