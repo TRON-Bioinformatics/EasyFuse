@@ -4,7 +4,7 @@
 [![Docker Image Version (latest semver)](https://img.shields.io/docker/v/tronbioinformatics/easyfuse?label=docker)](https://hub.docker.com/r/tronbioinformatics/easyfuse)
 [![License](https://img.shields.io/badge/license-GPLv3-green)](https://opensource.org/licenses/GPL-3.0)
 
-EasyFuse is a pipeline to detect fusion transcripts from RNA-seq data with high accuracy.
+EasyFuse is a pipeline to detect fusion transcripts from paired-end RNA-seq data with high accuracy.
 The current version of EasyFuse uses two fusion gene detection tools, [STAR-Fusion](https://github.com/STAR-Fusion/STAR-Fusion/wiki) and [Fusioncatcher](https://github.com/ndaniel/fusioncatcher) along with a powerful read filtering strategy, stringent re-quantification of supporting reads and machine learning for highly accurate predictions.
 
 Please note that previous versions of EasyFuse including the one in the EasyFuse publication utilized three additional prediction tools: [InFusion](https://bitbucket.org/kokonech/infusion/src/master/), [MapSplice2](http://www.netlab.uky.edu/p/bioinfo/MapSplice2) and [SoapFuse](https://sourceforge.net/p/soapfuse/wiki/Home/).
@@ -19,19 +19,25 @@ For maximal sensitivity, we recommend using an older EasyFuse release with five 
 
 ### Dependencies
 
- - [NextFlow](https://www.nextflow.io/)
+ - [NextFlow, 21.10.0](https://www.nextflow.io/)
  - [Conda](https://docs.anaconda.com/free/anaconda/install/index.html)
+
+Please have a look at environment.yml.
+The conda environment to run nextflow can be installed with the following command:
+```
+conda env create -f environment.yml --prefix conda_env/
+```
 
 ### Download reference data
 
-Before running EasyFuse the following reference annotation data needs to be downloaded (~92 GB).
+Before running EasyFuse the following reference annotation data needs to be downloaded (~104 GB).
 
 ```
 # Download reference archive
-wget ftp://easyfuse.tron-mainz.de/easyfuse_ref_v2.tar.gz
+wget ftp://easyfuse.tron-mainz.de/easyfuse_ref_v3.tar.gz
 
 # Extract reference archive
-tar xvfz easyfuse_ref_v2.tar.gz
+tar xvfz easyfuse_ref_v3.tar.gz
 ```
 
 
@@ -43,9 +49,12 @@ To install manually:
 ```
 git clone https://github.com/TRON-Bioinformatics/EasyFuse.git
 cd EasyFuse
+
+# In order to run the test script you have to move the reference folder to test/easyfuse_ref/
+mv ../easyfuse_ref_v3/ test/easyfuse_ref/
 ```
 
-To install with Nextflow (only available from release 2.0.1):
+To install with Nextflow (only available from release 2.0.1 onwards):
 ```
 nextflow run tron-bioinformatics/easyfuse -r x.y.z --help
 ```
@@ -75,7 +84,7 @@ nextflow main.nf \
 ```
 
 
-Or as follows if you installed it via Nextflow (only available from release 2.0.1):
+Or as follows if you installed it via Nextflow (only available from release 2.0.1 onwards):
 ```
 nextflow run tron-bioinformatics/easyfuse -r x.y.z \
   -profile conda -with-conda \
