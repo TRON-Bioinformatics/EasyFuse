@@ -45,7 +45,7 @@ process STAR_FUSION {
     conda (params.enable_conda ? "${baseDir}/environments/starfusion.yml" : null)
 
     input:
-      tuple val(name), path(chimeric_reads)
+      tuple val(name), path(chimeric_reads_1), path(chimeric_reads_2)
 
     output:
       tuple val("${name}"), path("star-fusion.fusion_predictions.tsv"), emit: fusions
@@ -53,9 +53,34 @@ process STAR_FUSION {
     script:
     """
     STAR-Fusion \
-        --chimeric_junction ${chimeric_reads} \
+        --chimeric_junction ${chimeric_reads_1} \
         --genome_lib_dir ${params.starfusion_index} \
         --CPU ${task.cpus} \
         --output_dir .
+    """
+}
+
+process ARRIBA {
+    cpus 6
+    memory "32g"
+    tag "${name}"
+
+    conda (params.enable_conda ? "${baseDir}/environments/arriba.yml" : null)
+
+    input:
+      tuple val(name), path(chimeric_reads_2), path(bam)
+
+    output:
+      tuple val("${name}"), path("fusions.tsv"), path("fusions.discarded.tsv"), emit: fusions
+
+    script:
+    """
+    arriba \
+        -c ${chimeric_reads_2} \
+        -x ${bam} \
+        -g ${params.gtf} \
+        -a ${params.fasta} \
+        -o fusions.tsv \
+        -O fusions.discarded.tsv
     """
 }
