@@ -2,11 +2,11 @@
 
 nextflow.enable.dsl = 2
 
-include { FASTQC ; FASTQC_PARSER ; SKEWER } from './modules/01_qc'
+include { FASTP } from './modules/01_qc'
 include { STAR ; READ_FILTER ; BAM2FASTQ } from './modules/02_alignment'
 include { FUSION_CATCHER ; STAR_FUSION ; FUSION_CATCHER_INDEX } from './modules/03_fusion_callers'
 include { FUSION_PARSER ; FUSION_ANNOTATION } from './modules/04_joint_fusion_calling'
-include { STAR_INDEX ; FUSION_FILTER ; STAR_CUSTOM ; READ_COUNT } from './modules/05_requantification'
+include { FUSION2CSV ; CSV2FASTA ; STAR_INDEX ; FUSION_FILTER ; STAR_CUSTOM ; READ_COUNT } from './modules/05_requantification'
 include { SUMMARIZE_DATA } from './modules/06_summarize'
 	    
 
@@ -45,12 +45,10 @@ workflow QC {
     input_files
 
     main:
-    FASTQC(input_files)
-    FASTQC_PARSER(FASTQC.out.qc_data)
-    SKEWER(input_files.join(FASTQC_PARSER.out.qc_table))
+    FASTP(input_files)
 
     emit:
-    trimmed_fastq = SKEWER.out.trimmed_fastq
+    trimmed_fastq = FASTP.out.trimmed_fastq
 }
 
 workflow ALIGNMENT {
@@ -113,6 +111,8 @@ workflow REQUANTIFICATION {
         read_stats
     ))
     BAM2FASTQ(FUSION_FILTER.out.bams)
+    FUSION2CSV(annotated_fusions)
+    //CSV2FASTA(FUSION2CSV.out.annot_csv)
     STAR_INDEX(annotated_fusions)
     STAR_CUSTOM(
         BAM2FASTQ.out.fastqs.join(
@@ -120,7 +120,7 @@ workflow REQUANTIFICATION {
     ))
     READ_COUNT(
         STAR_CUSTOM.out.bams.join(
-        STAR_CUSTOM.out.read_stats
+        FUSION2CSV.out.annot_csv
     ))
 
     emit:

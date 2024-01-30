@@ -11,7 +11,7 @@ process STAR {
 
     output:
       tuple val("${name}"), path("${name}.bam"), emit: bams
-      tuple val("${name}"), path("${name}.Chimeric.out.junction"), emit: chimeric_reads
+      tuple val("${name}"), path("${name}.Chimeric.out.junction"), path("${name}.Chimeric.out.sam"), emit: chimeric_reads
       tuple val("${name}"), path("${name}.Log.final.out"), emit: read_stats
 
     script:
@@ -41,11 +41,11 @@ process STAR {
 }
 
 process READ_FILTER {
-    cpus 2
+    cpus 1
     memory "8g"
     tag "${name}"
 
-    conda (params.enable_conda && ! params.disable_pyeasyfuse_conda ? "${baseDir}/environments/easyfuse_src.yml" : null)
+    conda (params.enable_conda ? "${baseDir}/environments/filtering.yml" : null)
 
     input:
       tuple val(name), path(bam)
@@ -55,7 +55,7 @@ process READ_FILTER {
 
     script:
     """
-    easy-fuse read-filter \
+    fusionreadfilter.py \
     --input ${bam} \
     --output ${name}.filtered.bam
     """
@@ -66,7 +66,7 @@ process BAM2FASTQ {
     memory "8g"
     tag "${name}"
 
-    conda (params.enable_conda ? "${baseDir}/environments/alignment.yml" : null)
+    conda (params.enable_conda ? "${baseDir}/environments/samtools.yml" : null)
 
     input:
       tuple val(name), path(bam)
