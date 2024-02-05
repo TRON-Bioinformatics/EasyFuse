@@ -4,4 +4,4 @@ channels:
   - bioconda
   - defaults
 dependencies:
-  - bioconda::star=2.6.1d
+  - bioconda::star=2.7.11b

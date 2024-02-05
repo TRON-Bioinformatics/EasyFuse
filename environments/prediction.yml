@@ -1,0 +1,10 @@
+name: prediction
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - conda-forge::r-base
+  - conda-forge::r-optparse
+  - conda-forge::r-tidyverse
+  - conda-forge::r-randomForest
