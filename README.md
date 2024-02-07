@@ -158,22 +158,21 @@ Overview of all features/columns annotated by EasyFuse:
 - **context_sequence_bp:** Position of breakpoint in context sequence  
 - **neo_peptide_sequence:** Translated peptide sequence of context sequence starting at 13 aa before breakpoint until 13 aa after breakpoint (for in-frame transcripts) or until next stop codon (for out frame and neo frame). This is to consider only the region around the breakpoint that may contain neo-epitopes.
 - **neo_peptide_sequence_bp:** Breakpoint on translated peptide sequence.  
-- ***toolname*_detected:** 1 if breakpoint was detected by respective tool, 0 if not (*toolname* is one of `fusioncatcher`, `starfusion`, `infusion`, `mapsplice` or `soapfuse`)
+- ***toolname*_detected:** 1 if breakpoint was detected by respective tool, 0 if not
 - ***toolname*_junc:** Junction read count (reads covering breakpoint) reported by *toolname*  
 - ***toolname*_span:** Spanning read count (read pairs with each partner on one side of breakpoint) reported by *toolname*  
 - **tool_count:** Number of tools detecting fusion gene breakpoint  
-- **tool_frac:** Fraction of tools out of 5  
-- ***category*_bp_best:** Location of breakpoint on context sequence (400 for an 800 bp context sequence). Whereby *category* describes (here and in the following columns) the reference sequence to which the reads were mapped and quantified: 
+- **tool_frac:** Fraction of tools detecting the fusion gene breakpoint
+- ***category*_bp:** Location of breakpoint on context sequence (400 for an 800 bp context sequence). Whereby *category* describes (here and in the following columns) the reference sequence to which the reads were mapped and quantified: 
   - `ft`: context_sequence of fusion transcript 
   - `wt1`: corresponding sequence of fusion partner 1 (wild type 1)
   - `wt2`: corresponding sequence of fusion partner 2 (wild type 2)
-- ***category*_junc_best:** Fraction of read counts from 1 million reads that map to sequence and overlap breakpoint by at least 10 bp  
-- ***category*_span_best:** Fraction of read pairs from 1 million sequenced read pairs, that map to both sides of breakpoint position
-- ***category*_anch_best:** Maximal read anchor size across all junction reads, where the anchor size for a given read is defined as the minimum distance between read start and breakpoint or read end and the breakpoint.  
-- ***category*_bp_cnt_best:** Location of breakpoint on context sequence (400 for an 800 bp context sequence)  
-- ***category*_junc_cnt_best:** Number of reads that map to sequence and overlap breakpoint by at least 10 bp  
-- ***category*_span_cnt_best:** Number of read pairs, that map to both sides of breakpoint position  
-- ***category*_anch_cnt_best:** Maximal read anchor size across all junction reads, where the anchor size for a given read is defined as the minimum distance between read start and breakpoint or read end and the breakpoint.  
+- ***category*_junc:** Fraction of read counts from 1 million reads that map to sequence and overlap breakpoint by at least 10 bp  
+- ***category*_span:** Fraction of read pairs from 1 million sequenced read pairs, that map to both sides of breakpoint position
+- ***category*_anch:** Maximal read anchor size across all junction reads, where the anchor size for a given read is defined as the minimum distance between read start and breakpoint or read end and the breakpoint.  
+- ***category*_junc_cnt:** Number of reads that map to sequence and overlap breakpoint by at least 10 bp  
+- ***category*_span_cnt:** Number of read pairs, that map to both sides of breakpoint position  
+- ***category*_anch_cnt:** Maximal read anchor size across all junction reads, where the anchor size for a given read is defined as the minimum distance between read start and breakpoint or read end and the breakpoint.  
 
 - **prediction_prob:** The predicted probability according to the machine learning model that the fusion candidate is a true positive. 
 - **prediction_class:** The predicted class (`negative` or `positive`) according to the machine learning model. This classification relies on a user-defined threshold (default 0.5) applied to the `precition_prob` column. 

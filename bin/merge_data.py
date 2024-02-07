@@ -198,7 +198,6 @@ class FusionSummary(object):
                 self.data[key]["{}_junc".format(seq_type)] = self.normalize_counts_cpm(requant_data[ctx_id][seq_type]["junc"])
                 self.data[key]["{}_span".format(seq_type)] = self.normalize_counts_cpm(requant_data[ctx_id][seq_type]["span"])
                 self.data[key]["{}_anch".format(seq_type)] = requant_data[ctx_id][seq_type]["anch"]
-                self.data[key]["{}_bp_cnt".format(seq_type)] = requant_data[ctx_id][seq_type]["pos"]
                 self.data[key]["{}_junc_cnt".format(seq_type)] = requant_data[ctx_id][seq_type]["junc"]
                 self.data[key]["{}_span_cnt".format(seq_type)] = requant_data[ctx_id][seq_type]["span"]
                 self.data[key]["{}_anch_cnt".format(seq_type)] = requant_data[ctx_id][seq_type]["anch"]
@@ -249,15 +248,12 @@ class FusionSummary(object):
             "wt2_junc", # requant
             "wt2_span", # requant
             "wt2_anch", # requant
-            "ft_bp_cnt", # requant, necessary?
             "ft_junc_cnt", # requant
             "ft_span_cnt", # requant
             "ft_anch_cnt", # requant
-            "wt1_bp_cnt", # requant, necessary?
             "wt1_junc_cnt", # requant
             "wt1_span_cnt", # requant
             "wt1_anch_cnt", # requant
-            "wt2_bp_cnt", # requant, necessary?
             "wt2_junc_cnt", # requant
             "wt2_span_cnt", # requant
             "wt2_anch_cnt" # requant
