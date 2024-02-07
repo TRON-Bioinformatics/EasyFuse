@@ -1,8 +1,0 @@
-name: easyfuse_src
-channels:
-  - conda-forge
-  - bioconda
-  - defaults
-dependencies:
-  - bioconda::pyeasyfuse=2.0.3
-  - bioconda::skewer=0.2.2

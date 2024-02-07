@@ -7,3 +7,4 @@ trace.txt*
 report.html*
 test/output
 conda_env
+__pycache__/

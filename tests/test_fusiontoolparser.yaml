@@ -1,0 +1,11 @@
+- name: Parse results of fusion tools
+  command: >
+    bin/fusiontoolparser.py \
+    --input-fusioncatcher tests/parsing/fusioncatcher_1.txt \
+    --input-fusioncatcher2 tests/parsing/fusioncatcher_2.tsv \
+    --input-starfusion tests/parsing/starfusion.tsv \
+    --input-arriba tests/parsing/arriba.tsv \
+    -o tests/ \
+    -s test
+  files:
+    - path: "tests/Detected_Fusions.csv"
