@@ -83,11 +83,12 @@ class FusionSummary(object):
         data = {}
         with open(self.input_fusion_context_seqs) as csvfile:
             csv_reader = csv.DictReader(csvfile, delimiter=';')
-            for row in csv_reader:  
-                ctx_id = row['context_sequence_id']
-                if ctx_id in data:
-                    logger.info("Context ID already in use")
-                data[ctx_id] = row
+            for row in csv_reader:
+                # Switch to more unique combination as ID
+                ftid = row['FTID']
+                if ftid in data:
+                    logger.info("FTID already in use")
+                data[ftid] = row
         logger.info("Loaded annotation data.")
         return data
 
@@ -191,15 +192,16 @@ class FusionSummary(object):
         """Adds the counts from requantification to the data"""
         # TODO: Remove redundancy
         for key in self.data:
+            ctx_id = self.data[key]['context_sequence_id']
             for seq_type in ("ft", "wt1", "wt2"):
-                self.data[key]["{}_bp".format(seq_type)] = requant_data[key][seq_type]["pos"]
-                self.data[key]["{}_junc".format(seq_type)] = self.normalize_counts_cpm(requant_data[key][seq_type]["junc"])
-                self.data[key]["{}_span".format(seq_type)] = self.normalize_counts_cpm(requant_data[key][seq_type]["span"])
-                self.data[key]["{}_anch".format(seq_type)] = requant_data[key][seq_type]["anch"]
-                self.data[key]["{}_bp_cnt".format(seq_type)] = requant_data[key][seq_type]["pos"]
-                self.data[key]["{}_junc_cnt".format(seq_type)] = requant_data[key][seq_type]["junc"]
-                self.data[key]["{}_span_cnt".format(seq_type)] = requant_data[key][seq_type]["span"]
-                self.data[key]["{}_anch_cnt".format(seq_type)] = requant_data[key][seq_type]["anch"]
+                self.data[key]["{}_bp".format(seq_type)] = requant_data[ctx_id][seq_type]["pos"]
+                self.data[key]["{}_junc".format(seq_type)] = self.normalize_counts_cpm(requant_data[ctx_id][seq_type]["junc"])
+                self.data[key]["{}_span".format(seq_type)] = self.normalize_counts_cpm(requant_data[ctx_id][seq_type]["span"])
+                self.data[key]["{}_anch".format(seq_type)] = requant_data[ctx_id][seq_type]["anch"]
+                self.data[key]["{}_bp_cnt".format(seq_type)] = requant_data[ctx_id][seq_type]["pos"]
+                self.data[key]["{}_junc_cnt".format(seq_type)] = requant_data[ctx_id][seq_type]["junc"]
+                self.data[key]["{}_span_cnt".format(seq_type)] = requant_data[ctx_id][seq_type]["span"]
+                self.data[key]["{}_anch_cnt".format(seq_type)] = requant_data[ctx_id][seq_type]["anch"]
         logger.info("Added requantification data.")
 
 
