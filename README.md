@@ -167,14 +167,10 @@ Overview of all features/columns annotated by EasyFuse:
   - `ft`: context_sequence of fusion transcript 
   - `wt1`: corresponding sequence of fusion partner 1 (wild type 1)
   - `wt2`: corresponding sequence of fusion partner 2 (wild type 2)
-- ***category*_a_best:**  Fraction of read counts from 1 million reads that map to either context sequence (ft) or wildtype sequence (wt1 or wt2) 400 left of breakpoint  
-- ***category*_b_best:**  Fraction of read counts from 1 million reads that map to either context sequence (ft) or wildtype sequence (wt1 or wt2) 400 left of breakpoint  
 - ***category*_junc_best:** Fraction of read counts from 1 million reads that map to sequence and overlap breakpoint by at least 10 bp  
-- ***category*_span_best:** Fraction of read pairs from 1 million sequenced read pairs, that map to both sides of breakpoint position  
+- ***category*_span_best:** Fraction of read pairs from 1 million sequenced read pairs, that map to both sides of breakpoint position
 - ***category*_anch_best:** Maximal read anchor size across all junction reads, where the anchor size for a given read is defined as the minimum distance between read start and breakpoint or read end and the breakpoint.  
 - ***category*_bp_cnt_best:** Location of breakpoint on context sequence (400 for an 800 bp context sequence)  
-- ***category*_a_cnt_best:** Number of reads, that map to either context sequence (ft) or wildtype sequence (wt1 or wt2) left of breakpoint  
-- ***category*_b_cnt_best:** Number of reads, that map to either context sequence (ft) or wildtype sequence (wt1 or wt2) 400 right of breakpoint  
 - ***category*_junc_cnt_best:** Number of reads that map to sequence and overlap breakpoint by at least 10 bp  
 - ***category*_span_cnt_best:** Number of read pairs, that map to both sides of breakpoint position  
 - ***category*_anch_cnt_best:** Maximal read anchor size across all junction reads, where the anchor size for a given read is defined as the minimum distance between read start and breakpoint or read end and the breakpoint.  

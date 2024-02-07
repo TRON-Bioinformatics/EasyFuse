@@ -249,15 +249,15 @@ class FusionSummary(object):
             "wt2_junc", # requant
             "wt2_span", # requant
             "wt2_anch", # requant
-            "ft_bp_cnt", # requant
+            "ft_bp_cnt", # requant, necessary?
             "ft_junc_cnt", # requant
             "ft_span_cnt", # requant
             "ft_anch_cnt", # requant
-            "wt1_bp_cnt", # requant
+            "wt1_bp_cnt", # requant, necessary?
             "wt1_junc_cnt", # requant
             "wt1_span_cnt", # requant
             "wt1_anch_cnt", # requant
-            "wt2_bp_cnt", # requant
+            "wt2_bp_cnt", # requant, necessary?
             "wt2_junc_cnt", # requant
             "wt2_span_cnt", # requant
             "wt2_anch_cnt" # requant
