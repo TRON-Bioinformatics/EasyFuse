@@ -6,8 +6,8 @@ Fusions are parsed into "id / fusion genes / breakpoints / supporting reads / pr
 and output based on their set recurrency value. The class requires the path' of data and
 output folders and writes the "Detected_Fusions.csv"
 
-@author: Tron (PASO), BNT (URLA)
-@version: 20181126
+@author: Tron (PASO)
+@version: 20240208
 """
 from argparse import ArgumentParser
 import os

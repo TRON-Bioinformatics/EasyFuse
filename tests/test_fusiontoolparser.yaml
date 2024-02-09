@@ -1,11 +1,6 @@
-- name: Parse results of fusion tools
-  command: >
-    bin/fusiontoolparser.py \
-    --input-fusioncatcher tests/parsing/fusioncatcher_1.txt \
-    --input-fusioncatcher2 tests/parsing/fusioncatcher_2.tsv \
-    --input-starfusion tests/parsing/starfusion.tsv \
-    --input-arriba tests/parsing/arriba.tsv \
-    -o tests/ \
-    -s test
+- name: fusiontoolparser
+  command: python bin/fusiontoolparser.py --input-fusioncatcher tests/fusiontoolparser/fusioncatcher_1.txt --input-fusioncatcher2 tests/fusiontoolparser/fusioncatcher_2.tsv --input-starfusion tests/fusiontoolparser/starfusion.tsv --input-arriba tests/fusiontoolparser/arriba.tsv --output tests/ --sample test_sample
   files:
-    - path: "tests/Detected_Fusions.csv"
+    - path: "tests/fusiontoolparser/Detected_Fusions.csv"
+      contains:
+        - "21:41494380:-_7:13935843:-"

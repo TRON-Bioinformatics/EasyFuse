@@ -7,7 +7,7 @@ and output based on their set recurrency value. The class requires the path' of 
 output folders and writes the "Detected_Fusions.csv"
 
 @author: Tron (PASO)
-@version: 20221109
+@version: 20240208
 """
 import re
 import operator

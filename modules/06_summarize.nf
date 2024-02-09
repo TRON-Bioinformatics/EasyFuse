@@ -21,7 +21,7 @@ process MERGE_DATA {
         --input-requant-counts ${counts} \
         --input-read-stats ${read_stats} \
         -o fusions.csv \
-        --fusion-tools fusioncatcher,star,arriba
+        --fusion-tools fusioncatcher,starfusion,arriba
     """
 }
 

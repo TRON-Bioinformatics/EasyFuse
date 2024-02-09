@@ -92,6 +92,7 @@ process STAR_CUSTOM {
     cpus 6
     memory "32g"
     tag "${name}"
+    publishDir "${params.output}/${name}", mode: 'copy'
 
     conda (params.enable_conda ? "${baseDir}/environments/requantification.yml" : null)
 
@@ -120,6 +121,7 @@ process READ_COUNT {
   cpus 6
   memory "50g"
   tag "${name}"
+  publishDir "${params.output}/${name}", mode: 'copy'
 
   conda (params.enable_conda ? "${baseDir}/environments/requantification.yml" : null)
 

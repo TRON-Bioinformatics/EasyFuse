@@ -1,0 +1,4 @@
+- name: fusionreadfilter
+  command: python bin/fusionreadfilter.py --input tests/fusionreadfilter/in.bam --output tests/fusionreadfilter/out.bam
+  files:
+    - path: "tests/fusionreadfilter/out.bam"

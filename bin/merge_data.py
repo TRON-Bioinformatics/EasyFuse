@@ -138,10 +138,9 @@ class FusionSummary(object):
         with open(self.input_requant_counts) as csvfile:
             csv_reader = csv.DictReader(csvfile, delimiter='\t')
             for row in csv_reader:
-                ftidplus = row['name']
-                id_split = ftidplus.rsplit("_", 3)
-                context_sequence_id = id_split[1]
-                seq_type = id_split[3]
+                id_split = row['name'].split("_")
+                context_sequence_id = id_split[0]
+                seq_type = id_split[2]
                 if not context_sequence_id in data:
                     data[context_sequence_id] = {}
                 if not seq_type in data[context_sequence_id]:
@@ -297,37 +296,37 @@ def main():
     parser = ArgumentParser(description="Merges results to final output table")
 
     parser.add_argument(
-        "--input-fusions",
-        dest="input_fusions",
+        "--detected_fusions",
+        dest="input_detected_fusions",
         required=True,
         help="Path to input file with fusions",
     )
     parser.add_argument(
-        "--input-fusion-context-seqs",
+        "--context_seqs",
         dest="input_fusion_context_seqs",
         required=True,
         help="Path to input file with fusion context sequences",
     )
     parser.add_argument(
-        "--input-requant-counts",
+        "--requant_counts",
         dest="input_requant_counts",
         required=True,
         help="Path to input file with requant counts",
     )
     parser.add_argument(
-        "--input-read-stats",
+        "--read_stats",
         dest="input_read_stats",
         required=True,
         help="Path to input file with read stats",
     )
     parser.add_argument(
         "-o",
-        "--output-table",
+        "--output_table",
         dest="output_table",
         help="Specify the merged output file."
     )
     parser.add_argument(
-        "--fusion-tools",
+        "--fusion_tools",
         dest="fusion_tools",
         help="Fusion tools."
     )
