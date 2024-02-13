@@ -1,0 +1,13 @@
+- name: fusiontoolparser
+  command: >
+    python bin/fusiontoolparser.py 
+    --input_fusioncatcher tests/fusiontoolparser/fusioncatcher_1.txt 
+    --input_fusioncatcher2 tests/fusiontoolparser/fusioncatcher_2.tsv 
+    --input_starfusion tests/fusiontoolparser/starfusion.tsv 
+    --input_arriba tests/fusiontoolparser/arriba.tsv 
+    --output tests/fusiontoolparser/ 
+    --sample test_sample
+  files:
+    - path: "tests/fusiontoolparser/Detected_Fusions.csv"
+      contains:
+        - "21:41494380:-_7:13935843:-"

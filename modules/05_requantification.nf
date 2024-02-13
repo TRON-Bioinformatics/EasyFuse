@@ -16,7 +16,7 @@ process FUSION_FILTER {
     read_selection.py \
         --input ${bam} \
         --input2 ${annot_fusions_csv_debug} \
-        --input-reads-stats ${read_stats} \
+        --input_read_stats ${read_stats} \
         --output ${name}.requantified.bam
     """
 }
@@ -25,6 +25,7 @@ process FUSION2CSV {
     cpus 1
     memory "1g"
     tag "${name}"
+    //publishDir "${params.output}/${name}", mode: 'copy'
 
     input:
       tuple val(name), path(annot_fusions_csv), path(annot_fusions_csv_debug), path(annot_fusions_fasta)
@@ -71,7 +72,7 @@ process STAR_INDEX {
     conda (params.enable_conda ? "${baseDir}/environments/requantification.yml" : null)
     
     input:
-      tuple val(name), path(annot_fusions_csv), path(annot_fusions_csv_debug), path(annot_fusions_fasta)
+      tuple val(name), path(formatted_fasta)
 
     output:
       tuple val("${name}"), path("star_index"), emit: star_index
@@ -80,7 +81,7 @@ process STAR_INDEX {
     """
     mkdir star_index
     bp_quant index \
-        -i ${annot_fusions_fasta} \
+        -i ${formatted_fasta} \
 	      -o star_index \
 	      -t 2 \
 	      -m star
@@ -92,6 +93,7 @@ process STAR_CUSTOM {
     cpus 6
     memory "32g"
     tag "${name}"
+    //publishDir "${params.output}/${name}", mode: 'copy'
 
     conda (params.enable_conda ? "${baseDir}/environments/requantification.yml" : null)
 
@@ -120,6 +122,7 @@ process READ_COUNT {
   cpus 6
   memory "50g"
   tag "${name}"
+  //publishDir "${params.output}/${name}", mode: 'copy'
 
   conda (params.enable_conda ? "${baseDir}/environments/requantification.yml" : null)
 

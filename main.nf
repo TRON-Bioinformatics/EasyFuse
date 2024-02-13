@@ -118,8 +118,8 @@ workflow REQUANTIFICATION {
     ))
     BAM2FASTQ(FUSION_FILTER.out.bams)
     FUSION2CSV(annotated_fusions)
-    //CSV2FASTA(FUSION2CSV.out.annot_csv)
-    STAR_INDEX(annotated_fusions)
+    CSV2FASTA(FUSION2CSV.out.formatted_csv)
+    STAR_INDEX(CSV2FASTA.out.formatted_fasta)
     STAR_CUSTOM(
         BAM2FASTQ.out.fastqs.join(
         STAR_INDEX.out.star_index

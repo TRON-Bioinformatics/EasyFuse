@@ -6,8 +6,8 @@ Fusions are parsed into "id / fusion genes / breakpoints / supporting reads / pr
 and output based on their set recurrency value. The class requires the path' of data and
 output folders and writes the "Detected_Fusions.csv"
 
-@author: Tron (PASO), BNT (URLA)
-@version: 20181126
+@author: Tron (PASO)
+@version: 20240208
 """
 from argparse import ArgumentParser
 import os
@@ -112,38 +112,38 @@ class FusionParser(object):
 def main():
     parser = ArgumentParser(description="Parses fusions from specific tools")
     parser.add_argument(
-        "--input-fusioncatcher",
+        "--input_fusioncatcher",
         dest="input_fusioncatcher",
         help="Input file with results from fusion catcher (ie: summary_candidate_fusions.txt).",
     )
     parser.add_argument(
-        "--input-fusioncatcher2",
+        "--input_fusioncatcher2",
         dest="input_fusioncatcher2",
         help="Input file with results from fusion catcher (ie: final-list_candidate-fusion-genes.txt).",
     )
     parser.add_argument(
-        "--input-starfusion",
+        "--input_starfusion",
         dest="input_starfusion",
         help="Input file with results from star fusion (ie: star-fusion.fusion_predictions.tsv).",
     )
     parser.add_argument(
-        "--input-infusion",
+        "--input_infusion",
         dest="input_infusion",
         help="Input file with results from infusion (ie: final_fusion_genes).",
     )
     parser.add_argument(
-        "--input-mapsplice",
+        "--input_mapsplice",
         dest="input_mapsplice",
         help="Input file with results from mapsplice (ie: fusions_well_annotated.txt).",
     )
     parser.add_argument(
-        "--input-soapfuse",
+        "--input_soapfuse",
         dest="input_soapfuse",
         help="Input file with results from soapfuse "
              "(ie: final_fusion_genes/${SAMPLE}/${SAMPLE}.final.Fusion.specific.for.genes).",
     )
     parser.add_argument(
-        "--input-arriba",
+        "--input_arriba",
         dest="input_arriba",
         help="Input file with results from arriba (ie: fusions.tsv).",
     )

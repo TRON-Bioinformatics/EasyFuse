@@ -1,0 +1,15 @@
+- name: fusionannotation
+  command: >
+    python bin/fusionannotation.py 
+    --detected_fusions tests/fusionannotation/Detected_Fusions.csv 
+    --annotation_db test/easyfuse_ref/Homo_sapiens.GRCh38.110.gff3.db 
+    --tsl_info test/easyfuse_ref/Homo_sapiens.GRCh38.110.gtf.tsl 
+    --genome_fasta test/easyfuse_ref/Homo_sapiens.GRCh38.dna.primary_assembly.fa 
+    --out_csv tests/fusionannotation/annotated_fusions.csv 
+    --cis_near_dist 1000000 
+    --context_seq_len 400 
+    --tsl_filter_level 4,5,NA
+  files:
+    - path: "tests/fusionannotation/annotated_fusions.csv"
+      contains:
+        - "21:41494380:-_7:13935843:-"

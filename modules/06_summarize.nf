@@ -16,12 +16,12 @@ process MERGE_DATA {
     script:
     """
     merge_data.py \
-        --input-fusions ${detected_fusions} \
-        --input-fusion-context-seqs ${annot_fusions_csv} \
-        --input-requant-counts ${counts} \
-        --input-read-stats ${read_stats} \
+        --detected_fusions ${detected_fusions} \
+        --context_seqs ${annot_fusions_csv} \
+        --requant_counts ${counts} \
+        --read_stats ${read_stats} \
         -o fusions.csv \
-        --fusion-tools fusioncatcher,star,arriba
+        --fusion_tools fusioncatcher,starfusion,arriba
     """
 }
 

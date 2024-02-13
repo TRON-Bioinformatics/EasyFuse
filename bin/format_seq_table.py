@@ -31,21 +31,32 @@ def main():
     # 24: context_sequence_wt1_bp
     # 25: context_sequence_wt2_bp
     with open(args.input_table) as csvfile, open(args.output_table, "w") as outf:
+        ctx_seq_dict = {}
         outf.write("name;sequence;position\n")
         reader = csv.DictReader(csvfile, delimiter=';')
         for row in reader:
-            ftid = row['FTID']
             ctx_seq_id = row['context_sequence_id']
-            ctx_seq_ft = row['context_sequence']
-            ctx_seq_ft_bp = row['context_sequence_bp']
-            ctx_seq_wt1 = row['context_sequence_wt1']
-            ctx_seq_wt1_bp = row['context_sequence_wt1_bp']
-            ctx_seq_wt2 = row['context_sequence_wt2']
-            ctx_seq_wt2_bp = row['context_sequence_wt2_bp']
             
-            outf.write("{}_{}_{}_ft;{};{}\n".format(ftid, ctx_seq_id, ctx_seq_ft_bp, ctx_seq_ft, ctx_seq_ft_bp))
-            outf.write("{}_{}_{}_wt1;{};{}\n".format(ftid, ctx_seq_id, ctx_seq_wt1_bp, ctx_seq_wt1, ctx_seq_wt1_bp))
-            outf.write("{}_{}_{}_wt2;{};{}\n".format(ftid, ctx_seq_id, ctx_seq_wt2_bp, ctx_seq_wt2, ctx_seq_wt2_bp))
+            if ctx_seq_id in ctx_seq_dict:
+                print(row['context_sequence_wt1'] == ctx_seq_dict[ctx_seq_id]["wt1"])
+            else:
+                ctx_seq_dict[ctx_seq_id] = {
+                    "ft": row['context_sequence'],
+                    "ft_bp": row['context_sequence_bp'],
+                    "wt1": row['context_sequence_wt1'],
+                    "wt1_bp": row['context_sequence_wt1_bp'],
+                    "wt2": row['context_sequence_wt2'],
+                    "wt2_bp": row['context_sequence_wt2_bp']
+                }
+        for ctx_seq_id in ctx_seq_dict:
+            values = ctx_seq_dict[ctx_seq_id]
+            for seq_type in ("ft", "wt1", "wt2"):
+                outf.write("{0}_{1}_{2};{3};{1}\n".format(
+                    ctx_seq_id, 
+                    values[seq_type + "_bp"], 
+                    seq_type,
+                    values[seq_type]
+                ))
 
 
 if __name__ == "__main__":

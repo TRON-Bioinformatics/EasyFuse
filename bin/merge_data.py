@@ -9,9 +9,13 @@ import csv
 import os
 import os.path
 import subprocess
+import sys
 
 from logzero import logger
-from count_input_reads import get_input_read_count_from_star
+
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+from count_input_reads import get_input_read_count
 
 
 class FusionSummary(object):
@@ -42,7 +46,7 @@ class FusionSummary(object):
         self.input_read_stats = input_read_stats
 
         # load aligned read counts
-        self.input_read_count = get_input_read_count_from_star(input_read_stats)
+        self.input_read_count = get_input_read_count(input_read_stats, "star")
         self.output_table = output_table
         self.fusion_tools = fusion_tools
         self.data = {}
@@ -138,10 +142,9 @@ class FusionSummary(object):
         with open(self.input_requant_counts) as csvfile:
             csv_reader = csv.DictReader(csvfile, delimiter='\t')
             for row in csv_reader:
-                ftidplus = row['name']
-                id_split = ftidplus.rsplit("_", 3)
-                context_sequence_id = id_split[1]
-                seq_type = id_split[3]
+                id_split = row['name'].split("_")
+                context_sequence_id = id_split[0]
+                seq_type = id_split[2]
                 if not context_sequence_id in data:
                     data[context_sequence_id] = {}
                 if not seq_type in data[context_sequence_id]:
@@ -297,45 +300,45 @@ def main():
     parser = ArgumentParser(description="Merges results to final output table")
 
     parser.add_argument(
-        "--input-fusions",
-        dest="input_fusions",
+        "--detected_fusions",
+        dest="input_detected_fusions",
         required=True,
         help="Path to input file with fusions",
     )
     parser.add_argument(
-        "--input-fusion-context-seqs",
-        dest="input_fusion_context_seqs",
+        "--context_seqs",
+        dest="input_context_seqs",
         required=True,
         help="Path to input file with fusion context sequences",
     )
     parser.add_argument(
-        "--input-requant-counts",
+        "--requant_counts",
         dest="input_requant_counts",
         required=True,
         help="Path to input file with requant counts",
     )
     parser.add_argument(
-        "--input-read-stats",
+        "--read_stats",
         dest="input_read_stats",
         required=True,
         help="Path to input file with read stats",
     )
     parser.add_argument(
         "-o",
-        "--output-table",
+        "--output_table",
         dest="output_table",
         help="Specify the merged output file."
     )
     parser.add_argument(
-        "--fusion-tools",
+        "--fusion_tools",
         dest="fusion_tools",
         help="Fusion tools."
     )
     args = parser.parse_args()
 
     summary = FusionSummary(
-        input_fusions=args.input_fusions,
-        input_fusion_context_seqs=args.input_fusion_context_seqs,
+        input_fusions=args.input_detected_fusions,
+        input_fusion_context_seqs=args.input_context_seqs,
         input_requant_counts=args.input_requant_counts,
         input_read_stats=args.input_read_stats,
         output_table=args.output_table,
