@@ -1,5 +1,12 @@
 - name: merge_data
-  command: python bin/merge_data.py --input-fusions tests/merge_data/Detected_Fusions.csv --input-fusion-context-seqs tests/merge_data/annotated_fusions.csv --input-requant-counts tests/merge_data/quantification.tsv --input-read-stats tests/merge_data/Log.final.out --output-table tests/merge_data/fusions.csv --fusion-tools fusioncatcher,starfusion,arriba
+  command: >
+    python bin/merge_data.py 
+    --detected_fusions tests/merge_data/Detected_Fusions.csv 
+    --context_seqs tests/merge_data/annotated_fusions.csv 
+    --requant_counts tests/merge_data/quantification.tsv 
+    --read_stats tests/merge_data/Log.final.out 
+    --output_table tests/merge_data/fusions.csv 
+    --fusion_tools fusioncatcher,starfusion,arriba
   files:
     - path: "tests/merge_data/fusions.csv"
       contains:

@@ -22,57 +22,58 @@ from Bio.SeqRecord import SeqRecord
 from logzero import logger
 
 
+def load_featuredb(db_in_file):
+    """Perform a simple check to confirm that the database input is a database"""
+    logger.info("Loading feature DB with gffutils")
+    if not db_in_file.endswith("db"):
+        logger.error("Not a valid database file: {}".format(db_in_file))
+    # return the db
+    return gffutils.FeatureDB(db_in_file)
+
+
+def breakpoints_to_dict(bp_in_file):
+    """Read BPIDs from Detected_Fusions.csv and store the info in a dict"""
+    logger.info("Loading BPIDs from Detected_Fusions.csv")
+    bp_dict = {}
+    with open(bp_in_file, "r") as bpin:
+        next(bpin)  # skip header
+        for line in bpin:
+            elements = line.rstrip().split(";")
+            bpid = elements[0]
+            bp1 = elements[2]
+            bp2 = elements[3]
+            # This could also be implemented as a set as BPID already contains both BPs
+            if not bpid in bp_dict:
+                bp_dict[bpid] = (bp1, bp2)
+    return bp_dict
+
+
+def load_tsl_data(tsl_in_file):
+    """Load data created by gtf2tsl.py into a dict"""
+    logger.info("Loading TSL data into dict")
+    tsl_dict = {}
+    with open(tsl_in_file, "r") as tslin:
+        next(tslin)  # skip header
+        for line in tslin:
+            elements = line.rstrip().split("\t")
+            trans_id = elements[0]
+            tsl = elements[3]
+            if not trans_id in tsl_dict:
+                tsl_dict[trans_id] = tsl
+    return tsl_dict
+
+
 class FusionAnnotation(object):
     """Annotation of predicted fusion genes soley based on the breakpoint information"""
 
     def __init__(self, db_file, bp_file, tsl_file):
         """Parameter initialization"""
-        self.db = self.load_featuredb(db_file)
-        self.bp_dict = self.breakpoints_to_dict(bp_file)
-        self.tsl_dict = self.load_tsl_data(tsl_file)
+        self.db = load_featuredb(db_file)
+        self.bp_dict = breakpoints_to_dict(bp_file)
+        self.tsl_dict = load_tsl_data(tsl_file)
         self.cds_seq_dict = {}
         self.trans_flags_dict = {}
 
-    @staticmethod
-    def load_featuredb(db_in_file):
-        """Perform a simple check to confirm that the database input is a database"""
-        logger.info("Loading feature DB with gffutils")
-        if not db_in_file.endswith("db"):
-            logger.error("Not a valid database file: {}".format(db_in_file))
-        # return the db
-        return gffutils.FeatureDB(db_in_file)
-
-    @staticmethod
-    def breakpoints_to_dict(bp_in_file):
-        """Read fgid and breakpoints from Detected_Fusions.csv and store the info in a dict"""
-        logger.info("Loading BPIDs from Detected_Fusions.csv")
-        bp_dict = {}
-        with open(bp_in_file, "r") as bpin:
-            next(bpin)  # skip header
-            for line in bpin:
-                elements = line.rstrip().split(";")
-                bpid = elements[0]
-                bp1 = elements[2]
-                bp2 = elements[3]
-                # This could also be implemented as a set as BPID already contains both BPs
-                if not bpid in bp_dict:
-                    bp_dict[bpid] = (bp1, bp2)
-        return bp_dict
-
-    @staticmethod
-    def load_tsl_data(tsl_in_file):
-        """Load data created by gtf2tsl.py into a dict"""
-        logger.info("Loading TSL data into dict")
-        tsl_dict = {}
-        with open(tsl_in_file, "r") as tslin:
-            next(tslin)  # skip header
-            for line in tslin:
-                elements = line.rstrip().split("\t")
-                trans_id = elements[0]
-                tsl = elements[3]
-                if not trans_id in tsl_dict:
-                    tsl_dict[trans_id] = tsl
-        return tsl_dict
 
     def get_tsl(self, trans_id):
         """Get the transcript support level (tsl) from the pre-loaded dict"""

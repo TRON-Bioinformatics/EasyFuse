@@ -3,8 +3,8 @@ from bin.fusiontoolparser_helper import parse_starfusion_results
 from bin.fusiontoolparser_helper import parse_arriba_results
 
 def test_parse_fusioncatcher_results():
-    infile = "tests/parsing/fusioncatcher_1.txt"
-    infile2 = "tests/parsing/fusioncatcher_2.tsv"
+    infile = "tests/fusiontoolparser/fusioncatcher_1.txt"
+    infile2 = "tests/fusiontoolparser/fusioncatcher_2.tsv"
     assert parse_fusioncatcher_results(infile, infile2) == {
         '21:41494380:-_7:13935843:-': [
             'TMPRSS2_ETV1', '21:41494380:-', '7:13935843:-', '16', '367'
@@ -33,7 +33,7 @@ def test_parse_fusioncatcher_results():
     }
 
 def test_parse_starfusion_results():
-    infile = "tests/parsing/starfusion.tsv"
+    infile = "tests/fusiontoolparser/starfusion.tsv"
     assert parse_starfusion_results(infile) == {
         '12:11869969:+_15:87940753:-': [
             'ETV6_NTRK3', '12:11869969:+', '15:87940753:-', '160', '390'
@@ -65,7 +65,7 @@ def test_parse_starfusion_results():
     }
 
 def test_parse_arriba_results():
-    infile = "tests/parsing/arriba.tsv"
+    infile = "tests/fusiontoolparser/arriba.tsv"
     assert parse_arriba_results(infile) == {
         '12:11869969:+_15:87940753:-': [
             'ETV6_NTRK3', '12:11869969:+', '15:87940753:-', '130', '300'

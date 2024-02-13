@@ -28,7 +28,7 @@ import logzero
 import pysam  # pysam is not available for windows (where I run pylint) => pylint: disable=E0401
 from logzero import logger
 
-from count_input_reads import get_input_read_count_from_star
+from count_input_reads import get_input_read_count
 
 
 # pylint: disable=line-too-long
@@ -36,7 +36,7 @@ from count_input_reads import get_input_read_count_from_star
 class ReadSelection(object):
     """Select alignments belonging to putative fusions from an s/bam file"""
 
-    def __init__(self, bam, output, context_file, input_reads_stats):
+    def __init__(self, bam, output, context_file, input_read_stats):
         """Parameter initialization"""
         self.bam_file = bam
         self.in_bam = pysam.AlignmentFile(bam, "rb")
@@ -57,9 +57,9 @@ class ReadSelection(object):
         logzero.logfile("{}.fusionReadFilterLog".format(output))
 
         # loads read counts
-        assert os.path.exists(input_reads_stats) and os.path.isfile(input_reads_stats), \
-            "Read stats file not found: {}".format(input_reads_stats)
-        self.input_read_count = get_input_read_count_from_star(input_reads_stats)
+        assert os.path.exists(input_read_stats) and os.path.isfile(input_read_stats), \
+            "Read stats file not found: {}".format(input_read_stats)
+        self.input_read_count = get_input_read_count(input_read_stats, "star")
 
         self.coord_dict = {}
         self.get_ranges(context_file)
@@ -311,15 +311,15 @@ def main():
         "-i2", "--input2", dest="input2", help="Specify context_seq file file"
     )
     parser.add_argument(
-        "--input-reads-stats",
-        dest="input_reads_stats",
+        "--input_read_stats",
+        dest="input_read_stats",
         required=True,
-        help="Path to input file with reads stats",
+        help="Path to input file with read stats",
     )
     parser.add_argument("-o", "--output", dest="output", help="Specify output prefix")
     args = parser.parse_args()
 
-    stats = ReadSelection(args.input, args.output, args.input2, args.input_reads_stats)
+    stats = ReadSelection(args.input, args.output, args.input2, args.input_read_stats)
     stats.run()
 
 if __name__ == "__main__":

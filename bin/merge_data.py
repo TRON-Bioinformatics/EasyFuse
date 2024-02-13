@@ -9,9 +9,13 @@ import csv
 import os
 import os.path
 import subprocess
+import sys
 
 from logzero import logger
-from count_input_reads import get_input_read_count_from_star
+
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+from count_input_reads import get_input_read_count
 
 
 class FusionSummary(object):
@@ -42,7 +46,7 @@ class FusionSummary(object):
         self.input_read_stats = input_read_stats
 
         # load aligned read counts
-        self.input_read_count = get_input_read_count_from_star(input_read_stats)
+        self.input_read_count = get_input_read_count(input_read_stats, "star")
         self.output_table = output_table
         self.fusion_tools = fusion_tools
         self.data = {}
@@ -303,7 +307,7 @@ def main():
     )
     parser.add_argument(
         "--context_seqs",
-        dest="input_fusion_context_seqs",
+        dest="input_context_seqs",
         required=True,
         help="Path to input file with fusion context sequences",
     )
@@ -333,8 +337,8 @@ def main():
     args = parser.parse_args()
 
     summary = FusionSummary(
-        input_fusions=args.input_fusions,
-        input_fusion_context_seqs=args.input_fusion_context_seqs,
+        input_fusions=args.input_detected_fusions,
+        input_fusion_context_seqs=args.input_context_seqs,
         input_requant_counts=args.input_requant_counts,
         input_read_stats=args.input_read_stats,
         output_table=args.output_table,

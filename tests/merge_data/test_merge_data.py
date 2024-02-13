@@ -1,11 +1,11 @@
 from bin.merge_data import FusionSummary
 
 class TestFusionSummary:
-    input_fusions = "tests/merging/Detected_Fusions.csv"
-    input_fusion_context_seqs = "tests/merging/annotated_fusions.csv"
-    input_requant_counts = "tests/merging/quantification.tsv"
-    input_read_stats = "tests/merging/Log.final.out"
-    output_table = "tests/merging/fusions.csv"
+    input_fusions = "tests/merge_data/Detected_Fusions.csv"
+    input_fusion_context_seqs = "tests/merge_data/annotated_fusions.csv"
+    input_requant_counts = "tests/merge_data/quantification.tsv"
+    input_read_stats = "tests/merge_data/Log.final.out"
+    output_table = "tests/merge_data/fusions.csv"
     fusion_tools = "fusioncatcher,starfusion,arriba"
     fs = FusionSummary(
         input_fusions,
@@ -101,33 +101,33 @@ class TestFusionSummary:
 
 
     def test_load_requant_counts(self):
-        #print(self.fs.load_requant_counts())
+        #print(self.fs.load_requant_counts()['b21d222ed947abeb'])
         assert self.fs.load_requant_counts()['b21d222ed947abeb'] == {
             'ft': {
-                'name': 'ETV6_12:11869969:+_ENST00000396373_NTRK3_15:87940753:-_ENST00000629765_b21d222ed947abeb_400_ft', 
+                'name': 'b21d222ed947abeb_400_ft', 
                 'pos': '400', 
-                'junc': '29', 
-                'span': '44', 
-                'anch': '24', 
-                'a': '81', 
-                'b': '51'
+                'junc': '205', 
+                'span': '296', 
+                'anch': '25', 
+                'a': '521', 
+                'b': '378'
             }, 
             'wt1': {
-                'name': 'ETV6_12:11869969:+_ENST00000396373_NTRK3_15:87940753:-_ENST00000629765_b21d222ed947abeb_400_wt1', 
+                'name': 'b21d222ed947abeb_400_wt1', 
                 'pos': '400', 
                 'junc': '0', 
                 'span': '0', 
                 'anch': '0', 
-                'a': '0', 
+                'a': '2', 
                 'b': '0'
             }, 
             'wt2': {
-                'name': 'ETV6_12:11869969:+_ENST00000396373_NTRK3_15:87940753:-_ENST00000629765_b21d222ed947abeb_400_wt2', 
+                'name': 'b21d222ed947abeb_400_wt2', 
                 'pos': '400', 
                 'junc': '0', 
                 'span': '0', 
                 'anch': '0', 
                 'a': '0', 
-                'b': '0'
+                'b': '6'
             }
         }

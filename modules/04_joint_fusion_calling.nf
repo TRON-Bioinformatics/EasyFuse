@@ -3,7 +3,7 @@ process FUSION_PARSER {
     cpus 2
     memory "8g"
     tag "${name}"
-    publishDir "${params.output}/${name}", mode: 'copy'
+    //publishDir "${params.output}/${name}", mode: 'copy'
 
     conda (params.enable_conda ? "${baseDir}/environments/filtering.yml" : null)
 
@@ -18,10 +18,10 @@ process FUSION_PARSER {
 
     """
     fusiontoolparser.py \
-        --input-fusioncatcher ${fusion_catcher_1} \
-        --input-fusioncatcher2 ${fusion_catcher_2} \
-	      --input-starfusion ${star_fusion} \
-        --input-arriba ${arriba_1} \
+        --input_fusioncatcher ${fusion_catcher_1} \
+        --input_fusioncatcher2 ${fusion_catcher_2} \
+	      --input_starfusion ${star_fusion} \
+        --input_arriba ${arriba_1} \
         --output . \
         --sample ${name}
     """
@@ -31,7 +31,7 @@ process FUSION_ANNOTATION {
     cpus 1
     memory "8g"
     tag "${name}"
-    publishDir "${params.output}/${name}", mode: 'copy'
+    //publishDir "${params.output}/${name}", mode: 'copy'
 
     conda (params.enable_conda ? "${baseDir}/environments/annotation.yml" : null)
 

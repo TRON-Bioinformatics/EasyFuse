@@ -1,10 +1,8 @@
-#!/usr/bin/env python3
-
 import os
 import subprocess
 
 
-def get_input_read_count_from_star(infile):
+def __get_input_read_count_from_star(infile):
     """Parses a star output log file to get input read counts from the fastq origin"""
     if not os.path.exists(infile):
         return -1
@@ -15,7 +13,7 @@ def get_input_read_count_from_star(infile):
     return -1
 
 
-def get_input_read_count_from_fastq(infile):
+def __get_input_read_count_from_fastq(infile):
     """Parses input FASTQ to get read count"""
     if not os.path.exists(infile):
         return -1
@@ -28,6 +26,6 @@ def get_input_read_count(infile, file_format):
     """Parses input file to get read count"""
 
     if file_format == "star":
-        return get_input_read_count_from_star(infile)
+        return __get_input_read_count_from_star(infile)
     elif file_format == "fastq":
-        return get_input_read_count_from_fastq(infile)
+        return __get_input_read_count_from_fastq(infile)
