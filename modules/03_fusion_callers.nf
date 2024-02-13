@@ -39,13 +39,13 @@ process FUSION_CATCHER {
 
 process STAR_FUSION {
     cpus 6
-    memory "32g"
+    memory "40g"
     tag "${name}"
 
     conda (params.enable_conda ? "${baseDir}/environments/starfusion.yml" : null)
 
     input:
-      tuple val(name), path(chimeric_reads_1), path(chimeric_reads_2)
+      tuple val(name), path(fastq1), file(fastq2)
 
     output:
       tuple val("${name}"), path("star-fusion.fusion_predictions.tsv"), emit: fusions
@@ -53,7 +53,8 @@ process STAR_FUSION {
     script:
     """
     STAR-Fusion \
-        --chimeric_junction ${chimeric_reads_1} \
+        --left_fq ${fastq1} \
+        --right_fq ${fastq2} \
         --genome_lib_dir ${params.starfusion_index} \
         --CPU ${task.cpus} \
         --output_dir .
@@ -68,7 +69,7 @@ process ARRIBA {
     conda (params.enable_conda ? "${baseDir}/environments/arriba.yml" : null)
 
     input:
-      tuple val(name), path(chimeric_reads_2), path(bam)
+      tuple val(name), path(bam)
 
     output:
       tuple val("${name}"), path("fusions.tsv"), path("fusions.discarded.tsv"), emit: fusions
@@ -76,11 +77,11 @@ process ARRIBA {
     script:
     """
     arriba \
-        -c ${chimeric_reads_2} \
         -x ${bam} \
         -g ${params.gtf} \
         -a ${params.fasta} \
         -o fusions.tsv \
-        -O fusions.discarded.tsv
+        -O fusions.discarded.tsv \
+        -f blacklist
     """
 }

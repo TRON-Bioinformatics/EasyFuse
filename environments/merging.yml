@@ -1,7 +1,7 @@
-name: qc
+name: merging
 channels:
   - conda-forge
   - bioconda
   - defaults
 dependencies:
-  - bioconda::fastp=0.23.4
+  - conda-forge::logzero=1.7.0

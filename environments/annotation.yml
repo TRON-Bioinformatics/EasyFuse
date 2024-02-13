@@ -1,0 +1,10 @@
+name: annotation
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - conda-forge::logzero=1.7.0
+  - conda-forge::biopython=1.83
+  - conda-forge::python-xxhash=3.4.1
+  - bioconda::gffutils=0.12

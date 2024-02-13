@@ -3,11 +3,12 @@ process FUSION_PARSER {
     cpus 2
     memory "8g"
     tag "${name}"
+    publishDir "${params.output}/${name}", mode: 'copy'
 
-    conda (params.enable_conda && ! params.disable_pyeasyfuse_conda ? "${baseDir}/environments/easyfuse_src.yml" : null)
+    conda (params.enable_conda ? "${baseDir}/environments/filtering.yml" : null)
 
     input:
-      tuple val(name), path(fusion_catcher_1), path(fusion_catcher_2), path(star_fusion)
+      tuple val(name), path(fusion_catcher_1), path(fusion_catcher_2), path(star_fusion), path(arriba_1), path(arriba_2)
 
 
     output:
@@ -16,34 +17,36 @@ process FUSION_PARSER {
     script:
 
     """
-    easy-fuse fusion-parser \
+    fusiontoolparser.py \
         --input-fusioncatcher ${fusion_catcher_1} \
         --input-fusioncatcher2 ${fusion_catcher_2} \
-	--input-starfusion ${star_fusion} \
+	      --input-starfusion ${star_fusion} \
+        --input-arriba ${arriba_1} \
         --output . \
         --sample ${name}
     """
 }
 
 process FUSION_ANNOTATION {
-    cpus 2
+    cpus 1
     memory "8g"
     tag "${name}"
+    publishDir "${params.output}/${name}", mode: 'copy'
 
-    conda (params.enable_conda && ! params.disable_pyeasyfuse_conda ? "${baseDir}/environments/easyfuse_src.yml" : null)
+    conda (params.enable_conda ? "${baseDir}/environments/annotation.yml" : null)
 
     input:
       tuple val(name), path(fusions)
 
     output:
-      tuple val("${name}"), path("annotated_fusions.csv.debug"), path("annotated_fusions.csv.fasta"), emit: annot_fusions
+      tuple val("${name}"), path("annotated_fusions.csv"), path("annotated_fusions.csv.debug"), path("annotated_fusions.csv.fasta"), emit: annot_fusions
       
       
 
     script:
 
     """
-    easy-fuse annotation \
+    fusionannotation.py \
         --detected_fusions ${fusions} \
         --annotation_db ${params.annotation_db} \
         --out_csv annotated_fusions.csv \

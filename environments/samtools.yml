@@ -1,4 +1,4 @@
-name: requantification
+name: samtools
 channels:
   - conda-forge
   - bioconda
