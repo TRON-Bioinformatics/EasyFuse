@@ -1,8 +1,0 @@
-name: requantification
-channels:
-  - conda-forge
-  - bioconda
-  - defaults
-dependencies:
-  - bioconda::star=2.6.1d
-  - bioconda::samtools=1.9.0
