@@ -39,7 +39,7 @@ process FUSION_CATCHER {
 
 process STAR_FUSION {
     cpus 6
-    memory "40g"
+    memory "32g"
     tag "${name}"
 
     conda (params.enable_conda ? "${baseDir}/environments/starfusion.yml" : null)
@@ -62,8 +62,8 @@ process STAR_FUSION {
 }
 
 process ARRIBA {
-    cpus 6
-    memory "32g"
+    cpus 1
+    memory "10g"
     tag "${name}"
 
     conda (params.enable_conda ? "${baseDir}/environments/arriba.yml" : null)
