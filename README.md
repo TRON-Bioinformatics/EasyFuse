@@ -5,7 +5,7 @@
 [![License](https://img.shields.io/badge/license-GPLv3-green)](https://opensource.org/licenses/GPL-3.0)
 
 EasyFuse is a pipeline to detect fusion transcripts from paired-end RNA-seq data with high accuracy.
-The current version of EasyFuse uses two fusion gene detection tools, [STAR-Fusion](https://github.com/STAR-Fusion/STAR-Fusion/wiki) and [Fusioncatcher](https://github.com/ndaniel/fusioncatcher) along with a powerful read filtering strategy, stringent re-quantification of supporting reads and machine learning for highly accurate predictions.
+The current version of EasyFuse uses three fusion gene detection tools, [STAR-Fusion](https://github.com/STAR-Fusion/STAR-Fusion/wiki), [Fusioncatcher](https://github.com/ndaniel/fusioncatcher) and [Arriba](https://arriba.readthedocs.io/en/latest/) along with a powerful read filtering strategy, stringent re-quantification of supporting reads and machine learning for highly accurate predictions.
 
 Please note that previous versions of EasyFuse including the one in the EasyFuse publication utilized three additional prediction tools: [InFusion](https://bitbucket.org/kokonech/infusion/src/master/), [MapSplice2](http://www.netlab.uky.edu/p/bioinfo/MapSplice2) and [SoapFuse](https://sourceforge.net/p/soapfuse/wiki/Home/).
 For maximal sensitivity, we recommend using an older EasyFuse release with five tools: [EasyFuse v1.3.7](https://github.com/TRON-Bioinformatics/EasyFuse/tree/v1.3.7)
