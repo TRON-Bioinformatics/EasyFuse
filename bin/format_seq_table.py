@@ -2,6 +2,7 @@
 
 from argparse import ArgumentParser
 import csv
+import sys
 
 csv.field_size_limit(sys.maxsize)
 
