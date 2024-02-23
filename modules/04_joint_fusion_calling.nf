@@ -1,9 +1,7 @@
 
 process FUSION_PARSER {
-    cpus 2
-    memory "8g"
     tag "${name}"
-    //publishDir "${params.output}/${name}", mode: 'copy'
+    label 'process_single'
 
     conda (params.enable_conda ? "${baseDir}/environments/filtering.yml" : null)
 
@@ -28,10 +26,8 @@ process FUSION_PARSER {
 }
 
 process FUSION_ANNOTATION {
-    cpus 1
-    memory "8g"
     tag "${name}"
-    //publishDir "${params.output}/${name}", mode: 'copy'
+    label 'process_single'
 
     conda (params.enable_conda ? "${baseDir}/environments/annotation.yml" : null)
 

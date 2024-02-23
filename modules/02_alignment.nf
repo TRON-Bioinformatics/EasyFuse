@@ -1,8 +1,7 @@
 
 process STAR {
-    cpus 6
-    memory "32g"
     tag "${name}"
+    label 'process_medium'
 
     conda (params.enable_conda ? "${baseDir}/environments/alignment.yml" : null)
 
@@ -42,11 +41,9 @@ process STAR {
 }
 
 
-
 process STAR_ARRIBA {
-    cpus 6
-    memory "32g"
     tag "${name}"
+    label 'process_medium'
 
     conda (params.enable_conda ? "${baseDir}/environments/alignment.yml" : null)
 
@@ -84,9 +81,8 @@ process STAR_ARRIBA {
 
 
 process READ_FILTER {
-    cpus 1
-    memory "8g"
     tag "${name}"
+    label 'process_single'
 
     conda (params.enable_conda ? "${baseDir}/environments/filtering.yml" : null)
 
@@ -105,9 +101,8 @@ process READ_FILTER {
 }
 
 process BAM2FASTQ {
-    cpus 6
-    memory "8g"
     tag "${name}"
+    label 'process_medium'
 
     conda (params.enable_conda ? "${baseDir}/environments/samtools.yml" : null)
 

@@ -1,8 +1,7 @@
 
 process FASTP {
-    cpus 6
-    memory "8g"
     tag "${name}"
+    label 'process_medium'
 
     conda (params.enable_conda ? "${baseDir}/environments/qc.yml" : null)
 

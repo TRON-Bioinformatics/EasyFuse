@@ -1,8 +1,7 @@
 
 process FUSION_CATCHER_INDEX {
-    cpus 6
-    memory "32g"
     tag "${name}"
+    label 'process_low'
 
     conda (params.enable_conda ? "${baseDir}/environments/fusioncatcher.yml" : null)
 
@@ -14,9 +13,8 @@ process FUSION_CATCHER_INDEX {
 
 
 process FUSION_CATCHER {
-    cpus 6
-    memory "32g"
     tag "${name}"
+    label 'process_medium'
 
     conda (params.enable_conda ? "${baseDir}/environments/fusioncatcher.yml" : null)
 
@@ -38,9 +36,8 @@ process FUSION_CATCHER {
 }
 
 process STAR_FUSION {
-    cpus 6
-    memory "32g"
     tag "${name}"
+    label 'process_medium'
 
     conda (params.enable_conda ? "${baseDir}/environments/starfusion.yml" : null)
 
@@ -62,9 +59,8 @@ process STAR_FUSION {
 }
 
 process ARRIBA {
-    cpus 1
-    memory "10g"
     tag "${name}"
+    label 'process_low'
 
     conda (params.enable_conda ? "${baseDir}/environments/arriba.yml" : null)
 
