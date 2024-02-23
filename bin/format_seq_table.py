@@ -3,6 +3,8 @@
 from argparse import ArgumentParser
 import csv
 
+csv.field_size_limit(sys.maxsize)
+
 def main():
     parser = ArgumentParser(description="Reformats context seqs table to fit easyquant format")
     parser.add_argument(
