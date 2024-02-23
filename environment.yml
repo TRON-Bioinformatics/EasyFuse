@@ -2,4 +2,5 @@ name: conda_env
 channels:
   - bioconda
 dependencies:
+  - python=3.7
   - nextflow=21.10.0
