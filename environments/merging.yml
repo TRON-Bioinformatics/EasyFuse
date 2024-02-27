@@ -4,4 +4,5 @@ channels:
   - bioconda
   - defaults
 dependencies:
+  - python=3.8
   - conda-forge::logzero=1.7.0
