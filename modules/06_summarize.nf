@@ -44,7 +44,7 @@ process PREDICTION {
     R_model_prediction.R \
       --fusion_summary ${merged_results} \
       --model_file ${params.model_pred} \
-      --prediction_threshold 0.5 \
+      --prediction_threshold ${params.model_threshold} \
       --output fusions.pass.csv
     """
 }
