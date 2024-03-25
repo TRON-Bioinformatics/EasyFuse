@@ -3,7 +3,7 @@ process FUSION_FILTER {
     memory "8g"
     tag "${name}"
 
-    conda (params.enable_conda ? "${baseDir}/environments/filtering.yml" : null)
+    conda ("${baseDir}/environments/filtering.yml")
 
     input:
       tuple val(name), path(bam), path(annot_fusions_csv), path(annot_fusions_csv_debug), path(annot_fusions_fasta), path(read_stats)
@@ -27,6 +27,8 @@ process FUSION2CSV {
     tag "${name}"
     //publishDir "${params.output}/${name}", mode: 'copy'
 
+    conda ("${baseDir}/environments/filtering.yml")
+
     input:
       tuple val(name), path(annot_fusions_csv), path(annot_fusions_csv_debug), path(annot_fusions_fasta)
 
@@ -46,7 +48,7 @@ process CSV2FASTA {
     memory "1g"
     tag "${name}"
 
-    conda (params.enable_conda ? "${baseDir}/environments/requantification.yml" : null)
+    conda ("${baseDir}/environments/requantification.yml")
 
     input:
       tuple val(name), path(formatted_csv)
@@ -69,7 +71,7 @@ process STAR_INDEX {
     memory "8g"
     tag "${name}"
 
-    conda (params.enable_conda ? "${baseDir}/environments/requantification.yml" : null)
+    conda ("${baseDir}/environments/requantification.yml")
     
     input:
       tuple val(name), path(formatted_fasta)
@@ -95,7 +97,7 @@ process STAR_CUSTOM {
     tag "${name}"
     //publishDir "${params.output}/${name}", mode: 'copy'
 
-    conda (params.enable_conda ? "${baseDir}/environments/requantification.yml" : null)
+    conda ("${baseDir}/environments/requantification.yml")
 
     input:
       tuple val(name), path(fastq1), file(fastq2), path(star_index)
@@ -124,7 +126,7 @@ process READ_COUNT {
   tag "${name}"
   //publishDir "${params.output}/${name}", mode: 'copy'
 
-  conda (params.enable_conda ? "${baseDir}/environments/requantification.yml" : null)
+  conda ("${baseDir}/environments/requantification.yml")
 
   input:
     tuple val(name), path(bam), path(formatted_csv)

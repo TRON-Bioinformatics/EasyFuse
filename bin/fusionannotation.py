@@ -204,9 +204,7 @@ class FusionAnnotation(object):
                 trans_id = parent.id
                 trans_biotype = parent.attributes["biotype"][0]
             elif parent.id.startswith("gene:"):
-                #print(parent.attributes)
-                gene_id = parent.id
-                #gene_name = parent.attributes["Name"][0]
+                gene_id = parent.attributes.get("gene_id", "")
                 gene_name = parent.attributes.get("Name", gene_id)[0]
                 gene_biotype = parent.attributes["biotype"][0]
                 try:
