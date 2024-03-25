@@ -19,7 +19,7 @@ For maximal sensitivity, we recommend using an older EasyFuse release with five 
 
 ### Dependencies
 
- - [NextFlow, 21.10.0](https://www.nextflow.io/)
+ - [NextFlow, 23.10.1](https://www.nextflow.io/)
  - [Conda](https://docs.anaconda.com/free/anaconda/install/index.html)
 
 Please have a look at environment.yml.
@@ -49,6 +49,8 @@ To install manually:
 ```
 git clone https://github.com/TRON-Bioinformatics/EasyFuse.git
 cd EasyFuse
+# In order to use the nextflow.config from the repo we have to rename it and change the path to `conda.cacheDir`
+mv nextflow.config.sample nextflow.config
 
 # In order to run the test script you have to move the reference folder to test/easyfuse_ref/
 mv ../easyfuse_ref_v4/ test/easyfuse_ref/
@@ -149,7 +151,6 @@ Overview of all features/columns annotated by EasyFuse:
 - ***toolname*_detected:** 1 if breakpoint was detected by respective tool, 0 if not
 - ***toolname*_junc:** Junction read count (reads covering breakpoint) reported by *toolname*  
 - ***toolname*_span:** Spanning read count (read pairs with each partner on one side of breakpoint) reported by *toolname*  
-- **tool_count:** Number of tools detecting fusion gene breakpoint  
 - **tool_frac:** Fraction of tools detecting the fusion gene breakpoint
 - ***category*_bp:** Location of breakpoint on context sequence (400 for an 800 bp context sequence). Whereby *category* describes (here and in the following columns) the reference sequence to which the reads were mapped and quantified: 
   - `ft`: context_sequence of fusion transcript 

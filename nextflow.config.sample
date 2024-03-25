@@ -2,13 +2,13 @@ profiles {
   standard {
     conda.enabled = true
     conda.useMamba = false
-    conda.cacheDir = "/scratch/info/projects/nf-conda"
+    conda.cacheDir = "/path/to/cachedir"
     process.executor = 'local'
   }
   cluster {
     conda.enabled = true
     conda.useMamba = false
-    conda.cacheDir = "/scratch/info/projects/nf-conda"
+    conda.cacheDir = "/path/to/cachedir"
     process.executor = 'slurm'
     process.queue = 'Compute'
   }
