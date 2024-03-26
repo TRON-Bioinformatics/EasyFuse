@@ -4,7 +4,7 @@ process FUSION_CATCHER_INDEX {
     memory "32g"
     tag "${name}"
 
-    conda (params.enable_conda ? "${baseDir}/environments/fusioncatcher.yml" : null)
+    conda ("${baseDir}/environments/fusioncatcher.yml")
 
     script:
     """
@@ -18,7 +18,7 @@ process FUSION_CATCHER {
     memory "32g"
     tag "${name}"
 
-    conda (params.enable_conda ? "${baseDir}/environments/fusioncatcher.yml" : null)
+    conda ("${baseDir}/environments/fusioncatcher.yml")
 
     input:
       tuple val(name), path(fastq1), file(fastq2)
@@ -42,7 +42,7 @@ process STAR_FUSION {
     memory "32g"
     tag "${name}"
 
-    conda (params.enable_conda ? "${baseDir}/environments/starfusion.yml" : null)
+    conda ("${baseDir}/environments/starfusion.yml")
 
     input:
       tuple val(name), path(fastq1), file(fastq2)
@@ -66,7 +66,7 @@ process ARRIBA {
     memory "10g"
     tag "${name}"
 
-    conda (params.enable_conda ? "${baseDir}/environments/arriba.yml" : null)
+    conda ("${baseDir}/environments/arriba.yml")
 
     input:
       tuple val(name), path(bam)

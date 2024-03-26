@@ -3,4 +3,4 @@ channels:
   - bioconda
 dependencies:
   - python=3.7
-  - nextflow=21.10.0
+  - nextflow=23.10.1

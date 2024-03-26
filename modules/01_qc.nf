@@ -4,7 +4,7 @@ process FASTP {
     memory "8g"
     tag "${name}"
 
-    conda (params.enable_conda ? "${baseDir}/environments/qc.yml" : null)
+    conda ("${baseDir}/environments/qc.yml")
 
     input:
       tuple val(name), path(fastq1), path(fastq2)
@@ -18,6 +18,6 @@ process FASTP {
         -I ${fastq2} \
         -o trimmed_R1.fastq.gz \
         -O trimmed_R2.fastq.gz \
-        --thread 6
+        --thread ${task.cpus}
     """
 }

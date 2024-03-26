@@ -19,7 +19,7 @@ For maximal sensitivity, we recommend using an older EasyFuse release with five 
 
 ### Dependencies
 
- - [NextFlow, 21.10.0](https://www.nextflow.io/)
+ - [NextFlow, 23.10.1](https://www.nextflow.io/)
  - [Conda](https://docs.anaconda.com/free/anaconda/install/index.html)
 
 Please have a look at environment.yml.
@@ -27,6 +27,7 @@ The conda environment to run nextflow can be installed with the following comman
 ```
 conda env create -f environment.yml --prefix conda_env/
 ```
+
 
 ### Download reference data
 
@@ -76,8 +77,8 @@ sample_01	/path/to/sample_01_R1.fastq.gz	/path/to/sample_01_R2.fastq.gz
 Start the pipeline as follows if you installed manually
 
 ```
-nextflow main.nf \
-  -profile conda -with-conda \
+nextflow run main.nf \
+  -profile conda \
   --reference /path/to/reference/folder \
   --input_files /path/to/input_table_file \
   --output /path/to/output_folder
@@ -87,11 +88,14 @@ nextflow main.nf \
 Or as follows if you installed it via Nextflow (only available from release 2.0.1 onwards):
 ```
 nextflow run tron-bioinformatics/easyfuse -r x.y.z \
-  -profile conda -with-conda \
+  -profile conda \
   --reference /path/to/reference/folder \
   --input_files /path/to/input_table_file \
   --output /path/to/output_folder
 ```
+
+Note: If you want to use a custom profile (e.g. for running jobs on a cluster), please refer to https://www.nextflow.io/docs/latest/config.html for further information.
+
 
 ### Output format
 
@@ -149,7 +153,6 @@ Overview of all features/columns annotated by EasyFuse:
 - ***toolname*_detected:** 1 if breakpoint was detected by respective tool, 0 if not
 - ***toolname*_junc:** Junction read count (reads covering breakpoint) reported by *toolname*  
 - ***toolname*_span:** Spanning read count (read pairs with each partner on one side of breakpoint) reported by *toolname*  
-- **tool_count:** Number of tools detecting fusion gene breakpoint  
 - **tool_frac:** Fraction of tools detecting the fusion gene breakpoint
 - ***category*_bp:** Location of breakpoint on context sequence (400 for an 800 bp context sequence). Whereby *category* describes (here and in the following columns) the reference sequence to which the reads were mapped and quantified: 
   - `ft`: context_sequence of fusion transcript 

@@ -4,7 +4,7 @@ process STAR {
     memory "32g"
     tag "${name}"
 
-    conda (params.enable_conda ? "${baseDir}/environments/alignment.yml" : null)
+    conda ("${baseDir}/environments/alignment.yml")
 
     input:
       tuple val(name), path(fastq1), file(fastq2)
@@ -48,7 +48,7 @@ process STAR_ARRIBA {
     memory "32g"
     tag "${name}"
 
-    conda (params.enable_conda ? "${baseDir}/environments/alignment.yml" : null)
+    conda ("${baseDir}/environments/alignment.yml")
 
     input:
       tuple val(name), path(fastq1), file(fastq2)
@@ -88,7 +88,7 @@ process READ_FILTER {
     memory "8g"
     tag "${name}"
 
-    conda (params.enable_conda ? "${baseDir}/environments/filtering.yml" : null)
+    conda ("${baseDir}/environments/filtering.yml")
 
     input:
       tuple val(name), path(bam)
@@ -109,7 +109,7 @@ process BAM2FASTQ {
     memory "8g"
     tag "${name}"
 
-    conda (params.enable_conda ? "${baseDir}/environments/samtools.yml" : null)
+    conda ("${baseDir}/environments/samtools.yml")
 
     input:
       tuple val(name), path(bam)
