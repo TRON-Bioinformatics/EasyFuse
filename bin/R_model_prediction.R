@@ -64,11 +64,6 @@ fusion_data <- readr::read_delim(input_file,
     frame = factor(frame, 
                    levels = c("no_frame", "in_frame", "out_frame", 
                               "neo_frame")),
-    # add feature tool_frac
-    tool_count = rowSums(select(., .dots = ends_with("_detected"))),
-    tool_n = ncol(select(., .dots = ends_with("_detected"))),
-    tool_frac = tool_count / tool_n
-
   )
 
 # read model from input file ---------------------------------------------------
