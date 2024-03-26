@@ -28,6 +28,7 @@ The conda environment to run nextflow can be installed with the following comman
 conda env create -f environment.yml --prefix conda_env/
 ```
 
+
 ### Download reference data
 
 Before running EasyFuse the following reference annotation data needs to be downloaded (~104 GB).
@@ -49,8 +50,6 @@ To install manually:
 ```
 git clone https://github.com/TRON-Bioinformatics/EasyFuse.git
 cd EasyFuse
-# In order to use the nextflow.config from the repo we have to rename it and change the path to `conda.cacheDir`
-mv nextflow.config.sample nextflow.config
 
 # In order to run the test script you have to move the reference folder to test/easyfuse_ref/
 mv ../easyfuse_ref_v4/ test/easyfuse_ref/
@@ -78,8 +77,8 @@ sample_01	/path/to/sample_01_R1.fastq.gz	/path/to/sample_01_R2.fastq.gz
 Start the pipeline as follows if you installed manually
 
 ```
-nextflow main.nf \
-  -profile conda -with-conda \
+nextflow run main.nf \
+  -profile conda \
   --reference /path/to/reference/folder \
   --input_files /path/to/input_table_file \
   --output /path/to/output_folder
@@ -89,11 +88,14 @@ nextflow main.nf \
 Or as follows if you installed it via Nextflow (only available from release 2.0.1 onwards):
 ```
 nextflow run tron-bioinformatics/easyfuse -r x.y.z \
-  -profile conda -with-conda \
+  -profile conda \
   --reference /path/to/reference/folder \
   --input_files /path/to/input_table_file \
   --output /path/to/output_folder
 ```
+
+Note: If you want to use a custom profile (e.g. for running jobs on a cluster), please refer to https://www.nextflow.io/docs/latest/config.html for further information.
+
 
 ### Output format
 

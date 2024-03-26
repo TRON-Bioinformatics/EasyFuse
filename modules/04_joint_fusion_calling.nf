@@ -3,7 +3,7 @@ process FUSION_PARSER {
     cpus 1
     memory "8g"
     tag "${name}"
-    publishDir "${params.output}/${name}", mode: 'copy'
+    //publishDir "${params.output}/${name}", mode: 'copy'
 
     conda ("${baseDir}/environments/filtering.yml")
 
@@ -31,7 +31,7 @@ process FUSION_ANNOTATION {
     cpus 1
     memory "8g"
     tag "${name}"
-    publishDir "${params.output}/${name}", mode: 'copy'
+    //publishDir "${params.output}/${name}", mode: 'copy'
 
     conda ("${baseDir}/environments/annotation.yml")
 
