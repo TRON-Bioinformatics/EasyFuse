@@ -7,8 +7,6 @@
 EasyFuse is a pipeline to detect fusion transcripts from paired-end RNA-seq data with high accuracy.
 The current version of EasyFuse uses three fusion gene detection tools, [STAR-Fusion](https://github.com/STAR-Fusion/STAR-Fusion/wiki), [Fusioncatcher](https://github.com/ndaniel/fusioncatcher) and [Arriba](https://arriba.readthedocs.io/en/latest/) along with a powerful read filtering strategy, stringent re-quantification of supporting reads and machine learning for highly accurate predictions.
 
-Please note that previous versions of EasyFuse including the one in the EasyFuse publication utilized three additional prediction tools: [InFusion](https://bitbucket.org/kokonech/infusion/src/master/), [MapSplice2](http://www.netlab.uky.edu/p/bioinfo/MapSplice2) and [SoapFuse](https://sourceforge.net/p/soapfuse/wiki/Home/).
-For maximal sensitivity, we recommend using an older EasyFuse release with five tools: [EasyFuse v1.3.7](https://github.com/TRON-Bioinformatics/EasyFuse/tree/v1.3.7)
 
 <p align="center"><img src="img/easyfuse_workflow.png" width="240px"></p>
 
@@ -168,56 +166,6 @@ Overview of all features/columns annotated by EasyFuse:
 - **prediction_prob:** The predicted probability according to the machine learning model that the fusion candidate is a true positive. 
 - **prediction_class:** The predicted class (`negative` or `positive`) according to the machine learning model. This classification relies on a user-defined threshold (default 0.5) applied to the `precition_prob` column. 
 
-
-
-## Run EasyFuse 1.3.7
-
-For maximial sensitivity, we currently recommend using [EasyFuse version 1.3.7](https://github.com/TRON-Bioinformatics/EasyFuse/tree/v1.3.7) via Docker or Singularity.
-
-### Run via Docker
-
-The Docker image can be downloaded from [dockerhub](https://hub.docker.com/r/tronbioinformatics/easyfuse) using the following command:
-
-```
-docker pull tronbioinformatics/easyfuse:latest
-```
-
-EasyFuse will require three folders:
-
-* The input data folder containing FASTQ files, in this example `/path/to/data`.
-* The reference data folder, in this example `/path/to/easyfuse_ref`
-* The output folder, in this example `/path/to/output`
-
-EasyFuse can be started by mapping the input data, references, and output folders.
-
-```
-docker run \
-  --name easyfuse_container \
-  -v /path/to/easyfuse_ref:/ref \
-  -v /path/to/data:/data \
-  -v /path/to/output:/output \
-  --rm \
-  -it easyfuse:latest \
-  python /code/easyfuse/processing.py -i /data -o /output
-
-```
-
-### Run EasyFuse with Singularity
-
-Alternatively, EasyFuse can be executed with [Singularity](https://sylabs.io/docs/) as follows:
-
-```
-singularity exec 
-  --containall \
-  --bind /path/to/easyfuse_ref:/ref \
-  --bind /path/to/data:/data \
-  --bind /path/to/output:/output \  
-  docker://tronbioinformatics/easyfuse:latest \
-  python /code/easyfuse/processing.py -i /data/ -o /output
-
-```
-
-The output can be found in `/path/to/output/FusionSummary`.
 
 
 ## Citation
