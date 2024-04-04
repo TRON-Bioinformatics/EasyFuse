@@ -9,17 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Arriba v2.4.0 for fusion prediction
-- High confidence filter for Arriba
-- Conversion, parsing and annotation scripts
-- Easyquant v0.5.2 for requantification
-- Unit/integration tests using `pytest`
+- Arriba v2.4.0 high confidence calls as fusion candidates
+- [easyquant] (https://github.com/TRON-Bioinformatics/Easyquant) v0.5.2 for read support requantification
+- Unit/integration tests using pytest
 
 ### Changed
 
-- rm `tool_frac` column in R script
-- Fixed issue in fusion annotation script
+- Fixed issue with gene names in fusion annotation script
 - Updated prediction model based on new results
+- Moved conversion, parsing and annotation code from the easyfuse-src package
+- Removed unnecessary columns from final output
 
 ## [2.0.2] - 2023-11-24
 
