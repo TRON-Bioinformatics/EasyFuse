@@ -5,16 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.0.3] - 2024-03-26
-
+## [2.0.3] - 2024-04-04
 
 ### Added
 
-- 
+- Arriba v2.4.0 for fusion prediction
+- High confidence filter for Arriba
+- Conversion, parsing and annotation scripts
+- Easyquant v0.5.2 for requantification
+- Unit/integration tests using `pytest`
 
 ### Changed
 
 - rm `tool_frac` column in R script
+- Fixed issue in fusion annotation script
+- Updated prediction model based on new results
 
 ## [2.0.2] - 2023-11-24
 
