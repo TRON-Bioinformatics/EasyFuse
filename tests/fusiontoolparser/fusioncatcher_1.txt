@@ -1,0 +1,16 @@
+Very short summary of found candidate somatic fusion genes
+======================================================= ====
+
+Found 8 somatic fusion gene(s), which are as follows:
+  * TMPRSS2--ETV1  (already known fusion)
+  * EWSR1--ATF1  (already known fusion; exon-exon fusion junction)
+  * AKAP9--BRAF  (already known fusion; exon-exon fusion junction)
+  * ETV6--NTRK3  (already known fusion; exon-exon fusion junction)
+  * HOOK3--RET  (already known fusion; exon-exon fusion junction)
+  * EWSR1--FLI1  (already known fusion; exon-exon fusion junction)
+  * BRD4--NUTM1  (already known fusion; exon-exon fusion junction)
+  * CD74--ROS1  (already known fusion; exon-exon fusion junction)
+
+Found 8 somatic fusion transcript(s).
+
+For more detailed information regarding these candidate fusions, see text file 'final-list_candidate-fusion-genes.txt'.

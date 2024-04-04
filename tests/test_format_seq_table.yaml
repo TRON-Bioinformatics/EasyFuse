@@ -1,0 +1,9 @@
+- name: format_seq_table
+  command: >
+    python bin/format_seq_table.py 
+    --input_table tests/format_seq_table/annotated_fusions.csv.debug 
+    --output_table tests/format_seq_table/seq_table.csv
+  files:
+    - path: "tests/format_seq_table/seq_table.csv"
+      contains:
+        - "e45e9d63b50c4d61_181_ft"

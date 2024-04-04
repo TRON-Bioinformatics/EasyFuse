@@ -2,12 +2,12 @@
 
 nextflow.enable.dsl = 2
 
-include { FASTQC ; FASTQC_PARSER ; SKEWER } from './modules/01_qc'
-include { STAR ; READ_FILTER ; BAM2FASTQ } from './modules/02_alignment'
-include { FUSION_CATCHER ; STAR_FUSION ; FUSION_CATCHER_INDEX } from './modules/03_fusion_callers'
+include { FASTP } from './modules/01_qc'
+include { STAR ; STAR_ARRIBA ; READ_FILTER ; BAM2FASTQ } from './modules/02_alignment'
+include { FUSION_CATCHER ; STAR_FUSION ; ARRIBA; FUSION_CATCHER_INDEX } from './modules/03_fusion_callers'
 include { FUSION_PARSER ; FUSION_ANNOTATION } from './modules/04_joint_fusion_calling'
-include { STAR_INDEX ; FUSION_FILTER ; STAR_CUSTOM ; READ_COUNT } from './modules/05_requantification'
-include { SUMMARIZE_DATA } from './modules/06_summarize'
+include { FUSION2CSV ; CSV2FASTA ; STAR_INDEX ; FUSION_FILTER ; STAR_CUSTOM ; READ_COUNT } from './modules/05_requantification'
+include { MERGE_DATA ; PREDICTION } from './modules/06_summarize'
 	    
 
 def helpMessage() {
@@ -45,12 +45,10 @@ workflow QC {
     input_files
 
     main:
-    FASTQC(input_files)
-    FASTQC_PARSER(FASTQC.out.qc_data)
-    SKEWER(input_files.join(FASTQC_PARSER.out.qc_table))
+    FASTP(input_files)
 
     emit:
-    trimmed_fastq = SKEWER.out.trimmed_fastq
+    trimmed_fastq = FASTP.out.trimmed_fastq
 }
 
 workflow ALIGNMENT {
@@ -76,22 +74,28 @@ workflow TOOLS {
 
     main:
     FUSION_CATCHER(filtered_fastqs)
-    STAR_FUSION(chimeric_reads)
+    STAR_FUSION(filtered_fastqs)
+    STAR_ARRIBA(filtered_fastqs)
+    ARRIBA(STAR_ARRIBA.out.bams)
+
 
     emit:
     fusioncatcher_results = FUSION_CATCHER.out.fusions
     starfusion_results = STAR_FUSION.out.fusions
+    arriba_results = ARRIBA.out.fusions
 }
 
 workflow ANNOTATION {
     take:
     fusioncatcher_results
     starfusion_results
+    arriba_results
 
     main:
     FUSION_PARSER(
         fusioncatcher_results.join(
-        starfusion_results
+        starfusion_results.join(
+        arriba_results)
     ))
     FUSION_ANNOTATION(FUSION_PARSER.out.fusions)
 
@@ -113,14 +117,16 @@ workflow REQUANTIFICATION {
         read_stats
     ))
     BAM2FASTQ(FUSION_FILTER.out.bams)
-    STAR_INDEX(annotated_fusions)
+    FUSION2CSV(annotated_fusions)
+    CSV2FASTA(FUSION2CSV.out.formatted_csv)
+    STAR_INDEX(CSV2FASTA.out.formatted_fasta)
     STAR_CUSTOM(
         BAM2FASTQ.out.fastqs.join(
         STAR_INDEX.out.star_index
     ))
     READ_COUNT(
         STAR_CUSTOM.out.bams.join(
-        STAR_CUSTOM.out.read_stats
+        FUSION2CSV.out.formatted_csv
     ))
 
     emit:
@@ -146,7 +152,8 @@ workflow {
     // fusion merging
     ANNOTATION(
         TOOLS.out.fusioncatcher_results,
-        TOOLS.out.starfusion_results
+        TOOLS.out.starfusion_results,
+        TOOLS.out.arriba_results
     )
 
     // requantification
@@ -157,10 +164,15 @@ workflow {
     )
 
     // summarize results
-    SUMMARIZE_DATA(
+    MERGE_DATA(
         ANNOTATION.out.fusions.join(
         ANNOTATION.out.annotated_fusions).join(
         REQUANTIFICATION.out.counts).join(
         REQUANTIFICATION.out.read_stats
     ))
+
+    // run prediction
+    PREDICTION(
+        MERGE_DATA.out.merged_results
+    )
 }

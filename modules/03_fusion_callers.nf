@@ -4,7 +4,7 @@ process FUSION_CATCHER_INDEX {
     memory "32g"
     tag "${name}"
 
-    conda (params.enable_conda ? "${baseDir}/environments/fusioncatcher.yml" : null)
+    conda ("${baseDir}/environments/fusioncatcher.yml")
 
     script:
     """
@@ -18,7 +18,7 @@ process FUSION_CATCHER {
     memory "32g"
     tag "${name}"
 
-    conda (params.enable_conda ? "${baseDir}/environments/fusioncatcher.yml" : null)
+    conda ("${baseDir}/environments/fusioncatcher.yml")
 
     input:
       tuple val(name), path(fastq1), file(fastq2)
@@ -42,10 +42,10 @@ process STAR_FUSION {
     memory "32g"
     tag "${name}"
 
-    conda (params.enable_conda ? "${baseDir}/environments/starfusion.yml" : null)
+    conda ("${baseDir}/environments/starfusion.yml")
 
     input:
-      tuple val(name), path(chimeric_reads)
+      tuple val(name), path(fastq1), file(fastq2)
 
     output:
       tuple val("${name}"), path("star-fusion.fusion_predictions.tsv"), emit: fusions
@@ -53,9 +53,35 @@ process STAR_FUSION {
     script:
     """
     STAR-Fusion \
-        --chimeric_junction ${chimeric_reads} \
+        --left_fq ${fastq1} \
+        --right_fq ${fastq2} \
         --genome_lib_dir ${params.starfusion_index} \
         --CPU ${task.cpus} \
         --output_dir .
+    """
+}
+
+process ARRIBA {
+    cpus 1
+    memory "10g"
+    tag "${name}"
+
+    conda ("${baseDir}/environments/arriba.yml")
+
+    input:
+      tuple val(name), path(bam)
+
+    output:
+      tuple val("${name}"), path("fusions.tsv"), path("fusions.discarded.tsv"), emit: fusions
+
+    script:
+    """
+    arriba \
+        -x ${bam} \
+        -g ${params.gtf} \
+        -a ${params.fasta} \
+        -o fusions.tsv \
+        -O fusions.discarded.tsv \
+        -f blacklist
     """
 }

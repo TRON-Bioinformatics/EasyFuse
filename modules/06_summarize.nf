@@ -1,31 +1,50 @@
 
-process SUMMARIZE_DATA {
-    cpus 2
+process MERGE_DATA {
+    cpus 1
+    memory "10g"
+    tag "${name}"
+    publishDir "${params.output}/${name}", mode: 'copy'
+    
+    conda ("${baseDir}/environments/merging.yml")
+
+    input:
+      tuple val(name), path(detected_fusions), path(annot_fusions_csv), path(annot_fusions_csv_debug), path(annot_fusions_fasta), path(counts), path(read_stats)
+
+    output:
+      tuple val("${name}"), path("fusions.csv"), emit: merged_results
+
+    script:
+    """
+    merge_data.py \
+        --detected_fusions ${detected_fusions} \
+        --context_seqs ${annot_fusions_csv} \
+        --requant_counts ${counts} \
+        --read_stats ${read_stats} \
+        -o fusions.csv \
+        --fusion_tools fusioncatcher,starfusion,arriba
+    """
+}
+
+process PREDICTION {
+    cpus 1
     memory "10g"
     tag "${name}"
     publishDir "${params.output}/${name}", mode: 'copy'
 
-    conda (params.enable_conda && ! params.disable_pyeasyfuse_conda ? "${baseDir}/environments/easyfuse_src.yml" : null)
+    conda ("${baseDir}/environments/prediction.yml")
 
     input:
-      tuple val(name), path(fusions), path(annot_csv), path(annot_fasta), path(cpms), path(counts), path(read_stats)
+      tuple val(name), path(merged_results)
 
     output:
-      tuple val("${name}"), path("fusions.csv"), path("fusions.pass.csv"), emit: predictions
+      tuple val("${name}"), path("fusions.pass.csv"), emit: predictions
 
     script:
     """
-    easy-fuse summarize-data \
-        --input-fusions ${fusions} \
-        --input-fusion-context-seqs ${annot_csv} \
-        --input-requant-cpm ${cpms} \
-        --input-requant-counts ${counts} \
-        --input-reads-stats ${read_stats} \
-	--input-model-pred ${params.model_pred} \
-        --model_predictions \
-        -o . \
-        --requant-mode best \
-        --model-pred-threshold 0.5 \
-        --fusion-tools fusioncatcher,star
+    R_model_prediction.R \
+      --fusion_summary ${merged_results} \
+      --model_file ${params.model_pred} \
+      --prediction_threshold ${params.model_threshold} \
+      --output fusions.pass.csv
     """
 }

@@ -1,0 +1,9 @@
+name: filtering
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - python=3.8
+  - conda-forge::logzero=1.7.0
+  - bioconda::pysam=0.22.0

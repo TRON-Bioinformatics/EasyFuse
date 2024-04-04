@@ -4,5 +4,12 @@ channels:
   - bioconda
   - defaults
 dependencies:
-  - bioconda::star=2.6.1d
-  - bioconda::pyeasyfuse=2.0.3
+  - python=3.7
+  - bowtie2=2.4.4
+  - bwa=0.7.17
+  - samtools=1.9
+  - pysam=0.21.0
+  - star=2.7.8a
+  - pip
+  - pip:
+    - bp-quant==0.5.2

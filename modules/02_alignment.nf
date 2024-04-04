@@ -4,7 +4,7 @@ process STAR {
     memory "32g"
     tag "${name}"
 
-    conda (params.enable_conda ? "${baseDir}/environments/alignment.yml" : null)
+    conda ("${baseDir}/environments/alignment.yml")
 
     input:
       tuple val(name), path(fastq1), file(fastq2)
@@ -24,6 +24,7 @@ process STAR {
         --outSAMmultNmax 1 \
         --chimSegmentMin 10 \
         --chimJunctionOverhangMin 10 \
+        --chimOutJunctionFormat 1 \
         --alignSJDBoverhangMin 10 \
         --alignMatesGapMax 200000 \
         --alignIntronMax 200000 \
@@ -40,12 +41,54 @@ process STAR {
     """
 }
 
+
+
+process STAR_ARRIBA {
+    cpus 6
+    memory "32g"
+    tag "${name}"
+
+    conda ("${baseDir}/environments/alignment.yml")
+
+    input:
+      tuple val(name), path(fastq1), file(fastq2)
+
+    output:
+      tuple val("${name}"), path("${name}.bam"), emit: bams
+
+    script:
+    """
+    STAR --genomeDir ${params.star_index} \
+        --outFileNamePrefix ${name}. \
+        --readFilesCommand zcat \
+        --readFilesIn ${fastq1} ${fastq2} \
+        --outFilterMultimapNmax 50 \
+        --peOverlapNbasesMin 10 \
+        --alignSplicedMateMapLminOverLmate 0.5 \
+        --chimSegmentMin 10 \
+        --chimJunctionOverhangMin 10 \
+        --chimScoreDropMax 30 \
+        --chimScoreJunctionNonGTAG 0 \
+        --chimScoreSeparation 1 \
+        --chimSegmentReadGapMax 3 \
+        --chimMultimapNmax 50 \
+        --alignSJstitchMismatchNmax 5 -1 5 5 \
+        --outSAMtype BAM Unsorted \
+        --chimOutType WithinBAM HardClip \
+        --outSAMunmapped Within \
+        --runThreadN ${task.cpus}
+
+    mv ${name}.Aligned.out.bam ${name}.bam
+    """
+}
+
+
 process READ_FILTER {
-    cpus 2
+    cpus 1
     memory "8g"
     tag "${name}"
 
-    conda (params.enable_conda && ! params.disable_pyeasyfuse_conda ? "${baseDir}/environments/easyfuse_src.yml" : null)
+    conda ("${baseDir}/environments/filtering.yml")
 
     input:
       tuple val(name), path(bam)
@@ -55,7 +98,7 @@ process READ_FILTER {
 
     script:
     """
-    easy-fuse read-filter \
+    fusionreadfilter.py \
     --input ${bam} \
     --output ${name}.filtered.bam
     """
@@ -66,7 +109,7 @@ process BAM2FASTQ {
     memory "8g"
     tag "${name}"
 
-    conda (params.enable_conda ? "${baseDir}/environments/alignment.yml" : null)
+    conda ("${baseDir}/environments/samtools.yml")
 
     input:
       tuple val(name), path(bam)
