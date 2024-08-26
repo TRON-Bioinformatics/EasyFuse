@@ -1,7 +1,6 @@
 process FUSION_FILTER {
-    cpus 1
-    memory "8g"
     tag "${name}"
+    label 'process_single'
 
     conda ("${baseDir}/environments/filtering.yml")
 
@@ -22,10 +21,8 @@ process FUSION_FILTER {
 }
 
 process FUSION2CSV {
-    cpus 1
-    memory "1g"
     tag "${name}"
-    //publishDir "${params.output}/${name}", mode: 'copy'
+    label 'process_single'
 
     conda ("${baseDir}/environments/filtering.yml")
 
@@ -44,9 +41,8 @@ process FUSION2CSV {
 }
 
 process CSV2FASTA {
-    cpus 1
-    memory "1g"
     tag "${name}"
+    label 'process_single'
 
     conda ("${baseDir}/environments/requantification.yml")
 
@@ -67,9 +63,8 @@ process CSV2FASTA {
 
 
 process STAR_INDEX {
-    cpus 2
-    memory "8g"
     tag "${name}"
+    label 'process_low'
 
     conda ("${baseDir}/environments/requantification.yml")
     
@@ -92,11 +87,8 @@ process STAR_INDEX {
 }
 
 process STAR_CUSTOM {
-    cpus 6
-    memory "32g"
     tag "${name}"
-    //publishDir "${params.output}/${name}", mode: 'copy'
-
+    label 'process_medium'    
     conda ("${baseDir}/environments/requantification.yml")
 
     input:
@@ -113,7 +105,7 @@ process STAR_CUSTOM {
       -2 ${fastq2} \
       -i ${star_index} \
       -o . \
-      -t 6 \
+      -t ${task.cpus} \
       -m star
 
     mv Aligned.out.sam ${name}.sam
@@ -121,10 +113,8 @@ process STAR_CUSTOM {
 }
 
 process READ_COUNT {
-  cpus 6
-  memory "50g"
   tag "${name}"
-  //publishDir "${params.output}/${name}", mode: 'copy'
+  label 'process_single'
 
   conda ("${baseDir}/environments/requantification.yml")
 
@@ -143,6 +133,5 @@ process READ_COUNT {
       --output . \
       --bp_distance 10 \
       --allow_mismatches
-
   """
 }

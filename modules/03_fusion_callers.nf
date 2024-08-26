@@ -1,22 +1,8 @@
 
-process FUSION_CATCHER_INDEX {
-    cpus 6
-    memory "32g"
-    tag "${name}"
-
-    conda ("${baseDir}/environments/fusioncatcher.yml")
-
-    script:
-    """
-    download-human-db.sh
-    """
-}
-
 
 process FUSION_CATCHER {
-    cpus 6
-    memory "32g"
     tag "${name}"
+    label 'process_medium'
 
     conda ("${baseDir}/environments/fusioncatcher.yml")
 
@@ -38,9 +24,8 @@ process FUSION_CATCHER {
 }
 
 process STAR_FUSION {
-    cpus 6
-    memory "32g"
     tag "${name}"
+    label 'process_medium'
 
     conda ("${baseDir}/environments/starfusion.yml")
 
@@ -62,9 +47,8 @@ process STAR_FUSION {
 }
 
 process ARRIBA {
-    cpus 1
-    memory "10g"
     tag "${name}"
+    label 'process_low'
 
     conda ("${baseDir}/environments/arriba.yml")
 

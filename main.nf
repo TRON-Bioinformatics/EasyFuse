@@ -4,7 +4,7 @@ nextflow.enable.dsl = 2
 
 include { FASTP } from './modules/01_qc'
 include { STAR ; STAR_ARRIBA ; READ_FILTER ; BAM2FASTQ } from './modules/02_alignment'
-include { FUSION_CATCHER ; STAR_FUSION ; ARRIBA; FUSION_CATCHER_INDEX } from './modules/03_fusion_callers'
+include { FUSION_CATCHER ; STAR_FUSION ; ARRIBA } from './modules/03_fusion_callers'
 include { FUSION_PARSER ; FUSION_ANNOTATION } from './modules/04_joint_fusion_calling'
 include { FUSION2CSV ; CSV2FASTA ; STAR_INDEX ; FUSION_FILTER ; STAR_CUSTOM ; READ_COUNT } from './modules/05_requantification'
 include { MERGE_DATA ; PREDICTION } from './modules/06_summarize'
