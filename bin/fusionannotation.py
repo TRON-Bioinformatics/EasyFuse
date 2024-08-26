@@ -714,7 +714,7 @@ class FusionAnnotation(object):
                         exon_nr = len(ft1_cds_pos_list) + len(ft2_exon_pos_list)
 
                     ft1_exon_nr = len(ft1_exon_pos_list)
-                    ft2_exon_nr = len(wt1_exon_pos_list) - len(ft2_exon_pos_list)
+                    ft2_exon_nr = len(wt2_exon_pos_list) - len(ft2_exon_pos_list) + 1
                     wt1_is_good_transcript = self.trans_flags_dict[wt1_trans_id]
                     wt2_is_good_transcript = self.trans_flags_dict[wt2_trans_id]
                     results_lists.append(
