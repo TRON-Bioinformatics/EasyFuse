@@ -1,16 +1,4 @@
 
-process FUSION_CATCHER_INDEX {
-    tag "${name}"
-    label 'process_low'
-
-    conda ("${baseDir}/environments/fusioncatcher.yml")
-
-    script:
-    """
-    download-human-db.sh
-    """
-}
-
 
 process FUSION_CATCHER {
     tag "${name}"

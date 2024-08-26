@@ -1,7 +1,7 @@
 
 process FASTP {
     tag "${name}"
-    label 'process_medium'
+    label 'process_low'
 
     conda ("${baseDir}/environments/qc.yml")
 

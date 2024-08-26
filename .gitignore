@@ -8,3 +8,8 @@ report.html*
 test/output
 conda_env
 __pycache__/
+trace*.txt
+dag*.html
+report*.html
+timeline*.html
+venv/

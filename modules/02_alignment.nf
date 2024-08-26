@@ -102,7 +102,7 @@ process READ_FILTER {
 
 process BAM2FASTQ {
     tag "${name}"
-    label 'process_medium'
+    label 'process_low'
 
     conda ("${baseDir}/environments/samtools.yml")
 

@@ -114,7 +114,7 @@ process STAR_CUSTOM {
 
 process READ_COUNT {
   tag "${name}"
-  label 'process_medium'
+  label 'process_single'
 
   conda ("${baseDir}/environments/requantification.yml")
 
