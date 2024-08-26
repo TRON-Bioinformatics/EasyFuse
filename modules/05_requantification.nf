@@ -2,7 +2,7 @@ process FUSION_FILTER {
     tag "${name}"
     label 'process_single'
 
-    conda (params.enable_conda ? "${baseDir}/environments/filtering.yml" : null)
+    conda ("${baseDir}/environments/filtering.yml")
 
     input:
       tuple val(name), path(bam), path(annot_fusions_csv), path(annot_fusions_csv_debug), path(annot_fusions_fasta), path(read_stats)
@@ -24,6 +24,8 @@ process FUSION2CSV {
     tag "${name}"
     label 'process_single'
 
+    conda ("${baseDir}/environments/filtering.yml")
+
     input:
       tuple val(name), path(annot_fusions_csv), path(annot_fusions_csv_debug), path(annot_fusions_fasta)
 
@@ -42,7 +44,7 @@ process CSV2FASTA {
     tag "${name}"
     label 'process_single'
 
-    conda (params.enable_conda ? "${baseDir}/environments/requantification.yml" : null)
+    conda ("${baseDir}/environments/requantification.yml")
 
     input:
       tuple val(name), path(formatted_csv)
@@ -64,7 +66,7 @@ process STAR_INDEX {
     tag "${name}"
     label 'process_low'
 
-    conda (params.enable_conda ? "${baseDir}/environments/requantification.yml" : null)
+    conda ("${baseDir}/environments/requantification.yml")
     
     input:
       tuple val(name), path(formatted_fasta)
@@ -86,9 +88,8 @@ process STAR_INDEX {
 
 process STAR_CUSTOM {
     tag "${name}"
-    label 'process_medium'
-    
-    conda (params.enable_conda ? "${baseDir}/environments/requantification.yml" : null)
+    label 'process_medium'    
+    conda ("${baseDir}/environments/requantification.yml")
 
     input:
       tuple val(name), path(fastq1), file(fastq2), path(star_index)
@@ -115,7 +116,7 @@ process READ_COUNT {
   tag "${name}"
   label 'process_medium'
 
-  conda (params.enable_conda ? "${baseDir}/environments/requantification.yml" : null)
+  conda ("${baseDir}/environments/requantification.yml")
 
   input:
     tuple val(name), path(bam), path(formatted_csv)

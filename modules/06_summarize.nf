@@ -4,7 +4,7 @@ process MERGE_DATA {
     label 'process_single'
     publishDir "${params.output}/${name}", mode: 'copy'
     
-    conda (params.enable_conda ? "${baseDir}/environments/merging.yml" : null)
+    conda ("${baseDir}/environments/merging.yml")
 
     input:
       tuple val(name), path(detected_fusions), path(annot_fusions_csv), path(annot_fusions_csv_debug), path(annot_fusions_fasta), path(counts), path(read_stats)
@@ -29,7 +29,7 @@ process PREDICTION {
     label 'process_single'
     publishDir "${params.output}/${name}", mode: 'copy'
 
-    conda (params.enable_conda ? "${baseDir}/environments/prediction.yml" : null)
+    conda ("${baseDir}/environments/prediction.yml")
 
     input:
       tuple val(name), path(merged_results)
@@ -42,7 +42,7 @@ process PREDICTION {
     R_model_prediction.R \
       --fusion_summary ${merged_results} \
       --model_file ${params.model_pred} \
-      --prediction_threshold 0.5 \
+      --prediction_threshold ${params.model_threshold} \
       --output fusions.pass.csv
     """
 }

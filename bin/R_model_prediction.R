@@ -63,7 +63,7 @@ fusion_data <- readr::read_delim(input_file,
                                       "both")),
     frame = factor(frame, 
                    levels = c("no_frame", "in_frame", "out_frame", 
-                              "neo_frame"))
+                              "neo_frame")),
   )
 
 # read model from input file ---------------------------------------------------
@@ -75,8 +75,12 @@ model_features_contained <- all(model_features %in% names(fusion_data))
 
 # if not all features appear in data, add only NAs and raise a warning
 if (! model_features_contained) {
-  warning("Model features are not completely contained in input data.")
-  fusion_data <- fusion_data %>%
+  warning(
+    str_c("Model features are not completely contained in input data. 
+    Missing feature: ", 
+    setdiff(model_features, names(fusion_data)))
+  )
+   fusion_data <- fusion_data %>%
     dplyr::mutate(
       prediction_prob = NA,
       prediction_class = NA

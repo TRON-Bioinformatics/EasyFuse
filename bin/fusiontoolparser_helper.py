@@ -242,6 +242,8 @@ def parse_arriba_results(infile):
         next(prediction)  # skip header line
         for line in prediction:
             elements = line.rstrip().split("\t")
+            if elements[14] != "high":
+                continue
             #gene1  gene2   strand1(gene/fusion)    strand2(gene/fusion)    breakpoint1     breakpoint2     site1   site2   type    split_reads1    split_reads2    discordant_mates        coverage1       coverage2       confidence      reading_frame   tags    retained_protein_domains        closest_genomic_breakpoint1     closest_genomic_breakpoint2     gene_id1        gene_id2        transcript_id1  transcript_id2  direction1      direction2      filters fusion_transcript       peptide_sequence        read_identifiers
             # ETV6    NTRK3   +/+     -/-     12:11869969     15:87940753     CDS/splice-site CDS/splice-site translocation   90      40      300     304     301     high    in-frame        Mitelman        Sterile_alpha_motif_(SAM)/Pointed_domain(100%)|Protein_kinase_domain(100%)      .       .       ENSG00000139083 ENSG00000140538 ENST00000396373 ENST00000394480 downstream      downstream      duplicates(34),low_entropy(5),mismatches(10)
             fusion_gene = (elements[0] + "_" + elements[1]).upper()

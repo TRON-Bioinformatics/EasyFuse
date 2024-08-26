@@ -3,7 +3,7 @@ process FUSION_PARSER {
     tag "${name}"
     label 'process_single'
 
-    conda (params.enable_conda ? "${baseDir}/environments/filtering.yml" : null)
+    conda ("${baseDir}/environments/filtering.yml")
 
     input:
       tuple val(name), path(fusion_catcher_1), path(fusion_catcher_2), path(star_fusion), path(arriba_1), path(arriba_2)
@@ -29,7 +29,7 @@ process FUSION_ANNOTATION {
     tag "${name}"
     label 'process_single'
 
-    conda (params.enable_conda ? "${baseDir}/environments/annotation.yml" : null)
+    conda ("${baseDir}/environments/annotation.yml")
 
     input:
       tuple val(name), path(fusions)

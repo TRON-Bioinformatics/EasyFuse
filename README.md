@@ -5,10 +5,8 @@
 [![License](https://img.shields.io/badge/license-GPLv3-green)](https://opensource.org/licenses/GPL-3.0)
 
 EasyFuse is a pipeline to detect fusion transcripts from paired-end RNA-seq data with high accuracy.
-The current version of EasyFuse uses two fusion gene detection tools, [STAR-Fusion](https://github.com/STAR-Fusion/STAR-Fusion/wiki) and [Fusioncatcher](https://github.com/ndaniel/fusioncatcher) along with a powerful read filtering strategy, stringent re-quantification of supporting reads and machine learning for highly accurate predictions.
+The current version of EasyFuse uses three fusion gene detection tools, [STAR-Fusion](https://github.com/STAR-Fusion/STAR-Fusion/wiki), [Fusioncatcher](https://github.com/ndaniel/fusioncatcher) and [Arriba](https://arriba.readthedocs.io/en/latest/) along with a powerful read filtering strategy, stringent re-quantification of supporting reads and machine learning for highly accurate predictions.
 
-Please note that previous versions of EasyFuse including the one in the EasyFuse publication utilized three additional prediction tools: [InFusion](https://bitbucket.org/kokonech/infusion/src/master/), [MapSplice2](http://www.netlab.uky.edu/p/bioinfo/MapSplice2) and [SoapFuse](https://sourceforge.net/p/soapfuse/wiki/Home/).
-For maximal sensitivity, we recommend using an older EasyFuse release with five tools: [EasyFuse v1.3.7](https://github.com/TRON-Bioinformatics/EasyFuse/tree/v1.3.7)
 
 <p align="center"><img src="img/easyfuse_workflow.png" width="240px"></p>
 
@@ -19,7 +17,7 @@ For maximal sensitivity, we recommend using an older EasyFuse release with five 
 
 ### Dependencies
 
- - [NextFlow, 21.10.0](https://www.nextflow.io/)
+ - [NextFlow, 23.10.1](https://www.nextflow.io/)
  - [Conda](https://docs.anaconda.com/free/anaconda/install/index.html)
 
 Please have a look at environment.yml.
@@ -28,16 +26,17 @@ The conda environment to run nextflow can be installed with the following comman
 conda env create -f environment.yml --prefix conda_env/
 ```
 
+
 ### Download reference data
 
 Before running EasyFuse the following reference annotation data needs to be downloaded (~104 GB).
 
 ```
 # Download reference archive
-wget ftp://easyfuse.tron-mainz.de/easyfuse_ref_v3.tar.gz
+wget ftp://easyfuse.tron-mainz.de/easyfuse_ref_v4.tar.gz
 
 # Extract reference archive
-tar xvfz easyfuse_ref_v3.tar.gz
+tar xvfz easyfuse_ref_v4.tar.gz
 ```
 
 
@@ -51,7 +50,7 @@ git clone https://github.com/TRON-Bioinformatics/EasyFuse.git
 cd EasyFuse
 
 # In order to run the test script you have to move the reference folder to test/easyfuse_ref/
-mv ../easyfuse_ref_v3/ test/easyfuse_ref/
+mv ../easyfuse_ref_v4/ test/easyfuse_ref/
 ```
 
 To install with Nextflow (only available from release 2.0.1 onwards):
@@ -76,8 +75,8 @@ sample_01	/path/to/sample_01_R1.fastq.gz	/path/to/sample_01_R2.fastq.gz
 Start the pipeline as follows if you installed manually
 
 ```
-nextflow main.nf \
-  -profile conda -with-conda \
+nextflow run main.nf \
+  -profile conda \
   --reference /path/to/reference/folder \
   --input_files /path/to/input_table_file \
   --output /path/to/output_folder
@@ -87,11 +86,14 @@ nextflow main.nf \
 Or as follows if you installed it via Nextflow (only available from release 2.0.1 onwards):
 ```
 nextflow run tron-bioinformatics/easyfuse -r x.y.z \
-  -profile conda -with-conda \
+  -profile conda \
   --reference /path/to/reference/folder \
   --input_files /path/to/input_table_file \
   --output /path/to/output_folder
 ```
+
+Note: If you want to use a custom profile (e.g. for running jobs on a cluster), please refer to https://www.nextflow.io/docs/latest/config.html for further information.
+
 
 ### Output format
 
@@ -101,18 +103,6 @@ EasyFuse creates an output folder for each input sample containing the following
  - `fusions.pass.csv` 
  
 Within the files, each line describes a candidate fusion transcript. The file `fusions.csv` contains all candidate fusions with annotated features, the prediction probability assigned by the EasyFuse model, and the corresponding prediction class (*positive* or *negative*). The file `fusions.pass.csv` contains only *positive* predicted gene fusions. 
-
-#### Example Output
-
-The following table shows an example of the `fusions.csv` file.:
-
-| BPID | context_sequence_id | FTID | Fusion_Gene | Breakpoint1 | Breakpoint2 | context_sequence_100_id | type | exon_nr | exon_starts | exon_ends | exon_boundary1 | exon_boundary2 | exon_boundary | bp1_frame | bp2_frame | frame | context_sequence | context_sequence_bp | neo_peptide_sequence | neo_peptide_sequence_bp | fusioncatcher_detected | fusioncatcher_junc | fusioncatcher_span | starfusion_detected | starfusion_junc | starfusion_span | infusion_detected | infusion_junc | infusion_span | mapsplice_detected | mapsplice_junc | mapsplice_span | soapfuse_detected | soapfuse_junc | soapfuse_span | tool_count | tool_frac | ft_bp_best | ft_a_best | ft_b_best | ft_junc_best | ft_span_best | ft_anch_best | wt1_bp_best | wt1_a_best | wt1_b_best | wt1_junc_best | wt1_span_best | wt1_anch_best | wt2_bp_best | wt2_a_best | wt2_b_best | wt2_junc_best | wt2_span_best | wt2_anch_best | ft_bp_cnt_best | ft_a_cnt_best | ft_b_cnt_best | ft_junc_cnt_best | ft_span_cnt_best | ft_anch_cnt_best | wt1_bp_cnt_best | wt1_a_cnt_best | wt1_b_cnt_best | wt1_junc_cnt_best | wt1_span_cnt_best | wt1_anch_cnt_best | wt2_bp_cnt_best | wt2_a_cnt_best | wt2_b_cnt_best | wt2_junc_cnt_best | wt2_span_cnt_best | wt2_anch_cnt_best | prediction_prob | prediction_class
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 8:42968214:+_10:43116584:+ | 07b05d58a3f6d152 | HOOK3_8:42968214:+_ENST00000307602_RET_10:43116584:+_ENST00000355710 | HOOK3_RET | 8:42968214:+ | 10:43116584:+ | b18ce98522749d2e | trans | 20 | 42968013*43116584 | 42968214*43116731 | right_boundary | left_boundary | both | 0 | 0 | in_frame | AAGAAGGCATTTGCAGCTCCAGACTCAATTAGAACAGCTCCAAGAAGAAACATTCAGACTAGAAGCAGCCAAAGATGATTATCGAATACGTTGTGAAGAGTTAGAAAAGGAGATCTCTGAACTTCGGCAACAGAATGATGAACTGACCACTTTGGCAGATGAAGCTCAGTCTCTGAAAGATGAGATCGACGTGCTGAGACATTCTTCTGATAAAGTATCTAAACTAGAAGGTCAAGTAGAATCTTATAAAAAGAAGCTAGAAGACCTTGGTGATTTAAGGCGGCAGGTTAAACTCTTAGAAGAGAAGAATACCATGTATATGCAGAATACTGTCAGTCTAGAGGAAGAGTTAAGAAAGGCCAACGCAGCGCGAAGTCAACTTGAAACCTACAAGAGACAGGAGGATCCAAAGTGGGAATTCCCTCGGAAGAACTTGGTTCTTGGAAAAACTCTAGGAGAAGGCGAATTTGGAAAAGTGGTCAAGGCAACGGCCTTCCATCTGAAAGGCAGAGCAGGGTACACCACGGTGGCCGTGAAGATGCTGAAAGAGAACGCCTCCCCGAGTGAGCTGCGAGACCTGCTGTCAGAGTTCAACGTCCTGAAGCAGGTCAACCACCCACATGTCATCAAATTGTATGGGGCCTGCAGCCAGGATGGCCCGCTCCTCCTCATCGTGGAGTACGCCAAATACGGCTCCCTGCGGGGCTTCCTCCGCGAGAGCCGCAAAGTGGGGCCTGGCTACCTGGGCAGTGGAGGCAGCCGCAACTCCAGCTCCCTGGACCACCCGGATGAGCGGGCCC | 400 | "NAARSQLETYKRQEDPKWEFPRKNLV" | 13 | 1 | 0 | 0 | 1 | 0 | 0 | 0 | 0 | 0 | 1 | 0 | 0 | 1 | 0 | 0 | 4 | 0.8 | 400 | 1327.72589688 | 1096.43026325 | 155.679753403 | 328.039480385 | 25 | 400 | 869.582622581 | 2.22399647719 | 0 | 1.11199823859 | 0 | 400 | 0 | 648.294973101 | 0 | 0 | 0 | 400 | 1194 | 986 | 140 | 295 | 25 | 400 | 782 | 2 | 0 | 1 | 0 | 400 | 0 | 583 | 0 | 0 | 0 | 0.762 | positive |
-| 8:42968214:+_10:43116584:+ | 07b05d58a3f6d152 | HOOK3_8:42968214:+_ENST00000307602_RET_10:43116584:+_ENST00000340058 | HOOK3_RET | 8:42968214:+ | 10:43116584:+ | b18ce98522749d2e | trans | 19 | 42968013*43116584 | 42968214*43116731 | right_boundary | left_boundary | both | 0 | 0 | in_frame | AAGAAGGCATTTGCAGCTCCAGACTCAATTAGAACAGCTCCAAGAAGAAACATTCAGACTAGAAGCAGCCAAAGATGATTATCGAATACGTTGTGAAGAGTTAGAAAAGGAGATCTCTGAACTTCGGCAACAGAATGATGAACTGACCACTTTGGCAGATGAAGCTCAGTCTCTGAAAGATGAGATCGACGTGCTGAGACATTCTTCTGATAAAGTATCTAAACTAGAAGGTCAAGTAGAATCTTATAAAAAGAAGCTAGAAGACCTTGGTGATTTAAGGCGGCAGGTTAAACTCTTAGAAGAGAAGAATACCATGTATATGCAGAATACTGTCAGTCTAGAGGAAGAGTTAAGAAAGGCCAACGCAGCGCGAAGTCAACTTGAAACCTACAAGAGACAGGAGGATCCAAAGTGGGAATTCCCTCGGAAGAACTTGGTTCTTGGAAAAACTCTAGGAGAAGGCGAATTTGGAAAAGTGGTCAAGGCAACGGCCTTCCATCTGAAAGGCAGAGCAGGGTACACCACGGTGGCCGTGAAGATGCTGAAAGAGAACGCCTCCCCGAGTGAGCTGCGAGACCTGCTGTCAGAGTTCAACGTCCTGAAGCAGGTCAACCACCCACATGTCATCAAATTGTATGGGGCCTGCAGCCAGGATGGCCCGCTCCTCCTCATCGTGGAGTACGCCAAATACGGCTCCCTGCGGGGCTTCCTCCGCGAGAGCCGCAAAGTGGGGCCTGGCTACCTGGGCAGTGGAGGCAGCCGCAACTCCAGCTCCCTGGACCACCCGGATGAGCGGGCCC | 400 | "NAARSQLETYKRQEDPKWEFPRKNLV" | 13 | 1 | 0 | 0 | 1 | 0 | 0 | 0 | 0 | 0 | 1 | 0 | 0 | 1 | 0 | 0 | 4 | 0.8 | 400 | 1327.72589688 | 1096.43026325 | 155.679753403 | 328.039480385 | 25 | 400 | 869.582622581 | 2.22399647719 | 0 | 1.11199823859 | 0 | 400 | 0 | 648.294973101 | 0 | 0 | 0 | 400 | 1194 | 986 | 140 | 295 | 25 | 400 | 782 | 2 | 0 | 1 | 0 | 400 | 0 | 583 | 0 | 0 | 0 | 0.762 | positive |
-| 8:42968214:+_10:43116584:+ | 07b05d58a3f6d152 | HOOK3_8:42968214:+_ENST00000527306_RET_10:43116584:+_ENST00000355710 | HOOK3_RET | 8:42968214:+ | 10:43116584:+ | b18ce98522749d2e | trans | 9 | 42968013*43116584 | 42968214*43116731 | right_boundary | left_boundary | both | -1 | 0 | no_frame | AAGAAGGCATTTGCAGCTCCAGACTCAATTAGAACAGCTCCAAGAAGAAACATTCAGACTAGAAGCAGCCAAAGATGATTATCGAATACGTTGTGAAGAGTTAGAAAAGGAGATCTCTGAACTTCGGCAACAGAATGATGAACTGACCACTTTGGCAGATGAAGCTCAGTCTCTGAAAGATGAGATCGACGTGCTGAGACATTCTTCTGATAAAGTATCTAAACTAGAAGGTCAAGTAGAATCTTATAAAAAGAAGCTAGAAGACCTTGGTGATTTAAGGCGGCAGGTTAAACTCTTAGAAGAGAAGAATACCATGTATATGCAGAATACTGTCAGTCTAGAGGAAGAGTTAAGAAAGGCCAACGCAGCGCGAAGTCAACTTGAAACCTACAAGAGACAGGAGGATCCAAAGTGGGAATTCCCTCGGAAGAACTTGGTTCTTGGAAAAACTCTAGGAGAAGGCGAATTTGGAAAAGTGGTCAAGGCAACGGCCTTCCATCTGAAAGGCAGAGCAGGGTACACCACGGTGGCCGTGAAGATGCTGAAAGAGAACGCCTCCCCGAGTGAGCTGCGAGACCTGCTGTCAGAGTTCAACGTCCTGAAGCAGGTCAACCACCCACATGTCATCAAATTGTATGGGGCCTGCAGCCAGGATGGCCCGCTCCTCCTCATCGTGGAGTACGCCAAATACGGCTCCCTGCGGGGCTTCCTCCGCGAGAGCCGCAAAGTGGGGCCTGGCTACCTGGGCAGTGGAGGCAGCCGCAACTCCAGCTCCCTGGACCACCCGGATGAGCGGGCCC | 400 | 0 | 0 | 1 | 0 | 0 | 1 | 0 | 0 | 0 | 0 | 0 | 1 | 0 | 0 | 1 | 0 | 0 | 4 | 0.8 | 400 | 1327.72589688 | 1096.43026325 | 155.679753403 | 328.039480385 | 25 | 400 | 869.582622581 | 2.22399647719 | 0 | 1.11199823859 | 0 | 400 | 0 | 648.294973101 | 0 | 0 | 0 | 400 | 1194 | 986 | 140 | 295 | 25 | 400 | 782 | 2 | 0 | 1 | 0 | 400 | 0 | 583 | 0 | 0 | 0 | 0.762 | positive |
-| 8:42968214:+_10:43116584:+ | 07b05d58a3f6d152 | HOOK3_8:42968214:+_ENST00000527306_RET_10:43116584:+_ENST00000340058 | HOOK3_RET | 8:42968214:+ | 10:43116584:+ | b18ce98522749d2e | trans | 8 | 42968013*43116584 | 42968214*43116731 | right_boundary | left_boundary | both | -1 | 0 | no_frame | AAGAAGGCATTTGCAGCTCCAGACTCAATTAGAACAGCTCCAAGAAGAAACATTCAGACTAGAAGCAGCCAAAGATGATTATCGAATACGTTGTGAAGAGTTAGAAAAGGAGATCTCTGAACTTCGGCAACAGAATGATGAACTGACCACTTTGGCAGATGAAGCTCAGTCTCTGAAAGATGAGATCGACGTGCTGAGACATTCTTCTGATAAAGTATCTAAACTAGAAGGTCAAGTAGAATCTTATAAAAAGAAGCTAGAAGACCTTGGTGATTTAAGGCGGCAGGTTAAACTCTTAGAAGAGAAGAATACCATGTATATGCAGAATACTGTCAGTCTAGAGGAAGAGTTAAGAAAGGCCAACGCAGCGCGAAGTCAACTTGAAACCTACAAGAGACAGGAGGATCCAAAGTGGGAATTCCCTCGGAAGAACTTGGTTCTTGGAAAAACTCTAGGAGAAGGCGAATTTGGAAAAGTGGTCAAGGCAACGGCCTTCCATCTGAAAGGCAGAGCAGGGTACACCACGGTGGCCGTGAAGATGCTGAAAGAGAACGCCTCCCCGAGTGAGCTGCGAGACCTGCTGTCAGAGTTCAACGTCCTGAAGCAGGTCAACCACCCACATGTCATCAAATTGTATGGGGCCTGCAGCCAGGATGGCCCGCTCCTCCTCATCGTGGAGTACGCCAAATACGGCTCCCTGCGGGGCTTCCTCCGCGAGAGCCGCAAAGTGGGGCCTGGCTACCTGGGCAGTGGAGGCAGCCGCAACTCCAGCTCCCTGGACCACCCGGATGAGCGGGCCC | 400 | 0 | 0 | 1 | 0 | 0 | 1 | 0 | 0 | 0 | 0 | 0 | 1 | 0 | 0 | 1 | 0 | 0 | 4 | 0.8 | 400 | 1327.72589688 | 1096.43026325 | 155.679753403 | 328.039480385 | 25 | 400 | 869.582622581 | 2.22399647719 | 0 | 1.11199823859 | 0 | 400 | 0 | 648.294973101 | 0 | 0 | 0 | 400 | 1194 | 986 | 140 | 295 | 25 | 400 | 782 | 2 | 0 | 1 | 0 | 400 | 0 | 583 | 0 | 0 | 0 | 0.762 | positive |
-  
 
 #### Column description
 
@@ -161,7 +151,6 @@ Overview of all features/columns annotated by EasyFuse:
 - ***toolname*_detected:** 1 if breakpoint was detected by respective tool, 0 if not
 - ***toolname*_junc:** Junction read count (reads covering breakpoint) reported by *toolname*  
 - ***toolname*_span:** Spanning read count (read pairs with each partner on one side of breakpoint) reported by *toolname*  
-- **tool_count:** Number of tools detecting fusion gene breakpoint  
 - **tool_frac:** Fraction of tools detecting the fusion gene breakpoint
 - ***category*_bp:** Location of breakpoint on context sequence (400 for an 800 bp context sequence). Whereby *category* describes (here and in the following columns) the reference sequence to which the reads were mapped and quantified: 
   - `ft`: context_sequence of fusion transcript 
@@ -177,56 +166,6 @@ Overview of all features/columns annotated by EasyFuse:
 - **prediction_prob:** The predicted probability according to the machine learning model that the fusion candidate is a true positive. 
 - **prediction_class:** The predicted class (`negative` or `positive`) according to the machine learning model. This classification relies on a user-defined threshold (default 0.5) applied to the `precition_prob` column. 
 
-
-
-## Run EasyFuse 1.3.7
-
-For maximial sensitivity, we currently recommend using [EasyFuse version 1.3.7](https://github.com/TRON-Bioinformatics/EasyFuse/tree/v1.3.7) via Docker or Singularity.
-
-### Run via Docker
-
-The Docker image can be downloaded from [dockerhub](https://hub.docker.com/r/tronbioinformatics/easyfuse) using the following command:
-
-```
-docker pull tronbioinformatics/easyfuse:latest
-```
-
-EasyFuse will require three folders:
-
-* The input data folder containing FASTQ files, in this example `/path/to/data`.
-* The reference data folder, in this example `/path/to/easyfuse_ref`
-* The output folder, in this example `/path/to/output`
-
-EasyFuse can be started by mapping the input data, references, and output folders.
-
-```
-docker run \
-  --name easyfuse_container \
-  -v /path/to/easyfuse_ref:/ref \
-  -v /path/to/data:/data \
-  -v /path/to/output:/output \
-  --rm \
-  -it easyfuse:latest \
-  python /code/easyfuse/processing.py -i /data -o /output
-
-```
-
-### Run EasyFuse with Singularity
-
-Alternatively, EasyFuse can be executed with [Singularity](https://sylabs.io/docs/) as follows:
-
-```
-singularity exec 
-  --containall \
-  --bind /path/to/easyfuse_ref:/ref \
-  --bind /path/to/data:/data \
-  --bind /path/to/output:/output \  
-  docker://tronbioinformatics/easyfuse:latest \
-  python /code/easyfuse/processing.py -i /data/ -o /output
-
-```
-
-The output can be found in `/path/to/output/FusionSummary`.
 
 
 ## Citation
