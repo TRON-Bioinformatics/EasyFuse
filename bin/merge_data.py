@@ -186,9 +186,9 @@ class FusionSummary(object):
                             self.data[key]["{}_detected".format(tool.lower())] = "0"
                             self.data[key]["{}_junc".format(tool.lower())] = "0"
                             self.data[key]["{}_span".format(tool.lower())] = "0"
-                tool_count = len(detected_fusions_data[bpid])
-                #self.data[key]["tool_count"] = str(tool_count)
-                self.data[key]["tool_frac"] = str(float(tool_count)/len(self.fusion_tools))
+                        tool_count = len(detected_fusions_data[bpid])
+                        #self.data[key]["tool_count"] = str(tool_count)
+                        self.data[key]["tool_frac"] = str(float(tool_count)/len(self.fusion_tools))
         logger.info("Added tool count data.")
 
 
