@@ -128,6 +128,7 @@ class FusionAnnotation(object):
     def get_bp_overlapping_features(self, bp_chr, bp_pos):
         """Get two lists with breakpoint overlapping exons and cds from the database"""
         
+        #TODO: Annotate intergenic/intronic breakpoints
         bp_exons = []
         bp_cds = []
         for efeature in self.db.region(
@@ -219,22 +220,47 @@ class FusionAnnotation(object):
             )
         return trans_id, trans_biotype, gene_name, gene_biotype, description
 
-    def get_wt_codings(self, trans_id):
+
+    def get_wt_codings(self, trans_id, bp, is_bp1=True, strand="+"):
         """Get matched exons and cds region per transcript id"""
+
         exon_pos_list = []
+        exon_until_bp_pos_list = []
         cds_pos_list = []
+        cds_until_bp_pos_list = []
         cds_frame_list = []
         for feature in self.db.children(
             trans_id, featuretype=("exon", "CDS"), order_by="start", reverse=False
         ):
             if feature.featuretype == "exon":
+                if strand == "+" and is_bp1 or strand == "-" and not is_bp1:
+                    if feature.stop >= bp:
+                        exon_until_bp_pos_list.append((feature.start, bp))
+                    else:
+                        exon_until_bp_pos_list.append((feature.start, feature.stop))
+                else:
+                    if feature.start <= bp:
+                        exon_until_bp_pos_list.append((bp, feature.stop))
+                    else:
+                        exon_until_bp_pos_list.append((feature.start, feature.stop))
                 exon_pos_list.append((feature.start, feature.stop))
             elif feature.featuretype == "CDS":
+                if strand == "+" and is_bp1 or strand == "-" and not is_bp1:
+                    if feature.stop >= bp:
+                        cds_until_bp_pos_list.append((feature.start, bp))
+                    else:
+                        cds_until_bp_pos_list.append((feature.start, feature.stop))
+                else:
+                    if feature.start <= bp:
+                        cds_until_bp_pos_list.append((bp, feature.stop))
+                    else:
+                        cds_until_bp_pos_list.append((feature.start, feature.stop))
                 cds_pos_list.append((feature.start, feature.stop))
                 cds_frame_list.append(feature.frame)
         # correct list positions in such a way that the a cds is enclosed by an exon or not all available
         # exons are the scaffold as there can be exons w/o cds but not vv
         cds_pos_list2 = []
+        cds_until_bp_pos_list2 = []
         cds_frame_list2 = []
         for exon_start, exon_stop in exon_pos_list:
             exon_has_cds = False
@@ -250,7 +276,21 @@ class FusionAnnotation(object):
             if not exon_has_cds:
                 cds_pos_list2.append("NA")
                 cds_frame_list2.append("NA")
-        return exon_pos_list, cds_pos_list2, cds_frame_list2
+
+        for exon_start, exon_stop in exon_until_bp_pos_list:
+            exon_has_cds = False
+            for cds_counter, (cds_start, cds_stop) in enumerate(cds_until_bp_pos_list, 0):
+                if cds_start >= exon_start and cds_stop <= exon_stop:
+                    cds_until_bp_pos_list2.append((cds_start, cds_stop))
+                    if cds_start > exon_start and cds_stop < exon_stop:
+                        self.trans_flags_dict[trans_id].add(
+                            "cds != exon at no {}".format(cds_counter)
+                        )
+                    exon_has_cds = True
+            if not exon_has_cds:
+                cds_until_bp_pos_list2.append("NA")
+        return exon_pos_list, exon_until_bp_pos_list, cds_pos_list2, cds_until_bp_pos_list2, cds_frame_list2
+
 
     @staticmethod
     def check_exon_overlap(wt1_exon_pos_list, wt2_exon_pos_list, fusion_type):
@@ -430,6 +470,8 @@ class FusionAnnotation(object):
             "context_sequence_100_id",
             "type",
             "exon_nr",
+            "ft1_exon_nr",
+            "ft2_exon_nr",
             "exon_starts",
             "exon_ends",
             "exon_boundary1",
@@ -442,6 +484,8 @@ class FusionAnnotation(object):
             "context_sequence_bp",
             "neo_peptide_sequence",
             "neo_peptide_sequence_bp",
+            "fusion_protein_sequence",
+            "fusion_protein_sequence_bp",
             "context_sequence_wt1",
             "context_sequence_wt2",
             "context_sequence_wt1_bp",
@@ -513,7 +557,7 @@ class FusionAnnotation(object):
         # information in the header is complete and useful for debugging, information in the short_header is identical
         # to the format of the previous
         # version of the fusion annotation and therefore used for downstream processing
-        short_header = header[0:21]
+        short_header = header[0:25]
         results_lists = []
 
         # get features overlapping with the bp from the db
@@ -560,9 +604,11 @@ class FusionAnnotation(object):
                 # the exon) and start frames of the cds
                 (
                     wt1_exon_pos_list,
+                    wt1_exon_until_bp_pos_list,
                     wt1_cds_pos_list,
+                    wt1_cds_until_bp_pos_list,
                     wt1_cds_frame_list,
-                ) = self.get_wt_codings(wt1_trans_id)
+                ) = self.get_wt_codings(wt1_trans_id, bp1_pos, True, bp1_strand)
                 # get the frame at the start of the first cds and at the breakpoint
                 wt1_frame_at_start, wt1_frame_at_bp = self.get_frame(
                     bp1_pos, wt1_cds_pos_list, wt1_cds_frame_list, bp1_strand
@@ -612,9 +658,11 @@ class FusionAnnotation(object):
 
                     (
                         wt2_exon_pos_list,
+                        wt2_exon_until_bp_pos_list,
                         wt2_cds_pos_list,
+                        wt2_cds_until_bp_pos_list,
                         wt2_cds_frame_list,
-                    ) = self.get_wt_codings(wt2_trans_id)
+                    ) = self.get_wt_codings(wt2_trans_id, bp2_pos, False, bp2_strand)
                     # check whether loci of wt1/wt2 overlap
                     if self.check_exon_overlap(
                         wt1_exon_pos_list, wt2_exon_pos_list, fusion_type
@@ -650,7 +698,9 @@ class FusionAnnotation(object):
                     )
                     # Collect positions for which we need to grep sequences
                     self.fill_seq_lookup_dict(bp1_chr, wt1_exon_pos_list)
+                    #self.fill_seq_lookup_dict(bp1_chr, wt1_exon_until_bp_pos_list)
                     self.fill_seq_lookup_dict(bp2_chr, wt2_exon_pos_list)
+                    #self.fill_seq_lookup_dict(bp2_chr, wt2_exon_until_bp_pos_list)
                     self.fill_seq_lookup_dict(bp1_chr, ft1_exon_pos_list)
                     self.fill_seq_lookup_dict(bp2_chr, ft2_exon_pos_list)
                     self.fill_seq_lookup_dict(bp1_chr, wt1_cds_pos_list)
@@ -662,6 +712,9 @@ class FusionAnnotation(object):
                         exon_nr = len(ft1_cds_pos_list) + len(ft2_cds_pos_list)
                     else:
                         exon_nr = len(ft1_cds_pos_list) + len(ft2_exon_pos_list)
+
+                    ft1_exon_nr = len(ft1_exon_pos_list)
+                    ft2_exon_nr = len(wt2_exon_pos_list) - len(ft2_exon_pos_list) + 1
                     wt1_is_good_transcript = self.trans_flags_dict[wt1_trans_id]
                     wt2_is_good_transcript = self.trans_flags_dict[wt2_trans_id]
                     results_lists.append(
@@ -675,6 +728,8 @@ class FusionAnnotation(object):
                             "context_sequence_100_id",
                             fusion_type,
                             str(exon_nr),
+                            str(ft1_exon_nr),
+                            str(ft2_exon_nr),
                             "exon_starts",
                             "exon_ends",
                             exon_boundary1,
@@ -687,6 +742,8 @@ class FusionAnnotation(object):
                             "context_sequence_bp",
                             "neo_peptide_sequence",
                             "neo_peptide_sequence_bp",
+                            "fusion_protein_sequence",
+                            "fusion_protein_sequence_bp",
                             "context_sequence_wt1",
                             "context_sequence_wt2",
                             "context_sequence_wt1_bp",
@@ -977,6 +1034,14 @@ class FusionAnnotation(object):
             result_list[header_dict["neo_peptide_sequence"]] = result_list[
                 header_dict["fusion_peptide"]
             ][max(0, int(bp_in_fusion_aa) - 13) :]
+
+            result_list[header_dict["fusion_protein_sequence"]] = result_list[
+                header_dict["fusion_peptide"]
+            ]
+
+            result_list[header_dict["fusion_protein_sequence_bp"]] = round(
+                    bp_in_fusion_aa, 1
+                )
 
             if (int(bp_in_fusion_aa) - 13) < 0:
                 result_list[header_dict["neo_peptide_sequence_bp"]] = round(
