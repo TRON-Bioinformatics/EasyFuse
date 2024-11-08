@@ -1,20 +1,19 @@
 """
-Tests for fusion annotation module.
+Tests for IO methods module.
 """
 
 import unittest
 
 # pylint: disable=E0401
-import bin.fusionannotation.fusionannotation # type: ignore
+from bin.fusionannotation.sequence_validation import get_stranded_seq
 
-
-class TestFusionAnnotation(unittest.TestCase):
+class TestSequenceValidation(unittest.TestCase):
     """
     Provides unit tests for fusion annotation module.
     """
     def setUp(self):
         self.input_fusions = "tests/fusionannotation/Detected_Fusions.csv"
 
-    def test_run(self):
-        """Test case for BP loading."""
+    def test_get_stranded_seq(self):
+        """Test case for strandedness validation"""
         pass

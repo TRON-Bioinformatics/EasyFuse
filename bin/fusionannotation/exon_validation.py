@@ -55,8 +55,36 @@ def get_wt_codings(db: object, trans_flags_dict: dict, trans_id: str) -> tuple:
     return (exon_pos_list, cds_pos_list2, cds_frame_list2)
 
 
+def merge_features(bp_cds: list, exon_transcripts: list, cds_transcripts: list) -> list:
+    """Check if exon is in CDS transcripts for each bp.
+
+    Args:
+        exon_transcripts (list): _description_
+        cds_transcripts (list): _description_
+
+    Returns:
+        list: _description_
+    """
+    bp_cds_new = []
+    for transcript in exon_transcripts:
+        if transcript in cds_transcripts:
+            bp_cds_new.append(bp_cds[cds_transcripts.index(transcript)])
+        else:
+            bp_cds_new.append("")
+    return bp_cds_new
+
+
 def get_bp_overlapping_features(db: object, bp_chr: str, bp_pos: int) -> tuple:
-    """Get two lists with breakpoint overlapping exons and cds from the database"""
+    """Get two lists with breakpoint overlapping exons and cds from the database.
+
+    Args:
+        db (object): _description_
+        bp_chr (str): _description_
+        bp_pos (int): _description_
+
+    Returns:
+        tuple: _description_
+    """
 
     bp_exons = []
     bp_cds = []
@@ -71,13 +99,10 @@ def get_bp_overlapping_features(db: object, bp_chr: str, bp_pos: int) -> tuple:
             bp_cds.append(efeature)
     # correct positions in such a way that the same position
     # in the exon/CDS list represents the same parental transcript
-    # exons are the scaffold as there can be exons w/o cds but not vv
+    # exons are the scaffold as there can be exons w/o cds but not vice versa
     exon_transcripts = [x.attributes["Parent"][0] for x in bp_exons]
     cds_transcripts = [x.attributes["Parent"][0] for x in bp_cds]
-    bp_cds = [
-        bp_cds[cds_transcripts.index(x)] if x in cds_transcripts else ""
-        for x in exon_transcripts
-    ]
+    bp_cds = merge_features(bp_cds, exon_transcripts, cds_transcripts)
     return (bp_exons, bp_cds)
 
 

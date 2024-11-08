@@ -4,7 +4,7 @@ This module provides methods to parse the exon/CDS boundaries annotation.
 
 def get_boundary(bp_pos: int, efeature: object) -> str:
     """Check whether the breakpoint position is on an exon or CDS boundary"""
-    if efeature == "":
+    if not efeature:
         return "NA"
     if bp_pos == efeature.start:
         return "left_boundary"

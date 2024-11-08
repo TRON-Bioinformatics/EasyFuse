@@ -1,13 +1,13 @@
 """
-Tests for fusion annotation module.
+Tests for IO methods module.
 """
 
 import unittest
 
 # pylint: disable=E0401
-from bin.fusionannotation.io_methods import breakpoints_to_dict
+from bin.fusionannotation.io_methods import breakpoints_to_dict # type: ignore
 
-class TestFusionAnnotation(unittest.TestCase):
+class TestIOMethods(unittest.TestCase):
     """
     Provides unit tests for fusion annotation module.
     """

@@ -2,12 +2,15 @@
 This module provides methods to parse the frame annotation.
 """
 
-def get_frame(bp_pos, cds_pos_list, cds_frame_list, strand):
+def get_frame(bp_pos: int, cds_pos_list: list, cds_frame_list: list, strand: str) -> tuple:
     """Get/Calculate the frame at the start of the cds and at the breakpoint"""
-    # urla - note: the frame annotation is imho a little confusing in ensembl and defined as follows:
-    #              0: The next full codon (i.e. 3bp codon) starts 0 bases from the current position => this is the first (0) base of a codon
-    #              1: The next full codon (i.e. 3bp codon) starts 1 base from the current position => this is the third (2) base of a codon
-    #              2: The next full codon (i.e. 3bp codon) starts 2 bases from the current position => this is the second (1) base of a codon
+    # the frame annotation in ensembl and defined as follows:
+    # 0: The next full codon (i.e. 3bp codon) starts 0 bases from the current position
+    #   => this is the first (0) base of a codon
+    # 1: The next full codon (i.e. 3bp codon) starts 1 base from the current position
+    #   => this is the third (2) base of a codon
+    # 2: The next full codon (i.e. 3bp codon) starts 2 bases from the current position
+    #   => this is the second (1) base of a codon
     frame_idx = [0, 2, 1, 0, 2, 1]
     # if the frame at bp is non-determinable, it is set to -1
     frame_at_start = -1

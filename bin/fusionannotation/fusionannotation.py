@@ -17,16 +17,16 @@ Annotate predicted fusion genes. This involves:
 from argparse import ArgumentParser
 
 # pylint: disable=E0401
-from Bio import SeqIO
-from Bio.Seq import Seq
-from Bio.SeqRecord import SeqRecord
-import gffutils
-from logzero import logger
-import xxhash
+from Bio import SeqIO # type: ignore
+from Bio.Seq import Seq # type: ignore
+from Bio.SeqRecord import SeqRecord # type: ignore
+import gffutils # type: ignore
+from logzero import logger # type: ignore
+import xxhash # type: ignore
 
 
 from file_headers import FULL_ANNOTATION_HEADER
-from io_methods import breakpoints_to_dict
+from io_methods import load_detected_fusions
 from io_methods import load_tsl_data
 from boundary_validation import get_boundary, get_boundary2
 from exon_validation import check_exon_overlap
@@ -44,21 +44,16 @@ class FusionAnnotation:
 
     def __init__(self, db_file, bp_file, tsl_file):
         """Parameter initialization"""
-        self.bp_dict = breakpoints_to_dict(bp_file)
+        self.bp_dict = load_detected_fusions(bp_file)
         self.db = gffutils.FeatureDB(db_file)
         self.tsl_dict = load_tsl_data(tsl_file)
         self.cds_seq_dict = {}
-        self.trans_flags_dict = {}
+        self.suspect_transcripts = {}
 
 
-    def get_tsl(self, trans_id):
+    def get_tsl(self, trans_id: str) -> str:
         """Get the transcript support level (tsl) from the pre-loaded dict"""
-        # the tsl is not available for grch37 data (at least not v87/90)
-        # and I'm therefore using the tsl info from grch38 v90
-        # With the newer data, however, it is possible that some transcript ids
-        # are not in the database (because the respective
-        # transcript annotations were deleted or modified significantly).
-        # Although the "correct" tsl for a missing trans_id would be "NA",
+        # The "correct" tsl for a missing trans_id would be "NA",
         # I'm using "6" in order to allow differentiation from
         # existing, "normal" tsl's which range from 1-5 and are NA
         # for transcripts of unknown support
@@ -67,7 +62,7 @@ class FusionAnnotation:
         return self.tsl_dict[trans_id]
 
 
-    def fill_seq_lookup_dict(self, chrom, cds_list):
+    def fill_seq_lookup_dict(self, chrom: str, cds_list: list):
         """
         Create/fill a dictionary of genomic position tuple with chromosomes as keys 
         and a list of two lists as values. Genomic coordinates are loaded into the first list 
@@ -82,11 +77,11 @@ class FusionAnnotation:
 
     def run(
         self,
-        context_seqs_file,
-        cis_near_distance,
-        genome_fasta,
-        context_seq_len,
-        tsl_filter_level,
+        context_seqs_file: str,
+        cis_near_distance: int,
+        genome_fasta: str,
+        context_seq_len: int,
+        tsl_filter_level: str,
     ):
         """Run the annotation pipeline"""
         # for performance reasons (mainly seq grepping), results cannot be written
@@ -114,14 +109,10 @@ class FusionAnnotation:
             bp2_pos = int(bp2_pos)
             # define fusion type based on relative breakpoint positions
             fusion_type = define_type(
-                cis_near_distance,
-                bp1_chr,
-                bp1_pos,
-                bp1_strand,
-                bp2_chr,
-                bp2_pos,
-                bp2_strand,
+                bpid,
+                cis_near_distance
             )
+
             # query db to get exons and matched cds (if available) overlapping
             # the bp as gffutils feature objects
             bp1_exons, bp1_cds = get_bp_overlapping_features(self.db, bp1_chr, bp1_pos)
@@ -141,14 +132,14 @@ class FusionAnnotation:
                     wt1_description,
                 ) = get_parents(self.db, bp1_efeature)
                 # create a set to collect "suspicious findings" for transcripts
-                if wt1_trans_id not in self.trans_flags_dict:
-                    self.trans_flags_dict[wt1_trans_id] = set()
+                if wt1_trans_id not in self.suspect_transcripts:
+                    self.suspect_transcripts[wt1_trans_id] = set()
                 # get the complete set of exons, corresponding cds
                 # (cds at the same index are NA if there is none in
                 # the exon) and start frames of the cds
                 (wt1_exon_pos_list, wt1_cds_pos_list, wt1_cds_frame_list) = get_wt_codings(
                     self.db,
-                    self.trans_flags_dict,
+                    self.suspect_transcripts,
                     wt1_trans_id
                 )
                 # get the frame at the start of the first cds and at the breakpoint
@@ -157,12 +148,12 @@ class FusionAnnotation:
                 )
                 if wt1_frame_at_start > 0:
                     # flag the transcript if its frame at the start of the first cds is > 0
-                    self.trans_flags_dict[wt1_trans_id].add("cds start > 0")
+                    self.suspect_transcripts[wt1_trans_id].add("cds start > 0")
                 # remove "NA's" from the cds list
                 wt1_cds_pos_list = [x for x in wt1_cds_pos_list if not x == "NA"]
                 if len(wt1_cds_pos_list) == 1:
                     # flag the transcript if it contains a single cds
-                    self.trans_flags_dict[wt1_trans_id].add("Only 1 cds in bp1")
+                    self.suspect_transcripts[wt1_trans_id].add("Only 1 cds in bp1")
                 # add pre-loaded tsl info
                 wt1_tsl = self.get_tsl(wt1_trans_id.split(":")[1])
 
@@ -182,8 +173,8 @@ class FusionAnnotation:
                         wt2_gene_biotype,
                         wt2_description,
                     ) = get_parents(self.db, bp2_efeature)
-                    if wt2_trans_id not in self.trans_flags_dict:
-                        self.trans_flags_dict[wt2_trans_id] = set()
+                    if wt2_trans_id not in self.suspect_transcripts:
+                        self.suspect_transcripts[wt2_trans_id] = set()
                     # generate ftid from gene names, breakpoints and transcript ids
                     ftid = "_".join(
                         [
@@ -201,20 +192,20 @@ class FusionAnnotation:
 
                     (wt2_exon_pos_list, wt2_cds_pos_list, wt2_cds_frame_list) = get_wt_codings(
                         self.db,
-                        self.trans_flags_dict,
+                        self.suspect_transcripts,
                         wt2_trans_id
                     )
                     # check whether loci of wt1/wt2 overlap
                     if check_exon_overlap(
                         wt1_exon_pos_list, wt2_exon_pos_list, fusion_type
                     ):
-                        self.trans_flags_dict[wt1_trans_id].add("wt1/wt2 exon overlap")
-                        self.trans_flags_dict[wt2_trans_id].add("wt1/wt2 exon overlap")
+                        self.suspect_transcripts[wt1_trans_id].add("wt1/wt2 exon overlap")
+                        self.suspect_transcripts[wt2_trans_id].add("wt1/wt2 exon overlap")
                     wt2_frame_at_start, wt2_frame_at_bp = get_frame(
                         bp2_pos, wt2_cds_pos_list, wt2_cds_frame_list, bp2_strand
                     )
                     if wt2_frame_at_start > 0:
-                        self.trans_flags_dict[wt2_trans_id].add("cds start > 0")
+                        self.suspect_transcripts[wt2_trans_id].add("cds start > 0")
                     wt2_cds_pos_list = [x for x in wt2_cds_pos_list if not x == "NA"]
                     wt2_tsl = self.get_tsl(wt2_trans_id.split(":")[1])
                     # combined frame at breakpoint information
@@ -256,8 +247,8 @@ class FusionAnnotation:
 
                     ft1_exon_nr = len(ft1_exon_pos_list)
                     ft2_exon_nr = len(wt1_exon_pos_list) - len(ft2_exon_pos_list)
-                    wt1_is_good_transcript = self.trans_flags_dict[wt1_trans_id]
-                    wt2_is_good_transcript = self.trans_flags_dict[wt2_trans_id]
+                    wt1_is_good_transcript = self.suspect_transcripts[wt1_trans_id]
+                    wt2_is_good_transcript = self.suspect_transcripts[wt2_trans_id]
                     results_lists.append(
                         [
                             bpid,
@@ -861,7 +852,8 @@ def main():
         "--tsl_filter_level",
         dest="tsl_filter_level",
         help="The TSL level to exclude from the final tables. \
-            Should be comma separated w/o spaces. Possible values include 1-5 and NA",
+            Should be comma separated w/o spaces. Possible values include 1-5 and NA, \
+            e.g. 1,2,NA",
         required=True,
     )
     parser.add_argument(
@@ -877,9 +869,9 @@ def main():
     )
     fusannot.run(
         args.out_csv,
-        int(args.cis_near_dist),
+        args.cis_near_dist,
         args.genome_fasta,
-        int(args.context_seq_len),
+        args.context_seq_len,
         args.tsl_filter_level,
     )
 

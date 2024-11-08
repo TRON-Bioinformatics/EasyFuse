@@ -2,9 +2,7 @@
 This module provides methods to determine fusion type.
 """
 
-def define_type(
-        cis_near_distance, bp1_chr, bp1_pos, bp1_strand, bp2_chr, bp2_pos, bp2_strand
-    ):
+def define_type(bpid: str, cis_near_distance: int) -> str:
     """Define the fusion type based on the location and orientation of the fusion partners"""
     # Fusion type:
     # -	"trans" (bp of fusion partners on different chromosomes, but with same strand)
@@ -16,6 +14,13 @@ def define_type(
     #       1st before 2nd, but more than 1Mb apart from each other (genomic distance))
     # -	"cis_near" (bp of fusion partners on same chromosome, same strand,
     #       1st before 2nd and closer than 1Mb apart from each other (genomic distance))
+
+    bp1, bp2 = bpid.split("_")
+    bp1_chr, bp1_pos, bp1_strand = bp1.split(":")
+    bp2_chr, bp2_pos, bp2_strand = bp2.split(":")
+    bp1_pos = int(bp1_pos)
+    bp2_pos = int(bp2_pos)
+
     if bp1_chr == bp2_chr:
         if bp1_strand == bp2_strand:
             if bp1_strand == "+":
