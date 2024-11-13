@@ -2,6 +2,9 @@
 This module performs validation of exons.
 """
 
+# pylint: disable=E0401
+from transcript import Transcript
+
 def check_exon_overlap(wt1_exon_pos_list: list, wt2_exon_pos_list: list, fusion_type: str) -> bool:
     """Returns true if exons overlap and false otherwise"""
     # exon position lists are always sorted
@@ -74,39 +77,7 @@ def merge_features(bp_cds: list, exon_transcripts: list, cds_transcripts: list) 
     return bp_cds_new
 
 
-def get_bp_overlapping_features(db: object, bp_chr: str, bp_pos: int) -> tuple:
-    """Get two lists with breakpoint overlapping exons and cds from the database.
-
-    Args:
-        db (object): _description_
-        bp_chr (str): _description_
-        bp_pos (int): _description_
-
-    Returns:
-        tuple: _description_
-    """
-
-    bp_exons = []
-    bp_cds = []
-    for efeature in db.region(
-        region=f"{bp_chr}:{bp_pos - 1}-{bp_pos + 1}",
-        completely_within=False,
-        featuretype=("exon", "CDS"),
-    ):
-        if efeature.featuretype == "exon":
-            bp_exons.append(efeature)
-        elif efeature.featuretype == "CDS":
-            bp_cds.append(efeature)
-    # correct positions in such a way that the same position
-    # in the exon/CDS list represents the same parental transcript
-    # exons are the scaffold as there can be exons w/o cds but not vice versa
-    exon_transcripts = [x.attributes["Parent"][0] for x in bp_exons]
-    cds_transcripts = [x.attributes["Parent"][0] for x in bp_cds]
-    bp_cds = merge_features(bp_cds, exon_transcripts, cds_transcripts)
-    return (bp_exons, bp_cds)
-
-
-def get_parents(db: object, efeature: object) -> tuple:
+def get_parents(db: object, efeature: object) -> Transcript:
     """Get transcript and gene parents from exon feature"""
     trans_id = ""
     trans_biotype = ""
@@ -114,8 +85,8 @@ def get_parents(db: object, efeature: object) -> tuple:
     gene_name = ""
     gene_biotype = ""
     description = ""
-    count_parents = 0
-    for count_parents, parent in enumerate(db.parents(efeature.id), 1):
+    #count_parents = 0
+    for parent in db.parents(efeature.id):
         if parent.id.startswith("transcript:"):
             trans_id = parent.id
             trans_biotype = parent.attributes["biotype"][0]
@@ -127,11 +98,17 @@ def get_parents(db: object, efeature: object) -> tuple:
                 description = parent.attributes["description"][0].replace(";", " ")
             except KeyError:
                 description = "NA"
-    if count_parents > 2:
-        pass
+    #if count_parents > 2:
+    #    pass
         # logger.warning(
         #     "%s has more than two parents. Please check that gene_id %s and \
         #         trans_id %s are correct for the exon at position %s-%s.",
         #         efeature.id, gene_id, trans_id, efeature.start, efeature.stop
         # )
-    return (trans_id, trans_biotype, gene_name, gene_biotype, description)
+    return Transcript(
+        trans_id, 
+        trans_biotype, 
+        gene_name, 
+        gene_biotype, 
+        description
+    )

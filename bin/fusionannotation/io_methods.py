@@ -4,6 +4,9 @@ This module handles data loading.
 
 import csv
 
+# pylint: disable=E0401
+from breakpoint import Breakpoint
+
 def load_detected_fusions(detected_fusions_table: str) -> dict:
     """Read BPIDs from Detected_Fusions.csv and store the info in a dict.
 
@@ -23,8 +26,12 @@ def load_detected_fusions(detected_fusions_table: str) -> dict:
         reader = csv.DictReader(csvfile, delimiter=";")
         for row in reader:
             bpid = row["BPID"]
-            bp1 = row["Breakpoint1"]
-            bp2 = row["Breakpoint2"]
+            bp1_str = row["Breakpoint1"]
+            bp2_str = row["Breakpoint2"]
+            bp1_chr, bp1_pos, bp1_strand = bp1_str.split(":")
+            bp2_chr, bp2_pos, bp2_strand = bp2_str.split(":")
+            bp1 = Breakpoint(bp1_chr, int(bp1_pos), bp1_strand)
+            bp2 = Breakpoint(bp2_chr, int(bp2_pos), bp2_strand)
             # This could also be implemented as a set as BPID already contains both BPs
             if not bpid in bp_dict:
                 bp_dict[bpid] = (bp1, bp2)

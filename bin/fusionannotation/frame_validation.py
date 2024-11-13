@@ -2,7 +2,10 @@
 This module provides methods to parse the frame annotation.
 """
 
-def get_frame(bp_pos: int, cds_pos_list: list, cds_frame_list: list, strand: str) -> tuple:
+# pylint: disable=E0401
+from breakpoint import Breakpoint
+
+def get_frame(bp: Breakpoint, cds_pos_list: list, cds_frame_list: list) -> tuple:
     """Get/Calculate the frame at the start of the cds and at the breakpoint"""
     # the frame annotation in ensembl and defined as follows:
     # 0: The next full codon (i.e. 3bp codon) starts 0 bases from the current position
@@ -25,35 +28,23 @@ def get_frame(bp_pos: int, cds_pos_list: list, cds_frame_list: list, strand: str
             frame_idx.index(cds_frame) : frame_idx.index(cds_frame) + 3
         ]
         # on pos strand
-        if strand == "+":
-            if bp_pos == cds_pos[0]:
+        if bp.strand == "+":
+            if bp.pos == cds_pos[0]:
                 frame_at_bp = cds_frame
-            elif cds_pos[0] < bp_pos <= cds_pos[1]:
-                frame_at_bp = tmp_frame_idx[(bp_pos - (cds_pos[0] - 1)) % 3]
+            elif cds_pos[0] < bp.pos <= cds_pos[1]:
+                frame_at_bp = tmp_frame_idx[(bp.pos - (cds_pos[0] - 1)) % 3]
         # on neg strand
         else:
-            if bp_pos == cds_pos[1]:
+            if bp.pos == cds_pos[1]:
                 frame_at_bp = cds_frame
-            elif cds_pos[0] <= bp_pos < cds_pos[1]:
-                frame_at_bp = tmp_frame_idx[(cds_pos[1] - (bp_pos - 1)) % 3]
+            elif cds_pos[0] <= bp.pos < cds_pos[1]:
+                frame_at_bp = tmp_frame_idx[(cds_pos[1] - (bp.pos - 1)) % 3]
     # get the starting frame of the cds
     if not len(pos_frame_list) == 0:
-        if strand == "+":
+        if bp.strand == "+":
             frame_at_start = pos_frame_list[0][1]
         else:
             frame_at_start = pos_frame_list[-1][1]
     # return frame at the beginning of the first cds
     # and at the breakpoint position, both corrected according the the reading strand
     return frame_at_start, frame_at_bp
-
-
-def get_frame2(frame1: int, frame2: int) -> str:
-    """Combine frame info from bp1 and 2"""
-
-    if frame1 == -1:
-        return "no_frame"
-    if frame2 == -1:
-        return "neo_frame"
-    if frame1 == frame2:
-        return "in_frame"
-    return "out_frame"
