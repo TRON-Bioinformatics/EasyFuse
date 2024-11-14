@@ -28,7 +28,7 @@ from io_methods import load_detected_fusions
 from io_methods import load_tsl_data
 from boundary_validation import get_combined_boundary
 from exon_validation import check_exon_overlap
-from exon_validation import get_wt_codings
+from exon_validation import extract_features_from_transcript, filter_cds
 from exon_validation import get_parents
 from frame_validation import get_frame
 from fusion_transcript import FusionTranscript
@@ -121,8 +121,11 @@ class FusionAnnotation:
         # get the complete set of exons, corresponding cds
         # (cds at the same index are NA if there is none in
         # the exon) and start frames of the cds
-        (exon_pos_list, cds_pos_list, cds_frame_list) = get_wt_codings(
-            self.db,
+        (exon_pos_list, cds_pos_list, cds_frame_list) = extract_features_from_transcript(self.db, transcript.transcript_id)
+        (cds_pos_list, cds_frame_list) = filter_cds(
+            exon_pos_list, 
+            cds_pos_list, 
+            cds_frame_list,
             self.suspect_transcripts,
             transcript.transcript_id
         )
