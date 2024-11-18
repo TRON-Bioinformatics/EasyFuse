@@ -5,7 +5,7 @@ This module handles data loading.
 import csv
 
 # pylint: disable=E0401
-from breakpoint import Breakpoint
+from bin.fusionannotation.src.breakpoint import Breakpoint
 
 def load_detected_fusions(detected_fusions_table: str) -> dict:
     """Read BPIDs from Detected_Fusions.csv and store the info in a dict.
@@ -14,11 +14,8 @@ def load_detected_fusions(detected_fusions_table: str) -> dict:
         detected_fusions_table (str): Path to detected fusions table
 
     Returns:
-        dict: Dictionary with BPIDs as keys and BPs as values, where
-        BPIDs are the unique identifiers for each fusion event and BPs
-        BPID: 21:41494380:-_7:13935843:-
-        BP1: 21:41494380:-
-        BP2: 7:13935843:-
+        dict: Dictionary with BPIDs (e.g. 21:41494380:-_7:13935843:-) as keys
+        and breakpoints (BP1, BP2) as values
     """
 
     bp_dict = {}

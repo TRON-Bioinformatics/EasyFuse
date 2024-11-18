@@ -3,8 +3,15 @@ Module for FusionTranscript class.
 """
 
 # pylint: disable=E0401
-from breakpoint import Breakpoint
-from transcript import Transcript
+from bin.fusionannotation.src.breakpoint import Breakpoint
+from bin.fusionannotation.src.transcript import Transcript
+
+
+EXON_BOUNDARY_LEFT = "left_boundary"
+EXON_BOUNDARY_RIGHT = "right_boundary"
+EXON_BOUNDARY_WITHIN = "within"
+EXON_BOUNDARY_OUTSIDE = "outside"
+EXON_BOUNDARY_NA = "NA"
 
 
 def get_involved_exons(features: list, bp: Breakpoint, reverse: bool = False) -> list:
@@ -20,27 +27,27 @@ def get_involved_exons(features: list, bp: Breakpoint, reverse: bool = False) ->
             bp.strand == "+" and not reverse
         ):  # on the "+" strand, we need everything LEFT of the bp for fusion gene partner 1
             bp_feature_fus_list = [
-                feature for feature in features if bp.pos >= feature[0]
+                feature for feature in features if bp.pos >= feature.start
             ]
             if not len(bp_feature_fus_list) == 0:
                 # delete the last cds (i.e. last before the bp) if it starts with the breakpoint
-                if bp_feature_fus_list[-1][0] == bp.pos:
+                if bp_feature_fus_list[-1].start == bp.pos:
                     bp_feature_fus_list = bp_feature_fus_list[:-1]
                 else:  # or shorten the cds to the bp if it is within it
                     bp_feature_fus_list[-1] = (
-                        bp_feature_fus_list[-1][0],
+                        bp_feature_fus_list[-1].start,
                         bp.pos,
                     )
         else:  # on the "-" strand, we need everything RIGHT of the bp for fusion gene partner 1
             bp_feature_fus_list = [
-                feature for feature in features if bp.pos <= feature[1]
+                feature for feature in features if bp.pos <= feature.stop
             ]
             if not len(bp_feature_fus_list) == 0:
                 # delete first cds (i.e. first after the bp) if it starts with the breakpoint
-                if bp_feature_fus_list[0][1] == bp.pos:
+                if bp_feature_fus_list[0].stop == bp.pos:
                     bp_feature_fus_list = bp_feature_fus_list[1:]
                 else:
-                    bp_feature_fus_list[0] = (bp.pos, bp_feature_fus_list[0][1])
+                    bp_feature_fus_list[0] = (bp.pos, bp_feature_fus_list[0].stop)
 
     return bp_feature_fus_list
 
@@ -67,15 +74,20 @@ class FusionTranscript:
         self.cds_transcript_2 = self.get_fusion_cds_transcript_2()
 
 
+    def get_bpid(self):
+        """Return the breakpoint ID"""
+        return f"{self.bp1}_{self.bp2}"
+
+
     def get_ftid(self):
         """Return the fusion transcript ID"""
         return "_".join(
             [
                 self.transcript_1.gene_name,
-                self.bp1,
+                str(self.bp1),
                 self.transcript_1.transcript_id.split(":")[1],
                 self.transcript_2.gene_name,
-                self.bp2,
+                str(self.bp2),
                 self.transcript_2.transcript_id.split(":")[1],
             ]
         )
@@ -91,6 +103,27 @@ class FusionTranscript:
         )
 
 
+    def annotate_same_chrom(self, cis_near_distance: int) -> str:
+        """Annotates the fusion type for same chromosome fusions.
+
+        Args:
+            cis_near_distance (int): _description_
+
+        Returns:
+            str: _description_
+        """
+        distance = 0
+        if self.bp1.strand == "+":
+            distance = self.bp2.pos - self.bp1.pos
+        else:
+            distance = self.bp1.pos - self.bp2.pos
+        if distance < 0:
+            return "cis_trans"
+        if 0 < distance <= cis_near_distance:
+            return "cis_near"
+        return "cis_far"
+
+
     def get_fusion_type(self, cis_near_distance: int) -> str:
         """Define the fusion type based on the location and orientation of the fusion partners"""
         # Fusion type:
@@ -103,30 +136,41 @@ class FusionTranscript:
         #       1st before 2nd, but more than 1Mb apart from each other (genomic distance))
         # -	"cis_near" (bp of fusion partners on same chromosome, same strand,
         #       1st before 2nd and closer than 1Mb apart from each other (genomic distance))
+        same_chrom = self.bp1.chrom == self.bp2.chrom
+        same_strand = self.bp1.strand == self.bp2.strand
 
-        if self.bp1.chrom == self.bp2.chrom:
-            if self.bp1.strand == self.bp2.strand:
-                if self.bp1.strand == "+":
-                    if self.bp2.pos - self.bp1.pos < 0:
-                        return "cis_trans"
-                    if self.bp2.pos - self.bp1.pos > cis_near_distance:
-                        return "cis_far"
-                    return "cis_near"
-                else:
-                    if self.bp1.pos - self.bp2.pos < 0:
-                        return "cis_trans"
-                    if self.bp1.pos - self.bp2.pos > cis_near_distance:
-                        return "cis_far"
-                    return "cis_near"
-            return "cis_inv"
-        else:
-            if self.bp1.strand == self.bp2.strand:
-                return "trans"
-            return "trans_inv"
+        fusion_types = {
+            (True, True): self.annotate_same_chrom(cis_near_distance),
+            (True, False): "cis_inv",
+            (False, True): "trans",
+            (False, False): "trans_inv"
+        }
+
+        return fusion_types.get((same_chrom, same_strand), "no_match")
+
+
+    def get_combined_boundary(self) -> str:
+        """Check whether boundaries of both fusion partners are in the correct orientation"""
+
+        is_on_boundary = any((EXON_BOUNDARY_LEFT, EXON_BOUNDARY_RIGHT))
+        stranded = any(("+", "-"))
+
+        boundary_dict = {
+            ("+", "+", EXON_BOUNDARY_RIGHT, EXON_BOUNDARY_LEFT): "both",
+            ("+", "-", EXON_BOUNDARY_RIGHT, EXON_BOUNDARY_RIGHT): "both",
+            ("-", "+", EXON_BOUNDARY_LEFT, EXON_BOUNDARY_LEFT): "both",
+            ("-", "-", EXON_BOUNDARY_LEFT, EXON_BOUNDARY_RIGHT): "both",
+            (stranded, stranded, is_on_boundary, not is_on_boundary): "5prime",
+            (stranded, stranded, not is_on_boundary, is_on_boundary): "3prime"
+        }
+        return boundary_dict.get(
+            (self.bp1.strand, self.bp2.strand, self.bp1.exon_boundary, self.bp2.exon_boundary),
+            "no_match"
+        )
 
 
     def get_combined_frame(self) -> str:
-        """Combine frame info from bp1 and 2"""
+        """Combine frame info from bp1 and bp2"""
 
         if self.transcript_1.frame == -1:
             return "no_frame"

@@ -53,5 +53,19 @@ class Transcript:
         self.tsl = tsl
 
 
-    def __str__(self):
-        return f"{self.transcript_id}:{self.transcript_biotype}:{self.description}"
+    def __eq__(self, other):
+        return (
+            self.transcript_id == other.transcript_id and
+            self.transcript_biotype == other.transcript_biotype and
+            self.gene_name == other.gene_name and
+            self.gene_biotype == other.gene_biotype and
+            self.description == other.description
+        )
+
+
+    def __repr__(self):
+        return f"Transcript(transcript_id={repr(self.transcript_id)}, " \
+               f"transcript_biotype={repr(self.transcript_biotype)}, " \
+               f"gene_name={repr(self.gene_name)}, " \
+               f"gene_biotype={repr(self.gene_biotype)}, " \
+               f"description={repr(self.description)}"

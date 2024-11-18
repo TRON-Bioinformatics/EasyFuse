@@ -10,15 +10,14 @@ Annotate predicted fusion genes. This involves:
     6) Collect information on the kind of fusion which might be relevant for downstream
        selection processes
     7) Filter likely artifacts based on the quality of the annotated transcripts
-@author: TRON (PASO), BNT (URLA)
-@version: 241004
+@author: TRON (PASO)
+@version: 241118
 """
 
 from argparse import ArgumentParser
 
 # pylint: disable=E0401
-from Bio import SeqIO
-import gffutils # type: ignore
+from Bio import SeqIO # type: ignore
 from logzero import logger # type: ignore
 
 
@@ -26,14 +25,13 @@ from breakpoint import Breakpoint
 
 from io_methods import load_detected_fusions
 from io_methods import load_tsl_data
-from boundary_validation import get_combined_boundary
-from exon_validation import check_exon_overlap
-from exon_validation import get_wt_codings
-from exon_validation import get_parents
-from frame_validation import get_frame
+from feature_validation import check_exon_overlap
+from feature_validation import get_exon_cds_overlap
 from fusion_transcript import FusionTranscript
+from gff_db_controller import GffDbController
 from output_handler import OutputHandler
 from result_handler import update_results
+from transcript import Transcript
 
 
 
@@ -44,7 +42,7 @@ class FusionAnnotation:
     def __init__(self, db_file, bp_file, tsl_file):
         """Parameter initialization"""
         self.bp_dict = load_detected_fusions(bp_file)
-        self.db = gffutils.FeatureDB(db_file)
+        self.db = GffDbController(db_file)
         self.tsl_dict = load_tsl_data(tsl_file)
         self.cds_seq_dict = {}
         self.suspect_transcripts = {}
@@ -109,27 +107,28 @@ class FusionAnnotation:
                 ]
 
 
-    def annotate_bp(self, bp: Breakpoint, bp_efeature: object):
+    def annotate_bp(self, bp: Breakpoint, exon_id: str) -> Transcript:
         """
-        Annotate the first breakpoint of a pair
+        Annotate breakpoint of a pair
         """
         # get id and additional infos from exon parents transcript and gene
-        transcript = get_parents(self.db, bp_efeature)
+        transcript = self.db.get_parent_transcript(exon_id)
         # create a set to collect "suspicious findings" for transcripts
         if transcript.transcript_id not in self.suspect_transcripts:
             self.suspect_transcripts[transcript.transcript_id] = set()
         # get the complete set of exons, corresponding cds
         # (cds at the same index are NA if there is none in
         # the exon) and start frames of the cds
-        (exon_pos_list, cds_pos_list, cds_frame_list) = get_wt_codings(
-            self.db,
-            self.suspect_transcripts,
-            transcript.transcript_id
+        exon_pos_list = self.db.get_features_from_transcript(transcript.transcript_id, "exon")
+        cds = self.db.get_features_from_transcript(transcript.transcript_id, "CDS")
+        (cds_pos_list, trans_flags) = get_exon_cds_overlap(
+            exon_pos_list, cds
         )
+        self.suspect_transcripts[transcript.transcript_id].extend(trans_flags)
         transcript.set_exon_pos_list(exon_pos_list)
         # get the frame at the start of the first cds and at the breakpoint
-        frame_at_start, frame_at_bp = get_frame(
-            bp, cds_pos_list, cds_frame_list
+        frame_at_start, frame_at_bp = bp.get_frame(
+            cds_pos_list
         )
         transcript.set_frame_at_bp(frame_at_bp)
         if frame_at_start > 0:
@@ -157,133 +156,37 @@ class FusionAnnotation:
         bp1 = self.bp_dict[bpid][0]
         bp2 = self.bp_dict[bpid][1]
 
-        # query db to get exons and matched cds (if available) overlapping
-        # the bp as gffutils feature objects
-        bp1_exons, bp1_cds = bp1.get_overlapping_features(self.db)
-        bp2_exons, bp2_cds = bp2.get_overlapping_features(self.db)
+        # get features overlapping with the bp from the db
+        (bp1_exons, bp1_cds) = self.db.get_exons_cds_overlapping_position(bp1)
+        (bp2_exons, bp2_cds) = self.db.get_features_overlapping_position(bp2)
         # consider all possible combination between transcript1 to transcript2 fusions
         for bp1_efeature, bp1_cfeature in zip(bp1_exons, bp1_cds):
-            # check whether breakpoint1 is located on an exon boundary
-            exon_boundary_1 = bp1.get_boundary(bp1_efeature)
-            # check whether breakpoint1 is located on a CDS boundary
-            cds_boundary_1 = bp1.get_boundary(bp1_cfeature)
-            wt1 = self.annotate_bp(bp1, bp1_efeature)
+            bp1.exon_boundary = bp1.get_boundary(bp1_efeature)
+            bp1.cds_boundary = bp1.get_boundary(bp1_cfeature)
+            wt1 = self.annotate_bp(bp1, bp1_efeature.id)
             # do the same stuff for transcript 2 and (if applicable)
             # combine the information from both transcripts
             for bp2_efeature, bp2_cfeature in zip(bp2_exons, bp2_cds):
-                # check whether breakpoint1 is located on an exon boundary
-                exon_boundary_2 = bp2.get_boundary(bp2_efeature)
-                # check whether breakpoint1 is located on a CDS boundary
-                cds_boundary_2 = bp2.get_boundary(bp2_cfeature)
-                wt2 = self.annotate_bp(bp2, bp2_efeature)
-                # combined exon boundary information
-                exon_boundary = get_combined_boundary(
-                    exon_boundary_1, exon_boundary_2, bp1.strand, bp2.strand
-                )
-                fusion_transcript = FusionTranscript(wt1, wt2, bp1, bp2)
-                fusion_type = fusion_transcript.get_fusion_type(cis_near_distance)
+                bp2.exon_boundary = bp2.get_boundary(bp2_efeature)
+                bp2.cds_boundary = bp2.get_boundary(bp2_cfeature)
+                wt2 = self.annotate_bp(bp2, bp2_efeature.id)
 
+                fusion_transcript = FusionTranscript(wt1, wt2, bp1, bp2)
+                fusion_transcript.fusion_type = fusion_transcript.get_fusion_type(cis_near_distance)
                 # check whether loci of wt1/wt2 overlap
                 if check_exon_overlap(
-                    wt1.exon_pos_list, wt2.exon_pos_list, fusion_type
+                    wt1.exon_pos_list, wt2.exon_pos_list, fusion_transcript.fusion_type
                 ):
-                    self.suspect_transcripts[wt1.transcript_id].add("wt1/wt2 exon overlap")
+                    self.suspect_transcripts[fusion_transcript.wt1.transcript_id].add(
+                        "wt1/wt2 exon overlap"
+                    )
 
                 self.fill_seq_lookup_dict_fusion_transcript(fusion_transcript)
 
-                wt1_is_good_transcript = self.suspect_transcripts[wt1.transcript_id]
-                wt2_is_good_transcript = self.suspect_transcripts[wt2.transcript_id]
-                result_list.append([
-                    bpid,
-                    fusion_transcript.get_fusion_gene_name(),
-                    bp1,
-                    bp2,
-                    fusion_transcript.get_ftid(),
-                    "context_sequence_id",
-                    "context_sequence_100_id",
-                    fusion_type,
-                    str(fusion_transcript.get_exon_nr()),
-                    str(len(fusion_transcript.exons_transcript_1)),
-                    str(len(wt1.exon_pos_list) - len(fusion_transcript.exons_transcript_2)),
-                    "exon_starts",
-                    "exon_ends",
-                    exon_boundary_1,
-                    exon_boundary_2,
-                    exon_boundary,
-                    str(wt1.frame),
-                    str(wt2.frame),
-                    fusion_transcript.frame,
-                    "context_sequence",
-                    "context_sequence_bp",
-                    "neo_peptide_sequence",
-                    "neo_peptide_sequence_bp",
-                    "fusion_protein_sequence",
-                    "fusion_protein_sequence_bp",
-                    "context_sequence_wt1",
-                    "context_sequence_wt2",
-                    "context_sequence_wt1_bp",
-                    "context_sequence_wt2_bp",
-                    "context_sequence_100",
-                    bp1.chrom,
-                    bp1.pos,
-                    bp1.strand,
-                    bp2.chrom,
-                    bp2.pos,
-                    bp2.strand,
-                    cds_boundary_1,
-                    cds_boundary_2,
-                    wt1.exon_pos_list,
-                    wt2.exon_pos_list,
-                    fusion_transcript.exons_transcript_1,
-                    fusion_transcript.exons_transcript_2,
-                    wt1.cds_pos_list,
-                    wt2.cds_pos_list,
-                    fusion_transcript.cds_transcript_1,
-                    fusion_transcript.cds_transcript_2,
-                    [],
-                    [],
-                    [],
-                    [],
-                    [],
-                    [],
-                    [],
-                    [],
-                    "wt1_exon_transcripts",
-                    "wt2_exon_transcripts",
-                    "ft1_exon_transcripts",
-                    "ft2_exon_transcripts",
-                    "wt1_cds_transcripts",
-                    "wt2_cds_transcripts",
-                    "ft1_cds_transcripts",
-                    "ft2_cds_transcripts",
-                    "wt1_peptide",
-                    "wt2_peptide",
-                    "fusion_transcript",
-                    "fusion_peptide",
-                    wt1_is_good_transcript,
-                    wt2_is_good_transcript,
-                    wt1.transcript_biotype,
-                    wt2.transcript_biotype,
-                    wt1.gene_biotype,
-                    wt2.gene_biotype,
-                    wt1.description,
-                    wt2.description,
-                    wt1.frame_at_start,
-                    wt2.frame_at_start,
-                    wt1.tsl,
-                    wt2.tsl,
-                    len(wt1.exon_pos_list),
-                    len(wt2.exon_pos_list),
-                    len(fusion_transcript.exons_transcript_1),
-                    len(fusion_transcript.exons_transcript_2),
-                    len(wt1.cds_pos_list),
-                    len(wt2.cds_pos_list),
-                    len(fusion_transcript.cds_transcript_1),
-                    len(fusion_transcript.cds_transcript_2),
-                    f"{bp1.chrom}:{wt1.exon_pos_list[0][0]}:{wt1.exon_pos_list[-1][1]}",
-                    f"{bp2.chrom}:{wt2.exon_pos_list[0][0]}:{wt2.exon_pos_list[-1][1]}",
-                    "annotation_bias",
-                ])
+                fusion_transcript.wt1.is_good_transcript = self.suspect_transcripts[wt1.transcript_id]
+                fusion_transcript.wt2.is_good_transcript = self.suspect_transcripts[wt2.transcript_id]
+
+                result_list.append(fusion_transcript)
         return result_list
 
 
@@ -314,6 +217,7 @@ class FusionAnnotation:
             results_lists.extend(result_list)
 
         self.grep_candidate_seqs(genome_fasta)
+
         results_lists = update_results(
             results_lists,
             self.cds_seq_dict,
