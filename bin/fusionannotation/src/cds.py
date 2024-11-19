@@ -10,20 +10,20 @@ class CDS:
     frame: int
     parent_id: int
 
-    def __init__(self, cds_id, cds_start, cds_stop, cds_frame, cds_transcript_id):
+    def __init__(self, cds_id, start, stop, frame, transcript_id):
         self.id = cds_id
-        self.start = cds_start
-        self.stop = cds_stop
-        self.frame = cds_frame
-        self.parent_id = cds_transcript_id
+        self.start = start
+        self.stop = stop
+        self.frame = frame
+        self.transcript_id = transcript_id
 
 
     def __repr__(self):
-        return f"CDS(id={repr(self.id)}, " \
+        return f"CDS(cds_id={repr(self.id)}, " \
                f"start={repr(self.start)}, " \
                f"stop={repr(self.stop)}, " \
                f"frame={repr(self.frame)}, " \
-               f"parent_id={repr(self.parent_id)})"
+               f"transcript_id={repr(self.transcript_id)})"
 
 
     def __eq__(self, other):
@@ -32,7 +32,7 @@ class CDS:
             self.start == other.start and
             self.stop == other.stop and
             self.frame == other.frame and
-            self.parent_id == other.parent_id
+            self.transcript_id == other.transcript_id
         )
 
 

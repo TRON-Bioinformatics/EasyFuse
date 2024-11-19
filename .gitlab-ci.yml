@@ -4,3 +4,4 @@ easyfuse-pipeline:
   script:
     - conda install -c bioconda nextflow=21.10.0
     - bash test/scripts/test_00.sh
+    - bash test/scripts/test_fusionannotation.sh

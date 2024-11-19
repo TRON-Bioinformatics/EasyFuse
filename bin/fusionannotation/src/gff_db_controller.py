@@ -102,13 +102,13 @@ class GffDbController:
         gene_biotype = ""
         description = ""
         for parent in self.db.parents(feature_id):
-            if parent.id.startswith("transcript:"):
+            if parent.featuretype == "transcript":
                 trans_id = parent.id
-                trans_biotype = parent.attributes["biotype"][0]
-            elif parent.id.startswith("gene:"):
+                trans_biotype = parent.attributes["transcript_biotype"][0]
+            if parent.featuretype == "gene":
                 gene_id = parent.attributes.get("gene_id", "")
-                gene_name = parent.attributes.get("Name", gene_id)[0]
-                gene_biotype = parent.attributes["biotype"][0]
+                gene_name = parent.attributes.get("gene_name", gene_id)[0]
+                gene_biotype = parent.attributes["gene_biotype"][0]
                 try:
                     description = parent.attributes["description"][0].replace(";", " ")
                 except KeyError:

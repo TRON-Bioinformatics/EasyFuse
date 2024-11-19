@@ -51,11 +51,11 @@ def filter_cds_by_exons(exons: list, cds: list) -> list:
     Returns:
         list: _description_
     """
-    cds_transcripts = [cds.parent_id for cds in cds]
+    cds_transcripts = [cds.transcript_id for cds in cds]
     bp_cds_new = []
     for exon in exons:
-        if exon.parent_id in cds_transcripts:
-            bp_cds_new.append(cds[cds_transcripts.index(exon.parent_id)])
+        if exon.transcript_id in cds_transcripts:
+            bp_cds_new.append(cds[cds_transcripts.index(exon.transcript_id)])
         else:
             bp_cds_new.append(None)
     return bp_cds_new

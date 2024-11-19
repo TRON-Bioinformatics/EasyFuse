@@ -13,7 +13,7 @@ class TestIOMethods(unittest.TestCase):
     Provides unit tests for fusion annotation module.
     """
     def setUp(self):
-        self.input_fusions = "tests/fusionannotation/Detected_Fusions.csv"
+        self.input_fusions = "tests/fusionannotation/input_data/Detected_Fusions.csv"
 
     def test_load_detected_fusions(self):
         """Test case for BP loading."""
