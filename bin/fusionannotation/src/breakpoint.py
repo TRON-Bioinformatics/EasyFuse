@@ -22,6 +22,10 @@ class Breakpoint:
         )
 
 
+    def __hash__(self):
+        return hash(repr(self))
+
+
     def get_boundary(self, feature: object) -> str:
         """Check whether the breakpoint position is on an exon or CDS boundary"""
         if not feature:

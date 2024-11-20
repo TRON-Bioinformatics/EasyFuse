@@ -27,6 +27,10 @@ class Exon:
         )
 
 
+    def __hash__(self):
+        return hash(repr(self))
+
+
     def get_length(self) -> int:
         """Return the exon length"""
         return self.stop - self.start + 1

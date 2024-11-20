@@ -17,7 +17,6 @@ Annotate predicted fusion genes. This involves:
 from argparse import ArgumentParser
 
 # pylint: disable=E0401
-from Bio import SeqIO # type: ignore
 from logzero import logger # type: ignore
 
 
@@ -25,6 +24,7 @@ from breakpoint import Breakpoint
 
 from io_methods import load_detected_fusions
 from io_methods import load_tsl_data
+from io_methods import load_genomic_data
 from feature_validation import check_exon_overlap
 from feature_validation import get_exon_cds_overlap
 from fusion_transcript import FusionTranscript
@@ -32,8 +32,6 @@ from gff_db_controller import GffDbController
 from output_handler import OutputHandler
 from result_handler import update_results
 from transcript import Transcript
-
-
 
 
 class FusionAnnotation:
@@ -44,7 +42,6 @@ class FusionAnnotation:
         self.bp_dict = load_detected_fusions(bp_file)
         self.db = GffDbController(db_file)
         self.tsl_dict = load_tsl_data(tsl_file)
-        self.cds_seq_dict = {}
         self.suspect_transcripts = {}
 
 
@@ -57,54 +54,6 @@ class FusionAnnotation:
         if not trans_id in self.tsl_dict:
             return "6"
         return self.tsl_dict[trans_id]
-
-
-    def fill_seq_lookup_dict(self, chrom: str, cds_list: list):
-        """
-        Create/fill a dictionary of genomic position tuple with chromosomes as keys 
-        and a list of two lists as values. Genomic coordinates are loaded into the first list 
-        and the second one is later complemented by the respective sequence
-        """
-        if not chrom in self.cds_seq_dict:
-            self.cds_seq_dict[chrom] = [[], []]
-        for cds_coord in cds_list:
-            if not cds_coord in self.cds_seq_dict[chrom][0]:
-                self.cds_seq_dict[chrom][0].append(cds_coord)
-
-
-    def fill_seq_lookup_dict_fusion_transcript(self, ft: FusionTranscript):
-        """Collect positions for which we need to grep sequences."""
-        self.fill_seq_lookup_dict(ft.bp1.chrom, ft.transcript_1.exon_pos_list)
-        self.fill_seq_lookup_dict(ft.bp2.chrom, ft.transcript_2.exon_pos_list)
-        self.fill_seq_lookup_dict(ft.bp1.chrom, ft.exons_transcript_1)
-        self.fill_seq_lookup_dict(ft.bp2.chrom, ft.exons_transcript_2)
-        self.fill_seq_lookup_dict(ft.bp1.chrom, ft.transcript_1.cds_pos_list)
-        self.fill_seq_lookup_dict(ft.bp2.chrom, ft.transcript_2.cds_pos_list)
-        self.fill_seq_lookup_dict(ft.bp1.chrom, ft.cds_transcript_1)
-        self.fill_seq_lookup_dict(ft.bp2.chrom, ft.cds_transcript_2)
-
-
-    def grep_candidate_seqs(self, genome_fasta: str):
-        """
-        Grep chromosomes and extract cds sequences from the @cds_seq_dict
-        urla note: the max(..) check in the slicing is probably superfluous
-        as CDS annotations should not start at chromosome position 0
-        (which would become -1 in @get_frame()). Nevertheless, negative values would
-        completely mess up the slicing...
-        An additinal check at the end is not required as
-        slicing stops anyway at the end of sequence
-        """
-
-        for record in SeqIO.parse(genome_fasta, "fasta"):
-            if record.id in self.cds_seq_dict:
-                logger.info(
-                    "Grepping candidate regions from chromosome %s", record.id
-                )
-
-                self.cds_seq_dict[record.id][1] = [
-                    record.seq[max(0, val[0] - 1) : val[1]]
-                    for val in self.cds_seq_dict[record.id][0]
-                ]
 
 
     def annotate_bp(self, bp: Breakpoint, exon_id: str) -> Transcript:
@@ -181,8 +130,6 @@ class FusionAnnotation:
                         "wt1/wt2 exon overlap"
                     )
 
-                self.fill_seq_lookup_dict_fusion_transcript(fusion_transcript)
-
                 fusion_transcript.wt1.is_good_transcript = self.suspect_transcripts[wt1.transcript_id]
                 fusion_transcript.wt2.is_good_transcript = self.suspect_transcripts[wt2.transcript_id]
 
@@ -213,14 +160,15 @@ class FusionAnnotation:
 
         # get features overlapping with the bp from the db
         for bpid in sorted(self.bp_dict):
-            result_list = self.annotate_bpid(bpid, cis_near_distance)
-            results_lists.extend(result_list)
+            fusion_transcripts = self.annotate_bpid(bpid, cis_near_distance)
+            results_lists.extend(fusion_transcripts)
 
-        self.grep_candidate_seqs(genome_fasta)
+        logger.info("Loading genomic data from %s", genome_fasta)
+        cds_seqs = load_genomic_data(genome_fasta, results_lists)
 
         results_lists = update_results(
             results_lists,
-            self.cds_seq_dict,
+            cds_seqs,
             context_seq_len
         )
         output_handler = OutputHandler(results_lists, context_seqs_file, tsl_filter_level)

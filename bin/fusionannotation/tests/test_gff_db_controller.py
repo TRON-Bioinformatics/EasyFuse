@@ -25,8 +25,8 @@ class TestGffDbController(unittest.TestCase):
         )
 
 
-    def test_get_features_overlapping_position_exon(self):
-        """Test case for extracting features overlapping the breakpoint"""
+    def test_get_features_overlapping_position_exon_negative_strand(self):
+        """Test case for extracting features overlapping the breakpoint on the negative strand."""
         # 21:41494380:-_7:13935843:- -> TMPRSS2_ETV1
         bp = Breakpoint("21", 30157, "-")
         result = self.db.get_features_overlapping_position(bp, "exon")
@@ -50,8 +50,44 @@ class TestGffDbController(unittest.TestCase):
         self.assertEqual(result, exons)
 
 
+    def test_get_features_overlapping_position_exon_positive_strand(self):
+        """Test case for extracting features overlapping the breakpoint on the positive strand."""
+        bp = Breakpoint("7", 257882, "+")
+        result = self.db.get_features_overlapping_position(bp, "exon")
+        exons = [
+            Exon(exon_id='ENSE00003936914', start=244655, stop=294171, transcript_id='ENST00000691309'),
+            Exon(exon_id='ENSE00001886368', start=247896, stop=274015, transcript_id='ENST00000476279'),
+            Exon(exon_id='ENSE00001839092', start=247913, stop=273180, transcript_id='ENST00000461457'),
+            Exon(exon_id='agat-exon-167', start=257777, stop=257882, transcript_id='ENST00000680072'),
+            Exon(exon_id='agat-exon-118', start=257777, stop=257882, transcript_id='ENST00000680513'),
+            Exon(exon_id='ENSE00003608380', start=257777, stop=257882, transcript_id='ENST00000680534'),
+            Exon(exon_id='agat-exon-217', start=257777, stop=257882, transcript_id='ENST00000679821'),
+            Exon(exon_id='agat-exon-264', start=257777, stop=257882, transcript_id='ENST00000681722'),
+            Exon(exon_id='agat-exon-311', start=257777, stop=257882, transcript_id='ENST00000680181'),
+            Exon(exon_id='agat-exon-361', start=257777, stop=257882, transcript_id='ENST00000356239'),
+            Exon(exon_id='agat-exon-410', start=257777, stop=257882, transcript_id='ENST00000679521'),
+            Exon(exon_id='agat-exon-513', start=257777, stop=257882, transcript_id='ENST00000679457'),
+            Exon(exon_id='ENSE00003626584', start=257777, stop=257882, transcript_id='ENST00000679474'),
+            Exon(exon_id='agat-exon-594', start=257777, stop=257882, transcript_id='ENST00000680952'),
+            Exon(exon_id='agat-exon-687', start=257777, stop=257882, transcript_id='ENST00000681412'),
+            Exon(exon_id='agat-exon-735', start=257777, stop=257882, transcript_id='ENST00000679448'),
+            Exon(exon_id='agat-exon-783', start=257777, stop=257882, transcript_id='ENST00000680766'),
+            Exon(exon_id='agat-exon-885', start=257777, stop=257882, transcript_id='ENST00000359028'),
+            Exon(exon_id='agat-exon-912', start=257777, stop=257882, transcript_id='ENST00000491695'),
+            Exon(exon_id='agat-exon-934', start=257777, stop=257882, transcript_id='ENST00000394534'),
+            Exon(exon_id='agat-exon-977', start=257777, stop=257882, transcript_id='ENST00000680365'),
+            Exon(exon_id='agat-exon-954', start=257777, stop=257882, transcript_id='ENST00000681216'),
+            Exon(exon_id='agat-exon-993', start=257777, stop=257882, transcript_id='ENST00000487692'),
+            Exon(exon_id='agat-exon-1001', start=257777, stop=257882, transcript_id='ENST00000487258'),
+            Exon(exon_id='agat-exon-1008', start=257777, stop=257882, transcript_id='ENST00000486313'),
+            Exon(exon_id='ENSE00003912099', start=257777, stop=259537, transcript_id='ENST00000680047'),
+            Exon(exon_id='ENSE00001956879', start=257822, stop=257882, transcript_id='ENST00000463118')
+        ]
+        self.assertEqual(result, exons)
+
+
     def test_get_features_overlapping_position_cds(self):
-        """Test case for extracting features overlapping the breakpoint"""
+        """Test case for extracting features overlapping the breakpoint."""
         # Original locus: 21:41494380:- -> TMPRSS2
         bp = Breakpoint("21", 30157, "-")
         result = self.db.get_features_overlapping_position(bp, "CDS")
@@ -75,7 +111,7 @@ class TestGffDbController(unittest.TestCase):
 
 
     def test_get_exons_from_transcript(self):
-        """Test case for extracting exons from transcript"""
+        """Test case for extracting exons from transcript."""
         transcript_id = "ENST00000679263"
         result = self.db.get_features_from_transcript(transcript_id, "exon")
         exons = [
@@ -98,7 +134,7 @@ class TestGffDbController(unittest.TestCase):
 
 
     def test_get_cds_from_transcripts(self):
-        """Test case for extracting cds from transcript"""
+        """Test case for extracting cds from transcript."""
         transcript_id = "ENST00000679263"
         result = self.db.get_features_from_transcript(transcript_id, "CDS")
         cds = [
@@ -121,7 +157,7 @@ class TestGffDbController(unittest.TestCase):
 
 
     def test_get_parent_transcript(self):
-        """Test case for extracting parent transcript"""
+        """Test case for extracting parent transcript."""
         feature_id = "ENSE00003907476"
         result = self.db.get_parent_transcript(feature_id)
         transcript = Transcript(

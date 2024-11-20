@@ -5,8 +5,13 @@ Tests for IO methods module.
 import unittest
 
 # pylint: disable=E0401
+from Bio.Seq import Seq # type: ignore
 from bin.fusionannotation.src.breakpoint import Breakpoint
+from bin.fusionannotation.src.exon import Exon
 from bin.fusionannotation.src.io_methods import load_detected_fusions # type: ignore
+from bin.fusionannotation.src.io_methods import load_genomic_data # type: ignore
+from bin.fusionannotation.src.transcript import Transcript
+from bin.fusionannotation.src.fusion_transcript import FusionTranscript
 
 class TestIOMethods(unittest.TestCase):
     """
@@ -50,3 +55,42 @@ class TestIOMethods(unittest.TestCase):
             )
         }
         self.assertEqual(load_detected_fusions(self.input_fusions), res)
+
+
+    def test_load_genomic_data(self):
+        """Test case for genomic data loading."""
+        genome_fasta = "tests/fusionannotation/input_data/Homo_sapiens.GRCh38.110_minigenome.fa"
+        wt1 = Transcript("transcript_1", "", "GeneA", "", "")
+        wt2 = Transcript("transcript_2", "", "GeneB", "", "")
+        bp1 = Breakpoint("21", 30157, "-")
+        bp2 = Breakpoint("7", 257882, "+")
+        wt1.exon_pos_list = [
+            Exon(exon_id='exon_1', start=30157, stop=30179, transcript_id='transcript_1'),
+        ]
+        wt2.exon_pos_list = [
+            Exon(exon_id='exon_2', start=248000, stop=248030, transcript_id='transcript_2')
+        ]
+        fusion_transcript = FusionTranscript(wt1, wt2, bp1, bp2)
+        fusion_transcripts = [
+            fusion_transcript
+        ]
+        cds_seqs = {
+            '21': [
+                {
+                    Exon(exon_id='exon_1', start=30157, stop=30179, transcript_id='transcript_1')
+                },
+                [
+                    Seq('TTGAGGTGCACACTGTCCCGGAT')
+                ]
+            ],
+            '7': [
+                {
+                    Exon(exon_id='exon_2', start=248000, stop=248030, transcript_id='transcript_2')
+                },
+                [
+                    Seq('TCTATCAAAATAAAAAATAGTGACAGCAAGT')
+                ]
+            ]
+        }
+        result = load_genomic_data(genome_fasta, fusion_transcripts)
+        self.assertEqual(result, cds_seqs)

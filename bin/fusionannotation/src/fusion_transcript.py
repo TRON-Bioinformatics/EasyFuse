@@ -34,10 +34,7 @@ def get_involved_exons(features: list, bp: Breakpoint, reverse: bool = False) ->
                 if bp_feature_fus_list[-1].start == bp.pos:
                     bp_feature_fus_list = bp_feature_fus_list[:-1]
                 else:  # or shorten the cds to the bp if it is within it
-                    bp_feature_fus_list[-1] = (
-                        bp_feature_fus_list[-1].start,
-                        bp.pos,
-                    )
+                    bp_feature_fus_list[-1].pos = bp.pos
         else:  # on the "-" strand, we need everything RIGHT of the bp for fusion gene partner 1
             bp_feature_fus_list = [
                 feature for feature in features if bp.pos <= feature.stop
@@ -47,7 +44,7 @@ def get_involved_exons(features: list, bp: Breakpoint, reverse: bool = False) ->
                 if bp_feature_fus_list[0].stop == bp.pos:
                     bp_feature_fus_list = bp_feature_fus_list[1:]
                 else:
-                    bp_feature_fus_list[0] = (bp.pos, bp_feature_fus_list[0].stop)
+                    bp_feature_fus_list[0].pos = bp.pos
 
     return bp_feature_fus_list
 
@@ -85,10 +82,10 @@ class FusionTranscript:
             [
                 self.transcript_1.gene_name,
                 str(self.bp1),
-                self.transcript_1.transcript_id.split(":")[1],
+                self.transcript_1.transcript_id,
                 self.transcript_2.gene_name,
                 str(self.bp2),
-                self.transcript_2.transcript_id.split(":")[1],
+                self.transcript_2.transcript_id,
             ]
         )
 

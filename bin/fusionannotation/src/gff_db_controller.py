@@ -103,10 +103,10 @@ class GffDbController:
         description = ""
         for parent in self.db.parents(feature_id):
             if parent.featuretype == "transcript":
-                trans_id = parent.id
+                trans_id = parent.id.strip("transcript:")
                 trans_biotype = parent.attributes["transcript_biotype"][0]
             if parent.featuretype == "gene":
-                gene_id = parent.attributes.get("gene_id", "")
+                gene_id = parent.attributes.get("gene_id", "").strip("gene:")
                 gene_name = parent.attributes.get("gene_name", gene_id)[0]
                 gene_biotype = parent.attributes["gene_biotype"][0]
                 try:

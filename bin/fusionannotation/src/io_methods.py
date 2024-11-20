@@ -5,6 +5,8 @@ This module handles data loading.
 import csv
 
 # pylint: disable=E0401
+from Bio import SeqIO # type: ignore
+
 from bin.fusionannotation.src.breakpoint import Breakpoint
 
 def load_detected_fusions(detected_fusions_table: str) -> dict:
@@ -22,16 +24,13 @@ def load_detected_fusions(detected_fusions_table: str) -> dict:
     with open(detected_fusions_table, "r", encoding="utf8") as csvfile:
         reader = csv.DictReader(csvfile, delimiter=";")
         for row in reader:
-            bpid = row["BPID"]
-            bp1_str = row["Breakpoint1"]
-            bp2_str = row["Breakpoint2"]
-            bp1_chr, bp1_pos, bp1_strand = bp1_str.split(":")
-            bp2_chr, bp2_pos, bp2_strand = bp2_str.split(":")
+            bp1_chr, bp1_pos, bp1_strand = row["Breakpoint1"].split(":")
+            bp2_chr, bp2_pos, bp2_strand = row["Breakpoint2"].split(":")
             bp1 = Breakpoint(bp1_chr, int(bp1_pos), bp1_strand)
             bp2 = Breakpoint(bp2_chr, int(bp2_pos), bp2_strand)
             # This could also be implemented as a set as BPID already contains both BPs
-            if not bpid in bp_dict:
-                bp_dict[bpid] = (bp1, bp2)
+            if not row["BPID"] in bp_dict:
+                bp_dict[row["BPID"]] = (bp1, bp2)
     return bp_dict
 
 
@@ -48,3 +47,40 @@ def load_tsl_data(tsl_in_file: str) -> dict:
             if not trans_id in tsl_dict:
                 tsl_dict[trans_id] = tsl
     return tsl_dict
+
+
+def load_genomic_data(genome_fasta: str, fusion_transcrips: list) -> dict:
+    """Load genomic data from genome fasta and fusion transcripts"""
+    cds_seqs = {}
+    for ft in fusion_transcrips:
+        chr1 = ft.bp1.chrom
+        chr2 = ft.bp2.chrom
+        if not chr1 in cds_seqs:
+            cds_seqs[chr1] = [set(), set()]
+        if not chr2 in cds_seqs:
+            cds_seqs[chr2] = [set(), set()]
+        for features in (
+            ft.transcript_1.exon_pos_list,
+            ft.exons_transcript_1,
+            ft.transcript_1.cds_pos_list,
+            ft.cds_transcript_1
+        ):
+            cds_seqs[chr1][0].update(features)
+        for features in (
+            ft.transcript_2.exon_pos_list,
+            ft.exons_transcript_2,
+            ft.transcript_2.cds_pos_list,
+            ft.cds_transcript_2
+        ):
+            cds_seqs[chr2][0].update(features)
+
+    for record in SeqIO.parse(genome_fasta, "fasta"):
+        if record.id in cds_seqs:
+            # print(
+            #     "Grepping candidate regions from chromosome %s", record.id
+            # )
+            cds_seqs[record.id][1] = [
+                record.seq[max(0, feature.start - 1) : feature.stop]
+                for feature in cds_seqs[record.id][0]
+            ]
+    return cds_seqs

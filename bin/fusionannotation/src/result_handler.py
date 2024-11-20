@@ -2,35 +2,65 @@
 
 # pylint: disable=E0401
 import xxhash # type: ignore
-from Bio.Seq import Seq
+from Bio.Seq import Seq # type: ignore
 
-from sequence_validation import get_stranded_seq
+from bin.fusionannotation.src.breakpoint import Breakpoint
+from bin.fusionannotation.src.fusion_transcript import FusionTranscript
+from bin.fusionannotation.src.sequence_validation import get_stranded_seq
 
 
-def get_feature_seqs(tmp_dict: dict, feature_list: list) -> list:
+def get_feature_seqs(tmp_dict: dict, features: list) -> list:
     """
     Return a list of Seq objects for a list of features.
     """
-    return [tmp_dict[feature] for feature in feature_list]
+    return [tmp_dict[feature] for feature in features]
 
 
-def get_feature_transcripts(features: list) -> str:
-    return sum(features, Seq(""))
+def concatenate_seqs(sequences: list) -> str:
+    """Returns a concatenated string of Seq objects.
+    If sequences is empty, an empty Seq is returned.
+
+    Args:
+        sequences (list): List of Seq objects
+
+    Returns:
+        Seq: Concatenated Seq object, empty if sequences is empty
+    """
+    return sum(sequences, Seq(""))
 
 
-def get_context_sequence(transcripts: str, fusion_transcript: object) -> str:
-    ctx_part_1 = get_stranded_seq(
-        transcripts,
-        fusion_transcript.bp1.strand
-    )
-    ctx_part_2 = get_stranded_seq(
-        fusion_transcript.exons_transcript_2,
-        fusion_transcript.bp2.strand
-    )
+def get_context_sequence(ft1_seq: Seq, ft2_seq: Seq, bp1_strand: str, bp2_strand: str) -> str:
+    """Returns the context sequence for a fusion transcript.
+
+    Args:
+        transcripts (Seq): _description_
+        fusion_transcript (FusionTranscript): _description_
+
+    Returns:
+        str: _description_
+    """
+    ctx_part_1 = get_stranded_seq(ft1_seq, bp1_strand)
+    ctx_part_2 = get_stranded_seq(ft2_seq, bp2_strand)
     return ctx_part_1 + ctx_part_2
 
 
-def get_fusion_transcript_sequence(bp1: object, bp2: object, table_row: dict, fusion_transcript: object) -> str:
+def get_fusion_transcript_sequence(
+    bp1: Breakpoint,
+    bp2: Breakpoint,
+    table_row: dict,
+    fusion_transcript: FusionTranscript
+) -> str:
+    """_summary_
+
+    Args:
+        bp1 (Breakpoint): _description_
+        bp2 (Breakpoint): _description_
+        table_row (dict): _description_
+        fusion_transcript (FusionTranscript): _description_
+
+    Returns:
+        str: _description_
+    """
     fusion_transcript_sequence = get_stranded_seq(
         table_row["ft1_cds_transcripts"],
         bp1.strand
@@ -64,20 +94,46 @@ def get_peptide_sequence(cds_transcripts: str, bp: object, transcript: object) -
     return peptide_seq
 
 
-def calc_hash(seq: str) -> str:
+def calc_hash(seq: Seq) -> str:
+    """_summary_
+
+    Args:
+        seq (Seq): _description_
+
+    Returns:
+        str: _description_
+    """
     return xxhash.xxh64(str(seq)).hexdigest()
 
 
-def generate_temp_dict(cds_seq_dict: dict, bp: object) -> dict:
+def generate_temp_dict(cds_seq_dict: dict, chrom: str) -> dict:
+    """_summary_
+
+    Args:
+        cds_seq_dict (dict): _description_
+        bp (object): _description_
+
+    Returns:
+        dict: _description_
+    """
     return dict(
         zip(
-            cds_seq_dict[bp.chrom][0],
-            cds_seq_dict[bp.chrom][1],
+            cds_seq_dict[chrom][0],
+            cds_seq_dict[chrom][1],
         )
     )
 
 
 def get_exon_ranges(exons: list, neo_pep_until_bp_nuc: int) -> list:
+    """_summary_
+
+    Args:
+        exons (list): _description_
+        neo_pep_until_bp_nuc (int): _description_
+
+    Returns:
+        list: _description_
+    """
     exon_pos = 1
     summed_len = 0
     for exon_pos, exon_length in enumerate([y - x for x, y in exons], 1):
@@ -91,6 +147,15 @@ def get_exon_ranges(exons: list, neo_pep_until_bp_nuc: int) -> list:
 
 
 def get_exon_ranges_reverse(exons: list, neo_pep_until_bp_nuc: int) -> tuple:
+    """_summary_
+
+    Args:
+        exons (list): _description_
+        neo_pep_until_bp_nuc (int): _description_
+
+    Returns:
+        tuple: _description_
+    """
     exon_pos = 1
     summed_len = 0
     for exon_pos, exon_length in enumerate([y - x for x, y in exons][::-1], 1):
@@ -129,8 +194,8 @@ def update_results_list(fusion_transcripts: list, cds_seq_dict: dict, context_se
         wt2 = fusion_transcript.transcript_2
         bp1 = fusion_transcript.bp1
         bp2 = fusion_transcript.bp2
-        tmp_dict_1 = generate_temp_dict(cds_seq_dict, bp1)
-        tmp_dict_2 = generate_temp_dict(cds_seq_dict, bp2)
+        tmp_dict_1 = generate_temp_dict(cds_seq_dict, bp1.chrom)
+        tmp_dict_2 = generate_temp_dict(cds_seq_dict, bp2.chrom)
         table_row = {
             "BPID": fusion_transcript.get_bpid(),
             "Fusion_Gene": fusion_transcript.get_fusion_gene_name(),
@@ -225,23 +290,23 @@ def update_results_list(fusion_transcripts: list, cds_seq_dict: dict, context_se
 
         table_row["wt1_cds_seqs"] = get_feature_seqs(tmp_dict_1, wt1.cds_pos_list)
         table_row["wt2_cds_seqs"] = get_feature_seqs(tmp_dict_2, wt2.cds_pos_list)
-        table_row["wt1_cds_transcripts"] = get_feature_transcripts(table_row["wt1_cds_seqs"])
-        table_row["wt2_cds_transcripts"] = get_feature_transcripts(table_row["wt2_cds_seqs"])
+        table_row["wt1_cds_transcripts"] = concatenate_seqs(table_row["wt1_cds_seqs"])
+        table_row["wt2_cds_transcripts"] = concatenate_seqs(table_row["wt2_cds_seqs"])
 
         table_row["ft1_cds_seqs"] = get_feature_seqs(tmp_dict_1, fusion_transcript.cds_transcript_1)
         table_row["ft2_cds_seqs"] = get_feature_seqs(tmp_dict_2, fusion_transcript.cds_transcript_2)
-        table_row["ft1_cds_transcripts"] = get_feature_transcripts(table_row["ft1_cds_seqs"])
-        table_row["ft2_cds_transcripts"] = get_feature_transcripts(table_row["ft2_cds_seqs"])
+        table_row["ft1_cds_transcripts"] = concatenate_seqs(table_row["ft1_cds_seqs"])
+        table_row["ft2_cds_transcripts"] = concatenate_seqs(table_row["ft2_cds_seqs"])
 
         table_row["ft1_exon_seqs"] = get_feature_seqs(tmp_dict_1, fusion_transcript.exons_transcript_1)
         table_row["ft2_exon_seqs"] = get_feature_seqs(tmp_dict_2, fusion_transcript.exons_transcript_2)
-        table_row["ft1_exon_transcripts"] = get_feature_transcripts(table_row["ft1_exon_seqs"])
-        table_row["ft2_exon_transcripts"] = get_feature_transcripts(table_row["ft2_exon_seqs"])
+        table_row["ft1_exon_transcripts"] = concatenate_seqs(table_row["ft1_exon_seqs"])
+        table_row["ft2_exon_transcripts"] = concatenate_seqs(table_row["ft2_exon_seqs"])
 
         table_row["wt1_exon_seqs"] = get_feature_seqs(tmp_dict_1, wt1.exon_pos_list)
         table_row["wt2_exon_seqs"] = get_feature_seqs(tmp_dict_2, wt2.exon_pos_list)
-        table_row["wt1_exon_transcripts"] = get_feature_transcripts(table_row["wt1_exon_seqs"])
-        table_row["wt2_exon_transcripts"] = get_feature_transcripts(table_row["wt2_exon_seqs"])
+        table_row["wt1_exon_transcripts"] = concatenate_seqs(table_row["wt1_exon_seqs"])
+        table_row["wt2_exon_transcripts"] = concatenate_seqs(table_row["wt2_exon_seqs"])
 
         table_row["wt1_peptide"] = get_peptide_sequence(table_row["wt1_cds_transcripts"], bp1, wt1)
         table_row["wt2_peptide"] = get_peptide_sequence(table_row["wt2_cds_transcripts"], bp2, wt2)
@@ -258,7 +323,12 @@ def update_results_list(fusion_transcripts: list, cds_seq_dict: dict, context_se
         table_row["context_sequence_100"] = table_row["context_sequence"][
             max(0, bp_in_fusion_nt_ex - 100) : (bp_in_fusion_nt_ex + 100)
         ]
-        table_row["context_sequence"] = get_context_sequence(tmp_dict_1, fusion_transcript)[
+        table_row["context_sequence"] = get_context_sequence(
+            table_row["ft1_exon_transcripts"],
+            table_row["ft2_exon_transcripts"],
+            bp1.strand,
+            bp2.strand
+        )[
             max(0, bp_in_fusion_nt_ex - context_seq_len) : (
                 bp_in_fusion_nt_ex + context_seq_len
             )
