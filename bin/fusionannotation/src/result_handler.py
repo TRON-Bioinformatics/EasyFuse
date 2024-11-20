@@ -33,11 +33,13 @@ def get_context_sequence(ft1_seq: Seq, ft2_seq: Seq, bp1_strand: str, bp2_strand
     """Returns the context sequence for a fusion transcript.
 
     Args:
-        transcripts (Seq): _description_
-        fusion_transcript (FusionTranscript): _description_
+        ft1_seq (Seq): Sequence of the first fusion transcript
+        f2_seq (Seq): Sequence of the second fusion transcript
+        bp1_strand (str): Strand of the first breakpoint
+        bp2_strand (str): Strand of the second breakpoint
 
     Returns:
-        str: _description_
+        Seq: Context sequence
     """
     ctx_part_1 = get_stranded_seq(ft1_seq, bp1_strand)
     ctx_part_2 = get_stranded_seq(ft2_seq, bp2_strand)
@@ -50,7 +52,7 @@ def get_fusion_transcript_sequence(
     table_row: dict,
     fusion_transcript: FusionTranscript
 ) -> str:
-    """_summary_
+    """Returns the fusion transcript sequence.
 
     Args:
         bp1 (Breakpoint): _description_
@@ -80,41 +82,49 @@ def get_fusion_transcript_sequence(
     return fusion_transcript_sequence
 
 
-def get_peptide_sequence(cds_transcripts: str, bp: object, transcript: object) -> str:
-    """create the first part of the context and fusion sequence and translate wt1 seqs"""
-    translation_shift = transcript.frame
+def get_peptide_sequence(transcript_sequence: Seq, bp: Breakpoint, transcript_frame: int) -> Seq:
+    """Returns the peptide sequence for a transcript.
+
+    Args:
+        transcript_sequence (Seq): Sequence to be translated
+        bp (Breakpoint): Breakpoint object
+        transcript_frame (int): Frame shift of the transcript
+
+    Returns:
+        Seq: Peptide sequence
+    """
     # for easier visualization, store in separate var
     trans_table = 2 if bp.chrom == "MT" else 1
 
     peptide_seq_raw = get_stranded_seq(
-        cds_transcripts,
+        transcript_sequence,
         bp.strand
     )
-    peptide_seq = peptide_seq_raw[translation_shift:].translate(table=trans_table)
+    peptide_seq = peptide_seq_raw[transcript_frame:].translate(table=trans_table)
     return peptide_seq
 
 
 def calc_hash(seq: Seq) -> str:
-    """_summary_
+    """Calculates the hash of a sequence.
 
     Args:
-        seq (Seq): _description_
+        seq (Seq): Sequence to calculate the hash for
 
     Returns:
-        str: _description_
+        str: Hash of the sequence
     """
     return xxhash.xxh64(str(seq)).hexdigest()
 
 
 def generate_temp_dict(cds_seq_dict: dict, chrom: str) -> dict:
-    """_summary_
+    """Generates a temporary dictionary for a chromosome.
 
     Args:
-        cds_seq_dict (dict): _description_
-        bp (object): _description_
+        cds_seq_dict (dict): Feature dictionary with according sequences
+        chrom (str): Chromosome to generate the dictionary for
 
     Returns:
-        dict: _description_
+        dict: Temporary dictionary for the chromosome
     """
     return dict(
         zip(
