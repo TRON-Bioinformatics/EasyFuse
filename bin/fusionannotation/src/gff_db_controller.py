@@ -103,10 +103,10 @@ class GffDbController:
         description = ""
         for parent in self.db.parents(feature_id):
             if parent.featuretype == "transcript":
-                trans_id = parent.id.strip("transcript:")
+                trans_id = parent.id
                 trans_biotype = parent.attributes["transcript_biotype"][0]
             if parent.featuretype == "gene":
-                gene_id = parent.attributes.get("gene_id", "").strip("gene:")
+                gene_id = parent.attributes.get("gene_id", "")
                 gene_name = parent.attributes.get("gene_name", gene_id)[0]
                 gene_biotype = parent.attributes["gene_biotype"][0]
                 try:
@@ -114,9 +114,9 @@ class GffDbController:
                 except KeyError:
                     description = "NA"
         return Transcript(
-            trans_id,
+            trans_id.strip("transcript:"),
             trans_biotype,
-            gene_name,
+            gene_name.strip("gene:"),
             gene_biotype,
             description
         )

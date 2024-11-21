@@ -7,7 +7,32 @@ import xxhash # type: ignore
 from Bio.Seq import Seq # type: ignore
 
 from bin.fusionannotation.src.breakpoint import Breakpoint
-from bin.fusionannotation.src.fusion_transcript import FusionTranscript
+
+
+def calc_hash(seq: Seq) -> str:
+    """Calculates the hash of a sequence.
+
+    Args:
+        seq (Seq): Sequence to calculate the hash for
+
+    Returns:
+        str: Hash of the sequence
+    """
+    return xxhash.xxh64(str(seq)).hexdigest()
+
+
+def get_trimmed_seq(seq: Seq, start: int, end: int) -> Seq:
+    """Returns a trimmed sequence.
+
+    Args:
+        seq (Seq): Sequence to be trimmed
+        start (int): Start of the trimmed sequence
+        end (int): End of the trimmed sequence
+
+    Returns:
+        Seq: Trimmed sequence
+    """
+    return seq[start:end]
 
 
 def get_stranded_seq(sequence: Seq, strand: str) -> Seq:
@@ -58,10 +83,12 @@ def get_context_sequence(ft1_seq: Seq, ft2_seq: Seq, bp1_strand: str, bp2_strand
 
 
 def get_fusion_transcript_sequence(
-    bp1: Breakpoint,
-    bp2: Breakpoint,
-    table_row: dict,
-    fusion_transcript: FusionTranscript
+    ft1_cds_seq: Seq,
+    ft2_cds_seq: Seq,
+    ft2_exon_seq: Seq,
+    bp1_strand: str,
+    bp2_strand: str,
+    frame: int
 ) -> str:
     """Returns the fusion transcript sequence.
 
@@ -75,20 +102,20 @@ def get_fusion_transcript_sequence(
         str: _description_
     """
     fusion_transcript_sequence = get_stranded_seq(
-        table_row["ft1_cds_transcripts"],
-        bp1.strand
+        ft1_cds_seq,
+        bp1_strand
     )
 
     # for in frame fusions, use the cds sequences, for everything else, use the exons
-    if fusion_transcript.frame == "in_frame":
+    if frame == "in_frame":
         fusion_transcript_sequence += get_stranded_seq(
-            fusion_transcript.cds_transcript_2,
-            bp2.strand
+            ft2_cds_seq,
+            bp2_strand
         )
     else:
         fusion_transcript_sequence += get_stranded_seq(
-            table_row["ft2_exon_transcripts"],
-            bp2.strand
+            ft2_exon_seq,
+            bp2_strand
         )
     return fusion_transcript_sequence
 
@@ -113,15 +140,3 @@ def get_peptide_sequence(transcript_sequence: Seq, bp: Breakpoint, transcript_fr
     )
     peptide_seq = peptide_seq_raw[transcript_frame:].translate(table=trans_table)
     return peptide_seq
-
-
-def calc_hash(seq: Seq) -> str:
-    """Calculates the hash of a sequence.
-
-    Args:
-        seq (Seq): Sequence to calculate the hash for
-
-    Returns:
-        str: Hash of the sequence
-    """
-    return xxhash.xxh64(str(seq)).hexdigest()

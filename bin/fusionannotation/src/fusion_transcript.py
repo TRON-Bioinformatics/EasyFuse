@@ -14,17 +14,17 @@ EXON_BOUNDARY_OUTSIDE = "outside"
 EXON_BOUNDARY_NA = "NA"
 
 
-def get_involved_exons(features: list, bp: Breakpoint, reverse: bool = False) -> list:
+def get_involved_features(features: list, bp: Breakpoint, reverse: bool = False) -> list:
     """
     Based on the breakpoints, the strand and the complete feature positions 
     of the involved genes, return only those feature positions which will remain in the fusion.
     """
     bp_feature_fus_list = []
 
-    # get fusion partner 1 cds
+    # get fusion partner cds
     if not len(features) == 0:
         if (
-            bp.strand == "+" and not reverse
+            bp.strand == "+" and not reverse or bp.strand == "-" and reverse
         ):  # on the "+" strand, we need everything LEFT of the bp for fusion gene partner 1
             bp_feature_fus_list = [
                 feature for feature in features if bp.pos >= feature.start
@@ -65,10 +65,10 @@ class FusionTranscript:
         self.bp1 = bp1
         self.bp2 = bp2
         self.frame = self.get_combined_frame()
-        self.exons_transcript_1 = self.get_fusion_exons_transcript_1()
-        self.exons_transcript_2 = self.get_fusion_exons_transcript_2()
-        self.cds_transcript_1 = self.get_fusion_cds_transcript_1()
-        self.cds_transcript_2 = self.get_fusion_cds_transcript_2()
+        self.exons_transcript_1 = get_involved_features(self.transcript_1.exons, self.bp1, False)
+        self.exons_transcript_2 = get_involved_features(self.transcript_2.exons, self.bp2, True)
+        self.cds_transcript_1 = get_involved_features(self.transcript_1.cds, self.bp1, False)
+        self.cds_transcript_2 = get_involved_features(self.transcript_2.cds, self.bp2, True)
 
 
     def get_bpid(self):
@@ -121,8 +121,8 @@ class FusionTranscript:
         return "cis_far"
 
 
-    def get_fusion_type(self, cis_near_distance: int) -> str:
-        """Define the fusion type based on the location and orientation of the fusion partners"""
+    def determine_fusion_type(self, cis_near_distance: int) -> str:
+        """Determine the fusion type based on the location and orientation of the fusion partners"""
         # Fusion type:
         # -	"trans" (bp of fusion partners on different chromosomes, but with same strand)
         # -	"trans_inv" (bp of fusion partners on different chromosomes and with different strand)
@@ -169,33 +169,13 @@ class FusionTranscript:
     def get_combined_frame(self) -> str:
         """Combine frame info from bp1 and bp2"""
 
-        if self.transcript_1.frame == -1:
+        if self.transcript_1.frame_at_bp == -1:
             return "no_frame"
-        if self.transcript_2.frame == -1:
+        if self.transcript_2.frame_at_bp == -1:
             return "neo_frame"
-        if self.transcript_1.frame == self.transcript_2.frame:
+        if self.transcript_1.frame_at_bp == self.transcript_2.frame_at_bp:
             return "in_frame"
         return "out_frame"
-
-
-    def get_fusion_cds_transcript_1(self):
-        """Return the fusion CDS for transcript 1"""
-        return get_involved_exons(self.transcript_1.cds_pos_list, self.bp1)
-
-
-    def get_fusion_cds_transcript_2(self):
-        """Return the fusion CDS for transcript 2"""
-        return get_involved_exons(self.transcript_2.cds_pos_list, self.bp2, reverse=True)
-
-
-    def get_fusion_exons_transcript_1(self):
-        """Return the fusion exons for transcript 1"""
-        return get_involved_exons(self.transcript_1.exon_pos_list, self.bp1)
-
-
-    def get_fusion_exons_transcript_2(self):
-        """Return the fusion exons for transcript 2"""
-        return get_involved_exons(self.transcript_2.exon_pos_list, self.bp2, reverse=True)
 
 
     def get_exon_nr(self) -> int:

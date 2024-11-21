@@ -55,21 +55,20 @@ def load_genomic_data(genome_fasta: str, fusion_transcrips: list) -> dict:
     for ft in fusion_transcrips:
         chr1 = ft.bp1.chrom
         chr2 = ft.bp2.chrom
-        if not chr1 in cds_seqs:
-            cds_seqs[chr1] = [set(), set()]
-        if not chr2 in cds_seqs:
-            cds_seqs[chr2] = [set(), set()]
+        for chrom in (chr1, chr2):
+            if not chrom in cds_seqs:
+                cds_seqs[chrom] = [set(), set()]
         for features in (
-            ft.transcript_1.exon_pos_list,
+            ft.transcript_1.exons,
             ft.exons_transcript_1,
-            ft.transcript_1.cds_pos_list,
+            ft.transcript_1.cds,
             ft.cds_transcript_1
         ):
             cds_seqs[chr1][0].update(features)
         for features in (
-            ft.transcript_2.exon_pos_list,
+            ft.transcript_2.exons,
             ft.exons_transcript_2,
-            ft.transcript_2.cds_pos_list,
+            ft.transcript_2.cds,
             ft.cds_transcript_2
         ):
             cds_seqs[chr2][0].update(features)

@@ -30,7 +30,7 @@ from feature_validation import get_exon_cds_overlap
 from fusion_transcript import FusionTranscript
 from gff_db_controller import GffDbController
 from output_handler import OutputHandler
-from result_handler import update_results
+from result_handler import ResultHandler
 from transcript import Transcript
 
 
@@ -74,18 +74,19 @@ class FusionAnnotation:
             exon_pos_list, cds
         )
         self.suspect_transcripts[transcript.transcript_id].extend(trans_flags)
-        transcript.set_exon_pos_list(exon_pos_list)
+        transcript.set_exons(exon_pos_list)
         # get the frame at the start of the first cds and at the breakpoint
         frame_at_start, frame_at_bp = bp.get_frame(
             cds_pos_list
         )
+        transcript.set_frame_at_start(frame_at_start)
         transcript.set_frame_at_bp(frame_at_bp)
         if frame_at_start > 0:
             # flag the transcript if its frame at the start of the first cds is > 0
             self.suspect_transcripts[transcript.transcript_id].add("cds start > 0")
         # remove "NA's" from the cds list
         cds_pos_list = [x for x in cds_pos_list if not x == "NA"]
-        transcript.set_cds_pos_list(cds_pos_list)
+        transcript.set_cds(cds_pos_list)
         if len(cds_pos_list) == 1:
             # flag the transcript if it contains a single cds
             self.suspect_transcripts[transcript.transcript_id].add("Only 1 cds in bp1")
@@ -121,12 +122,12 @@ class FusionAnnotation:
                 wt2 = self.annotate_bp(bp2, bp2_efeature.id)
 
                 fusion_transcript = FusionTranscript(wt1, wt2, bp1, bp2)
-                fusion_transcript.fusion_type = fusion_transcript.get_fusion_type(cis_near_distance)
+                fusion_transcript.fusion_type = fusion_transcript.determine_fusion_type(cis_near_distance)
                 # check whether loci of wt1/wt2 overlap
                 if check_exon_overlap(
                     wt1.exon_pos_list, wt2.exon_pos_list, fusion_transcript.fusion_type
                 ):
-                    self.suspect_transcripts[fusion_transcript.wt1.transcript_id].add(
+                    self.suspect_transcripts[wt1.transcript_id].add(
                         "wt1/wt2 exon overlap"
                     )
 
@@ -156,22 +157,21 @@ class FusionAnnotation:
         # to the format of the previous
         # version of the fusion annotation and therefore used for downstream processing
 
-        results_lists = []
+        fusion_transcripts = []
 
         # get features overlapping with the bp from the db
         for bpid in sorted(self.bp_dict):
-            fusion_transcripts = self.annotate_bpid(bpid, cis_near_distance)
-            results_lists.extend(fusion_transcripts)
+            fusion_transcripts_bpid = self.annotate_bpid(bpid, cis_near_distance)
+            fusion_transcripts.extend(fusion_transcripts_bpid)
 
         logger.info("Loading genomic data from %s", genome_fasta)
-        cds_seqs = load_genomic_data(genome_fasta, results_lists)
+        cds_seqs = load_genomic_data(genome_fasta, fusion_transcripts)
 
-        results_lists = update_results(
-            results_lists,
-            cds_seqs,
-            context_seq_len
+        result_handler = ResultHandler(cds_seqs, context_seq_len)
+        result_list = result_handler.generate_result_list(
+            fusion_transcripts
         )
-        output_handler = OutputHandler(results_lists, context_seqs_file, tsl_filter_level)
+        output_handler = OutputHandler(result_list, context_seqs_file, tsl_filter_level)
         output_handler.write_full_table()
         output_handler.write_filtered_table()
         output_handler.write_fasta()

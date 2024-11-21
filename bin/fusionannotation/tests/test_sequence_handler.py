@@ -11,23 +11,31 @@ from bin.fusionannotation.src.breakpoint import Breakpoint
 from bin.fusionannotation.src.sequence_handler import calc_hash
 from bin.fusionannotation.src.sequence_handler import concatenate_seqs
 from bin.fusionannotation.src.sequence_handler import get_context_sequence
+from bin.fusionannotation.src.sequence_handler import get_fusion_transcript_sequence
 from bin.fusionannotation.src.sequence_handler import get_peptide_sequence
 from bin.fusionannotation.src.sequence_handler import get_stranded_seq
 
-class TestSequenceValidation(unittest.TestCase):
+class TestSequenceHandler(unittest.TestCase):
     """
-    Provides unit tests for the sequence validation module.
+    Provides unit tests for the sequence handler module.
     """
+
+
+    def test_calc_hash(self):
+        """Test case for hash calculation"""
+        seq = Seq('ACGTTTA')
+        result = calc_hash(seq)
+        self.assertEqual(result, 'a40d472865950d7c')
 
 
     def test_get_stranded_seq_positive_strand(self):
         """Test case for strandedness validation"""
-        self.assertEqual(get_stranded_seq("ATCG", "+"), "ATCG")
+        self.assertEqual(get_stranded_seq(Seq("ATCG"), "+"), Seq("ATCG"))
 
 
     def test_get_stranded_seq_negative_strand(self):
         """Test case for strandedness validation"""
-        self.assertEqual(get_stranded_seq("ATCG", "-"), "CGAT")
+        self.assertEqual(get_stranded_seq(Seq("ATCG"), "-"), Seq("CGAT"))
 
 
     def test_get_feature_transcripts(self):
@@ -65,15 +73,42 @@ class TestSequenceValidation(unittest.TestCase):
 
 
     def test_get_peptide_sequence(self):
-        """Test case for context sequence validation"""
+        """Test case for peptide sequence validation"""
         cds_seq = Seq('ATGGCCATTGTAATGGGCCGCTGAAAGGGTGCCCGATAG')
         bp = Breakpoint("21", 30157, "+")
         result = get_peptide_sequence(cds_seq, bp, 0)
         self.assertEqual(result, Seq("MAIVMGR*KGAR*"))
 
 
-    def test_calc_hash(self):
-        """Test case for hash calculation"""
-        seq = Seq('ACGTTTA')
-        result = calc_hash(seq)
-        self.assertEqual(result, 'a40d472865950d7c')
+    def test_get_fusion_transcript_sequence_in_frame(self):
+        """Test case for fusion transcript sequence validation"""
+        ft1_cds_seq = Seq('ACGT')
+        ft2_cds_seq = Seq('ATTA')
+        ft2_exon_seq = Seq('GTCG')
+
+        result = get_fusion_transcript_sequence(
+            ft1_cds_seq,
+            ft2_cds_seq,
+            ft2_exon_seq,
+            "-",
+            "+",
+            "in_frame"
+        )
+        self.assertEqual(result, Seq("ACGTATTA"))
+
+
+    def test_get_fusion_transcript_sequence_out_frame(self):
+        """Test case for fusion transcript sequence validation"""
+        ft1_cds_seq = Seq('ACGT')
+        ft2_cds_seq = Seq('ATTA')
+        ft2_exon_seq = Seq('GTCG')
+
+        result = get_fusion_transcript_sequence(
+            ft1_cds_seq,
+            ft2_cds_seq,
+            ft2_exon_seq,
+            "-",
+            "+",
+            "neo_frame"
+        )
+        self.assertEqual(result, Seq("ACGTGTCG"))

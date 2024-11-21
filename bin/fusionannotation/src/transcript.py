@@ -11,37 +11,47 @@ class Transcript:
         self.gene_name = gene_name
         self.gene_biotype = gene_biotype
         self.description = description
-        self.exon_pos_list = []
-        self.cds_pos_list = []
-        self.frame = None
+        self.exons = []
+        self.cds = []
+        self.frame_at_start = None
+        self.frame_at_bp = None
         self.tsl = None
 
 
-    def set_exon_pos_list(self, exon_pos_list: list):
+    def set_exons(self, exons: list):
         """Sets the exon position list.
 
         Args:
             exon_pos_list (list): Exon positions
         """
-        self.exon_pos_list = exon_pos_list
+        self.exons = exons
 
 
-    def set_cds_pos_list(self, cds_pos_list: list):
+    def set_cds(self, cds: list):
         """Sets the cds position list.
 
         Args:
             cds_pos_list (list): CDS positions
         """
-        self.cds_pos_list = cds_pos_list
+        self.cds = cds
 
 
-    def set_frame(self, frame: int):
+    def set_frame_at_start(self, frame: int):
         """Sets the frame.
 
         Args:
             frame (int): Frame
         """
-        self.frame = frame
+        self.frame_at_start = frame
+
+
+    def set_frame_at_bp(self, frame: int):
+        """Sets the frame.
+
+        Args:
+            frame (int): Frame
+        """
+        self.frame_at_bp = frame
 
 
     def set_tsl(self, tsl: str):

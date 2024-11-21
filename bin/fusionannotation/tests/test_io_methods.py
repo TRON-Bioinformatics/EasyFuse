@@ -64,10 +64,10 @@ class TestIOMethods(unittest.TestCase):
         wt2 = Transcript("transcript_2", "", "GeneB", "", "")
         bp1 = Breakpoint("21", 30157, "-")
         bp2 = Breakpoint("7", 257882, "+")
-        wt1.exon_pos_list = [
+        wt1.exons = [
             Exon(exon_id='exon_1', start=30157, stop=30179, transcript_id='transcript_1'),
         ]
-        wt2.exon_pos_list = [
+        wt2.exons = [
             Exon(exon_id='exon_2', start=248000, stop=248030, transcript_id='transcript_2')
         ]
         fusion_transcript = FusionTranscript(wt1, wt2, bp1, bp2)
