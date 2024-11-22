@@ -18,16 +18,16 @@ from argparse import ArgumentParser
 import logging
 
 # pylint: disable=E0401
-from .breakpoint import Breakpoint
-from .io_methods import load_detected_fusions
-from .io_methods import load_tsl_data
-from .io_methods import load_genomic_data
-from .feature_validation import get_exon_cds_overlap
-from .fusion_transcript import FusionTranscript
-from .gff_db_controller import GffDbController
-from .output_handler import OutputHandler
-from .result_handler import ResultHandler
-from .transcript import Transcript
+from src.fusionannotation.breakpoint import Breakpoint
+from src.fusionannotation.io_methods import load_detected_fusions
+from src.fusionannotation.io_methods import load_tsl_data
+from src.fusionannotation.io_methods import load_genomic_data
+from src.fusionannotation.feature_validation import get_exon_cds_overlap
+from src.fusionannotation.fusion_transcript import FusionTranscript
+from src.fusionannotation.gff_db_controller import GffDbController
+from src.fusionannotation.output_handler import OutputHandler
+from src.fusionannotation.result_handler import ResultHandler
+from src.fusionannotation.transcript import Transcript
 
 
 FORMAT = '%(asctime)s - %(message)s'
@@ -66,7 +66,7 @@ class FusionAnnotation:
         (cds_pos_list, trans_flags) = get_exon_cds_overlap(
             exons, cds
         )
-        self.suspect_transcripts[transcript.transcript_id].extend(trans_flags)
+        self.suspect_transcripts[transcript.transcript_id].update(trans_flags)
         transcript.set_exons(exons)
         # get the frame at the start of the first cds and at the breakpoint
         frame_at_start, frame_at_bp = bp.get_frame(
@@ -78,7 +78,7 @@ class FusionAnnotation:
             # flag the transcript if its frame at the start of the first cds is > 0
             self.suspect_transcripts[transcript.transcript_id].add("cds start > 0")
         # remove "NA's" from the cds list
-        cds_pos_list = [x for x in cds_pos_list if not x == "NA"]
+        cds_pos_list = [x for x in cds_pos_list if x]
         transcript.set_cds(cds_pos_list)
         if len(cds_pos_list) == 1:
             # flag the transcript if it contains a single cds

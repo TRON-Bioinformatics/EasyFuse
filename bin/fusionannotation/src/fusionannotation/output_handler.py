@@ -15,6 +15,8 @@ Length and count of fasta sequences in context_seqs.csv.fasta
 
 """
 
+import csv
+
 # pylint: disable=E0401
 from Bio import SeqIO # type: ignore
 from Bio.SeqRecord import SeqRecord # type: ignore
@@ -37,10 +39,10 @@ class OutputHandler:
 
     def filter_based_on_tsl(self, result_line) -> bool:
         if (
-            result_line[self.header_dict["annotation_bias"]]
-            or result_line[self.header_dict["wt1_TSL"]]
+            result_line["annotation_bias"]
+            or result_line["wt1_TSL"]
             in self.tsl_filter_level.split(",")
-            or result_line[self.header_dict["wt2_TSL"]]
+            or result_line["wt2_TSL"]
             in self.tsl_filter_level.split(",")
         ):
             return True
@@ -54,7 +56,7 @@ class OutputHandler:
                     continue
                 data_str = ";".join(
                     [
-                        str(result_line[self.header_dict[col_name]])
+                        str(result_line[col_name])
                         for col_name in self.short_header
                     ]
                 )
@@ -63,10 +65,15 @@ class OutputHandler:
 
     def write_full_table(self):
         with open(f"{self.output_prefix}.debug", "w", encoding="utf8") as outfile_debug:
-            outfile_debug.write(f"{self.full_annotation_header_str}\n")
-            for result_line in self.results:
-                res_str = ";".join(map(str, result_line))
-                outfile_debug.write(f"{res_str}\n")
+            writer = csv.DictWriter(outfile_debug, fieldnames=FULL_ANNOTATION_HEADER, delimiter=";")
+            #outfile_debug.write(f"{self.full_annotation_header_str}\n")
+            writer.writeheader()
+            for result_dict in self.results:
+                writer.writerow(result_dict)
+                # for colname in FULL_ANNOTATION_HEADER:
+                #     outfile_debug.write(f"{result_dict[colname]};")
+                # #res_str = ";".join(map(str, result_line))
+                # outfile_debug.write(f"{res_str}\n")
 
 
     def write_fasta(self):
@@ -74,14 +81,14 @@ class OutputHandler:
             for result_line in self.results:
                 if self.filter_based_on_tsl(result_line):
                     continue
-                ftid = result_line[self.header_dict["FTID"]]
-                ctx_id = result_line[self.header_dict["context_sequence_id"]]
-                ctx_bp = result_line[self.header_dict["context_sequence_bp"]]
-                ctx_wt_bp = result_line[self.header_dict["context_sequence_wt1_bp"]]
-                ctx_wt2_bp = result_line[self.header_dict['context_sequence_wt2_bp']]
+                ftid = result_line["FTID"]
+                ctx_id = result_line["context_sequence_id"]
+                ctx_bp = result_line["context_sequence_bp"]
+                ctx_wt_bp = result_line["context_sequence_wt1_bp"]
+                ctx_wt2_bp = result_line["context_sequence_wt2_bp"]
                 SeqIO.write(
                     SeqRecord(
-                        result_line[self.header_dict["context_sequence"]],
+                        result_line["context_sequence"],
                         id=f"{ftid}_{ctx_id}_{ctx_bp}_ft",
                         name="",
                         description="",
@@ -91,7 +98,7 @@ class OutputHandler:
                 )
                 SeqIO.write(
                     SeqRecord(
-                        result_line[self.header_dict["context_sequence_wt1"]],
+                        result_line["context_sequence_wt1"],
                         id=f"{ftid}_{ctx_id}_{ctx_wt_bp}_wt1",
                         name="",
                         description="",
@@ -101,7 +108,7 @@ class OutputHandler:
                 )
                 SeqIO.write(
                     SeqRecord(
-                        result_line[self.header_dict["context_sequence_wt2"]],
+                        result_line["context_sequence_wt2"],
                         id=f"{ftid}_{ctx_id}_{ctx_wt2_bp}_wt2",
                         name="",
                         description="",
@@ -114,11 +121,11 @@ class OutputHandler:
     def write_transcript_fasta(self):
         with open(f"{self.output_prefix}_transcript.fasta", "w", encoding="utf8") as tfasta:
             for result_line in self.results:
-                ftid = result_line[self.header_dict["FTID"]]
-                bp_in_fusion_nt = len(result_line[self.header_dict["ft1_cds_transcripts"]])
+                ftid = result_line["FTID"]
+                bp_in_fusion_nt = len(result_line["ft1_cds_transcripts"])
                 SeqIO.write(
                     SeqRecord(
-                        result_line[self.header_dict["fusion_transcript"]],
+                        result_line["fusion_transcript"],
                         id=f"{ftid}_ft_{bp_in_fusion_nt}",
                         name="",
                         description="",
@@ -131,18 +138,16 @@ class OutputHandler:
     def write_peptide_fasta(self):
         with open(f"{self.output_prefix}_peptide.fasta", "w", encoding="utf8") as pfasta:
             for result_line in self.results:
-                ftid = result_line[self.header_dict["FTID"]]
-                fusion_type = result_line[self.header_dict["type"]]
-                bp_in_fusion_nt = len(result_line[self.header_dict["ft1_cds_transcripts"]])
-                translation_shift1 = result_line[
-                    self.header_dict["wt1_frame_at_start"]
-                ]
+                ftid = result_line["FTID"]
+                fusion_type = result_line["type"]
+                bp_in_fusion_nt = len(result_line["ft1_cds_transcripts"])
+                translation_shift1 = result_line["wt1_frame_at_start"]
                 bp_in_fusion_aa = (
                     (bp_in_fusion_nt - translation_shift1) * 10.0 // 3
                 ) / 10.0
                 SeqIO.write(
                     SeqRecord(
-                        result_line[self.header_dict["fusion_peptide"]],
+                        result_line["fusion_peptide"],
                         id=f"{ftid}_{bp_in_fusion_aa}_{fusion_type}",
                         name="",
                         description="",
@@ -163,9 +168,9 @@ class OutputHandler:
                 map(
                     len,
                     [
-                        result_line[self.header_dict["context_sequence"]],
-                        result_line[self.header_dict["context_sequence_wt1"]],
-                        result_line[self.header_dict["context_sequence_wt2"]],
+                        result_line["context_sequence"],
+                        result_line["context_sequence_wt1"],
+                        result_line["context_sequence_wt2"],
                     ],
                 )
             )

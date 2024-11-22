@@ -54,7 +54,7 @@ class Breakpoint:
         frame_at_bp = -1
 
         pos_frame_list = [
-            (cds, cds.frame) for cds in cds_pos_list if not cds
+            (cds, cds.frame) for cds in cds_pos_list if cds is not None
         ]
         # find breakpoint cds and get the frame at the breakpoint
         for cds, cds_frame in pos_frame_list:

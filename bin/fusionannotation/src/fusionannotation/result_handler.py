@@ -138,7 +138,7 @@ class ResultHandler:
         # the breakpoint in wt2 is at the position where the ft2 transcripts start
         bp_in_wt2_nt_ex = len(wt2_exon_transcripts) - len(ft2_exon_transcripts)
         context_sequence_wt2_stranded = get_stranded_seq(
-            wt2.exons,
+            wt2_exon_transcripts,
             bp2.strand
         )
         context_sequence_wt2 = get_trimmed_seq(
