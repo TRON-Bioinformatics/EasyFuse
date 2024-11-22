@@ -1,5 +1,11 @@
 #!/bin/bash
 
+python -m venv bin/fusionannotation/.venv
+source bin/fusionannotation/.venv/bin/activate
+pip install gffutils
+pip install biopython
+pip install xxhash
+
 python -m unittest bin/fusionannotation/tests/test_breakpoint.py
 python -m unittest bin/fusionannotation/tests/test_feature_validation.py
 python -m unittest bin/fusionannotation/tests/test_fusion_transcript.py
