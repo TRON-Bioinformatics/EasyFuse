@@ -6,7 +6,7 @@ This module provides methods for sequence operations.
 import xxhash # type: ignore
 from Bio.Seq import Seq # type: ignore
 
-from bin.fusionannotation.src.breakpoint import Breakpoint
+from .breakpoint import Breakpoint
 
 
 def calc_hash(seq: Seq) -> str:

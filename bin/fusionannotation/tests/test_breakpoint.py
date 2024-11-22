@@ -5,9 +5,10 @@ Tests for fusion validation module.
 import unittest
 
 # pylint: disable=E0401
-from bin.fusionannotation.src.breakpoint import Breakpoint
-from bin.fusionannotation.src.cds import CDS
-from bin.fusionannotation.src.exon import Exon
+from src.fusionannotation.breakpoint import Breakpoint
+from src.fusionannotation.cds import CDS
+from src.fusionannotation.exon import Exon
+
 
 class TestBreakpoint(unittest.TestCase):
     """
@@ -76,3 +77,7 @@ class TestBreakpoint(unittest.TestCase):
         result = self.bp.get_frame(cds)
         frame = (-1, -1)
         self.assertEqual(result, frame)
+
+
+if __name__ == '__main__':
+    unittest.main()

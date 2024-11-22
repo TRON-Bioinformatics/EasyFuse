@@ -5,10 +5,11 @@ Tests for fusion validation module.
 import unittest
 
 # pylint: disable=E0401
-from bin.fusionannotation.src.breakpoint import Breakpoint
-from bin.fusionannotation.src.cds import CDS
-from bin.fusionannotation.src.fusion_transcript import FusionTranscript, get_involved_features
-from bin.fusionannotation.src.transcript import Transcript
+from src.fusionannotation.breakpoint import Breakpoint
+from src.fusionannotation.cds import CDS
+from src.fusionannotation.exon import Exon
+from src.fusionannotation.fusion_transcript import FusionTranscript, get_involved_features
+from src.fusionannotation.transcript import Transcript
 
 class TestFusionTranscript(unittest.TestCase):
     """
@@ -83,7 +84,7 @@ class TestFusionTranscript(unittest.TestCase):
         bp1 = Breakpoint("1", 200, "+")
         bp2 = Breakpoint("3", 300, "-")
         self.fusion_transcript = FusionTranscript(self.wt1, self.wt2, bp1, bp2)
-        self.assertEqual(self.fusion_transcript.determine_fusion_type(100), "trans_inv")
+        self.assertEqual(self.fusion_transcript.fusion_type, "trans_inv")
 
 
     def test_get_combined_boundary_trans_inv(self):
@@ -176,3 +177,60 @@ class TestFusionTranscript(unittest.TestCase):
             CDS(cds_id='cds_2', start=248000, stop=248030, frame=0, transcript_id='transcript_2')
         ]
         self.assertEqual(actual_result, expected_result)
+
+
+    def test_check_exon_overlap_true(self):
+        """Test case for checking exon overlap"""
+        self.wt1.exons = [
+            Exon("1", 1, 2, "transcript:ENST00000679263"),
+            Exon("2", 4, 5, "transcript:ENST00000679181"),
+            Exon("3", 7, 8, "transcript:ENST00000676973")
+        ]
+        self.wt2.exons = [
+            Exon("1", 1, 2, "transcript:ENST00000679263"),
+            Exon("2", 4, 5, "transcript:ENST00000679181"),
+            Exon("3", 7, 8, "transcript:ENST00000676973")
+        ]
+        bp1 = Breakpoint("1", 200, "+")
+        bp2 = Breakpoint("1", 300, "-")
+        self.fusion_transcript = FusionTranscript(self.wt1, self.wt2, bp1, bp2)
+        result = self.fusion_transcript.has_overlapping_transcripts()
+        self.assertTrue(result)
+
+
+    def test_check_exon_overlap_false(self):
+        """Test case for checking exon overlap"""
+        self.wt1.exons = [
+            Exon("1", 1, 2, "transcript:ENST00000679263"),
+            Exon("2", 4, 5, "transcript:ENST00000679181"),
+            Exon("3", 7, 8, "transcript:ENST00000676973")
+        ]
+        self.wt2.exons = [
+            Exon("1", 9, 10, "transcript:ENST00000679263"),
+            Exon("2", 11, 12, "transcript:ENST00000679181"),
+            Exon("3", 13, 14, "transcript:ENST00000676973")
+        ]
+        bp1 = Breakpoint("1", 200, "+")
+        bp2 = Breakpoint("1", 300, "-")
+        self.fusion_transcript = FusionTranscript(self.wt1, self.wt2, bp1, bp2)
+        result = self.fusion_transcript.has_overlapping_transcripts()
+        self.assertFalse(result)
+
+
+    def test_check_exon_overlap_trans(self):
+        """Test case for checking exon overlap"""
+        self.wt1.exons = [
+            Exon("1", 3, 4, "transcript:ENST00000679263")
+        ]
+        self.wt2.exons = [
+            Exon("1", 1, 12, "transcript:ENST00000679263")
+        ]
+        bp1 = Breakpoint("1", 200, "+")
+        bp2 = Breakpoint("3", 300, "-")
+        self.fusion_transcript = FusionTranscript(self.wt1, self.wt2, bp1, bp2)
+        result = self.fusion_transcript.has_overlapping_transcripts()
+        self.assertFalse(result)
+
+
+if __name__ == '__main__':
+    unittest.main()

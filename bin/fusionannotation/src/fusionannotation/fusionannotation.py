@@ -15,23 +15,24 @@ Annotate predicted fusion genes. This involves:
 """
 
 from argparse import ArgumentParser
+import logging
 
 # pylint: disable=E0401
-from logzero import logger # type: ignore
+from .breakpoint import Breakpoint
+from .io_methods import load_detected_fusions
+from .io_methods import load_tsl_data
+from .io_methods import load_genomic_data
+from .feature_validation import get_exon_cds_overlap
+from .fusion_transcript import FusionTranscript
+from .gff_db_controller import GffDbController
+from .output_handler import OutputHandler
+from .result_handler import ResultHandler
+from .transcript import Transcript
 
 
-from breakpoint import Breakpoint
-
-from io_methods import load_detected_fusions
-from io_methods import load_tsl_data
-from io_methods import load_genomic_data
-from feature_validation import check_exon_overlap
-from feature_validation import get_exon_cds_overlap
-from fusion_transcript import FusionTranscript
-from gff_db_controller import GffDbController
-from output_handler import OutputHandler
-from result_handler import ResultHandler
-from transcript import Transcript
+FORMAT = '%(asctime)s - %(message)s'
+logging.basicConfig(format=FORMAT, level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 class FusionAnnotation:
@@ -39,21 +40,13 @@ class FusionAnnotation:
 
     def __init__(self, db_file, bp_file, tsl_file):
         """Parameter initialization"""
+        logger.info("Loading fusion breakpoints into dict")
         self.bp_dict = load_detected_fusions(bp_file)
+        logger.info("Loading GFF data into database object")
         self.db = GffDbController(db_file)
+        logger.info("Loading TSL data into dict")
         self.tsl_dict = load_tsl_data(tsl_file)
         self.suspect_transcripts = {}
-
-
-    def get_tsl(self, trans_id: str) -> str:
-        """Get the transcript support level (tsl) from the pre-loaded dict"""
-        # The "correct" tsl for a missing trans_id would be "NA",
-        # I'm using "6" in order to allow differentiation from
-        # existing, "normal" tsl's which range from 1-5 and are NA
-        # for transcripts of unknown support
-        if not trans_id in self.tsl_dict:
-            return "6"
-        return self.tsl_dict[trans_id]
 
 
     def annotate_bp(self, bp: Breakpoint, exon_id: str) -> Transcript:
@@ -68,13 +61,13 @@ class FusionAnnotation:
         # get the complete set of exons, corresponding cds
         # (cds at the same index are NA if there is none in
         # the exon) and start frames of the cds
-        exon_pos_list = self.db.get_features_from_transcript(transcript.transcript_id, "exon")
+        exons = self.db.get_features_from_transcript(transcript.transcript_id, "exon")
         cds = self.db.get_features_from_transcript(transcript.transcript_id, "CDS")
         (cds_pos_list, trans_flags) = get_exon_cds_overlap(
-            exon_pos_list, cds
+            exons, cds
         )
         self.suspect_transcripts[transcript.transcript_id].extend(trans_flags)
-        transcript.set_exons(exon_pos_list)
+        transcript.set_exons(exons)
         # get the frame at the start of the first cds and at the breakpoint
         frame_at_start, frame_at_bp = bp.get_frame(
             cds_pos_list
@@ -91,7 +84,11 @@ class FusionAnnotation:
             # flag the transcript if it contains a single cds
             self.suspect_transcripts[transcript.transcript_id].add("Only 1 cds in bp1")
         # add pre-loaded tsl info
-        tsl = self.get_tsl(transcript.transcript_id.split(":")[1])
+        # The "correct" tsl for a missing trans_id would be "NA",
+        # I'm using "6" in order to allow differentiation from
+        # existing, "normal" tsl's which range from 1-5 and are NA
+        # for transcripts of unknown support level
+        tsl = self.tsl_dict.get(transcript.transcript_id, "6")
         transcript.set_tsl(tsl)
         return transcript
 
@@ -108,7 +105,7 @@ class FusionAnnotation:
 
         # get features overlapping with the bp from the db
         (bp1_exons, bp1_cds) = self.db.get_exons_cds_overlapping_position(bp1)
-        (bp2_exons, bp2_cds) = self.db.get_features_overlapping_position(bp2)
+        (bp2_exons, bp2_cds) = self.db.get_exons_cds_overlapping_position(bp2)
         # consider all possible combination between transcript1 to transcript2 fusions
         for bp1_efeature, bp1_cfeature in zip(bp1_exons, bp1_cds):
             bp1.exon_boundary = bp1.get_boundary(bp1_efeature)
@@ -121,18 +118,18 @@ class FusionAnnotation:
                 bp2.cds_boundary = bp2.get_boundary(bp2_cfeature)
                 wt2 = self.annotate_bp(bp2, bp2_efeature.id)
 
-                fusion_transcript = FusionTranscript(wt1, wt2, bp1, bp2)
-                fusion_transcript.fusion_type = fusion_transcript.determine_fusion_type(cis_near_distance)
+                fusion_transcript = FusionTranscript(wt1, wt2, bp1, bp2, cis_near_distance)
+
                 # check whether loci of wt1/wt2 overlap
-                if check_exon_overlap(
-                    wt1.exon_pos_list, wt2.exon_pos_list, fusion_transcript.fusion_type
-                ):
+                # Why flag only wt1? If wt1 and wt2 overlap, then wt2 also overlaps wt1
+                # It makes more sense to flag fusion transcript instead of the wildtype transcript,
+                # since the wildtype transcript can be used in multiple fusion transcripts
+                if fusion_transcript.has_overlapping_transcripts():
                     self.suspect_transcripts[wt1.transcript_id].add(
                         "wt1/wt2 exon overlap"
                     )
 
-                fusion_transcript.wt1.is_good_transcript = self.suspect_transcripts[wt1.transcript_id]
-                fusion_transcript.wt2.is_good_transcript = self.suspect_transcripts[wt2.transcript_id]
+                fusion_transcript.set_flags(self.suspect_transcripts)
 
                 result_list.append(fusion_transcript)
         return result_list
@@ -147,19 +144,11 @@ class FusionAnnotation:
         tsl_filter_level: str,
     ):
         """Run the annotation pipeline"""
-        # for performance reasons (mainly seq grepping), results cannot be written
-        # on the fly and everything will therefore be stored in a list of lists
+
         logger.info("Running annotation pipeline")
-
-
-        # information in the header is complete and useful for debugging,
-        # information in the short_header is identical
-        # to the format of the previous
-        # version of the fusion annotation and therefore used for downstream processing
 
         fusion_transcripts = []
 
-        # get features overlapping with the bp from the db
         for bpid in sorted(self.bp_dict):
             fusion_transcripts_bpid = self.annotate_bpid(bpid, cis_near_distance)
             fusion_transcripts.extend(fusion_transcripts_bpid)

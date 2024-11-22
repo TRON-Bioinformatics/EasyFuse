@@ -3,8 +3,8 @@ Module for FusionTranscript class.
 """
 
 # pylint: disable=E0401
-from bin.fusionannotation.src.breakpoint import Breakpoint
-from bin.fusionannotation.src.transcript import Transcript
+from .breakpoint import Breakpoint
+from .transcript import Transcript
 
 
 EXON_BOUNDARY_LEFT = "left_boundary"
@@ -12,6 +12,7 @@ EXON_BOUNDARY_RIGHT = "right_boundary"
 EXON_BOUNDARY_WITHIN = "within"
 EXON_BOUNDARY_OUTSIDE = "outside"
 EXON_BOUNDARY_NA = "NA"
+FUSION_TYPE_TRANS = "trans"
 
 
 def get_involved_features(features: list, bp: Breakpoint, reverse: bool = False) -> list:
@@ -58,7 +59,8 @@ class FusionTranscript:
         transcript_1: Transcript,
         transcript_2: Transcript,
         bp1: Breakpoint,
-        bp2: Breakpoint
+        bp2: Breakpoint,
+        cis_near_distance: int = 1000000
     ):
         self.transcript_1 = transcript_1
         self.transcript_2 = transcript_2
@@ -69,6 +71,7 @@ class FusionTranscript:
         self.exons_transcript_2 = get_involved_features(self.transcript_2.exons, self.bp2, True)
         self.cds_transcript_1 = get_involved_features(self.transcript_1.cds, self.bp1, False)
         self.cds_transcript_2 = get_involved_features(self.transcript_2.cds, self.bp2, True)
+        self.fusion_type = self.determine_fusion_type(cis_near_distance)
 
 
     def get_bpid(self):
@@ -98,6 +101,12 @@ class FusionTranscript:
                 self.transcript_2.gene_name,
             ]
         )
+
+
+    def set_flags(self, suspect_transcripts: dict):
+        """Set flags for suspect transcripts"""
+        self.transcript_1.flags = suspect_transcripts[self.transcript_1.transcript_id]
+        self.transcript_2.flags = suspect_transcripts[self.transcript_2.transcript_id]
 
 
     def annotate_same_chrom(self, cis_near_distance: int) -> str:
@@ -185,3 +194,28 @@ class FusionTranscript:
                     len(self.cds_transcript_2))
         return (len(self.cds_transcript_1) +
                 len(self.exons_transcript_2))
+
+
+    def has_overlapping_transcripts(self) -> bool:
+        """Check if exons of wt1 and wt2 overlap.
+        Since both exon lists are sorted, we can simply compare the first 
+        and last exon of each list.
+
+        Args:
+            wt1_exons (list): _description_
+            wt2_exons (list): _description_
+            fusion_type (str): _description_
+
+        Returns:
+            bool: True if there is an overlap, False otherwise
+        """
+        # Skip check for translocations
+        if self.fusion_type.startswith(FUSION_TYPE_TRANS):
+            return False
+        # end of wt1 locus must be < start of wt2 locus or start of wt1 locus > end of wt2 locus
+        if (
+            self.transcript_1.exons[-1].stop < self.transcript_2.exons[0].start
+            or self.transcript_1.exons[0].start > self.transcript_2.exons[-1].stop
+        ):
+            return False
+        return True

@@ -7,12 +7,12 @@ import unittest
 # pylint: disable=E0401
 from Bio.Seq import Seq # type: ignore
 
-from bin.fusionannotation.src.cds import CDS
-from bin.fusionannotation.src.exon import Exon
-from bin.fusionannotation.src.transcript import Transcript
-from bin.fusionannotation.src.breakpoint import Breakpoint
-from bin.fusionannotation.src.fusion_transcript import FusionTranscript
-from bin.fusionannotation.src.result_handler import ResultHandler
+from src.fusionannotation.cds import CDS
+from src.fusionannotation.exon import Exon
+from src.fusionannotation.transcript import Transcript
+from src.fusionannotation.breakpoint import Breakpoint
+from src.fusionannotation.fusion_transcript import FusionTranscript
+from src.fusionannotation.result_handler import ResultHandler
 
 
 class TestResultHandler(unittest.TestCase):
@@ -214,3 +214,7 @@ class TestResultHandler(unittest.TestCase):
             'annotation_bias': False
         }
         self.assertEqual(actual_result, expected_result)
+
+
+if __name__ == '__main__':
+    unittest.main()

@@ -3,17 +3,17 @@ This module contains functions to handle the results of the fusion annotation.
 """
 
 # pylint: disable=E0401
-from bin.fusionannotation.src.exon import get_exon_ranges
-from bin.fusionannotation.src.exon import get_exon_ranges_reverse
-from bin.fusionannotation.src.fusion_transcript import FusionTranscript
-from bin.fusionannotation.src.sequence_handler import get_stranded_seq
-from bin.fusionannotation.src.sequence_handler import get_feature_seqs
-from bin.fusionannotation.src.sequence_handler import concatenate_seqs
-from bin.fusionannotation.src.sequence_handler import get_context_sequence
-from bin.fusionannotation.src.sequence_handler import calc_hash
-from bin.fusionannotation.src.sequence_handler import get_peptide_sequence
-from bin.fusionannotation.src.sequence_handler import get_fusion_transcript_sequence
-from bin.fusionannotation.src.sequence_handler import get_trimmed_seq
+from .exon import get_exon_ranges
+from .exon import get_exon_ranges_reverse
+from .fusion_transcript import FusionTranscript
+from .sequence_handler import get_stranded_seq
+from .sequence_handler import get_feature_seqs
+from .sequence_handler import concatenate_seqs
+from .sequence_handler import get_context_sequence
+from .sequence_handler import calc_hash
+from .sequence_handler import get_peptide_sequence
+from .sequence_handler import get_fusion_transcript_sequence
+from .sequence_handler import get_trimmed_seq
 
 
 class ResultHandler:
@@ -218,12 +218,12 @@ class ResultHandler:
         exon_ends = f"{exon_ends_1}*{exon_ends_2}"
 
         # experimental
-        wt1_is_good_transcript = wt1.is_good_transcript
+        wt1_is_good_transcript = wt1.flags
         if len(wt1_cds_transcripts) % 3 != 0:
             wt1_is_good_transcript.add(
                 "wt1 seq % 3 != 0"
             )
-        wt2_is_good_transcript = wt2.is_good_transcript
+        wt2_is_good_transcript = wt2.flags
         if len(wt2_cds_transcripts) % 3 != 0:
             wt2_is_good_transcript.add(
                 "wt2 seq % 3 != 0"

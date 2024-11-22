@@ -7,7 +7,7 @@ import csv
 # pylint: disable=E0401
 from Bio import SeqIO # type: ignore
 
-from bin.fusionannotation.src.breakpoint import Breakpoint
+from .breakpoint import Breakpoint
 
 def load_detected_fusions(detected_fusions_table: str) -> dict:
     """Read BPIDs from Detected_Fusions.csv and store the info in a dict.
@@ -36,7 +36,6 @@ def load_detected_fusions(detected_fusions_table: str) -> dict:
 
 def load_tsl_data(tsl_in_file: str) -> dict:
     """Load data created by gtf2tsl.py into a dict"""
-    #logger.info("Loading TSL data into dict")
     tsl_dict = {}
     with open(tsl_in_file, "r", encoding="utf8") as tslin:
         next(tslin)  # skip header

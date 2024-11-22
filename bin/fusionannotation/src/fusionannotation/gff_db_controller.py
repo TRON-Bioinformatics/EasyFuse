@@ -5,11 +5,11 @@ Module for extracting information from the GFF DB file.
 # pylint: disable=E0401
 import gffutils  # type: ignore
 
-from bin.fusionannotation.src.breakpoint import Breakpoint
-from bin.fusionannotation.src.cds import CDS
-from bin.fusionannotation.src.exon import Exon
-from bin.fusionannotation.src.feature_validation import filter_cds_by_exons
-from bin.fusionannotation.src.transcript import Transcript
+from .breakpoint import Breakpoint
+from .cds import CDS
+from .exon import Exon
+from .feature_validation import filter_cds_by_exons
+from .transcript import Transcript
 
 FEATURE_TYPE_EXON = "exon"
 FEATURE_TYPE_CDS = "CDS"
@@ -17,8 +17,8 @@ FEATURE_TYPE_CDS = "CDS"
 
 class GffDbController:
     """Controller for GFF DB access."""
-    def __init__(self, db_file):
-        self.db = gffutils.FeatureDB(db_file)
+    def __init__(self, gff_db_file: str):
+        self.db = gffutils.FeatureDB(gff_db_file)
 
 
     def get_features_overlapping_position(self, bp: Breakpoint, feature_type: str) -> list:

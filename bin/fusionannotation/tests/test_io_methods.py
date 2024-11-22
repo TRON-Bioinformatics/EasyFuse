@@ -6,19 +6,22 @@ import unittest
 
 # pylint: disable=E0401
 from Bio.Seq import Seq # type: ignore
-from bin.fusionannotation.src.breakpoint import Breakpoint
-from bin.fusionannotation.src.exon import Exon
-from bin.fusionannotation.src.io_methods import load_detected_fusions # type: ignore
-from bin.fusionannotation.src.io_methods import load_genomic_data # type: ignore
-from bin.fusionannotation.src.transcript import Transcript
-from bin.fusionannotation.src.fusion_transcript import FusionTranscript
+
+from src.fusionannotation.breakpoint import Breakpoint
+from src.fusionannotation.exon import Exon
+from src.fusionannotation.io_methods import load_detected_fusions # type: ignore
+from src.fusionannotation.io_methods import load_genomic_data # type: ignore
+from src.fusionannotation.transcript import Transcript
+from src.fusionannotation.fusion_transcript import FusionTranscript
 
 class TestIOMethods(unittest.TestCase):
     """
     Provides unit tests for fusion annotation module.
     """
     def setUp(self):
-        self.input_fusions = "tests/fusionannotation/input_data/Detected_Fusions.csv"
+        self.input_fusions = "ref_data/Detected_Fusions.csv"
+        self.genome_fasta = "ref_data/Homo_sapiens.GRCh38.110_minigenome.fa"
+
 
     def test_load_detected_fusions(self):
         """Test case for BP loading."""
@@ -59,7 +62,7 @@ class TestIOMethods(unittest.TestCase):
 
     def test_load_genomic_data(self):
         """Test case for genomic data loading."""
-        genome_fasta = "tests/fusionannotation/input_data/Homo_sapiens.GRCh38.110_minigenome.fa"
+
         wt1 = Transcript("transcript_1", "", "GeneA", "", "")
         wt2 = Transcript("transcript_2", "", "GeneB", "", "")
         bp1 = Breakpoint("21", 30157, "-")
@@ -92,5 +95,9 @@ class TestIOMethods(unittest.TestCase):
                 ]
             ]
         }
-        result = load_genomic_data(genome_fasta, fusion_transcripts)
+        result = load_genomic_data(self.genome_fasta, fusion_transcripts)
         self.assertEqual(result, cds_seqs)
+
+
+if __name__ == '__main__':
+    unittest.main()

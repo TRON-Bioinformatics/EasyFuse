@@ -7,13 +7,13 @@ import unittest
 # pylint: disable=E0401
 from Bio.Seq import Seq # type: ignore
 
-from bin.fusionannotation.src.breakpoint import Breakpoint
-from bin.fusionannotation.src.sequence_handler import calc_hash
-from bin.fusionannotation.src.sequence_handler import concatenate_seqs
-from bin.fusionannotation.src.sequence_handler import get_context_sequence
-from bin.fusionannotation.src.sequence_handler import get_fusion_transcript_sequence
-from bin.fusionannotation.src.sequence_handler import get_peptide_sequence
-from bin.fusionannotation.src.sequence_handler import get_stranded_seq
+from src.fusionannotation.breakpoint import Breakpoint
+from src.fusionannotation.sequence_handler import calc_hash
+from src.fusionannotation.sequence_handler import concatenate_seqs
+from src.fusionannotation.sequence_handler import get_context_sequence
+from src.fusionannotation.sequence_handler import get_fusion_transcript_sequence
+from src.fusionannotation.sequence_handler import get_peptide_sequence
+from src.fusionannotation.sequence_handler import get_stranded_seq
 
 class TestSequenceHandler(unittest.TestCase):
     """
@@ -112,3 +112,7 @@ class TestSequenceHandler(unittest.TestCase):
             "neo_frame"
         )
         self.assertEqual(result, Seq("ACGTGTCG"))
+
+
+if __name__ == '__main__':
+    unittest.main()

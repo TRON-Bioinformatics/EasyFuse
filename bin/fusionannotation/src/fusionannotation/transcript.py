@@ -16,6 +16,7 @@ class Transcript:
         self.frame_at_start = None
         self.frame_at_bp = None
         self.tsl = None
+        self.flags = set()
 
 
     def set_exons(self, exons: list):

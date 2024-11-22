@@ -5,7 +5,6 @@ channels:
   - defaults
 dependencies:
   - python=3.8
-  - conda-forge::logzero=1.7.0
-  - conda-forge::biopython=1.83
-  - conda-forge::python-xxhash=3.4.1
-  - bioconda::gffutils=0.12
+  - conda-forge::biopython=1.84
+  - conda-forge::python-xxhash=3.5.0
+  - bioconda::gffutils=0.13

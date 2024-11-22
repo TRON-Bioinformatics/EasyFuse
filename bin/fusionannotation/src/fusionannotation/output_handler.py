@@ -19,7 +19,7 @@ Length and count of fasta sequences in context_seqs.csv.fasta
 from Bio import SeqIO # type: ignore
 from Bio.SeqRecord import SeqRecord # type: ignore
 
-from file_headers import FULL_ANNOTATION_HEADER
+from .file_headers import FULL_ANNOTATION_HEADER
 
 class OutputHandler:
     """This class handles the output of the fusion annotation tool."""
