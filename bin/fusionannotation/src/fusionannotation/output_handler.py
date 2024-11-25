@@ -21,6 +21,7 @@ import csv
 from Bio import SeqIO # type: ignore
 from Bio.SeqRecord import SeqRecord # type: ignore
 
+from .file_headers import SHORT_ANNOTATION_HEADER
 from .file_headers import FULL_ANNOTATION_HEADER
 
 class OutputHandler:
@@ -30,53 +31,59 @@ class OutputHandler:
         self.results = results
         self.output_prefix = output_prefix
         self.tsl_filter_level = tsl_filter_level
-        self.full_annotation_header_str = ";".join(FULL_ANNOTATION_HEADER)
-        self.short_header = FULL_ANNOTATION_HEADER[0:25]
-        self.short_header_str = ";".join(self.short_header)
-        header_idx = range(len(FULL_ANNOTATION_HEADER))
-        self.header_dict = dict(zip(FULL_ANNOTATION_HEADER, header_idx))
 
 
-    def filter_based_on_tsl(self, result_line) -> bool:
+    def filter_based_on_tsl(self, result: dict) -> bool:
+        """Filter fusion events based on TSL level.
+
+        Args:
+            result (dict): Dictionary with information on the fusion event
+
+        Returns:
+            bool: True if the fusion event should be filtered out
+        """
         if (
-            result_line["annotation_bias"]
-            or result_line["wt1_TSL"]
+            result["annotation_bias"]
+            or result["wt1_TSL"]
             in self.tsl_filter_level.split(",")
-            or result_line["wt2_TSL"]
+            or result["wt2_TSL"]
             in self.tsl_filter_level.split(",")
         ):
             return True
         return False
 
+
     def write_filtered_table(self):
+        """Write the filtered annotation table to disk."""
         with open(self.output_prefix, "w", encoding="utf8") as outfile:
-            outfile.write(f"{self.short_header_str}\n")
-            for result_line in self.results:
-                if self.filter_based_on_tsl(result_line):
+            writer = csv.DictWriter(
+                outfile,
+                fieldnames=SHORT_ANNOTATION_HEADER,
+                extrasaction='ignore',
+                delimiter=";"
+            )
+            writer.writeheader()
+            for result_dict in self.results:
+                if self.filter_based_on_tsl(result_dict):
                     continue
-                data_str = ";".join(
-                    [
-                        str(result_line[col_name])
-                        for col_name in self.short_header
-                    ]
-                )
-                outfile.write(f"{data_str}\n")
+                writer.writerow(result_dict)
 
 
     def write_full_table(self):
+        """Write the full annotation table to disk."""
         with open(f"{self.output_prefix}.debug", "w", encoding="utf8") as outfile_debug:
-            writer = csv.DictWriter(outfile_debug, fieldnames=FULL_ANNOTATION_HEADER, delimiter=";")
-            #outfile_debug.write(f"{self.full_annotation_header_str}\n")
+            writer = csv.DictWriter(
+                outfile_debug,
+                fieldnames=FULL_ANNOTATION_HEADER,
+                delimiter=";"
+            )
             writer.writeheader()
             for result_dict in self.results:
                 writer.writerow(result_dict)
-                # for colname in FULL_ANNOTATION_HEADER:
-                #     outfile_debug.write(f"{result_dict[colname]};")
-                # #res_str = ";".join(map(str, result_line))
-                # outfile_debug.write(f"{res_str}\n")
 
 
     def write_fasta(self):
+        """Write the context sequences to a fasta file."""
         with open(f"{self.output_prefix}.fasta", "w", encoding="utf8") as cfasta:
             for result_line in self.results:
                 if self.filter_based_on_tsl(result_line):
@@ -119,6 +126,7 @@ class OutputHandler:
 
 
     def write_transcript_fasta(self):
+        """Write the full length transcripts to a fasta file."""
         with open(f"{self.output_prefix}_transcript.fasta", "w", encoding="utf8") as tfasta:
             for result_line in self.results:
                 ftid = result_line["FTID"]
@@ -136,6 +144,7 @@ class OutputHandler:
 
 
     def write_peptide_fasta(self):
+        """Write the full length peptides to a fasta file."""
         with open(f"{self.output_prefix}_peptide.fasta", "w", encoding="utf8") as pfasta:
             for result_line in self.results:
                 ftid = result_line["FTID"]
@@ -158,6 +167,7 @@ class OutputHandler:
 
 
     def write_fasta_info(self):
+        """Write the length and count of the fasta sequences to a file."""
         count_context_seqs = 0
         summed_context_seqs_len = 0
         for result_line in self.results:

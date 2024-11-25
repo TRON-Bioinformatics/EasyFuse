@@ -93,3 +93,6 @@ FULL_ANNOTATION_HEADER = [
     "wt2_start_stop",
     "annotation_bias",
 ]
+
+
+SHORT_ANNOTATION_HEADER = FULL_ANNOTATION_HEADER[0:25]
