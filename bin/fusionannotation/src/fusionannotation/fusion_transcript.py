@@ -21,7 +21,7 @@ def get_involved_features(features: list, bp: Breakpoint, reverse: bool = False)
     of the involved genes, return only those feature positions which will remain in the fusion.
     """
     bp_feature_fus_list = []
-
+    # Does the strand relate to the exon strand or the breakpoint strand?
     # get fusion partner cds
     if not len(features) == 0:
         if (
@@ -66,11 +66,12 @@ class FusionTranscript:
         self.transcript_2 = transcript_2
         self.bp1 = bp1
         self.bp2 = bp2
-        self.frame = self.get_combined_frame()
-        self.exons_transcript_1 = get_involved_features(self.transcript_1.exons, self.bp1, False)
-        self.exons_transcript_2 = get_involved_features(self.transcript_2.exons, self.bp2, True)
-        self.cds_transcript_1 = get_involved_features(self.transcript_1.cds, self.bp1, False)
-        self.cds_transcript_2 = get_involved_features(self.transcript_2.cds, self.bp2, True)
+        self.frame = self.get_fusion_frame()
+        # Why is the reverse flag set to a fixed value? --> Should this represent the orientation of the fusion? (LR, LL, RL, RR)
+        self.exons_transcript_1 = get_involved_features(self.transcript_1.exons, self.bp1, reverse=False)
+        self.exons_transcript_2 = get_involved_features(self.transcript_2.exons, self.bp2, reverse=True)
+        self.cds_transcript_1 = get_involved_features(self.transcript_1.cds, self.bp1, reverse=False)
+        self.cds_transcript_2 = get_involved_features(self.transcript_2.cds, self.bp2, reverse=True)
         self.fusion_type = self.determine_fusion_type(cis_near_distance)
 
 
@@ -102,7 +103,7 @@ class FusionTranscript:
             ]
         )
 
-
+    # Is this used after all suspect transcripts have been annotated?
     def set_flags(self, suspect_transcripts: dict):
         """Set flags for suspect transcripts"""
         self.transcript_1.flags = suspect_transcripts[self.transcript_1.transcript_id]
@@ -110,13 +111,13 @@ class FusionTranscript:
 
 
     def annotate_same_chrom(self, cis_near_distance: int) -> str:
-        """Annotates the fusion type for same chromosome fusions.
+        """Annotates the fusion type for same chromosome and same strand fusions.
 
         Args:
-            cis_near_distance (int): _description_
+            cis_near_distance (int): Distance to classify as cis_near fusions
 
         Returns:
-            str: _description_
+            str: Type for same chromosome and same strand fusions
         """
         distance = 0
         if self.bp1.strand == "+":
@@ -175,7 +176,7 @@ class FusionTranscript:
         )
 
 
-    def get_combined_frame(self) -> str:
+    def get_fusion_frame(self) -> str:
         """Combine frame info from bp1 and bp2"""
 
         if self.transcript_1.frame_at_bp == -1:

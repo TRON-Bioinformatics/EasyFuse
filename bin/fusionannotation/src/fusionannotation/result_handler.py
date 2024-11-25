@@ -178,7 +178,7 @@ class ResultHandler:
                 : (int(neo_peptide_sequence_bp) + 13)
             ]
 
-
+        # Check if this context sequence has already been created
         ftid = fusion_transcript.get_ftid()
         ftid_plus = f"{ftid}_{ctx_id}"
         if ftid_plus in self.ftid_plus_set:
