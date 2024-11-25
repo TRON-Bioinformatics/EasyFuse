@@ -18,16 +18,16 @@ from argparse import ArgumentParser
 import logging
 
 # pylint: disable=E0401
-from src.fusionannotation.breakpoint import Breakpoint
-from src.fusionannotation.io_methods import load_detected_fusions
-from src.fusionannotation.io_methods import load_tsl_data
-from src.fusionannotation.io_methods import load_genomic_data
-from src.fusionannotation.feature_validation import get_exon_cds_overlap
-from src.fusionannotation.fusion_transcript import FusionTranscript
-from src.fusionannotation.gff_db_controller import GffDbController
-from src.fusionannotation.output_handler import OutputHandler
-from src.fusionannotation.result_handler import ResultHandler
-from src.fusionannotation.transcript import Transcript
+from fusionannotation.src.breakpoint import Breakpoint
+from fusionannotation.src.io_methods import load_detected_fusions
+from fusionannotation.src.io_methods import load_tsl_data
+from fusionannotation.src.io_methods import load_genomic_data
+from fusionannotation.src.feature_validation import get_exon_cds_overlap
+from fusionannotation.src.fusion_transcript import FusionTranscript
+from fusionannotation.src.gff_db_controller import GffDbController
+from fusionannotation.src.output_handler import OutputHandler
+from fusionannotation.src.result_handler import ResultHandler
+from fusionannotation.src.transcript import Transcript
 
 
 FORMAT = '%(asctime)s - %(message)s'
@@ -35,7 +35,7 @@ logging.basicConfig(format=FORMAT, level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-class FusionAnnotation:
+class FusionAnnotator:
     """Annotation of predicted fusion genes soley based on the breakpoint information"""
 
     def __init__(self, db_file, bp_file, tsl_file):
@@ -103,6 +103,8 @@ class FusionAnnotation:
         bp1 = self.bp_dict[bpid][0]
         bp2 = self.bp_dict[bpid][1]
 
+        if not bpid == "12:11869969:+_15:87940753:-":
+            return []
         # get features overlapping with the bp from the db
         (bp1_exons, bp1_cds) = self.db.get_exons_cds_overlapping_position(bp1)
         (bp2_exons, bp2_cds) = self.db.get_exons_cds_overlapping_position(bp2)
@@ -117,9 +119,7 @@ class FusionAnnotation:
                 bp2.exon_boundary = bp2.get_boundary(bp2_efeature)
                 bp2.cds_boundary = bp2.get_boundary(bp2_cfeature)
                 wt2 = self.annotate_bp(bp2, bp2_efeature.id)
-
                 fusion_transcript = FusionTranscript(wt1, wt2, bp1, bp2, cis_near_distance)
-
                 # check whether loci of wt1/wt2 overlap
                 # Why flag only wt1? If wt1 and wt2 overlap, then wt2 also overlaps wt1
                 # It makes more sense to flag fusion transcript instead of the wildtype transcript,
@@ -230,7 +230,7 @@ def main():
     )
     args = parser.parse_args()
 
-    fusannot = FusionAnnotation(
+    fusannot = FusionAnnotator(
         args.annotation_db, args.detected_fusions, args.tsl_info
     )
     fusannot.run(

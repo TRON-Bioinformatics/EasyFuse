@@ -7,20 +7,20 @@ import unittest
 # pylint: disable=E0401
 from Bio.Seq import Seq # type: ignore
 
-from src.fusionannotation.breakpoint import Breakpoint
-from src.fusionannotation.exon import Exon
-from src.fusionannotation.io_methods import load_detected_fusions # type: ignore
-from src.fusionannotation.io_methods import load_genomic_data # type: ignore
-from src.fusionannotation.transcript import Transcript
-from src.fusionannotation.fusion_transcript import FusionTranscript
+from fusionannotation.src.breakpoint import Breakpoint
+from fusionannotation.src.exon import Exon
+from fusionannotation.src.io_methods import load_detected_fusions # type: ignore
+from fusionannotation.src.io_methods import load_genomic_data # type: ignore
+from fusionannotation.src.transcript import Transcript
+from fusionannotation.src.fusion_transcript import FusionTranscript
 
 class TestIOMethods(unittest.TestCase):
     """
     Provides unit tests for fusion annotation module.
     """
     def setUp(self):
-        self.input_fusions = "ref_data/Detected_Fusions.csv"
-        self.genome_fasta = "ref_data/Homo_sapiens.GRCh38.110_minigenome.fa"
+        self.input_fusions = "fusionannotation/ref_data/Detected_Fusions.csv"
+        self.genome_fasta = "fusionannotation/ref_data/Homo_sapiens.GRCh38.110_minigenome.fa"
 
 
     def test_load_detected_fusions(self):

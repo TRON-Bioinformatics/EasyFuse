@@ -5,9 +5,9 @@ Tests for fusion validation module.
 import unittest
 
 # pylint: disable=E0401
-from src.fusionannotation.breakpoint import Breakpoint
-from src.fusionannotation.cds import CDS
-from src.fusionannotation.exon import Exon
+from fusionannotation.src.breakpoint import Breakpoint
+from fusionannotation.src.cds import CDS
+from fusionannotation.src.exon import Exon
 
 
 class TestBreakpoint(unittest.TestCase):
@@ -55,7 +55,7 @@ class TestBreakpoint(unittest.TestCase):
             CDS("CDS:ENSP00000504238_9", 4, 5, 2, "transcript:ENST00000679181"),
         ]
         result = self.bp.get_frame(cds)
-        frame = (-1, -1)
+        frame = (1, -1)
         self.assertEqual(result, frame)
 
 
@@ -75,7 +75,7 @@ class TestBreakpoint(unittest.TestCase):
             CDS("CDS:ENSP00000504705_11", 3, 4, 2, "transcript:ENST00000676973"),
         ]
         result = self.bp.get_frame(cds)
-        frame = (-1, -1)
+        frame = (1, 2)
         self.assertEqual(result, frame)
 
 

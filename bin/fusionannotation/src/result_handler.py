@@ -108,6 +108,7 @@ class ResultHandler:
             bp1.strand,
             bp2.strand
         )
+
         context_sequence = get_trimmed_seq(
             context_sequence_stranded,
             max(0, bp_in_fusion_nt_ex - self.context_seq_len),
@@ -229,12 +230,13 @@ class ResultHandler:
                 "wt2 seq % 3 != 0"
             )
 
-        wt1_cds_transcripts = str(
-            wt1_cds_transcripts
-        )
-        wt2_cds_transcripts = str(
-            wt2_cds_transcripts
-        )
+        wt1_start_stop = ""
+        wt2_start_stop = ""
+        if len(wt1.exons) > 0:
+            wt1_start_stop = f"{bp1.chrom}:{wt1.exons[0].start}:{wt1.exons[-1].stop}"
+        if len(wt2.exons) > 0:
+            wt2_start_stop = f"{bp2.chrom}:{wt2.exons[0].start}:{wt2.exons[-1].stop}"
+
 
         table_row = {
             "BPID": fusion_transcript.get_bpid(),
@@ -295,8 +297,8 @@ class ResultHandler:
             "wt2_exon_transcripts": wt2_exon_transcripts,
             "ft1_exon_transcripts": ft1_exon_transcripts,
             "ft2_exon_transcripts": ft2_exon_transcripts,
-            "wt1_cds_transcripts": wt1_cds_transcripts,
-            "wt2_cds_transcripts": wt2_cds_transcripts,
+            "wt1_cds_transcripts": str(wt1_cds_transcripts),
+            "wt2_cds_transcripts": str(wt2_cds_transcripts),
             "ft1_cds_transcripts": ft1_cds_transcripts,
             "ft2_cds_transcripts": ft2_cds_transcripts,
             "wt1_peptide": wt1_peptide,
@@ -323,8 +325,8 @@ class ResultHandler:
             "wt2_cds_no": len(wt2.cds),
             "ft1_cds_no": len(fusion_transcript.cds_transcript_1),
             "ft2_cds_no": len(fusion_transcript.cds_transcript_2),
-            "wt1_start_stop": f"{bp1.chrom}:{wt1.exons[0].start}:{wt1.exons[-1].stop}",
-            "wt2_start_stop": f"{bp2.chrom}:{wt2.exons[0].start}:{wt2.exons[-1].stop}",
+            "wt1_start_stop": wt1_start_stop,
+            "wt2_start_stop": wt2_start_stop,
             "annotation_bias": annotation_bias
         }
         return table_row

@@ -75,6 +75,11 @@ class FusionTranscript:
         self.fusion_type = self.determine_fusion_type(cis_near_distance)
 
 
+    def __repr__(self):
+        return f"FusionTranscript(id={repr(self.get_ftid())}, " \
+               f"bpid={repr(self.get_bpid())})"
+
+
     def get_bpid(self):
         """Return the breakpoint ID"""
         return f"{self.bp1}_{self.bp2}"
@@ -86,10 +91,10 @@ class FusionTranscript:
             [
                 self.transcript_1.gene_name,
                 str(self.bp1),
-                self.transcript_1.transcript_id,
+                self.transcript_1.transcript_id.strip("transcript:"),
                 self.transcript_2.gene_name,
                 str(self.bp2),
-                self.transcript_2.transcript_id,
+                self.transcript_2.transcript_id.strip("transcript:"),
             ]
         )
 
@@ -212,6 +217,9 @@ class FusionTranscript:
         """
         # Skip check for translocations
         if self.fusion_type.startswith(FUSION_TYPE_TRANS):
+            return False
+        # If there are no exons in either of the transcripts, there is no overlap
+        if len(self.transcript_1.exons) == 0 or len(self.transcript_2.exons) == 0:
             return False
         # end of wt1 locus must be < start of wt2 locus or start of wt1 locus > end of wt2 locus
         if (

@@ -7,13 +7,13 @@ import unittest
 # pylint: disable=E0401
 from Bio.Seq import Seq # type: ignore
 
-from src.fusionannotation.breakpoint import Breakpoint
-from src.fusionannotation.sequence_handler import calc_hash
-from src.fusionannotation.sequence_handler import concatenate_seqs
-from src.fusionannotation.sequence_handler import get_context_sequence
-from src.fusionannotation.sequence_handler import get_fusion_transcript_sequence
-from src.fusionannotation.sequence_handler import get_peptide_sequence
-from src.fusionannotation.sequence_handler import get_stranded_seq
+from fusionannotation.src.breakpoint import Breakpoint
+from fusionannotation.src.sequence_handler import calc_hash
+from fusionannotation.src.sequence_handler import concatenate_seqs
+from fusionannotation.src.sequence_handler import get_context_sequence
+from fusionannotation.src.sequence_handler import get_fusion_transcript_sequence
+from fusionannotation.src.sequence_handler import get_peptide_sequence
+from fusionannotation.src.sequence_handler import get_stranded_seq
 
 class TestSequenceHandler(unittest.TestCase):
     """

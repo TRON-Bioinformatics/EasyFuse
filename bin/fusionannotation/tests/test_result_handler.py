@@ -7,12 +7,12 @@ import unittest
 # pylint: disable=E0401
 from Bio.Seq import Seq # type: ignore
 
-from src.fusionannotation.cds import CDS
-from src.fusionannotation.exon import Exon
-from src.fusionannotation.transcript import Transcript
-from src.fusionannotation.breakpoint import Breakpoint
-from src.fusionannotation.fusion_transcript import FusionTranscript
-from src.fusionannotation.result_handler import ResultHandler
+from fusionannotation.src.cds import CDS
+from fusionannotation.src.exon import Exon
+from fusionannotation.src.transcript import Transcript
+from fusionannotation.src.breakpoint import Breakpoint
+from fusionannotation.src.fusion_transcript import FusionTranscript
+from fusionannotation.src.result_handler import ResultHandler
 
 
 class TestResultHandler(unittest.TestCase):
@@ -115,9 +115,7 @@ class TestResultHandler(unittest.TestCase):
             'fusion_protein_sequence': Seq('IRDSVHLNLSK'),
             'fusion_protein_sequence_bp': 0.3,
             'context_sequence_wt1': Seq('ATCCGGGACAGTGTGCACCTCAA'),
-            'context_sequence_wt2': [
-                Exon(exon_id='exon_2', start=248000, stop=248030, transcript_id='transcript_2')
-            ],
+            'context_sequence_wt2': Seq('TCTATCAAAATAAAAAATAGTGACAGCAAGT'),
             'context_sequence_wt1_bp': 1,
             'context_sequence_wt2_bp': 0,
             'context_sequence_100': Seq('ATCCGGGACAGTGTGCACCTCAATCTATCAAAATAAAAAATAGTGACAGCAAGT'),

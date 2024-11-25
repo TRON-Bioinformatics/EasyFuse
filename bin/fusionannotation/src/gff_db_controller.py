@@ -84,11 +84,22 @@ class GffDbController:
         ):
             if feature_type == FEATURE_TYPE_EXON:
                 features.append(
-                    Exon(feature.id, feature.start, feature.stop, "")
+                    Exon(
+                        feature.id,
+                        feature.start,
+                        feature.stop,
+                        feature.attributes["Parent"][0]
+                    )
                 )
             elif feature_type == FEATURE_TYPE_CDS:
                 features.append(
-                    CDS(feature.id, feature.start, feature.stop, int(feature.frame), "")
+                    CDS(
+                        feature.id,
+                        feature.start,
+                        feature.stop,
+                        int(feature.frame),
+                        feature.attributes["Parent"][0]
+                    )
                 )
         return features
 
@@ -102,21 +113,19 @@ class GffDbController:
         gene_biotype = ""
         description = ""
         for parent in self.db.parents(feature_id):
-            if parent.featuretype == "transcript":
+            if parent.id.startswith("transcript"):
                 trans_id = parent.id
-                trans_biotype = parent.attributes["transcript_biotype"][0]
-            if parent.featuretype == "gene":
-                gene_id = parent.attributes.get("gene_id", "")
-                gene_name = parent.attributes.get("gene_name", gene_id)[0]
-                gene_biotype = parent.attributes["gene_biotype"][0]
-                try:
-                    description = parent.attributes["description"][0].replace(";", " ")
-                except KeyError:
-                    description = "NA"
+                #trans_id = parent.attributes.get("transcript_id", [""])[0]
+                trans_biotype = parent.attributes.get("biotype", [""])[0]
+            if parent.id.startswith("gene"):
+                gene_id = parent.attributes.get("gene_id", [""])
+                gene_name = parent.attributes.get("Name", gene_id)[0]
+                gene_biotype = parent.attributes.get("biotype", [""])[0]
+                description = parent.attributes.get("description", ["NA"])[0].replace(";", " ")
         return Transcript(
-            trans_id.strip("transcript:"),
+            trans_id,
             trans_biotype,
-            gene_name.strip("gene:"),
+            gene_name,
             gene_biotype,
             description
         )
