@@ -113,14 +113,27 @@ class GffDbController:
         gene_biotype = ""
         description = ""
         for parent in self.db.parents(feature_id):
-            if parent.id.startswith("transcript"):
+            #print(parent)
+            if parent.id.startswith("transcript") or parent.featuretype in ("mRNA", "transcript"):
                 trans_id = parent.id
                 #trans_id = parent.attributes.get("transcript_id", [""])[0]
-                trans_biotype = parent.attributes.get("biotype", [""])[0]
-            if parent.id.startswith("gene"):
+                trans_biotype = parent.attributes.get(
+                    "biotype", parent.attributes.get(
+                        "transcript_biotype", [""]
+                    )
+                )[0]
+            if parent.id.startswith("gene") or parent.featuretype in ("gene"):
                 gene_id = parent.attributes.get("gene_id", [""])
-                gene_name = parent.attributes.get("Name", gene_id)[0]
-                gene_biotype = parent.attributes.get("biotype", [""])[0]
+                gene_name = parent.attributes.get(
+                    "Name", parent.attributes.get(
+                        "gene_name", gene_id
+                    )
+                )[0]
+                gene_biotype = parent.attributes.get(
+                    "biotype", parent.attributes.get(
+                        "gene_biotype", [""]
+                    )
+                )[0]
                 description = parent.attributes.get("description", ["NA"])[0].replace(";", " ")
         return Transcript(
             trans_id,

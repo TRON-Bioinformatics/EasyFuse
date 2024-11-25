@@ -24,8 +24,8 @@ class TestResultHandler(unittest.TestCase):
         cds_seqs = {
             '21': [
                 {
-                    Exon(exon_id='exon_1', start=30157, stop=30179, transcript_id='transcript_1'),
-                    CDS(cds_id='cds_1', start=30157, stop=30179, frame=0, transcript_id='transcript_1')
+                    Exon(exon_id='exon_1', start=30157, stop=30179, transcript_id='ENST000A'),
+                    CDS(cds_id='cds_1', start=30157, stop=30179, frame=0, transcript_id='ENST000A')
                 },
                 [
                     Seq('TTGAGGTGCACACTGTCCCGGAT'),
@@ -34,8 +34,8 @@ class TestResultHandler(unittest.TestCase):
             ],
             '7': [
                 {
-                    Exon(exon_id='exon_2', start=248000, stop=248030, transcript_id='transcript_2'),
-                    CDS(cds_id='cds_2', start=248000, stop=248030, frame=0, transcript_id='transcript_2')
+                    Exon(exon_id='exon_2', start=248000, stop=248030, transcript_id='ENST000B'),
+                    CDS(cds_id='cds_2', start=248000, stop=248030, frame=0, transcript_id='ENST000B')
                 },
                 [
                     Seq('TCTATCAAAATAAAAAATAGTGACAGCAAGT'),
@@ -48,8 +48,8 @@ class TestResultHandler(unittest.TestCase):
 
     def test_generate_temp_dict(self):
         """Test case for generation of temporary dictionary"""
-        exon = Exon(exon_id='exon_1', start=30157, stop=30179, transcript_id='transcript_1')
-        cds = CDS(cds_id='cds_1', start=30157, stop=30179, frame=0, transcript_id='transcript_1')
+        exon = Exon(exon_id='exon_1', start=30157, stop=30179, transcript_id='ENST000A')
+        cds = CDS(cds_id='cds_1', start=30157, stop=30179, frame=0, transcript_id='ENST000A')
         tmp_dict = {
             exon: Seq('TTGAGGTGCACACTGTCCCGGAT'),
             cds: Seq('TTGAGGTGCACACTGTCCCGGAT')
@@ -60,8 +60,8 @@ class TestResultHandler(unittest.TestCase):
 
     def test_generate_fusion_transcript_values(self):
         """Test case to generate result row"""
-        wt1 = Transcript("transcript_1", "", "GeneA", "", "")
-        wt2 = Transcript("transcript_2", "", "GeneB", "", "")
+        wt1 = Transcript("ENST000A", "", "GeneA", "", "")
+        wt2 = Transcript("ENST000B", "", "GeneB", "", "")
         bp1 = Breakpoint("21", 30157, "-")
         bp2 = Breakpoint("7", 248000, "+")
         bp1.exon_boundary = "left_boundary"
@@ -71,16 +71,16 @@ class TestResultHandler(unittest.TestCase):
         wt1.frame_at_start = 0
         wt2.frame_at_start = 0
         wt1.exons = [
-            Exon(exon_id='exon_1', start=30157, stop=30179, transcript_id='transcript_1'),
+            Exon(exon_id='exon_1', start=30157, stop=30179, transcript_id='ENST000A'),
         ]
         wt1.cds = [
-            CDS(cds_id='cds_1', start=30157, stop=30179, frame=0, transcript_id='transcript_1')
+            CDS(cds_id='cds_1', start=30157, stop=30179, frame=0, transcript_id='ENST000A')
         ]
         wt2.exons = [
-            Exon(exon_id='exon_2', start=248000, stop=248030, transcript_id='transcript_2')
+            Exon(exon_id='exon_2', start=248000, stop=248030, transcript_id='ENST000B')
         ]
         wt2.cds = [
-            CDS(cds_id='cds_2', start=248000, stop=248030, frame=0, transcript_id='transcript_2')
+            CDS(cds_id='cds_2', start=248000, stop=248030, frame=0, transcript_id='ENST000B')
         ]
         wt1.is_good_transcript = set()
         wt2.is_good_transcript = set()
@@ -93,7 +93,7 @@ class TestResultHandler(unittest.TestCase):
             'Fusion_Gene': 'GeneA_GeneB',
             'Breakpoint1': '21:30157:-',
             'Breakpoint2': '7:248000:+',
-            'FTID': 'GeneA_21:30157:-_transcript_1_GeneB_7:248000:+_transcript_2',
+            'FTID': 'GeneA_21:30157:-_ENST000A_GeneB_7:248000:+_ENST000B',
             'context_sequence_id': '6fc9ef059658b069',
             'context_sequence_100_id': '6fc9ef059658b069',
             'type': 'trans',
@@ -128,28 +128,28 @@ class TestResultHandler(unittest.TestCase):
             'cds_boundary1': 'left_boundary',
             'cds_boundary2': 'right_boundary',
             'wt1_exon_pos': [
-                Exon(exon_id='exon_1', start=30157, stop=30179, transcript_id='transcript_1')
+                Exon(exon_id='exon_1', start=30157, stop=30179, transcript_id='ENST000A')
             ],
             'wt2_exon_pos': [
-                Exon(exon_id='exon_2', start=248000, stop=248030, transcript_id='transcript_2')
+                Exon(exon_id='exon_2', start=248000, stop=248030, transcript_id='ENST000B')
             ],
             'ft1_exon_pos': [
-                Exon(exon_id='exon_1', start=30157, stop=30179, transcript_id='transcript_1')
+                Exon(exon_id='exon_1', start=30157, stop=30179, transcript_id='ENST000A')
             ],
             'ft2_exon_pos': [
-                Exon(exon_id='exon_2', start=248000, stop=248030, transcript_id='transcript_2')
+                Exon(exon_id='exon_2', start=248000, stop=248030, transcript_id='ENST000B')
             ],
             'wt1_cds_pos': [
-                CDS(cds_id='cds_1', start=30157, stop=30179, frame=0, transcript_id='transcript_1')
+                CDS(cds_id='cds_1', start=30157, stop=30179, frame=0, transcript_id='ENST000A')
             ],
             'wt2_cds_pos': [
-                CDS(cds_id='cds_2', start=248000, stop=248030, frame=0, transcript_id='transcript_2')
+                CDS(cds_id='cds_2', start=248000, stop=248030, frame=0, transcript_id='ENST000B')
             ],
             'ft1_cds_pos': [
-                CDS(cds_id='cds_1', start=30157, stop=30179, frame=0, transcript_id='transcript_1')
+                CDS(cds_id='cds_1', start=30157, stop=30179, frame=0, transcript_id='ENST000A')
             ],
             'ft2_cds_pos': [
-                CDS(cds_id='cds_2', start=248000, stop=248030, frame=0, transcript_id='transcript_2')
+                CDS(cds_id='cds_2', start=248000, stop=248030, frame=0, transcript_id='ENST000B')
             ],
             'wt1_exon_seqs': [
                 Seq('TTGAGGTGCACACTGTCCCGGAT')
@@ -183,8 +183,7 @@ class TestResultHandler(unittest.TestCase):
             'wt2_cds_transcripts': 'TCTATCAAAATAAAAAATAGTGACAGCAAGT',
             'ft1_cds_transcripts': Seq('TTGAGGTGCACACTGTCCCGGAT'),
             'ft2_cds_transcripts': Seq('TCTATCAAAATAAAAAATAGTGACAGCAAGT'),
-            'wt1_peptide': Seq('IRDSVHL'),
-            'wt2_peptide': Seq('SIKIKNSDSK'),
+            'wt1_peptide': Seq('IRDSVHL'), 'wt2_peptide': Seq('SIKIKNSDSK'),
             'fusion_transcript': Seq('ATCCGGGACAGTGTGCACCTCAATCTATCAAAATAAAAAATAGTGACAGCAAGT'),
             'fusion_peptide': Seq('IRDSVHLNLSK'),
             'wt1_is_good_transcript': {'wt1 seq % 3 != 0'},

@@ -115,20 +115,20 @@ class TestGffDbController(unittest.TestCase):
         transcript_id = "ENST00000679263"
         result = self.db.get_features_from_transcript(transcript_id, "exon")
         exons = [
-            Exon(exon_id='ENSE00003907476', start=101, stop=1954, transcript_id=''),
-            Exon(exon_id='ENSE00003786558', start=3535, stop=3687, transcript_id=''),
-            Exon(exon_id='ENSE00001324661', start=4197, stop=4339, transcript_id=''),
-            Exon(exon_id='ENSE00001309041', start=6449, stop=6544, transcript_id=''),
-            Exon(exon_id='ENSE00001310536', start=7607, stop=7782, transcript_id=''),
-            Exon(exon_id='ENSE00001291248', start=9126, stop=9297, transcript_id=''),
-            Exon(exon_id='ENSE00001319118', start=12378, stop=12421, transcript_id=''),
-            Exon(exon_id='ENSE00001296879', start=14973, stop=15083, transcript_id=''),
-            Exon(exon_id='ENSE00001328752', start=16277, stop=16403, transcript_id=''),
-            Exon(exon_id='ENSE00001308618', start=24195, stop=24314, transcript_id=''),
-            Exon(exon_id='ENSE00003500399', start=25308, stop=25394, transcript_id=''),
-            Exon(exon_id='ENSE00003788834', start=30157, stop=30379, transcript_id=''),
-            Exon(exon_id='ENSE00003523611', start=33920, stop=33990, transcript_id=''),
-            Exon(exon_id='ENSE00003905802', start=47664, stop=47909, transcript_id='')
+            Exon(exon_id='ENSE00003907476', start=101, stop=1954, transcript_id='ENST00000679263'),
+            Exon(exon_id='ENSE00003786558', start=3535, stop=3687, transcript_id='ENST00000679263'),
+            Exon(exon_id='ENSE00001324661', start=4197, stop=4339, transcript_id='ENST00000679263'),
+            Exon(exon_id='ENSE00001309041', start=6449, stop=6544, transcript_id='ENST00000679263'),
+            Exon(exon_id='ENSE00001310536', start=7607, stop=7782, transcript_id='ENST00000679263'),
+            Exon(exon_id='ENSE00001291248', start=9126, stop=9297, transcript_id='ENST00000679263'),
+            Exon(exon_id='ENSE00001319118', start=12378, stop=12421, transcript_id='ENST00000679263'),
+            Exon(exon_id='ENSE00001296879', start=14973, stop=15083, transcript_id='ENST00000679263'),
+            Exon(exon_id='ENSE00001328752', start=16277, stop=16403, transcript_id='ENST00000679263'),
+            Exon(exon_id='ENSE00001308618', start=24195, stop=24314, transcript_id='ENST00000679263'),
+            Exon(exon_id='ENSE00003500399', start=25308, stop=25394, transcript_id='ENST00000679263'),
+            Exon(exon_id='ENSE00003788834', start=30157, stop=30379, transcript_id='ENST00000679263'),
+            Exon(exon_id='ENSE00003523611', start=33920, stop=33990, transcript_id='ENST00000679263'),
+            Exon(exon_id='ENSE00003905802', start=47664, stop=47909, transcript_id='ENST00000679263')
         ]
         self.assertEqual(result, exons)
 
@@ -138,20 +138,20 @@ class TestGffDbController(unittest.TestCase):
         transcript_id = "ENST00000679263"
         result = self.db.get_features_from_transcript(transcript_id, "CDS")
         cds = [
-            CDS(cds_id='agat-cds-1378', start=1943, stop=1954, frame=0, transcript_id=''),
-            CDS(cds_id='agat-cds-1377', start=3535, stop=3687, frame=0, transcript_id=''),
-            CDS(cds_id='agat-cds-1376', start=4197, stop=4339, frame=2, transcript_id=''),
-            CDS(cds_id='agat-cds-1375', start=6449, stop=6544, frame=2, transcript_id=''),
-            CDS(cds_id='agat-cds-1374', start=7607, stop=7782, frame=1, transcript_id=''),
-            CDS(cds_id='agat-cds-1373', start=9126, stop=9297, frame=2, transcript_id=''),
-            CDS(cds_id='agat-cds-1372', start=12378, stop=12421, frame=1, transcript_id=''),
-            CDS(cds_id='agat-cds-1371', start=14973, stop=15083, frame=1, transcript_id=''),
-            CDS(cds_id='agat-cds-1370', start=16277, stop=16403, frame=2, transcript_id=''),
-            CDS(cds_id='agat-cds-1369', start=24195, stop=24314, frame=2, transcript_id=''),
-            CDS(cds_id='agat-cds-1368', start=25308, stop=25394, frame=2, transcript_id=''),
-            CDS(cds_id='agat-cds-1367', start=30157, stop=30379, frame=0, transcript_id=''),
-            CDS(cds_id='agat-cds-1366', start=33920, stop=33990, frame=2, transcript_id=''),
-            CDS(cds_id='agat-cds-1365', start=47664, stop=47766, frame=0, transcript_id='')
+            CDS(cds_id='agat-cds-1378', start=1943, stop=1954, frame=0, transcript_id='ENST00000679263'),
+            CDS(cds_id='agat-cds-1377', start=3535, stop=3687, frame=0, transcript_id='ENST00000679263'),
+            CDS(cds_id='agat-cds-1376', start=4197, stop=4339, frame=2, transcript_id='ENST00000679263'),
+            CDS(cds_id='agat-cds-1375', start=6449, stop=6544, frame=2, transcript_id='ENST00000679263'),
+            CDS(cds_id='agat-cds-1374', start=7607, stop=7782, frame=1, transcript_id='ENST00000679263'),
+            CDS(cds_id='agat-cds-1373', start=9126, stop=9297, frame=2, transcript_id='ENST00000679263'),
+            CDS(cds_id='agat-cds-1372', start=12378, stop=12421, frame=1, transcript_id='ENST00000679263'),
+            CDS(cds_id='agat-cds-1371', start=14973, stop=15083, frame=1, transcript_id='ENST00000679263'),
+            CDS(cds_id='agat-cds-1370', start=16277, stop=16403, frame=2, transcript_id='ENST00000679263'),
+            CDS(cds_id='agat-cds-1369', start=24195, stop=24314, frame=2, transcript_id='ENST00000679263'),
+            CDS(cds_id='agat-cds-1368', start=25308, stop=25394, frame=2, transcript_id='ENST00000679263'),
+            CDS(cds_id='agat-cds-1367', start=30157, stop=30379, frame=0, transcript_id='ENST00000679263'),
+            CDS(cds_id='agat-cds-1366', start=33920, stop=33990, frame=2, transcript_id='ENST00000679263'),
+            CDS(cds_id='agat-cds-1365', start=47664, stop=47766, frame=0, transcript_id='ENST00000679263')
         ]
         self.assertEqual(result, cds)
 

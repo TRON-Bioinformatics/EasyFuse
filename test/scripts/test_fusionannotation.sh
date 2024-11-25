@@ -15,6 +15,8 @@ python -m fusionannotation.tests.test_io_methods
 python -m fusionannotation.tests.test_result_handler
 python -m fusionannotation.tests.test_sequence_handler
 
+mkdir -p fusionannotation/output
+
 python -m fusionannotator \
   --detected_fusions fusionannotation/ref_data/Detected_Fusions_miniannotation.csv \
   --annotation_db fusionannotation/ref_data/Homo_sapiens.GRCh38.110_miniannotation.gff3.db \
