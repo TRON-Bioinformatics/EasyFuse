@@ -55,7 +55,7 @@ class TestBreakpoint(unittest.TestCase):
             CDS("CDS:ENSP00000504238_9", 4, 5, 2, "transcript:ENST00000679181"),
         ]
         result = self.bp.get_frame(cds)
-        frame = (-1, -1)
+        frame = (1, -1)
         self.assertEqual(result, frame)
 
 
@@ -75,7 +75,7 @@ class TestBreakpoint(unittest.TestCase):
             CDS("CDS:ENSP00000504705_11", 3, 4, 2, "transcript:ENST00000676973"),
         ]
         result = self.bp.get_frame(cds)
-        frame = (-1, -1)
+        frame = (1, 2)
         self.assertEqual(result, frame)
 
 

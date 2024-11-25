@@ -115,9 +115,7 @@ class TestResultHandler(unittest.TestCase):
             'fusion_protein_sequence': Seq('IRDSVHLNLSK'),
             'fusion_protein_sequence_bp': 0.3,
             'context_sequence_wt1': Seq('ATCCGGGACAGTGTGCACCTCAA'),
-            'context_sequence_wt2': [
-                Exon(exon_id='exon_2', start=248000, stop=248030, transcript_id='transcript_2')
-            ],
+            'context_sequence_wt2': Seq('TCTATCAAAATAAAAAATAGTGACAGCAAGT'),
             'context_sequence_wt1_bp': 1,
             'context_sequence_wt2_bp': 0,
             'context_sequence_100': Seq('ATCCGGGACAGTGTGCACCTCAATCTATCAAAATAAAAAATAGTGACAGCAAGT'),

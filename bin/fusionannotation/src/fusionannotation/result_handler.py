@@ -229,13 +229,6 @@ class ResultHandler:
                 "wt2 seq % 3 != 0"
             )
 
-        wt1_cds_transcripts = str(
-            wt1_cds_transcripts
-        )
-        wt2_cds_transcripts = str(
-            wt2_cds_transcripts
-        )
-
         table_row = {
             "BPID": fusion_transcript.get_bpid(),
             "Fusion_Gene": fusion_transcript.get_fusion_gene_name(),
@@ -295,8 +288,8 @@ class ResultHandler:
             "wt2_exon_transcripts": wt2_exon_transcripts,
             "ft1_exon_transcripts": ft1_exon_transcripts,
             "ft2_exon_transcripts": ft2_exon_transcripts,
-            "wt1_cds_transcripts": wt1_cds_transcripts,
-            "wt2_cds_transcripts": wt2_cds_transcripts,
+            "wt1_cds_transcripts": str(wt1_cds_transcripts),
+            "wt2_cds_transcripts": str(wt2_cds_transcripts),
             "ft1_cds_transcripts": ft1_cds_transcripts,
             "ft2_cds_transcripts": ft2_cds_transcripts,
             "wt1_peptide": wt1_peptide,
