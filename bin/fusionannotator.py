@@ -128,10 +128,13 @@ class FusionAnnotator:
                     self.suspect_transcripts[wt1.transcript_id].add(
                         "wt1/wt2 exon overlap"
                     )
-
                 fusion_transcript.set_flags(self.suspect_transcripts)
-
                 result_list.append(fusion_transcript)
+        
+        # An improvement may be to add flags after the annotation process to catch all suspect_transcripts.
+        # for fusion_transcript in result_list:
+        #     fusion_transcript.set_flags(self.suspect_transcripts)
+
         return result_list
 
 

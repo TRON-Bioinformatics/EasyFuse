@@ -4,8 +4,16 @@ This module performs validation of exons.
 
 
 def get_exon_cds_overlap(exons: list, cds_list: list) -> tuple:
-    """Get matched exons and cds region per transcript id"""
+    """Get the CDS regions that overlap with the exons.
+    Args:
+        exons (list): A list of exon objects, each with 'start' and 'stop' attributes.
+        cds_list (list): A list of CDS objects, each with 'start' and 'stop' attributes.
 
+    Returns:
+        tuple: A tuple containing:
+            - list: A list of CDS regions that overlap with the exons.
+            - set: A set of transcript flags indicating any discrepancies between the CDS and exon boundaries.
+    """
     cds_filt = []
     trans_flags_dict = set()
     for exon in exons:
@@ -13,7 +21,7 @@ def get_exon_cds_overlap(exons: list, cds_list: list) -> tuple:
         for i, cds in enumerate(cds_list, 0):
             if cds.start >= exon.start and cds.stop <= exon.stop:
                 cds_filt.append(cds)
-                if cds.start != exon.start and cds.stop != exon.stop:
+                if not (cds.start == exon.start and cds.stop == exon.stop):
                     trans_flags_dict.add(f"cds != exon at no {i}")
                 exon_has_cds = True
         if not exon_has_cds:
@@ -26,13 +34,14 @@ def filter_cds_by_exons(exons: list, cds: list) -> list:
     """Correct positions in such a way that the same position
     in the exon/CDS list represents the same parental transcript
     exons are the scaffold as there can be exons w/o cds but not vice versa
+    Make sure that CDS and exons are taken from the same transcript.
 
     Args:
-        exons (list): _description_
-        cds (list): _description_
+        exons (list): A list of exon objects, each with 'start', 'stop', and 'transcript_id' attributes.
+        cds (list): A list of CDS objects, each with 'start', 'stop', and 'transcript_id' attributes.
 
     Returns:
-        list: _description_
+        list: A list of CDS objects aligned with the exons based on their transcript IDs.
     """
     cds_transcripts = [cds.transcript_id for cds in cds]
     bp_cds_new = []
