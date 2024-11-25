@@ -46,7 +46,7 @@ process FUSION_ANNOTATION {
     script:
 
     """
-    fusionannotation.py \
+    fusionannotator.py \
         --detected_fusions ${fusions} \
         --annotation_db ${params.annotation_db} \
         --out_csv annotated_fusions.csv \

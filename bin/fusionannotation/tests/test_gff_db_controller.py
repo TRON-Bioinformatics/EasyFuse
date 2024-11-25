@@ -5,11 +5,11 @@ Tests for fusion validation module.
 import unittest
 
 # pylint: disable=E0401
-from src.fusionannotation.breakpoint import Breakpoint # type: ignore
-from src.fusionannotation.cds import CDS
-from src.fusionannotation.exon import Exon
-from src.fusionannotation.gff_db_controller import GffDbController
-from src.fusionannotation.transcript import Transcript
+from fusionannotation.src.breakpoint import Breakpoint # type: ignore
+from fusionannotation.src.cds import CDS
+from fusionannotation.src.exon import Exon
+from fusionannotation.src.gff_db_controller import GffDbController
+from fusionannotation.src.transcript import Transcript
 
 
 class TestGffDbController(unittest.TestCase):
@@ -21,7 +21,7 @@ class TestGffDbController(unittest.TestCase):
         # GTF file created with `ShrinkGenome` package
         # GFF file generated from GTF file with `AGAT` package
         self.db = GffDbController(
-            "ref_data/Homo_sapiens.GRCh38.110_miniannotation.gff3.db"
+            "fusionannotation/ref_data/Homo_sapiens.GRCh38.110_miniannotation.gff3.db"
         )
 
 

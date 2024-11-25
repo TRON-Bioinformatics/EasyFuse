@@ -71,12 +71,8 @@ def load_genomic_data(genome_fasta: str, fusion_transcrips: list) -> dict:
             ft.cds_transcript_2
         ):
             cds_seqs[chr2][0].update(features)
-
     for record in SeqIO.parse(genome_fasta, "fasta"):
         if record.id in cds_seqs:
-            # print(
-            #     "Grepping candidate regions from chromosome %s", record.id
-            # )
             cds_seqs[record.id][1] = [
                 record.seq[max(0, feature.start - 1) : feature.stop]
                 for feature in cds_seqs[record.id][0]

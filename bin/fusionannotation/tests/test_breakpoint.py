@@ -5,9 +5,9 @@ Tests for fusion validation module.
 import unittest
 
 # pylint: disable=E0401
-from src.fusionannotation.breakpoint import Breakpoint
-from src.fusionannotation.cds import CDS
-from src.fusionannotation.exon import Exon
+from fusionannotation.src.breakpoint import Breakpoint
+from fusionannotation.src.cds import CDS
+from fusionannotation.src.exon import Exon
 
 
 class TestBreakpoint(unittest.TestCase):

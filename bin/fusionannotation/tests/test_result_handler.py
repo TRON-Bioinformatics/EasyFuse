@@ -7,12 +7,12 @@ import unittest
 # pylint: disable=E0401
 from Bio.Seq import Seq # type: ignore
 
-from src.fusionannotation.cds import CDS
-from src.fusionannotation.exon import Exon
-from src.fusionannotation.transcript import Transcript
-from src.fusionannotation.breakpoint import Breakpoint
-from src.fusionannotation.fusion_transcript import FusionTranscript
-from src.fusionannotation.result_handler import ResultHandler
+from fusionannotation.src.cds import CDS
+from fusionannotation.src.exon import Exon
+from fusionannotation.src.transcript import Transcript
+from fusionannotation.src.breakpoint import Breakpoint
+from fusionannotation.src.fusion_transcript import FusionTranscript
+from fusionannotation.src.result_handler import ResultHandler
 
 
 class TestResultHandler(unittest.TestCase):

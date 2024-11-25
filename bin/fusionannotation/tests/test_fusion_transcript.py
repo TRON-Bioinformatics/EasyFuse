@@ -5,11 +5,11 @@ Tests for fusion validation module.
 import unittest
 
 # pylint: disable=E0401
-from src.fusionannotation.breakpoint import Breakpoint
-from src.fusionannotation.cds import CDS
-from src.fusionannotation.exon import Exon
-from src.fusionannotation.fusion_transcript import FusionTranscript, get_involved_features
-from src.fusionannotation.transcript import Transcript
+from fusionannotation.src.breakpoint import Breakpoint
+from fusionannotation.src.cds import CDS
+from fusionannotation.src.exon import Exon
+from fusionannotation.src.fusion_transcript import FusionTranscript, get_involved_features
+from fusionannotation.src.transcript import Transcript
 
 class TestFusionTranscript(unittest.TestCase):
     """
