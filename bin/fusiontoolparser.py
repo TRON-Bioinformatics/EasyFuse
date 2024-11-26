@@ -7,28 +7,38 @@ and output based on their set recurrency value. The class requires the path' of 
 output folders and writes the "Detected_Fusions.csv"
 
 @author: Tron (PASO)
-@version: 20240208
+@version: 20241126
 """
 from argparse import ArgumentParser
+import csv
+import logging
 import os
-from typing import Dict
 
-import logzero
-from logzero import logger
-
-from fusiontoolparser_helper import *
+FORMAT = '%(asctime)s - %(message)s'
+logging.basicConfig(format=FORMAT, level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
-# pylint: disable=line-too-long
-#         yes they are partially, but I do not consider this to be relevant here
-class FusionParser(object):
-    """Get and parse results from previously run programs (fusion prediction, hla typing, expression estimation)"""
+from fusiontoolparser.file_headers import TOOL_HEADER, OUTPUT_HEADER
+from fusiontoolparser.fusiontoolparser_helper import parse_fusioncatcher_results
+from fusiontoolparser.fusiontoolparser_helper import parse_arriba_results
+from fusiontoolparser.fusiontoolparser_helper import parse_mapsplice_results
+from fusiontoolparser.fusiontoolparser_helper import parse_starfusion_results
+from fusiontoolparser.fusiontoolparser_helper import parse_soapfuse_results
+from fusiontoolparser.fusiontoolparser_helper import parse_infusion_results
+
+
+class FusionParser:
+    """
+    Get and parse results from previously run programs 
+    (fusion prediction, hla typing, expression estimation)
+    """
 
     # Initialization of parameters
     def __init__(
             self, input_fusioncatcher, input_fusioncatcher2, input_infusion, input_mapsplice,
             input_starfusion, input_soapfuse, input_arriba,
-            output_path, sample_id, logfile):
+            output_path, sample_id):
         """Parameter initiation and work folder creation."""
         self.input_fusioncatcher = input_fusioncatcher
         self.input_fusioncatcher2 = input_fusioncatcher2
@@ -39,7 +49,7 @@ class FusionParser(object):
         self.input_arriba = input_arriba
         self.output_path = output_path
         self.sample_id = sample_id
-        logzero.logfile(logfile)
+
 
     def run(self):
         """Parse output of fusion tools and save them into output file"""
@@ -49,11 +59,9 @@ class FusionParser(object):
         logger.debug("Generating Detected Fusions table")
         detected_fusions_file = os.path.join(self.output_path, "Detected_Fusions.csv")
 
-        with open(detected_fusions_file, "w") as all_fusions_file:
-            # write header
-            all_fusions_file.write(
-                "BPID;Fusion_Gene;Breakpoint1;Breakpoint2;Junction_Reads;Spanning_Reads;Sample;Tool\n"
-            )
+        with open(detected_fusions_file, "w", encoding="utf8") as all_fusions_file:
+            writer = csv.writer(all_fusions_file, fieldnames=OUTPUT_HEADER, delimiter=";")
+            writer.writeheader()
             # parses all available fusion tools
             if self.input_fusioncatcher and os.path.exists(self.input_fusioncatcher):
                 fusions = parse_fusioncatcher_results(self.input_fusioncatcher, self.input_fusioncatcher2)
@@ -80,23 +88,18 @@ class FusionParser(object):
                 count += self._write_fusions(
                     all_fusions_file=all_fusions_file, fusions_dict=fusions, tool="arriba")
 
-        logger.info(
-            "Wrote {0} detected fusion genes to {1}.".format(
-                count, detected_fusions_file
-            )
-        )
+        logger.info("Wrote %s detected fusion genes to %s.", count, detected_fusions_file)
 
-    def _write_fusions(self, fusions_dict: Dict, all_fusions_file, tool):
+    def _write_fusions(self, fusions_dict: dict, all_fusions_file, tool):
         count = 0
 
         # write fusions for this tool to a file
         tool_res_file = os.path.join(self.output_path, tool.lower() + ".csv")
-        with open(tool_res_file, "w") as tool_outf:
-            tool_outf.write(
-                "bpid;fusion_gene;breakpoint1;breakpoint2;junc_reads;span_reads\n"
-            )
+        with open(tool_res_file, "w", encoding="utf8") as tool_outf:
+            writer = csv.writer(tool_outf, fieldnames=TOOL_HEADER, delimiter=";")
+            writer.writeheader()
             for key in fusions_dict:
-                tool_outf.write("{};{}\n".format(key, ";".join(fusions_dict[key])))
+                writer.writerow(fusions_dict[key])
 
         # add fusions from this tool to all fusions file
         for bpid in fusions_dict:
@@ -110,6 +113,7 @@ class FusionParser(object):
 
 
 def main():
+    """stub"""
     parser = ArgumentParser(description="Parses fusions from specific tools")
     parser.add_argument(
         "--input_fusioncatcher",
@@ -161,14 +165,15 @@ def main():
         help="Specify the sample to process.",
         required=True,
     )
-    parser.add_argument(
-        "-l", "--logger", dest="logger", help="Logging of processing steps", default=""
-    )
     args = parser.parse_args()
 
     # checks that at least one fusion prediction tool is provided
-    assert args.input_fusioncatcher or args.input_starfusion or args.input_infusion or args.input_mapsplice or \
-           args.input_soapfuse or args.input_arriba, "No fusion prediction tool results provided."
+    assert (args.input_fusioncatcher or
+            args.input_starfusion or
+            args.input_infusion or
+            args.input_mapsplice or
+            args.input_soapfuse or
+            args.input_arriba), "No fusion prediction tool results provided."
 
     fusion_parser = FusionParser(
         input_fusioncatcher=args.input_fusioncatcher,
@@ -179,8 +184,7 @@ def main():
         input_soapfuse=args.input_soapfuse,
         input_arriba=args.input_arriba,
         output_path=args.output_path,
-        sample_id=args.sample,
-        logfile=args.logger
+        sample_id=args.sample
     )
     fusion_parser.run()
 
