@@ -18,6 +18,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+## [2.0.4] - 2024-11-26
+
+### Added
+
+- Added full length protein sequence to the final output
+
+### Changed
+
+- Updated NextflowVersion to 24.10.1
+- Updated resource management
+- Fixed exon count in final output
+- Fixed tool_frac column in final output
 
 ## [2.0.3] - 2024-04-04
 
@@ -159,6 +171,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 [Unreleased]: https://github.com/TRON-Bioinformatics/EasyFuse/v2.0.3...dev
+[2.0.4]: https://github.com/TRON-Bioinformatics/EasyFuse/v2.0.3...v2.0.4
 [2.0.3]: https://github.com/TRON-Bioinformatics/EasyFuse/v2.0.2...v2.0.3
 [2.0.2]: https://github.com/TRON-Bioinformatics/EasyFuse/v2.0.1...v2.0.2
 [2.0.1]: https://github.com/TRON-Bioinformatics/EasyFuse/v2.0.0...v2.0.1
