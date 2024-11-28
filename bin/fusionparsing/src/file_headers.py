@@ -15,12 +15,12 @@ OUTPUT_HEADER = (
 
 
 TOOL_HEADER = (
-    "bpid",
-    "fusion_gene",
-    "breakpoint1",
-    "breakpoint2",
-    "junc_reads",
-    "span_reads"
+    "BPID",
+    "Fusion_Gene",
+    "Breakpoint1",
+    "Breakpoint2",
+    "Junction_Reads",
+    "Spanning_Reads"
 )
 
 
