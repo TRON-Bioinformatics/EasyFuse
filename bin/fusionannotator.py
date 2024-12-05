@@ -103,8 +103,6 @@ class FusionAnnotator:
         bp1 = self.bp_dict[bpid][0]
         bp2 = self.bp_dict[bpid][1]
 
-        if not bpid == "12:11869969:+_15:87940753:-":
-            return []
         # get features overlapping with the bp from the db
         (bp1_exons, bp1_cds) = self.db.get_exons_cds_overlapping_position(bp1)
         (bp2_exons, bp2_cds) = self.db.get_exons_cds_overlapping_position(bp2)
