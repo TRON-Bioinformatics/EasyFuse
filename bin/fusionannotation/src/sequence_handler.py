@@ -70,12 +70,12 @@ def get_context_sequence(ft1_seq: Seq, ft2_seq: Seq, bp1_strand: str, bp2_strand
 
     Args:
         ft1_seq (Seq): Sequence of the first fusion transcript
-        f2_seq (Seq): Sequence of the second fusion transcript
+        ft2_seq (Seq): Sequence of the second fusion transcript
         bp1_strand (str): Strand of the first breakpoint
         bp2_strand (str): Strand of the second breakpoint
 
     Returns:
-        Seq: Context sequence
+        Seq: Concatenated Context sequence from both parts of the fusion transcript
     """
     ctx_part_1 = get_stranded_seq(ft1_seq, bp1_strand)
     ctx_part_2 = get_stranded_seq(ft2_seq, bp2_strand)

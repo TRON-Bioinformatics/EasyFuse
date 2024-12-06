@@ -103,22 +103,22 @@ class ResultHandler:
         bp_in_fusion_nt_ex = len(fusion_transcript.exons_transcript_2)
 
         context_sequence_stranded = get_context_sequence(
-            ft1_exon_transcripts,
-            ft2_exon_transcripts,
-            bp1.strand,
-            bp2.strand
+            ft1_seq = ft1_exon_transcripts,
+            ft2_seq = ft2_exon_transcripts,
+            bp1_strand = bp1.strand,
+            bp2_strand = bp2.strand
         )
 
         context_sequence = get_trimmed_seq(
             context_sequence_stranded,
             max(0, bp_in_fusion_nt_ex - self.context_seq_len),
-            (bp_in_fusion_nt_ex + self.context_seq_len)
+            min(len(context_sequence_stranded), bp_in_fusion_nt_ex + self.context_seq_len)
         )
 
         context_sequence_100 = get_trimmed_seq(
             context_sequence,
             max(0, bp_in_fusion_nt_ex - 100),
-            (bp_in_fusion_nt_ex + 100)
+            min(len(context_sequence), bp_in_fusion_nt_ex + 100)
         )
 
         ctx_id = calc_hash(context_sequence)
@@ -249,7 +249,7 @@ class ResultHandler:
             "type": fusion_transcript.fusion_type,
             "exon_nr": str(fusion_transcript.get_exon_nr()),
             "ft1_exon_nr": str(len(fusion_transcript.exons_transcript_1)),
-            "ft2_exon_nr": str(len(wt1.exons) - len(fusion_transcript.exons_transcript_2)),
+            "ft2_exon_nr": str(len(wt2.exons) - len(fusion_transcript.exons_transcript_2) + 1),
             "exon_starts": exon_starts,
             "exon_ends": exon_ends,
             "exon_boundary1": bp1.exon_boundary,

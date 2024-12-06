@@ -24,6 +24,7 @@ def get_exon_cds_overlap(exons: list, cds_list: list) -> tuple:
                 if not (cds.start == exon.start and cds.stop == exon.stop):
                     trans_flags_dict.add(f"cds != exon at no {i}")
                 exon_has_cds = True
+            # else if cds is not in the exon --> Catch Error 
         if not exon_has_cds:
             cds_filt.append(None)
 

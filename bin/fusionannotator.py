@@ -75,13 +75,13 @@ class FusionAnnotator:
         transcript.set_frame_at_start(frame_at_start)
         transcript.set_frame_at_bp(frame_at_bp)
         if frame_at_start > 0:
-            # flag the transcript if its frame at the start of the first cds is > 0
+            # flag the transcript if its frame at the start of the first cds is > 0 --> incomplete transcripts
             self.suspect_transcripts[transcript.transcript_id].add("cds start > 0")
         # remove "NA's" from the cds list
         cds_pos_list = [x for x in cds_pos_list if x]
         transcript.set_cds(cds_pos_list)
         if len(cds_pos_list) == 1:
-            # flag the transcript if it contains a single cds
+            # flag the transcript if it contains a single cds --> e.g. pseudogenes, which likely not produce protein
             self.suspect_transcripts[transcript.transcript_id].add("Only 1 cds in bp1")
         # add pre-loaded tsl info
         # The "correct" tsl for a missing trans_id would be "NA",
@@ -102,16 +102,14 @@ class FusionAnnotator:
         # split breakpoint info
         bp1 = self.bp_dict[bpid][0]
         bp2 = self.bp_dict[bpid][1]
-
-        if not bpid == "12:11869969:+_15:87940753:-":
-            return []
         # get features overlapping with the bp from the db
         (bp1_exons, bp1_cds) = self.db.get_exons_cds_overlapping_position(bp1)
         (bp2_exons, bp2_cds) = self.db.get_exons_cds_overlapping_position(bp2)
         # consider all possible combination between transcript1 to transcript2 fusions
         for bp1_efeature, bp1_cfeature in zip(bp1_exons, bp1_cds):
             bp1.exon_boundary = bp1.get_boundary(bp1_efeature)
-            bp1.cds_boundary = bp1.get_boundary(bp1_cfeature)
+            # should be used for frame translation
+            bp1.cds_boundary = bp1.get_boundary(bp1_cfeature) 
             wt1 = self.annotate_bp(bp1, bp1_efeature.id)
             # do the same stuff for transcript 2 and (if applicable)
             # combine the information from both transcripts

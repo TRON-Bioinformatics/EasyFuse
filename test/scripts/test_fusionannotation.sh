@@ -22,5 +22,5 @@ python -m fusionannotator \
   --annotation_db fusionannotation/ref_data/Homo_sapiens.GRCh38.110_miniannotation.gff3.db \
   --tsl_info fusionannotation/ref_data/Homo_sapiens.GRCh38.110_miniannotation.gtf.tsl \
   --genome_fasta fusionannotation/ref_data/Homo_sapiens.GRCh38.110_minigenome.fa \
-  --tsl_filter_level 1,2,NA \
+  --tsl_filter_level 4,5,NA \
   --out_csv fusionannotation/output/annotation_output.csv
