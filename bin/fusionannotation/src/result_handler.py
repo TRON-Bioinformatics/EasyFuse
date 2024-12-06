@@ -88,6 +88,7 @@ class ResultHandler:
         fusion_transcript_seq = get_fusion_transcript_sequence(
             ft1_cds_transcripts,
             ft2_cds_transcripts,
+            # ft1_exon_transcripts, 
             ft2_exon_transcripts,
             bp1.strand,
             bp2.strand,
@@ -100,7 +101,7 @@ class ResultHandler:
         )
 
         # the fusion starts in the fusion transcript with the end of the first part
-        bp_in_fusion_nt_ex = len(fusion_transcript.exons_transcript_2)
+        bp_in_fusion_nt_ex = len(ft1_exon_transcripts)
 
         context_sequence_stranded = get_context_sequence(
             ft1_seq = ft1_exon_transcripts,
@@ -153,7 +154,7 @@ class ResultHandler:
 
         # bp pos in the fusion
         # the fusion starts in the fusion transcript with the end of the first part
-        bp_in_fusion_nt = len(fusion_transcript.cds_transcript_2)
+        bp_in_fusion_nt = len(ft1_cds_transcripts)
         # the respective bp pos in the aa seq, whereas x.0 / x.3 / x.6
         # indicate that the breakpoint is at the beginning / after first base /
         # after second base of the underlying codon
