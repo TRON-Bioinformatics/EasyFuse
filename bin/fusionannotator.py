@@ -31,7 +31,7 @@ from fusionannotation.src.transcript import Transcript
 
 
 FORMAT = '%(asctime)s - %(message)s'
-logging.basicConfig(format=FORMAT, level=logging.INFO)
+logging.basicConfig(format=FORMAT, level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
@@ -153,9 +153,13 @@ class FusionAnnotator:
         for bpid in sorted(self.bp_dict):
             fusion_transcripts_bpid = self.annotate_bpid(bpid, cis_near_distance)
             fusion_transcripts.extend(fusion_transcripts_bpid)
-
+        # print all fusion transcripts
+        for fusion_transcript in fusion_transcripts:
+            logger.debug(fusion_transcript)
         logger.info("Loading genomic data from %s", genome_fasta)
         cds_seqs = load_genomic_data(genome_fasta, fusion_transcripts)
+        for key in cds_seqs:
+            logger.debug("Chrom: %s Loaded %s sequences", key, len(cds_seqs[key]))
 
         result_handler = ResultHandler(cds_seqs, context_seq_len)
         result_list = result_handler.generate_result_list(
