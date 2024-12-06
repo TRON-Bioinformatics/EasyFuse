@@ -117,9 +117,9 @@ class ResultHandler:
         )
 
         context_sequence_100 = get_trimmed_seq(
-            context_sequence,
+            context_sequence_stranded,
             max(0, bp_in_fusion_nt_ex - 100),
-            min(len(context_sequence), bp_in_fusion_nt_ex + 100)
+            min(len(context_sequence_stranded), bp_in_fusion_nt_ex + 100)
         )
 
         ctx_id = calc_hash(context_sequence)
