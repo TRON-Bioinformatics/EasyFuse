@@ -10,8 +10,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Specifiy computational requirements via predefined labels: single, low and medium
-
 ### Changed
 
 ### Fixed
@@ -23,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Added full length protein sequence to the final output
+- Specifiy computational requirements via predefined labels: single, low and medium
 
 ### Changed
 
@@ -30,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated resource management
 - Fixed exon count in final output
 - Fixed tool_frac column in final output
+- Updated prediction model based on new results
 
 ## [2.0.3] - 2024-04-04
 
