@@ -1,4 +1,4 @@
-name: conda_env
+name: easyfuse_env
 channels:
   - bioconda
 dependencies:
