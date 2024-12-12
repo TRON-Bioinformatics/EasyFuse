@@ -1,30 +1,3 @@
-
-process FUSION_PARSER {
-    tag "${name}"
-    label 'process_single'
-
-    conda ("${baseDir}/environments/filtering.yml")
-
-    input:
-      tuple val(name), path(fusion_catcher_1), path(fusion_catcher_2), path(star_fusion), path(arriba_1), path(arriba_2)
-
-
-    output:
-      tuple val("${name}"), path("Detected_Fusions.csv"), emit: fusions
-
-    script:
-
-    """
-    fusiontoolparser.py \
-        --input_fusioncatcher ${fusion_catcher_1} \
-        --input_fusioncatcher2 ${fusion_catcher_2} \
-	      --input_starfusion ${star_fusion} \
-        --input_arriba ${arriba_1} \
-        --output . \
-        --sample ${name}
-    """
-}
-
 process FUSION_ANNOTATION {
     tag "${name}"
     label 'process_single'
