@@ -17,7 +17,7 @@ The current version of EasyFuse uses three fusion gene detection tools, [STAR-Fu
 
 ### Dependencies
 
- - [NextFlow, 23.10.1](https://www.nextflow.io/)
+ - [NextFlow, 24.10.1](https://www.nextflow.io/)
  - [Conda](https://docs.anaconda.com/free/anaconda/install/index.html)
 
 Please have a look at environment.yml.
@@ -124,6 +124,8 @@ Overview of all features/columns annotated by EasyFuse:
   - `trans_inv`:  Genes on different chromosomes, different strands
 
 - **exon_nr:** Number of exons involved in the fusion transcript  
+- **ft1_exon_nr:** Exon number of fusion partner 1 that is invoved in building the transcript breakpoint 
+- **ft2_exon_nr:** Exon number of fusion partner 2 that is invoved in building the transcript breakpoint 
 - **exon_starts:** Genomic starting positions of involved exons
 - **exon_ends:** Genomic end positions of involved exons  
 - **exon_boundary1:** Exon boundary of the breakpoint in Gene1 
@@ -147,7 +149,9 @@ Overview of all features/columns annotated by EasyFuse:
 - **context_sequence:** The fusion transcript sequence downstream and upstream from the breakpoint (default 800 bp, shorter if transcript start or end occurs within the region)  
 - **context_sequence_bp:** Position of breakpoint in context sequence  
 - **neo_peptide_sequence:** Translated peptide sequence of context sequence starting at 13 aa before breakpoint until 13 aa after breakpoint (for in-frame transcripts) or until next stop codon (for out frame and neo frame). This is to consider only the region around the breakpoint that may contain neo-epitopes.
-- **neo_peptide_sequence_bp:** Breakpoint on translated peptide sequence.  
+- **neo_peptide_sequence_bp:** Breakpoint on translated peptide sequence. 
+- **fusion_protein_sequence:** Full-length protein sequence
+- **fusion_protein_sequence_bp:** Position of breakpoint in full-length protein seqeunce  
 - ***toolname*_detected:** 1 if breakpoint was detected by respective tool, 0 if not
 - ***toolname*_junc:** Junction read count (reads covering breakpoint) reported by *toolname*  
 - ***toolname*_span:** Spanning read count (read pairs with each partner on one side of breakpoint) reported by *toolname*  

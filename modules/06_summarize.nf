@@ -1,8 +1,7 @@
 
 process MERGE_DATA {
-    cpus 1
-    memory "10g"
     tag "${name}"
+    label 'process_single'
     publishDir "${params.output}/${name}", mode: 'copy'
     
     conda ("${baseDir}/environments/merging.yml")
@@ -26,9 +25,8 @@ process MERGE_DATA {
 }
 
 process PREDICTION {
-    cpus 1
-    memory "10g"
     tag "${name}"
+    label 'process_single'
     publishDir "${params.output}/${name}", mode: 'copy'
 
     conda ("${baseDir}/environments/prediction.yml")
