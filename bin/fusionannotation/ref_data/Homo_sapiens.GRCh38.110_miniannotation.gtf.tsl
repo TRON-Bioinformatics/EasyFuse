@@ -1,0 +1,21 @@
+transcript_id	trans_biotype	gene_biotype	tsl
+ENST00000009530	protein_coding	protein_coding	2 (assigned to previous version 11)
+ENST00000377795	protein_coding	protein_coding	1
+ENST00000523836	retained_intron	protein_coding	2 (assigned to previous version 5)
+ENST00000518797	nonsense_mediated_decay	protein_coding	2 (assigned to previous version 5)
+ENST00000523813	retained_intron	protein_coding	4 (assigned to previous version 1)
+ENST00000524315	retained_intron	protein_coding	5 (assigned to previous version 5)
+ENST00000353334	protein_coding	protein_coding	1 (assigned to previous version 10)
+ENST00000523208	nonsense_mediated_decay	protein_coding	5 (assigned to previous version 5)
+ENST00000517752	retained_intron	protein_coding	2
+ENST00000522246	nonsense_mediated_decay	protein_coding	4
+ENST00000517791	retained_intron	protein_coding	3
+ENST00000522153	retained_intron	protein_coding	2
+ENST00000516005	misc_RNA	misc_RNA	NA
+ENST00000410781	misc_RNA	misc_RNA	NA
+ENST00000467125	protein_coding	protein_coding	2
+ENST00000368508	protein_coding	protein_coding	1
+ENST00000368507	protein_coding	protein_coding	5 (assigned to previous version 7)
+ENST00000403284	protein_coding	protein_coding	2
+ENST00000476279	protein_coding	protein_coding	5
+ENST00000461457	protein_coding	protein_coding	3
