@@ -17,7 +17,7 @@ The current version of EasyFuse uses three fusion gene detection tools, [STAR-Fu
 
 ### Dependencies
 
- - [NextFlow, 23.10.1](https://www.nextflow.io/)
+ - [NextFlow, 24.10.1](https://www.nextflow.io/)
  - [Conda](https://docs.anaconda.com/free/anaconda/install/index.html)
 
 Please have a look at environment.yml.
