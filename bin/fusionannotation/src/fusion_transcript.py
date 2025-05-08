@@ -1,10 +1,12 @@
 """
 Module for FusionTranscript class.
 """
-
+import copy
 # pylint: disable=E0401
 from .breakpoint import Breakpoint
 from .transcript import Transcript
+from .exon import Exon
+from .cds import CDS
 
 
 EXON_BOUNDARY_LEFT = "left_boundary"
@@ -15,11 +17,16 @@ EXON_BOUNDARY_NA = "NA"
 FUSION_TYPE_TRANS = "trans"
 
 
-def get_involved_features(features: list, bp: Breakpoint, reverse: bool = False) -> list:
+def get_involved_features(
+    features: list[CDS, Exon], bp: Breakpoint, reverse: bool = False
+) -> list[CDS, Exon]:
     """
     Based on the breakpoints, the strand and the complete feature positions 
     of the involved genes, return only those feature positions which will remain in the fusion.
     """
+    # Create a deep copy of the features to avoid modifying the original objects
+    # features = copy.deepcopy(features)
+
     bp_feature_fus_list = []
     # Does the strand relate to the exon strand or the breakpoint strand?
     # get fusion partner cds
@@ -35,7 +42,7 @@ def get_involved_features(features: list, bp: Breakpoint, reverse: bool = False)
                 if bp_feature_fus_list[-1].start == bp.pos:
                     bp_feature_fus_list = bp_feature_fus_list[:-1]
                 else:  # or shorten the cds to the bp if it is within it
-                    bp_feature_fus_list[-1].pos = bp.pos
+                    bp_feature_fus_list[-1].stop = bp.pos
         else:  # on the "-" strand, we need everything RIGHT of the bp for fusion gene partner 1
             bp_feature_fus_list = [
                 feature for feature in features if bp.pos <= feature.stop
@@ -45,7 +52,7 @@ def get_involved_features(features: list, bp: Breakpoint, reverse: bool = False)
                 if bp_feature_fus_list[0].stop == bp.pos:
                     bp_feature_fus_list = bp_feature_fus_list[1:]
                 else:
-                    bp_feature_fus_list[0].pos = bp.pos
+                    bp_feature_fus_list[0].start = bp.pos
 
     return bp_feature_fus_list
 
@@ -62,12 +69,13 @@ class FusionTranscript:
         bp2: Breakpoint,
         cis_near_distance: int = 1000000
     ):
-        self.transcript_1 = transcript_1
-        self.transcript_2 = transcript_2
-        self.bp1 = bp1
-        self.bp2 = bp2
+        self.transcript_1 = copy.deepcopy(transcript_1)
+        self.transcript_2 = copy.deepcopy(transcript_2)
+        self.bp1 = copy.deepcopy(bp1)
+        self.bp2 = copy.deepcopy(bp2)
         self.frame = self.get_fusion_frame()
         # Why is the reverse flag set to a fixed value? --> Should this represent the orientation of the fusion? (LR, LL, RL, RR)
+        # The get_involved_features also affects the exons of transcript_1 and transcript_2. Check if this is correct.
         self.exons_transcript_1 = get_involved_features(self.transcript_1.exons, self.bp1, reverse=False)
         self.exons_transcript_2 = get_involved_features(self.transcript_2.exons, self.bp2, reverse=True)
         self.cds_transcript_1 = get_involved_features(self.transcript_1.cds, self.bp1, reverse=False)
@@ -162,23 +170,34 @@ class FusionTranscript:
 
 
     def get_combined_boundary(self) -> str:
-        """Check whether boundaries of both fusion partners are in the correct orientation"""
+        """Determine the combined boundary type of both fusion partners."""
 
-        is_on_boundary = any((EXON_BOUNDARY_LEFT, EXON_BOUNDARY_RIGHT))
-        stranded = any(("+", "-"))
+        # Check if either breakpoint is on a valid exon boundary
+        is_on_boundary_1 = self.bp1.exon_boundary in [EXON_BOUNDARY_LEFT, EXON_BOUNDARY_RIGHT]
+        is_on_boundary_2 = self.bp2.exon_boundary in [EXON_BOUNDARY_LEFT, EXON_BOUNDARY_RIGHT]
 
-        boundary_dict = {
-            ("+", "+", EXON_BOUNDARY_RIGHT, EXON_BOUNDARY_LEFT): "both",
-            ("+", "-", EXON_BOUNDARY_RIGHT, EXON_BOUNDARY_RIGHT): "both",
-            ("-", "+", EXON_BOUNDARY_LEFT, EXON_BOUNDARY_LEFT): "both",
-            ("-", "-", EXON_BOUNDARY_LEFT, EXON_BOUNDARY_RIGHT): "both",
-            (stranded, stranded, is_on_boundary, not is_on_boundary): "5prime",
-            (stranded, stranded, not is_on_boundary, is_on_boundary): "3prime"
+        # Define valid boundary combinations for "both"
+        valid_combinations = {
+            ("+", "+"): (EXON_BOUNDARY_RIGHT, EXON_BOUNDARY_LEFT),
+            ("+", "-"): (EXON_BOUNDARY_RIGHT, EXON_BOUNDARY_RIGHT),
+            ("-", "+"): (EXON_BOUNDARY_LEFT, EXON_BOUNDARY_LEFT),
+            ("-", "-"): (EXON_BOUNDARY_LEFT, EXON_BOUNDARY_RIGHT),
         }
-        return boundary_dict.get(
-            (self.bp1.strand, self.bp2.strand, self.bp1.exon_boundary, self.bp2.exon_boundary),
-            "no_match"
-        )
+
+        # Check if the current combination matches any valid "both" boundary
+        if (self.bp1.strand, self.bp2.strand) in valid_combinations:
+            expected_boundaries = valid_combinations[(self.bp1.strand, self.bp2.strand)]
+            if (self.bp1.exon_boundary, self.bp2.exon_boundary) == expected_boundaries:
+                return "both"
+
+        # Determine if the fusion is 5' or 3' based on boundary presence
+        if is_on_boundary_1 and not is_on_boundary_2:
+            return "5prime"
+        if not is_on_boundary_1 and is_on_boundary_2:
+            return "3prime"
+
+        # Default case if no match is found
+        return "no_match"
 
 
     def get_fusion_frame(self) -> str:
