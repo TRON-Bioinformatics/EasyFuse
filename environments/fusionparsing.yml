@@ -2,6 +2,6 @@ name: fusionparsing
 channels:
   - conda-forge
   - bioconda
-  - defaults
+  - nodefaults
 dependencies:
   - python=3.8

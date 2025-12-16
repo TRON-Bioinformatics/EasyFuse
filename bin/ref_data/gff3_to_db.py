@@ -16,9 +16,9 @@ import os
 # pylint: disable=E0401
 import gffutils # type: ignore
 
-FORMAT = '%(asctime)s - %(message)s'
-logging.basicConfig(format=FORMAT, level=logging.INFO)
-logger = logging.getLogger(__name__)
+# FORMAT = '%(asctime)s - %(message)s'
+# logging.basicConfig(format=FORMAT, level=logging.INFO)
+# logger = logging.getLogger(__name__)
 
 
 class Gff2Db:
@@ -32,16 +32,17 @@ class Gff2Db:
     def clean_overwrite(self, overwrite: bool):
         """Delete existing database if overwrite is specified"""
         if os.path.exists(self.db_out_file) and overwrite:
-            logger.info("File %s already exists, but overwrite is specified.", self.db_out_file)
-            logger.info("Deleting file %s", self.db_out_file)
+            # logger.info("File %s already exists, but overwrite is specified.", self.db_out_file)
+            # logger.info("Deleting file %s", self.db_out_file)
             os.remove(self.db_out_file)
         else:
-            logger.info("File %s already exists or overwrite is NOT specified.", self.db_out_file)
+            pass
+            # logger.info("File %s already exists or overwrite is NOT specified.", self.db_out_file)
 
 
     def create_gffdb(self):
         """Create a gffutils database from an ensembl gff3 file"""
-        logger.info("Generating DB from %s. (This may take 10-20+ minutes)", self.gff_in_file)
+        # logger.info("Generating DB from %s. (This may take 10-20+ minutes)", self.gff_in_file)
 
         gffutils.create_db(
             self.gff_in_file,
@@ -50,16 +51,17 @@ class Gff2Db:
             force=True,
             merge_strategy="create_unique"
         )
-        logger.info("DB generation complete [output_file=%s].", self.db_out_file)
+        # logger.info("DB generation complete [output_file=%s].", self.db_out_file)
 
 
     def test_db(self):
         """Test whether an existing database can be loaded and accessed"""
-        logger.info("Testing whether db can be accessed...")
+        # logger.info("Testing whether db can be accessed...")
         gff3_db = gffutils.FeatureDB(self.db_out_file)
         for feature in gff3_db.featuretypes():
             feature_counts = gff3_db.count_features_of_type(feature)
-            logger.info("Found %s features of type %s in the db.", feature_counts, feature)
+            # logger.info("Found %s features of type %s in the db.", feature_counts, feature)
+            pass
 
 
     def run(self, overwrite: bool):

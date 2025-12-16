@@ -82,44 +82,6 @@ def get_context_sequence(ft1_seq: Seq, ft2_seq: Seq, bp1_strand: str, bp2_strand
     return ctx_part_1 + ctx_part_2
 
 
-def get_fusion_transcript_sequence(
-    ft1_cds_seq: Seq,
-    ft2_cds_seq: Seq,
-    ft2_exon_seq: Seq,
-    bp1_strand: str,
-    bp2_strand: str,
-    frame: int
-) -> str:
-    """Returns the fusion transcript sequence.
-
-    Args:
-        bp1 (Breakpoint): _description_
-        bp2 (Breakpoint): _description_
-        table_row (dict): _description_
-        fusion_transcript (FusionTranscript): _description_
-
-    Returns:
-        str: _description_
-    """
-    fusion_transcript_sequence = get_stranded_seq(
-        ft1_cds_seq,
-        bp1_strand
-    )
-
-    # for in frame fusions, use the cds sequences, for everything else, use the exons
-    if frame == "in_frame":
-        fusion_transcript_sequence += get_stranded_seq(
-            ft2_cds_seq,
-            bp2_strand
-        )
-    else:
-        fusion_transcript_sequence += get_stranded_seq(
-            ft2_exon_seq,
-            bp2_strand
-        )
-    return fusion_transcript_sequence
-
-
 def get_peptide_sequence(transcript_sequence: Seq, bp: Breakpoint, transcript_frame: int) -> Seq:
     """Returns the peptide sequence for a transcript.
 

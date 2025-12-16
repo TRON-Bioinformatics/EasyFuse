@@ -12,9 +12,9 @@ import csv
 import logging
 import sys
 
-FORMAT = '%(asctime)s - %(message)s'
-logging.basicConfig(format=FORMAT, level=logging.INFO)
-logger = logging.getLogger(__name__)
+# FORMAT = '%(asctime)s - %(message)s'
+# logging.basicConfig(format=FORMAT, level=logging.INFO)
+# logger = logging.getLogger(__name__)
 
 
 ENS_PREFIX = "ENS"
@@ -84,8 +84,8 @@ class Gtf2Tsl:
     def check_prefix(self, transcript_id: str, row: dict):
         """Check if transcript id has the correct prefix"""
         if not (transcript_id[0:3] == ENS_PREFIX or transcript_id[0:4] == MGP_PREFIX):
-            logger.info("This does not look like a valid ensembl id: %s", transcript_id)
-            logger.info("Is this a valid ensembl gtf line: %s?", row)
+            # logger.info("This does not look like a valid ensembl id: %s", transcript_id)
+            # logger.info("Is this a valid ensembl gtf line: %s?", row)
             sys.exit(99)
 
 
@@ -106,7 +106,7 @@ class Gtf2Tsl:
                         row["attributes"]
                     )
                     info_str = f"{transcript_id}_{trans_biotype}_{gene_biotype}_{tsl}"
-                    logger.info(info_str)
+                    # logger.info(info_str)
                     # check again, that what we have is what we expect
                     self.check_prefix(transcript_id, row)
                     if not transcript_id in tsl_dict:
@@ -118,7 +118,7 @@ class Gtf2Tsl:
 
     def write_outfile(self, tsl_dict: dict):
         """Write TSL data to file."""
-        logger.info("Writing TSL data to %s", self.tsl_out)
+        # logger.info("Writing TSL data to %s", self.tsl_out)
         with open(self.tsl_out, "w", encoding="utf8") as out_file:
             header_str = "\t".join(TSL_HEADER)
             out_file.write(f"{header_str}\n")
@@ -132,7 +132,7 @@ class Gtf2Tsl:
         tsl_dict, feature_list = self.parse_gtf()
         self.write_outfile(tsl_dict)
         # list of available feature strings
-        logger.info(feature_list)
+        # logger.info(feature_list)
 
 
 def main():

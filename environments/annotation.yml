@@ -2,7 +2,7 @@ name: annotation
 channels:
   - conda-forge
   - bioconda
-  - defaults
+  - nodefaults
 dependencies:
   - python=3.9
   - conda-forge::biopython=1.84

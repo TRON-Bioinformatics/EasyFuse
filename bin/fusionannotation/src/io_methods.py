@@ -48,33 +48,33 @@ def load_tsl_data(tsl_in_file: str) -> dict:
     return tsl_dict
 
 
-def load_genomic_data(genome_fasta: str, fusion_transcrips: list) -> dict:
+def load_genomic_data(genome_fasta: str, fusion_transcripts: list) -> dict:
     """Load genomic data from genome fasta and fusion transcripts"""
-    cds_seqs = {}
-    for ft in fusion_transcrips:
+    feature_seqs = {}
+    for ft in fusion_transcripts:
         chr1 = ft.bp1.chrom
         chr2 = ft.bp2.chrom
         for chrom in (chr1, chr2):
-            if not chrom in cds_seqs:
-                cds_seqs[chrom] = [set(), set()]
+            if not chrom in feature_seqs:
+                feature_seqs[chrom] = [set(), set()]
         for features in (
             ft.transcript_1.exons,
             ft.exons_transcript_1,
             ft.transcript_1.cds,
             ft.cds_transcript_1
         ):
-            cds_seqs[chr1][0].update(features)
+            feature_seqs[chr1][0].update(features)
         for features in (
             ft.transcript_2.exons,
             ft.exons_transcript_2,
             ft.transcript_2.cds,
             ft.cds_transcript_2
         ):
-            cds_seqs[chr2][0].update(features)
+            feature_seqs[chr2][0].update(features)
     for record in SeqIO.parse(genome_fasta, "fasta"):
-        if record.id in cds_seqs:
-            cds_seqs[record.id][1] = [
+        if record.id in feature_seqs:
+            feature_seqs[record.id][1] = [
                 record.seq[max(0, feature.start - 1) : feature.stop]
-                for feature in cds_seqs[record.id][0]
+                for feature in feature_seqs[record.id][0]
             ]
-    return cds_seqs
+    return feature_seqs

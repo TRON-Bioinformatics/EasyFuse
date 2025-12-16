@@ -13,3 +13,4 @@ dag*.html
 report*.html
 timeline*.html
 venv/
+ef_env/

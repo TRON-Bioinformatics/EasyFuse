@@ -2,6 +2,7 @@
 Module for FusionTranscript class.
 """
 import copy
+from typing import Union, List
 # pylint: disable=E0401
 from .breakpoint import Breakpoint
 from .transcript import Transcript
@@ -18,43 +19,37 @@ FUSION_TYPE_TRANS = "trans"
 
 
 def get_involved_features(
-    features: list[CDS, Exon], bp: Breakpoint, reverse: bool = False
-) -> list[CDS, Exon]:
+    features: List[Union[CDS, Exon]], bp: Breakpoint, reverse: bool = False
+) -> List[Union[CDS, Exon]]:
     """
-    Based on the breakpoints, the strand and the complete feature positions 
-    of the involved genes, return only those feature positions which will remain in the fusion.
+    Return truncated feature list (prefix or suffix) relative to breakpoint.
+    Does not mutate the original feature objects.
+    reverse:
+      False -> keep 5' (prefix) part for '+' strand (left), 3' part for '-' strand
+      True  -> inverted (used for partner 2 in current logic)
     """
-    # Create a deep copy of the features to avoid modifying the original objects
-    # features = copy.deepcopy(features)
+    if not features:
+        return []
+    feats = copy.deepcopy(features)
 
-    bp_feature_fus_list = []
-    # Does the strand relate to the exon strand or the breakpoint strand?
-    # get fusion partner cds
-    if not len(features) == 0:
-        if (
-            bp.strand == "+" and not reverse or bp.strand == "-" and reverse
-        ):  # on the "+" strand, we need everything LEFT of the bp for fusion gene partner 1
-            bp_feature_fus_list = [
-                feature for feature in features if bp.pos >= feature.start
-            ]
-            if not len(bp_feature_fus_list) == 0:
-                # delete the last cds (i.e. last before the bp) if it starts with the breakpoint
-                if bp_feature_fus_list[-1].start == bp.pos:
-                    bp_feature_fus_list = bp_feature_fus_list[:-1]
-                else:  # or shorten the cds to the bp if it is within it
-                    bp_feature_fus_list[-1].stop = bp.pos
-        else:  # on the "-" strand, we need everything RIGHT of the bp for fusion gene partner 1
-            bp_feature_fus_list = [
-                feature for feature in features if bp.pos <= feature.stop
-            ]
-            if not len(bp_feature_fus_list) == 0:
-                # delete first cds (i.e. first after the bp) if it starts with the breakpoint
-                if bp_feature_fus_list[0].stop == bp.pos:
-                    bp_feature_fus_list = bp_feature_fus_list[1:]
-                else:
-                    bp_feature_fus_list[0].start = bp.pos
-
-    return bp_feature_fus_list
+    keep = []
+    if (bp.strand == "+" and not reverse) or (bp.strand == "-" and reverse):
+        # keep LEFT of breakpoint
+        keep = [f for f in feats if bp.pos >= f.start]
+        if keep:
+            if keep[-1].start == bp.pos:
+                keep = keep[:-1]
+            elif keep[-1].start < bp.pos <= keep[-1].stop:
+                keep[-1].stop = bp.pos
+    else:
+        # keep RIGHT of breakpoint
+        keep = [f for f in feats if bp.pos <= f.stop]
+        if keep:
+            if keep[0].stop == bp.pos:
+                keep = keep[1:]
+            elif keep[0].start <= bp.pos < keep[0].stop:
+                keep[0].start = bp.pos
+    return keep
 
 
 class FusionTranscript:
@@ -73,13 +68,14 @@ class FusionTranscript:
         self.transcript_2 = copy.deepcopy(transcript_2)
         self.bp1 = copy.deepcopy(bp1)
         self.bp2 = copy.deepcopy(bp2)
-        self.frame = self.get_fusion_frame()
-        # Why is the reverse flag set to a fixed value? --> Should this represent the orientation of the fusion? (LR, LL, RL, RR)
-        # The get_involved_features also affects the exons of transcript_1 and transcript_2. Check if this is correct.
+
+        # Truncated feature sets (do not overwrite originals)
         self.exons_transcript_1 = get_involved_features(self.transcript_1.exons, self.bp1, reverse=False)
         self.exons_transcript_2 = get_involved_features(self.transcript_2.exons, self.bp2, reverse=True)
         self.cds_transcript_1 = get_involved_features(self.transcript_1.cds, self.bp1, reverse=False)
         self.cds_transcript_2 = get_involved_features(self.transcript_2.cds, self.bp2, reverse=True)
+
+        self.frame = self.get_fusion_frame()
         self.fusion_type = self.determine_fusion_type(cis_near_distance)
 
 
@@ -213,37 +209,19 @@ class FusionTranscript:
 
 
     def get_exon_nr(self) -> int:
-        """Get the number of exons in the fusion transcript"""
+        """Number of contributing (truncated) exons/CDS."""
         if self.frame == "in_frame":
-            return (len(self.cds_transcript_1) +
-                    len(self.cds_transcript_2))
-        return (len(self.cds_transcript_1) +
-                len(self.exons_transcript_2))
+            return len(self.cds_transcript_1) + len(self.cds_transcript_2)
+        return len(self.cds_transcript_1) + len(self.exons_transcript_2)
 
 
     def has_overlapping_transcripts(self) -> bool:
-        """Check if exons of wt1 and wt2 overlap.
-        Since both exon lists are sorted, we can simply compare the first 
-        and last exon of each list.
-
-        Args:
-            wt1_exons (list): _description_
-            wt2_exons (list): _description_
-            fusion_type (str): _description_
-
-        Returns:
-            bool: True if there is an overlap, False otherwise
-        """
-        # Skip check for translocations
+        """Overlap check on original (untruncated) loci."""
         if self.fusion_type.startswith(FUSION_TYPE_TRANS):
             return False
-        # If there are no exons in either of the transcripts, there is no overlap
-        if len(self.transcript_1.exons) == 0 or len(self.transcript_2.exons) == 0:
+        if not self.transcript_1.exons or not self.transcript_2.exons:
             return False
-        # end of wt1 locus must be < start of wt2 locus or start of wt1 locus > end of wt2 locus
-        if (
-            self.transcript_1.exons[-1].stop < self.transcript_2.exons[0].start
-            or self.transcript_1.exons[0].start > self.transcript_2.exons[-1].stop
-        ):
+        if (self.transcript_1.exons[-1].stop < self.transcript_2.exons[0].start or
+            self.transcript_1.exons[0].start > self.transcript_2.exons[-1].stop):
             return False
         return True

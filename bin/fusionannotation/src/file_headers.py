@@ -92,6 +92,7 @@ FULL_ANNOTATION_HEADER = [
     "wt1_start_stop",
     "wt2_start_stop",
     "annotation_bias",
+    "filter_comment"
 ]
 
 

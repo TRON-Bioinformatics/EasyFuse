@@ -15,9 +15,9 @@ import logging
 
 from fusionparsing.src.file_headers import OUTPUT_HEADER
 
-FORMAT = '%(asctime)s - %(message)s'
-logging.basicConfig(format=FORMAT, level=logging.INFO)
-logger = logging.getLogger(__name__)
+# FORMAT = '%(asctime)s - %(message)s'
+# logging.basicConfig(format=FORMAT, level=logging.INFO)
+# logger = logging.getLogger(__name__)
 
 
 class FusionParser:
@@ -36,7 +36,7 @@ class FusionParser:
     def run(self, tool_outputs=None):
         """Parse output of fusion tools and save them into output file"""
 
-        logger.debug("Generating Detected Fusions table")
+        # logger.debug("Generating Detected Fusions table")
 
         count = 0
         with open(self.output_path, "w", encoding="utf8") as all_fusions_file:
@@ -52,7 +52,7 @@ class FusionParser:
                         writer.writerow(row)
                         count += 1
 
-        logger.info("Wrote %s detected fusion genes to %s.", count, self.output_path)
+        # logger.info("Wrote %s detected fusion genes to %s.", count, self.output_path)
 
 
 def main():

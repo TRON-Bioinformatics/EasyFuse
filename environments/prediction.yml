@@ -2,7 +2,7 @@ name: prediction
 channels:
   - conda-forge
   - bioconda
-  - defaults
+  - nodefaults
 dependencies:
   - conda-forge::r-base
   - conda-forge::r-optparse

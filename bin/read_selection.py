@@ -24,9 +24,9 @@ import os
 import sys
 import time
 
-import logzero
+# import logzero
 import pysam  # pysam is not available for windows (where I run pylint) => pylint: disable=E0401
-from logzero import logger
+# from logzero import logger
 
 from count_input_reads import get_input_read_count
 
@@ -54,7 +54,7 @@ class ReadSelection(object):
         # 9: count_not_filtered_but_in_fusion_gene
         self.counter = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         self.last_time = 0
-        logzero.logfile("{}.fusionReadFilterLog".format(output))
+        # logzero.logfile("{}.fusionReadFilterLog".format(output))
 
         # loads read counts
         assert os.path.exists(input_read_stats) and os.path.isfile(input_read_stats), \
@@ -67,11 +67,13 @@ class ReadSelection(object):
     def get_ranges(self, context_file):
         """vlkfh"""
         with open(context_file, "r") as cfile:
-            next(cfile)  # skip header
+            header = next(cfile).rstrip().split(";")
+            wt1_idx = header.index("wt1_start_stop")
+            wt2_idx = header.index("wt2_start_stop")
             for line in cfile:
                 line_splitter = line.split(";")
-                self.ranges_to_dict(line_splitter[-3])  # wt1 ranges
-                self.ranges_to_dict(line_splitter[-2])  # wt2 ranges
+                self.ranges_to_dict(line_splitter[wt1_idx])  # wt1 ranges
+                self.ranges_to_dict(line_splitter[wt2_idx])  # wt2 ranges
         self.merge_ranges()
 
     def ranges_to_dict(self, context_range):
@@ -145,7 +147,7 @@ class ReadSelection(object):
 
     def run(self):
         """Walk linewise through a s/bam file and send proper read pairs to classification"""
-        logger.info("Starting fusion read filtering")
+        # logger.info("Starting fusion read filtering")
         read1 = read2 = None
         self.last_time = time.time()
         last_query = ""
@@ -193,11 +195,11 @@ class ReadSelection(object):
                     read2 = read
                     read2_flag = read_flag
                 else:
-                    logger.error(
-                        "Neither r1 nor r2??? Read: {0}; R1: {1}; R2: {2}; bamLine: {3}".format(
-                            read, read1, read2, self.counter[0]
-                        )
-                    )
+                    # logger.error(
+                    #     "Neither r1 nor r2??? Read: {0}; R1: {1}; R2: {2}; bamLine: {3}".format(
+                    #         read, read1, read2, self.counter[0]
+                    #     )
+                    # )
                     sys.exit(1)
             # urla: uncomment the following, if you'd like to have stats updates during the run and not only at the end
             if self.counter[0] % 1000000 == 0:
@@ -216,7 +218,7 @@ class ReadSelection(object):
         self.in_bam.close()
         self.filtered_bam.close()
         self.print_stats()
-        logger.info("Finished fusion read filtering")
+        # logger.info("Finished fusion read filtering")
 
     def print_stats(self):
         """print collected statistics to the log file"""
@@ -224,16 +226,16 @@ class ReadSelection(object):
         time_taken = this_time - self.last_time
         time_taken_1m = float(time_taken * 1000000) / float(self.counter[0])
         self.last_time = this_time
-        logger.info(
-            "Processed {0} alignments, {1} of {2} pairs remained after filtering ({3:.2%}) ({4:.2f}s / 1M alignments; {5:.2f}s in total)".format(
-                self.counter[0],
-                self.counter[2],
-                self.counter[1],
-                float(self.counter[2]) / float(self.counter[1]),
-                time_taken_1m,
-                time_taken,
-            )
-        )
+        # logger.info(
+        #     "Processed {0} alignments, {1} of {2} pairs remained after filtering ({3:.2%}) ({4:.2f}s / 1M alignments; {5:.2f}s in total)".format(
+        #         self.counter[0],
+        #         self.counter[2],
+        #         self.counter[1],
+        #         float(self.counter[2]) / float(self.counter[1]),
+        #         time_taken_1m,
+        #         time_taken,
+        #     )
+        # )
 
         qc1 = False
         if self.input_read_count == self.counter[1]:
@@ -253,53 +255,53 @@ class ReadSelection(object):
         # 6: count_unmapped
         # 7: count_10bp_s_clip
         # 8: count_proper_pair
-        logger.info(
-            "Star_chimeric (chim alignment from star):\t{} pairs (filtered)".format(
-                self.counter[4]
-            )
-        )
-        logger.info(
-            "QC'd (additional Star_chimeric alignment):\t{} alignments (included in above)".format(
-                self.counter[5]
-            )
-        )
-        logger.info(
-            "Multimapped (1 < x <= 100 equal mappings):\t{} pairs (discarded)".format(
-                self.counter[3]
-            )
-        )
-        logger.info(
-            "Unmapped (no mapping or >100 multi map):\t{} pairs (filtered)".format(
-                self.counter[6]
-            )
-        )
-        logger.info(
-            "No proper pair (unexpected read distance):\t{} pairs (filtered)".format(
-                self.counter[8]
-            )
-        )
-        logger.info(
-            "10bp_s_clip (>9bp soft-clipped in cigar):\t{} pairs (filtered)".format(
-                self.counter[7]
-            )
-        )
-        logger.info(
-            'Unlikely chimeric ("normal" mappings): \t{} pairs (discarded)'.format(
-                self.counter[1]
-                - self.counter[4]
-                - self.counter[3]
-                - self.counter[6]
-                - self.counter[8]
-                - self.counter[7]
-            )
-        )
-        logger.info(
-            "Not filtered, but mapped to fusion gene:\t{} pairs (filtered)".format(
-                self.counter[9]
-            )
-        )
-        logger.info("Filter QC1 (fq reads = bam alignments):\t{}".format(qc1))
-        logger.info("Filter QC2 (QC'd alignments are chimeric):\t{}".format(qc2))
+        # logger.info(
+        #     "Star_chimeric (chim alignment from star):\t{} pairs (filtered)".format(
+        #         self.counter[4]
+        #     )
+        # )
+        # logger.info(
+        #     "QC'd (additional Star_chimeric alignment):\t{} alignments (included in above)".format(
+        #         self.counter[5]
+        #     )
+        # )
+        # logger.info(
+        #     "Multimapped (1 < x <= 100 equal mappings):\t{} pairs (discarded)".format(
+        #         self.counter[3]
+        #     )
+        # )
+        # logger.info(
+        #     "Unmapped (no mapping or >100 multi map):\t{} pairs (filtered)".format(
+        #         self.counter[6]
+        #     )
+        # )
+        # logger.info(
+        #     "No proper pair (unexpected read distance):\t{} pairs (filtered)".format(
+        #         self.counter[8]
+        #     )
+        # )
+        # logger.info(
+        #     "10bp_s_clip (>9bp soft-clipped in cigar):\t{} pairs (filtered)".format(
+        #         self.counter[7]
+        #     )
+        # )
+        # logger.info(
+        #     '"Unlikely chimeric ("normal" mappings): \t{} pairs (discarded)'.format(
+        #         self.counter[1]
+        #         - self.counter[4]
+        #         - self.counter[3]
+        #         - self.counter[6]
+        #         - self.counter[8]
+        #         - self.counter[7]
+        #     )
+        # )
+        # logger.info(
+        #     "Not filtered, but mapped to fusion gene:\t{} pairs (filtered)".format(
+        #         self.counter[9]
+        #     )
+        # )
+        # logger.info("Filter QC1 (fq reads = bam alignments):\t{}".format(qc1))
+        # logger.info("Filter QC2 (QC'd alignments are chimeric):\t{}".format(qc2))
 
 
 

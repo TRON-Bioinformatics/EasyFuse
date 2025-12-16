@@ -11,7 +11,7 @@ import os.path
 import subprocess
 import sys
 
-from logzero import logger
+# from logzero import logger
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
@@ -91,9 +91,10 @@ class FusionSummary(object):
                 # Switch to more unique combination as ID
                 ftid = row['FTID']
                 if ftid in data:
-                    logger.info("FTID already in use")
+                    # logger.info("FTID already in use")
+                    pass
                 data[ftid] = row
-        logger.info("Loaded annotation data.")
+        # logger.info("Loaded annotation data.")
         return data
 
 
@@ -121,7 +122,7 @@ class FusionSummary(object):
                     'junc': row['Junction_Reads'], 
                     'span': row['Spanning_Reads']
                 }
-        logger.info("Loaded fusion tool data.")
+        # logger.info("Loaded fusion tool data.")
         return data
 
 
@@ -149,13 +150,13 @@ class FusionSummary(object):
                     data[context_sequence_id] = {}
                 if not seq_type in data[context_sequence_id]:
                     data[context_sequence_id][seq_type] = row
-        logger.info("Loaded requantification data.")
+        # logger.info("Loaded requantification data.")
         return data
 
 
     def load_data(self):
         """Join the three data tables context_seq, detected_fusions and requantification"""
-        logger.info("Loading input tables")
+        # logger.info("Loading input tables")
         context_seqs_data = self.load_context_seqs()
         detected_fusions_data = self.load_detected_fusions()
         requant_data = self.load_requant_counts()
@@ -169,7 +170,7 @@ class FusionSummary(object):
             self.data[key] = {}
             for ele in context_seqs_data[key]:
                 self.data[key][ele] = context_seqs_data[key][ele]
-        logger.info("Added annotation data.")
+        # logger.info("Added annotation data.")
 
 
     def add_tool_counts(self, detected_fusions_data):
@@ -189,7 +190,7 @@ class FusionSummary(object):
                         tool_count = len(detected_fusions_data[bpid])
                         #self.data[key]["tool_count"] = str(tool_count)
                         self.data[key]["tool_frac"] = str(float(tool_count)/len(self.fusion_tools))
-        logger.info("Added tool count data.")
+        # logger.info("Added tool count data.")
 
 
     def add_requant_counts(self, requant_data):
@@ -205,7 +206,7 @@ class FusionSummary(object):
                 self.data[key]["{}_junc_cnt".format(seq_type)] = requant_data[ctx_id][seq_type]["junc"]
                 self.data[key]["{}_span_cnt".format(seq_type)] = requant_data[ctx_id][seq_type]["span"]
                 self.data[key]["{}_anch_cnt".format(seq_type)] = requant_data[ctx_id][seq_type]["anch"]
-        logger.info("Added requantification data.")
+        # logger.info("Added requantification data.")
 
 
     def write_fusion_table(self):
@@ -289,13 +290,13 @@ class FusionSummary(object):
 
         num_fusions, num_cols = self.write_fusion_table()
 
-        logger.info(
-            "Done. Created {} [rows={}, cols={}].".format(
-                self.output_table,
-                num_fusions,
-                num_cols
-            )
-        )
+        # logger.info(
+        #     "Done. Created {} [rows={}, cols={}].".format(
+        #         self.output_table,
+        #         num_fusions,
+        #         num_cols
+        #     )
+        # )
 
 
 def main():

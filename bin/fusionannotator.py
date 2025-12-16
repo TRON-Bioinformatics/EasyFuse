@@ -30,9 +30,9 @@ from fusionannotation.src.result_handler import ResultHandler
 from fusionannotation.src.transcript import Transcript
 
 
-FORMAT = '%(asctime)s - %(message)s'
-logging.basicConfig(format=FORMAT, level=logging.DEBUG)
-logger = logging.getLogger(__name__)
+# FORMAT = '%(asctime)s - %(message)s'
+# logging.basicConfig(format=FORMAT, level=logging.DEBUG)
+# logger = logging.getLogger(__name__)
 
 
 class FusionAnnotator:
@@ -40,11 +40,11 @@ class FusionAnnotator:
 
     def __init__(self, db_file, bp_file, tsl_file):
         """Parameter initialization"""
-        logger.info("Loading fusion breakpoints into dict")
+        # logger.info("Loading fusion breakpoints into dict")
         self.bp_dict = load_detected_fusions(bp_file)
-        logger.info("Loading GFF data into database object")
+        # logger.info("Loading GFF data into database object")
         self.db = GffDbController(db_file)
-        logger.info("Loading TSL data into dict")
+        # logger.info("Loading TSL data into dict")
         self.tsl_dict = load_tsl_data(tsl_file)
         self.suspect_transcripts = {}
 
@@ -97,7 +97,7 @@ class FusionAnnotator:
         """
         Annotate a single breakpoint pair
         """
-        logger.debug("Annotating '%s'...", bpid)
+        # logger.debug("Annotating '%s'...", bpid)
         result_list = []
         # split breakpoint info
         bp1 = self.bp_dict[bpid][0]
@@ -138,7 +138,7 @@ class FusionAnnotator:
 
     def run(
         self,
-        context_seqs_file: str,
+        context_seqs_file: str,  # Output CSV file
         cis_near_distance: int,
         genome_fasta: str,
         context_seq_len: int,
@@ -146,7 +146,7 @@ class FusionAnnotator:
     ):
         """Run the annotation pipeline"""
 
-        logger.info("Running annotation pipeline")
+        # logger.info("Running annotation pipeline")
 
         fusion_transcripts = []
 
@@ -154,14 +154,16 @@ class FusionAnnotator:
             fusion_transcripts_bpid = self.annotate_bpid(bpid, cis_near_distance)
             fusion_transcripts.extend(fusion_transcripts_bpid)
         # print all fusion transcripts
-        for fusion_transcript in fusion_transcripts:
-            logger.debug(fusion_transcript)
-        logger.info("Loading genomic data from %s", genome_fasta)
-        cds_seqs = load_genomic_data(genome_fasta, fusion_transcripts)
-        for key in cds_seqs:
-            logger.debug("Chrom: %s Loaded %s sequences", key, len(cds_seqs[key]))
+        # for fusion_transcript in fusion_transcripts:
+            # logger.debug(fusion_transcript)
+            # pass
+        # logger.info("Loading genomic data from %s", genome_fasta)
+        feature_seqs = load_genomic_data(genome_fasta, fusion_transcripts)
+        # for key in feature_seqs:
+            # logger.debug("Chrom: %s Loaded %s sequences", key, len(feature_seqs[key]))
+            # pass
 
-        result_handler = ResultHandler(cds_seqs, context_seq_len)
+        result_handler = ResultHandler(feature_seqs, context_seq_len)
         result_list = result_handler.generate_result_list(
             fusion_transcripts
         )
@@ -172,7 +174,7 @@ class FusionAnnotator:
         output_handler.write_fasta_info()
         output_handler.write_transcript_fasta()
         output_handler.write_peptide_fasta()
-        logger.info("Finished annotation pipeline")
+        # logger.info("Finished annotation pipeline")
 
 
 def main():
