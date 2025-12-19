@@ -264,7 +264,7 @@ class ResultHandler:
         if wt1_full.exons:
             wt1_start_stop = f"{bp1.chrom}:{wt1_full.exons[0].start}:{wt1_full.exons[-1].stop}"
         if wt2_full.exons:
-            wt2_start_stop = f"{bp2.chrom}:{wt2_full.exons[0].start}:{bp2.chrom}:{wt2_full.exons[-1].stop}"
+            wt2_start_stop = f"{bp2.chrom}:{wt2_full.exons[0].start}:{wt2_full.exons[-1].stop}"
 
         table_row = {
             "BPID": fusion_transcript.get_bpid(),
