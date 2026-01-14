@@ -8,28 +8,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
-### Added
-- New modular fusion parsing with per-tool parsers (Arriba, STAR-Fusion, FusionCatcher, InFusion, MapSplice, SOAPfuse) producing standardized CSV via parse_tool.py
-- New Nextflow parsing processes (PARSE_ARRIBA, PARSE_STAR_FUSION, PARSE_FUSION_CATCHER) and dedicated conda env (environments/fusionparsing.yml)
-- New utilities for annotation: gff3_to_db.py (build gffutils DB) and gtf2tsl.py (extract TSL)
-- Unit tests and test runner for fusion annotation module
+> **Note:** This release contains no changes to pipeline output or results. All changes are internal technical improvements and code refactoring.
 
-### Changed
-- Refactored fusion annotation to modular fusionannotator.py and supporting components
-- Refactored fusion parsing; fusiontoolparser.py now consumes standardized per-tool CSVs via repeated --tool and writes Detected_Fusions.csv with consistent headers
-- Nextflow workflow reorganized: parsing moved to modules/04_fusionparsing.nf, annotation to modules/05_fusionannotation.nf; downstream stages renumbered
-- Updated environments: conda channels switched to nodefaults
-- Removed logzero usage and reduced log output across scripts
-
-### Fixed
+### Technical Improvements
 - Robust header-based range extraction in read_selection.py for wildtype ranges
 - Stricter chromosome filtering to primary contigs and strand handling in tool parsers; ARRIBA limited to high-confidence fusions
 - Pipeline outputs aligned for ARRIBA (only fusions.tsv) and downstream consumers
 
-### Removed
-- Legacy monolithic fusion annotation script (replaced by fusionannotator.py)
-- logzero dependency and related logging calls
+### Internal & Technical Changes
+
+#### Code Refactoring
+- Refactored fusion annotation to modular fusionannotator.py and supporting components
+- Refactored fusion parsing; fusiontoolparser.py now consumes standardized per-tool CSVs via repeated --tool and writes Detected_Fusions.csv with consistent headers
+- Nextflow workflow reorganized: parsing moved to modules/04_fusionparsing.nf, annotation to modules/05_fusionannotation.nf; downstream stages renumbered
+
+#### Infrastructure & Dependencies
+- Updated environments: conda channels switched to nodefaults
+- Removed logzero dependency and related logging calls; reduced log output across scripts
+- Removed legacy monolithic fusion annotation script (replaced by fusionannotator.py)
 - Removed ARRIBA discarded output from pipeline (structural cleanup; discarded fusions were not used downstream before, only high-confidence calls proceed)
+
+#### Development & Testing
+- New utilities for annotation: gff3_to_db.py (build gffutils DB) and gtf2tsl.py (extract TSL)
+- New modular fusion parsing with per-tool parsers (Arriba, STAR-Fusion, FusionCatcher, InFusion, MapSplice, SOAPfuse) producing standardized CSV via parse_tool.py
+- New Nextflow parsing processes (PARSE_ARRIBA, PARSE_STAR_FUSION, PARSE_FUSION_CATCHER) and dedicated conda env (environments/fusionparsing.yml)
+- Unit tests and test runner for fusion annotation module
 
 ## [2.0.4] - 2024-12-09
 
