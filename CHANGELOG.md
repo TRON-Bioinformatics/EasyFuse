@@ -8,29 +8,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
-### ⚠️ No Output Changes
+### Functional changes
 
-**This release contains no changes to pipeline output or results.** All changes are internal technical improvements and code refactoring to improve maintainability and code quality.
-
-### Technical Improvements
-- Robust header-based range extraction in read_selection.py for wildtype ranges
-- Stricter chromosome filtering to primary contigs and strand handling in tool parsers; ARRIBA limited to high-confidence fusions
-- Pipeline outputs aligned for ARRIBA (only fusions.tsv) and downstream consumers
+- No changes to pipeline output or results; this release focuses on internal refactoring and maintainability improvements.
+- In rare cases, `no_frame` or `neo_frame` fusion annotations may change due to improved handling of reference annotations.
 
 ### Internal & Technical Changes
 
 #### Code Refactoring
+
 - Refactored fusion annotation to modular fusionannotator.py and supporting components
 - Refactored fusion parsing; fusiontoolparser.py now consumes standardized per-tool CSVs via repeated --tool and writes Detected_Fusions.csv with consistent headers
 - Nextflow workflow reorganized: parsing moved to modules/04_fusionparsing.nf, annotation to modules/05_fusionannotation.nf; downstream stages renumbered
 
+#### Technical Improvements
+
+- Robust header-based range extraction in read_selection.py for wildtype ranges
+- Stricter chromosome filtering to primary contigs and strand handling in tool parsers
+- Pipeline outputs aligned for ARRIBA (only fusions.tsv) and downstream consumers
+
+
 #### Infrastructure & Dependencies
+
 - Updated environments: conda channels switched to nodefaults
 - Removed logzero dependency and related logging calls; reduced log output across scripts
 - Removed legacy monolithic fusion annotation script (replaced by fusionannotator.py)
 - Removed ARRIBA discarded output from pipeline (structural cleanup; discarded fusions were not used downstream before, only high-confidence calls proceed)
 
 #### Development & Testing
+
 - New utilities for annotation: gff3_to_db.py (build gffutils DB) and gtf2tsl.py (extract TSL)
 - New modular fusion parsing with per-tool parsers (Arriba, STAR-Fusion, FusionCatcher, InFusion, MapSplice, SOAPfuse) producing standardized CSV via parse_tool.py
 - New Nextflow parsing processes (PARSE_ARRIBA, PARSE_STAR_FUSION, PARSE_FUSION_CATCHER) and dedicated conda env (environments/fusionparsing.yml)
@@ -41,7 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Added full length protein sequence to the final output
-- Specifiy computational requirements via predefined labels: single, low and medium
+- Specify computational requirements via predefined labels: single, low and medium
 
 ### Changed
 
