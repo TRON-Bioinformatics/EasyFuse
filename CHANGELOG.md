@@ -8,7 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
-> **Note:** This release contains no changes to pipeline output or results. All changes are internal technical improvements and code refactoring.
+### ⚠️ No Output Changes
+
+**This release contains no changes to pipeline output or results.** All changes are internal technical improvements and code refactoring to improve maintainability and code quality.
 
 ### Technical Improvements
 - Robust header-based range extraction in read_selection.py for wildtype ranges
