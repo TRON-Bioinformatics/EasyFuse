@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Refactored fusion annotation to modular fusionannotator.py and supporting components
 - Refactored fusion parsing; fusiontoolparser.py now consumes standardized per-tool CSVs via repeated --tool and writes Detected_Fusions.csv with consistent headers
 - Nextflow workflow reorganized: parsing moved to modules/04_fusionparsing.nf, annotation to modules/05_fusionannotation.nf; downstream stages renumbered
+- Retrained model due to slight changes in annotations
 
 #### Technical Improvements
 
