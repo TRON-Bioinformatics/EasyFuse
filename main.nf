@@ -5,9 +5,10 @@ nextflow.enable.dsl = 2
 include { FASTP } from './modules/01_qc'
 include { STAR ; STAR_ARRIBA ; READ_FILTER ; BAM2FASTQ } from './modules/02_alignment'
 include { FUSION_CATCHER ; STAR_FUSION ; ARRIBA } from './modules/03_fusion_callers'
-include { FUSION_PARSER ; FUSION_ANNOTATION } from './modules/04_joint_fusion_calling'
-include { FUSION2CSV ; CSV2FASTA ; STAR_INDEX ; FUSION_FILTER ; STAR_CUSTOM ; READ_COUNT } from './modules/05_requantification'
-include { MERGE_DATA ; PREDICTION } from './modules/06_summarize'
+include { PARSE_FUSION_CATCHER ; PARSE_STAR_FUSION ; PARSE_ARRIBA ; FUSION_PARSER } from './modules/04_fusionparsing'
+include { FUSION_ANNOTATION } from './modules/05_fusionannotation'
+include { FUSION2CSV ; CSV2FASTA ; STAR_INDEX ; FUSION_FILTER ; STAR_CUSTOM ; READ_COUNT } from './modules/06_requantification'
+include { MERGE_DATA ; PREDICTION } from './modules/07_summarize'
 	    
 
 def helpMessage() {
@@ -74,15 +75,18 @@ workflow TOOLS {
 
     main:
     FUSION_CATCHER(filtered_fastqs)
+    PARSE_FUSION_CATCHER(FUSION_CATCHER.out.fusions)
     STAR_FUSION(filtered_fastqs)
+    PARSE_STAR_FUSION(STAR_FUSION.out.fusions)
     STAR_ARRIBA(filtered_fastqs)
     ARRIBA(STAR_ARRIBA.out.bams)
+    PARSE_ARRIBA(ARRIBA.out.fusions)
 
 
     emit:
-    fusioncatcher_results = FUSION_CATCHER.out.fusions
-    starfusion_results = STAR_FUSION.out.fusions
-    arriba_results = ARRIBA.out.fusions
+    fusioncatcher_results = PARSE_FUSION_CATCHER.out.fusions
+    starfusion_results = PARSE_STAR_FUSION.out.fusions
+    arriba_results = PARSE_ARRIBA.out.fusions
 }
 
 workflow ANNOTATION {

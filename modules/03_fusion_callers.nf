@@ -1,5 +1,4 @@
 
-
 process FUSION_CATCHER {
     tag "${name}"
     label 'process_medium'
@@ -56,7 +55,7 @@ process ARRIBA {
       tuple val(name), path(bam)
 
     output:
-      tuple val("${name}"), path("fusions.tsv"), path("fusions.discarded.tsv"), emit: fusions
+      tuple val("${name}"), path("fusions.tsv"), emit: fusions
 
     script:
     """

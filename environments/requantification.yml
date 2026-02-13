@@ -2,7 +2,7 @@ name: requantification
 channels:
   - conda-forge
   - bioconda
-  - defaults
+  - nodefaults
 dependencies:
   - python=3.7
   - bowtie2=2.4.4

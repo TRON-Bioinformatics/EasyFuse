@@ -2,7 +2,9 @@ name: merging
 channels:
   - conda-forge
   - bioconda
-  - defaults
+  - nodefaults
 dependencies:
   - python=3.8
-  - conda-forge::logzero=1.7.0
+  # - pip
+  # - pip:
+  #     - logzero==1.7.0

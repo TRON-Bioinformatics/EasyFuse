@@ -2,6 +2,6 @@ name: arriba
 channels:
   - conda-forge
   - bioconda
-  - defaults
+  - nodefaults
 dependencies:
   - bioconda::arriba=2.4.0

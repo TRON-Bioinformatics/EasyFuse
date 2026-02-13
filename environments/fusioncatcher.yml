@@ -2,7 +2,7 @@ name: fusioncatcher
 channels:
   - conda-forge
   - bioconda
-  - defaults
+  - nodefaults
 dependencies:
   - bioconda::fusioncatcher=1.33
   - bioconda::java-jdk
