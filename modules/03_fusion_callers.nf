@@ -47,7 +47,7 @@ process STAR_FUSION {
 
 process ARRIBA {
     tag "${name}"
-    label 'process_low'
+    label 'process_medium'
 
     conda ("${baseDir}/environments/arriba.yml")
 
