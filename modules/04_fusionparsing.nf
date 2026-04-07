@@ -1,9 +1,11 @@
-
 process PARSE_ARRIBA {
     tag "${name}"
     label 'process_single'
 
     conda ("${baseDir}/environments/fusionparsing.yml")
+    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+        'community.wave.seqera.io/library/python:3.8.0--5e0e57f6a223cdda' :
+        'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/79/796c2d0f22be8bd23bf91dd74661318db5545bc15c4ec63fd1207c95b2d5d22c/data' }" 
 
     input:
       tuple val(name), path(arriba_out)
@@ -26,6 +28,9 @@ process PARSE_STAR_FUSION {
     label 'process_single'
 
     conda ("${baseDir}/environments/fusionparsing.yml")
+    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+        'community.wave.seqera.io/library/python:3.8.0--5e0e57f6a223cdda' :
+        'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/79/796c2d0f22be8bd23bf91dd74661318db5545bc15c4ec63fd1207c95b2d5d22c/data' }"
 
     input:
       tuple val(name), path(star_fusion_out)
@@ -48,6 +53,9 @@ process PARSE_FUSION_CATCHER {
     label 'process_single'
 
     conda ("${baseDir}/environments/fusionparsing.yml")
+    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+        'community.wave.seqera.io/library/python:3.8.0--5e0e57f6a223cdda' :
+        'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/79/796c2d0f22be8bd23bf91dd74661318db5545bc15c4ec63fd1207c95b2d5d22c/data' }"
 
     input:
       tuple val(name), path(fusion_catcher_1), path(fusion_catcher_2)
@@ -71,6 +79,9 @@ process FUSION_PARSER {
     label 'process_single'
 
     conda ("${baseDir}/environments/fusionparsing.yml")
+    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+        'community.wave.seqera.io/library/python:3.8.0--5e0e57f6a223cdda' :
+        'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/79/796c2d0f22be8bd23bf91dd74661318db5545bc15c4ec63fd1207c95b2d5d22c/data' }"
 
     input:
       tuple val(name), path(fusion_catcher), path(star_fusion), path(arriba)
