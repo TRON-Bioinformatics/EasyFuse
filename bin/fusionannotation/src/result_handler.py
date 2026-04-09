@@ -169,14 +169,12 @@ class ResultHandler:
         # TODO: Use translation table 2 for mitochondrial genes
         translation_table = 1  # Standard table for human AA codes
         if fusion_cds in ["NA", ""]:
-            fusion_peptide = ""
-            fusion_protein_sequence = fusion_peptide
+            fusion_protein_sequence = ""
             fusion_protein_sequence_bp = 0
             neo_peptide_sequence = ""
             neo_peptide_sequence_bp = 0
         else:
-            fusion_peptide = fusion_cds[wt1_full.frame_at_start:].translate(table=translation_table, to_stop=True)
-            fusion_protein_sequence = fusion_peptide
+            fusion_protein_sequence = fusion_cds[wt1_full.frame_at_start:].translate(table=translation_table, to_stop=True)
 
             # Breakpoint in fusion transcript (CDS)
             bp_in_fusion_nt = len(ft1_cds_transcripts)
@@ -193,7 +191,7 @@ class ResultHandler:
                 neo_peptide_sequence_bp = round(bp_in_fusion_aa - (int(bp_in_fusion_aa) - 13), 1)
 
             # Neo-peptide
-            neo_peptide_sequence = fusion_peptide[max(0, int(bp_in_fusion_aa) - 13) :]
+            neo_peptide_sequence = fusion_protein_sequence[max(0, int(bp_in_fusion_aa) - 13) :]
             # Truncate the neo-peptide sequence to the breakpoint position if in-frame
             if fusion_transcript.frame == "in_frame":
                 neo_peptide_sequence = neo_peptide_sequence[: (int(neo_peptide_sequence_bp) + 13)]
@@ -332,7 +330,7 @@ class ResultHandler:
             "wt1_peptide": wt1_peptide,
             "wt2_peptide": wt2_peptide,
             "fusion_transcript": fusion_cds,  # should be renamed in the output
-            "fusion_peptide": fusion_peptide,  # same as fusion_protein_sequence
+            "fusion_peptide": fusion_protein_sequence,  # compatibility alias for release stability
             "wt1_is_good_transcript": wt1_is_good_transcript,
             "wt2_is_good_transcript": wt2_is_good_transcript,
             "wt1_trans_biotype": wt1_full.transcript_biotype,
