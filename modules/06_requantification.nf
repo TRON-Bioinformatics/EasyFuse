@@ -3,6 +3,9 @@ process FUSION_FILTER {
     label 'process_single'
 
     conda ("${baseDir}/environments/filtering.yml")
+    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+        'community.wave.seqera.io/library/pysam:0.22.0--a94c5bab35035aad' :
+        'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/64/64682c99fc92227f78f81a53c8d739b16e8b712c6c75a8909f159405cb29dbe1/data' }"
 
     input:
       tuple val(name), path(bam), path(annot_fusions_csv), path(annot_fusions_csv_debug), path(annot_fusions_fasta), path(read_stats)
@@ -25,6 +28,9 @@ process FUSION2CSV {
     label 'process_single'
 
     conda ("${baseDir}/environments/filtering.yml")
+    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+        'community.wave.seqera.io/library/pysam:0.22.0--a94c5bab35035aad' :
+        'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/64/64682c99fc92227f78f81a53c8d739b16e8b712c6c75a8909f159405cb29dbe1/data' }"
 
     input:
       tuple val(name), path(annot_fusions_csv), path(annot_fusions_csv_debug), path(annot_fusions_fasta)
@@ -45,6 +51,9 @@ process CSV2FASTA {
     label 'process_single'
 
     conda ("${baseDir}/environments/requantification.yml")
+    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+        'community.wave.seqera.io/library/bowtie2_bwa_pysam_samtools_pruned:dbf6a7df7fd19e94' :
+        'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/f6/f6cff3f1cbfc4d55dcafb0096f37bd334a48d175064b94e5d3d75245b29db43b/data'}"
 
     input:
       tuple val(name), path(formatted_csv)
@@ -67,7 +76,10 @@ process STAR_INDEX {
     label 'process_low'
 
     conda ("${baseDir}/environments/requantification.yml")
-    
+    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+        'community.wave.seqera.io/library/bowtie2_bwa_pysam_samtools_pruned:dbf6a7df7fd19e94' :
+        'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/f6/f6cff3f1cbfc4d55dcafb0096f37bd334a48d175064b94e5d3d75245b29db43b/data'}"
+  
     input:
       tuple val(name), path(formatted_fasta)
 
@@ -88,8 +100,12 @@ process STAR_INDEX {
 
 process STAR_CUSTOM {
     tag "${name}"
-    label 'process_medium'    
+    label 'process_medium'
+
     conda ("${baseDir}/environments/requantification.yml")
+    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+        'community.wave.seqera.io/library/bowtie2_bwa_pysam_samtools_pruned:dbf6a7df7fd19e94' :
+        'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/f6/f6cff3f1cbfc4d55dcafb0096f37bd334a48d175064b94e5d3d75245b29db43b/data'}"
 
     input:
       tuple val(name), path(fastq1), file(fastq2), path(star_index)
@@ -117,6 +133,9 @@ process READ_COUNT {
   label 'process_single'
 
   conda ("${baseDir}/environments/requantification.yml")
+  container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+        'community.wave.seqera.io/library/bowtie2_bwa_pysam_samtools_pruned:dbf6a7df7fd19e94' :
+        'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/f6/f6cff3f1cbfc4d55dcafb0096f37bd334a48d175064b94e5d3d75245b29db43b/data'}"
 
   input:
     tuple val(name), path(bam), path(formatted_csv)

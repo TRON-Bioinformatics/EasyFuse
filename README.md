@@ -18,7 +18,7 @@ The current version of EasyFuse uses three fusion gene detection tools, [STAR-Fu
 ### Dependencies
 
  - [NextFlow, 24.10.1](https://www.nextflow.io/)
- - [Conda](https://docs.anaconda.com/free/anaconda/install/index.html)
+ - [Conda](https://docs.anaconda.com/free/anaconda/install/index.html) / [Singularity](https://docs.sylabs.io/guides/3.5/user-guide/introduction.html) / [Docker](https://docs.docker.com/manuals/)
 
 Please have a look at environment.yml.
 The conda environment to run nextflow can be installed with the following command:
@@ -91,6 +91,11 @@ nextflow run tron-bioinformatics/easyfuse -r x.y.z \
   --input_files /path/to/input_table_file \
   --output /path/to/output_folder
 ```
+
+The pipeline supports the following profiles:
+- Conda - nextflow builds a dedicated conda environment for each of the processes to run
+- Singularity - nextflow pulls dedicated singularity conatiners for the processes to run. If containers are available locally the `NXF_SINGULARITY_CACHEDIR=/path/to/local/images` environment variable for nextflow to find the images locally.
+- Slurm - the slurm profile would run the pipeline with the slurm executor, parallelizing the nextflow processes.
 
 Note: If you want to use a custom profile (e.g. for running jobs on a cluster), please refer to https://www.nextflow.io/docs/latest/config.html for further information.
 

@@ -14,3 +14,5 @@ report*.html
 timeline*.html
 venv/
 ef_env/
+logs/
+*slurm*
