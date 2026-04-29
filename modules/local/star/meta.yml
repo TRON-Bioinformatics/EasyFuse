@@ -1,0 +1,69 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
+# # TODO nf-core: Add a description of the module and list keywords
+name: "star"
+description: write your description here
+keywords:
+  - sort
+  - example
+  - genomics
+tools:
+  ## TODO nf-core: Add a description and other details for the software below
+  - "star":
+      description: "An RNA-seq read aligner."
+      homepage: "None"
+      documentation: "None"
+      tool_dev_url: "None"
+      doi: ""
+      licence: ["GPL v3-or-later", "GPL v3"]
+      identifier: biotools:star
+
+input:
+  # TODO nf-core: Update the information obtained from bio.tools and make sure that it is correct
+  - - meta:
+        type: map
+        description: Groovy Map containing sample information. e.g. `[
+          id:'sample1' ]`
+    - rna_sequence:
+        type: file
+        description: rna_sequence file
+        pattern: "*.{fastq}"
+        ontologies:
+          - edam: http://edamontology.org/data_3495 # RNA sequence
+          - edam: http://edamontology.org/format_1930 # FASTQ
+output:
+  # TODO nf-core: Update the information obtained from bio.tools and make sure that it is correct
+  nucleic_acid_sequence_alignment:
+    - - meta:
+          type: map
+          description: Groovy Map containing sample information. e.g. `[
+            id:'sample1' ]`
+      - "*.{bam,sam}":
+          type: file
+          description: nucleic_acid_sequence_alignment file
+          pattern: "*.{bam,sam}"
+          ontologies:
+            - edam: http://edamontology.org/data_1383 # Nucleic acid sequence alignment
+            - edam: http://edamontology.org/format_2572 # BAM
+            - edam: http://edamontology.org/format_2573 # SAM
+  gene_expression_matrix:
+    - - meta:
+          type: map
+          description: Groovy Map containing sample information. e.g. `[
+            id:'sample1' ]`
+      - "*.{}":
+          type: file
+          description: gene_expression_matrix file
+          pattern: "*.{}"
+          ontologies:
+            - edam: http://edamontology.org/data_3112 # Gene expression matrix
+  versions:
+    - versions.yml:
+        type: file
+        description: File containing software versions
+        pattern: versions.yml
+        ontologies:
+          - edam: http://edamontology.org/format_3750 # YAML
+authors:
+  - "@khersameesh24"
+maintainers:
+  - "@khersameesh24"

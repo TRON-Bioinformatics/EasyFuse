@@ -1,7 +1,0 @@
-name: starfusion
-channels:
-  - conda-forge
-  - bioconda
-  - nodefaults
-dependencies:
-  - bioconda::star-fusion=1.12.0

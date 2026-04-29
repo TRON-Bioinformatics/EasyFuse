@@ -1,0 +1,35 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
+# # TODO nf-core: Add a description of the module and list keywords
+name: "fastp"
+description: write your description here
+keywords:
+- sort
+- example
+- genomics
+tools:
+## TODO nf-core: Add a description and other details for the software below
+- "fastp":
+    description: "A ultra-fast FASTQ preprocessor with full features (QC/adapters/trimming/filtering/splitting...)."
+    homepage: "https://github.com/OpenGene/fastp/blob/v1.3.3/README.md"
+    documentation: "https://github.com/OpenGene/fastp/blob/v1.3.3/README.md"
+    tool_dev_url: "https://github.com/OpenGene/fastp"
+    doi: ""
+    licence: ['MIT']
+    identifier: biotools:fastp
+
+input:
+# TODO nf-core: Update the information obtained from bio.tools and make sure that it is correct
+  []
+output:
+# TODO nf-core: Update the information obtained from bio.tools and make sure that it is correct
+  versions: -
+    versions.yml:
+      type: file
+      description: File containing software versions
+      pattern: versions.yml
+      ontologies:
+      - edam: http://edamontology.org/format_3750  # YAML
+authors:
+- "@khersameesh24"
+maintainers:
+- "@khersameesh24"
