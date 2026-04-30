@@ -1,4 +1,4 @@
-process STARARRIBA {
+process STAR_ARRIBA {
     tag "$meta.id"
     label 'process_medium'
 

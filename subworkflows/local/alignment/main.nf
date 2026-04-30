@@ -1,5 +1,5 @@
 //
-// EasyFuse: align paired end RNA-seq reads to a reference genome and transcriptome,
+// EasyFuse: Alignment - align paired end RNA-seq reads to a reference genome and transcriptome,
 // and filter for fusion-supporting reads
 //
 
