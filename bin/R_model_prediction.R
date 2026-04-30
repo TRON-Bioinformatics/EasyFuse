@@ -10,6 +10,7 @@ library(stringr, quietly = TRUE)
 library(randomForest, quietly = TRUE)
 
 # Parse commandline arguments --------------------------------------------------
+version <- "v2.1.0"
 
 argument_list <- list(
 	make_option(c("-i", "--fusion_summary"), default="",
@@ -21,8 +22,15 @@ argument_list <- list(
 	            positive"),
 	make_option(c("-o", "--output"), default="",
 	            help="Final Output file for predicted fusion genes")
+  make_options(c("-v", "--version"), default=version,
+              help="Return version and exit")
 )
 opt <- parse_args(OptionParser(option_list=argument_list))
+
+if (!is.null(opt$version) && opt$version) {
+  cat(version)
+  quit(save="no")
+}
 
 # check mandatory arguments
 if(is.na(opt$fusion_summary) | opt$fusion_summary == "") {

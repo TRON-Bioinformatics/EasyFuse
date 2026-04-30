@@ -1,0 +1,9 @@
+channels:
+  - conda-forge
+  - bioconda
+  - nodefaults
+dependencies:
+  - conda-forge::r-base
+  - conda-forge::r-optparse
+  - conda-forge::r-tidyverse
+  - conda-forge::r-randomForest

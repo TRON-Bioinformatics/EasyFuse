@@ -17,6 +17,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from count_input_reads import get_input_read_count
 
+__version__ = "20240129"
 
 class FusionSummary(object):
     """Collect stats of the run and write them to file"""
@@ -337,7 +338,15 @@ def main():
         dest="fusion_tools",
         help="Fusion tools."
     )
+    parser.add_argument(
+        "--version",
+        dest="version",
+        help="Return version and exit"
+    )
     args = parser.parse_args()
+
+    if args.version:
+        return __version__
 
     summary = FusionSummary(
         input_fusions=args.input_detected_fusions,
