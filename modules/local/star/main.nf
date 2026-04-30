@@ -8,8 +8,7 @@ process STAR_ALIGN {
         'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/9b/9b8ecb2f9a77b5e7573ef6fae2f4c2e771064f7a129ed1329913c1025c33f365/data' }"
 
     input:
-    tuple val(meta), path(fastq1), path(fastq2)
-    path(star_index, stageAs: "star_index/")
+    tuple val(meta), path(fastq1), path(fastq2), path(star_index, stageAs: "star_index/")
 
     output:
     tuple val(meta), path("${prefix}.bam")                  , emit: bam

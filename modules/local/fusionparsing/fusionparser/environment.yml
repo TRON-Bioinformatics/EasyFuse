@@ -3,4 +3,4 @@ channels:
   - bioconda
   - nodefaults
 dependencies:
-  - bioconda::star=2.7.11b
+  - python=3.8
