@@ -39,62 +39,6 @@ workflow EASYFUSE {
     ch_stararriba_index    = channel.empty()
     ch_fusioncatcher_index = channel.empty()
 
-    // get reference fasta
-    if (params.reference_fasta) {
-        ch_reference_fasta = channel.value(
-            file(params.reference_fasta.toString().replaceFirst(/\/$/, ''), checkIfExists: true)
-        )
-    } else {
-        ch_reference_fasta = channel.value(
-            file(params.reference.toString().replaceFirst(/\/$/, '') + '/Homo_sapiens.GRCh38.dna.primary_assembly.fa', checkIfExists: true)
-        )
-    }
-
-    // get reference gtf
-    if (params.reference_gtf) {
-        ch_reference_gtf = channel.value(
-            file(params.reference_gtf.toString().replaceFirst(/\/$/, ''), checkIfExists: true)
-        )
-    } else {
-        ch_reference_gtf = channel.value(
-            file(params.reference.toString().replaceFirst(/\/$/, '') + '/ref_genome.gtf', checkIfExists: true)
-        )
-    }
-
-    // get Fusioncatcher index path from params or set default path based on reference path
-    if (params.fusioncatcher_index) {
-        ch_fusioncatcher_index = channel.value(
-            file(params.fusioncatcher_index.toString().replaceFirst(/\/$/, ''), checkIfExists: true)
-        )
-    } else {
-        ch_fusioncatcher_index = channel.value(
-            file(params.reference_path.toString().replaceFirst(/\/$/, '') + '/fusioncatcher_index', checkIfExists: true)
-        )
-    }
-
-    // get STAR-Fusion index path from params or set default path based on reference path
-    if (params.starfusion_index) {
-        ch_starfusion_index = channel.value(
-            file(params.starfusion_index.toString().replaceFirst(/\/$/, ''), checkIfExists: true)
-        )
-    } else {
-        ch_starfusion_index = channel.value(
-            file(params.reference_path.toString().replaceFirst(/\/$/, '') + '/starfusion_index', checkIfExists: true)
-        )
-    }
-
-    // get STAR-Arriba index path from params or set default path based on reference path
-    if (params.stararriba_index) {
-        ch_stararriba_index = channel.value(
-            file(params.stararriba_index.toString().replaceFirst(/\/$/, ''), checkIfExists: true)
-        )
-    } else {
-        ch_stararriba_index = channel.value(
-            file(params.reference_path.toString().replaceFirst(/\/$/, '') + '/star_index', checkIfExists: true)
-        )
-    }
-
-
     /*
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         QC Layer
@@ -191,10 +135,6 @@ workflow EASYFUSE {
             newLine: true
         ).set { ch_collated_versions }
 
-
-    //
-    // MODULE: MultiQC
-    //
     ch_multiqc_config        = channel.fromPath("$projectDir/assets/multiqc_config.yml", checkIfExists: true)
     ch_multiqc_custom_config = params.multiqc_config ? channel.fromPath(params.multiqc_config, checkIfExists: true) : channel.empty()
     ch_multiqc_logo          = params.multiqc_logo ? channel.fromPath(params.multiqc_logo, checkIfExists: true) : channel.empty()
