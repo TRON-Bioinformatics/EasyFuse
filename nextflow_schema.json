@@ -10,7 +10,7 @@
             "type": "object",
             "fa_icon": "fas fa-terminal",
             "description": "Define where the pipeline should find input data and save output data.",
-            "required": ["input", "outdir"],
+            "required": ["input", "outdir", "reference"],
             "properties": {
                 "input": {
                     "type": "string",
@@ -28,6 +28,22 @@
                     "format": "directory-path",
                     "description": "The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure.",
                     "fa_icon": "fas fa-folder-open"
+                },
+                "reference": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "mimetype": "text/plain",
+                    "pattern": "^\\S+\\.txt$",
+                    "description": "Path to reference files.",
+                    "help_text": "Path to the reference genome and other reference files.",
+                    "fa_icon": "fas fa-file-alt"
+                },
+                "fusion_tools": {
+                    "type": "string",
+                    "default": "arriba,starfusion,fusioncatcher",
+                    "description": "Comma-separated list of fusion calling tools to run. Options: arriba, starfusion, fusioncatcher",
+                    "pattern": "^(arriba|starfusion|fusioncatcher)(,(arriba|starfusion|fusioncatcher))*$"
                 },
                 "multiqc_title": {
                     "type": "string",

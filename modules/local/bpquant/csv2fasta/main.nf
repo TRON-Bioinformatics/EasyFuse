@@ -1,4 +1,4 @@
-process CSV2FASTA {
+process BPQUANT_CSV2FASTA {
     tag "$meta.id"
     label 'process_single'
 

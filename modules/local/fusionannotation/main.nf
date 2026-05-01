@@ -1,4 +1,4 @@
-process FUSION_ANNOTATION {
+process FUSIONANNOTATER {
     tag "$meta.id"
     label 'process_single'
 

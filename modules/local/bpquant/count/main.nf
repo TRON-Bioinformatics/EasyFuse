@@ -11,8 +11,8 @@ process BPQUANT_COUNT {
     tuple val(meta), path(bam), path(formatted_csv)
 
     output:
-    tuple val(meta), path("quantification.tsv"), emit: counts
-    path("versions.yml")                       , emit: versions
+    tuple val(meta), path("${prefix}/quantification.tsv"), emit: counts
+    path("versions.yml")                                 , emit: versions
 
     when:
     task.ext.when == null || task.ext.when

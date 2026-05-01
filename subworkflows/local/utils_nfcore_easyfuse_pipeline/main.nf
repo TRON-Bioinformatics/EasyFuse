@@ -28,16 +28,16 @@ workflow PIPELINE_INITIALISATION {
     version           // boolean: Display version and exit
     validate_params   // boolean: Boolean whether to validate parameters against the schema at runtime
     monochrome_logs   // boolean: Do not use coloured log outputs
-    nextflow_cli_args //   array: List of positional nextflow CLI args
-    outdir            //  string: The output directory where the results will be saved
-    input             //  string: Path to input samplesheet
+    nextflow_cli_args // array: List of positional nextflow CLI args
+    outdir            // string: The output directory where the results will be saved
+    input             // string: Path to input samplesheet
     help              // boolean: Display help message and exit
     help_full         // boolean: Show the full help message
     show_hidden       // boolean: Show hidden parameters in the help message
 
     main:
 
-    ch_versions = Channel.empty()
+    ch_versions = channel.empty()
 
     //
     // Print version and exit if required and dump pipeline parameters to JSON file
@@ -81,8 +81,7 @@ workflow PIPELINE_INITIALISATION {
     //
     // Create channel from input file provided through params.input
     //
-
-    Channel
+    channel
         .fromList(samplesheetToList(params.input, "${projectDir}/assets/schema_input.json"))
         .map {
             meta, fastq_1, fastq_2 ->
@@ -102,8 +101,16 @@ workflow PIPELINE_INITIALISATION {
         }
         .set { ch_samplesheet }
 
+
+    //
+    // Validate fusion tools provided by the user
+    //
+    def run_tools = validateFusionTools()
+    ch_fusiontools = channel.value(run_tools)
+
     emit:
     samplesheet = ch_samplesheet
+    fusiontools = ch_fusiontools
     versions    = ch_versions
 }
 
@@ -116,9 +123,9 @@ workflow PIPELINE_INITIALISATION {
 workflow PIPELINE_COMPLETION {
 
     take:
-    outdir          //    path: Path to output directory where results will be published
+    outdir          // path: Path to output directory where results will be published
     monochrome_logs // boolean: Disable ANSI colour codes in log output
-    multiqc_report  //  string: Path to MultiQC report
+    multiqc_report  // string: Path to MultiQC report
 
     main:
     summary_params = paramsSummaryMap(workflow, parameters_schema: "nextflow_schema.json")
@@ -147,6 +154,30 @@ workflow PIPELINE_COMPLETION {
 //
 def validateInputParameters() {
     genomeExistsError()
+}
+
+
+//
+// Validate if the user provided fusion tools are a valid choice
+//
+def validateFusionTools() {
+    def tools = params.fusion_tools.split(',').collect { tool -> tool.trim().toLowerCase() }
+    def valid_tools = ['arriba', 'starfusion', 'fusioncatcher']
+
+    // Validate
+    def invalid = tools - valid_tools
+    if (invalid) {
+        error "Invalid fusion tool(s): ${invalid.join(', ')}. Valid options: ${valid_tools.join(', ')}"
+    }
+
+    // Pass as a channel or boolean flags
+    def run_tools = [
+        arriba       : 'arriba'       in tools,
+        starfusion   : 'starfusion'   in tools,
+        fusioncatcher: 'fusioncatcher' in tools
+    ]
+
+    return run_tools
 }
 
 //

@@ -8,7 +8,7 @@ process FUSION_PARSER {
         'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/79/796c2d0f22be8bd23bf91dd74661318db5545bc15c4ec63fd1207c95b2d5d22c/data' }"
 
     input:
-    tuple val(meta), path(fusion_catcher), path(star_fusion), path(arriba)
+    tuple val(meta), path(fusioncatcher_fusions), path(starfusion_fusions), path(arriba_fusions)
 
     output:
     tuple val(meta), path("${prefix}_Detected_Fusions.csv"), emit: fusions
@@ -21,11 +21,15 @@ process FUSION_PARSER {
     def args = task.ext.args ?: ''
     prefix = task.ext.prefix ?: "${meta.id}"
 
+    def arriba        = arriba_fusions        ? "--tool arriba ${arriba_fusions}" : ''
+    def starfusion    = starfusion_fusions    ? "--tool starfusion ${starfusion_fusions}" : ''
+    def fusioncatcher = fusioncatcher_fusions ? "--tool fusioncatcher ${fusioncatcher_fusions}" : ''
+
     """
     fusiontoolparser.py \\
-        --tool fusioncatcher ${fusion_catcher} \\
-	    --tool starfusion ${star_fusion} \\
-        --tool arriba ${arriba} \\
+        ${fusioncatcher} \\
+	    ${starfusion} \\
+        ${arriba} \\
         --output ${prefix}_Detected_Fusions.csv \\
         --sample ${prefix} \\
         ${args}

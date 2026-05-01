@@ -20,17 +20,6 @@ include { getGenomeAttribute      } from './subworkflows/local/utils_nfcore_easy
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    GENOME PARAMETER VALUES
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-*/
-
-// TODO nf-core: Remove this line if you don't need a FASTA file
-//   This is an example of how to use getGenomeAttribute() to fetch parameters
-//   from igenomes.config using `--genome`
-params.fasta = getGenomeAttribute('fasta')
-
-/*
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     NAMED WORKFLOWS FOR PIPELINE
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
@@ -41,7 +30,8 @@ params.fasta = getGenomeAttribute('fasta')
 workflow TRONPRIVATE_EASYFUSE {
 
     take:
-    samplesheet // channel: samplesheet read in from --input
+    samplesheet  // channel: samplesheet read in from --input
+    fusion_tools // channel: fusion tools to run (read in from params.fusion_tools)
 
     main:
 
@@ -49,7 +39,8 @@ workflow TRONPRIVATE_EASYFUSE {
     // WORKFLOW: Run pipeline
     //
     EASYFUSE (
-        samplesheet
+        samplesheet,
+        fusion_tools
     )
     emit:
     multiqc_report = EASYFUSE.out.multiqc_report // channel: /path/to/multiqc_report.html
@@ -73,6 +64,8 @@ workflow {
         args,
         params.outdir,
         params.input,
+        params.reference,
+        params.fusion_tools,
         params.help,
         params.help_full,
         params.show_hidden
@@ -82,7 +75,8 @@ workflow {
     // WORKFLOW: Run main workflow
     //
     TRONPRIVATE_EASYFUSE (
-        PIPELINE_INITIALISATION.out.samplesheet
+        PIPELINE_INITIALISATION.out.samplesheet,
+        PIPELINE_INITIALISATION.out.fusiontools
     )
     //
     // SUBWORKFLOW: Run completion tasks

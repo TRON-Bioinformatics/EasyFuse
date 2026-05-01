@@ -4,10 +4,10 @@
 //
 
 include { STAR_ALIGN  } from '../../../modules/local/star/main'
-include { READ_FILTER } from '../../../modules/local/readfilter/main'
 include { BAM2FASTQ   } from '../../../modules/local/bam2fastq/main'
+include { READ_FILTER } from '../../../modules/local/utility/readfilter/main'
 
-workflow ALIGNMENT {
+workflow READ_FILTERING {
 
     take:
     ch_trimmed_fastqs // channel: [ val(meta), [ trimmed_fastq1, trimmed_fastq2 ] ]

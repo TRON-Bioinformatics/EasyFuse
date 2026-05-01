@@ -8,7 +8,7 @@ process ARRIBA {
         'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/fb/fbbd3ccedb1663939f2ca075a071e75b0d1c60f19a4cd46dd9ffe371f133105a/data' }"
 
     input:
-    tuple val(meta), path(bam), path(gtf), path(fasta)
+    tuple val(meta), path(bam), path(ref_gtf), path(ref_fasta)
 
     output:
     tuple val(meta), path("${prefix}_fusions.tsv"), emit: fusions
@@ -24,8 +24,8 @@ process ARRIBA {
     """
     arriba \\
         -x ${bam} \\
-        -g ${gtf} \\
-        -a ${fasta} \\
+        -g ${ref_gtf} \\
+        -a ${ref_fasta} \\
         -o ${prefix}_fusions.tsv \\
         -O ${prefix}_fusions.discarded.tsv \\
         -f blacklist \\
