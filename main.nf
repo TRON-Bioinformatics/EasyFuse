@@ -79,13 +79,13 @@ workflow {
     //
     TRONPRIVATE_EASYFUSE (
         PIPELINE_INITIALISATION.out.samplesheet,
-        PIPELINE_INITIALISATION.out.fusiontools
-        PIPELINE_INITIALISATION.out.reference_fasta
-        PIPELINE_INITIALISATION.out.reference_gtf
-        PIPELINE_INITIALISATION.out.reference_tsl
-        PIPELINE_INITIALISATION.out.annotation_db
-        PIPELINE_INITIALISATION.out.starfusion_index
-        PIPELINE_INITIALISATION.out.fusioncatcher_index
+        PIPELINE_INITIALISATION.out.fusiontools,
+        PIPELINE_INITIALISATION.out.reference_fasta,
+        PIPELINE_INITIALISATION.out.reference_gtf,
+        PIPELINE_INITIALISATION.out.reference_tsl,
+        PIPELINE_INITIALISATION.out.annotation_db,
+        PIPELINE_INITIALISATION.out.starfusion_index,
+        PIPELINE_INITIALISATION.out.fusioncatcher_index,
         PIPELINE_INITIALISATION.out.stararriba_index
     )
     //

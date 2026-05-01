@@ -27,12 +27,14 @@ workflow PIPELINE_INITIALISATION {
     take:
     version           // boolean: Display version and exit
     validate_params   // boolean: Boolean whether to validate parameters against the schema at runtime
-    monochrome_logs   // boolean: Do not use coloured log outputs
+    _monochrome_logs  // boolean: Do not use coloured log outputs
     nextflow_cli_args // array: List of positional nextflow CLI args
     outdir            // string: The output directory where the results will be saved
     input             // string: Path to input samplesheet
     fusion_tools      // string: comma separated string of fusion prediction tools
     ensembl_version   // string: ensembl version info.
+    model_pred        // string: path to the random forest classifier model
+    model_threshold   // number: model threshold for the random forest classifier
     reference         // string: Path to reference directory containing genome files (fasta, gtf, star indices etc.)
     help              // boolean: Display help message and exit
     help_full         // boolean: Show the full help message
@@ -85,7 +87,7 @@ workflow PIPELINE_INITIALISATION {
     // Create channel from input file provided through params.input
     //
     channel
-        .fromList(samplesheetToList(params.input, "${projectDir}/assets/schema_input.json"))
+        .fromList(samplesheetToList(input, "${projectDir}/assets/schema_input.json"))
         .map {
             meta, fastq_1, fastq_2 ->
                 if (!fastq_2) {
@@ -108,8 +110,7 @@ workflow PIPELINE_INITIALISATION {
     //
     // Validate fusion tools provided by the user
     //
-    def run_tools = validateFusionTools()
-    ch_fusiontools = channel.value(run_tools)
+    ch_fusiontools = channel.value(validateFusionTools(fusion_tools))
 
     //
     // Build reference file channels
@@ -150,8 +151,14 @@ workflow PIPELINE_INITIALISATION {
         file(reference.toString().replaceFirst(/\/$/, '') + "/star_index", checkIfExists: true)
     )
 
+    // random forest classifier model
+    ch_prediction_model = channel.value(
+        file("${baseDir}/assets/data/model/${model_pred}", checkIfExists: true)
+    )
+
 
     emit:
+
     samplesheet         = ch_samplesheet
     fusiontools         = ch_fusiontools
     reference_fasta     = ch_reference_fasta
@@ -161,6 +168,9 @@ workflow PIPELINE_INITIALISATION {
     starfusion_index    = ch_starfusion_index
     fusioncatcher_index = ch_fusioncatcher_index
     stararriba_index    = ch_stararriba_index
+    pred_model          = ch_prediction_model
+    model_threshold     = model_threshold
+
     versions            = ch_versions
 }
 
@@ -210,8 +220,8 @@ def validateInputParameters() {
 //
 // Validate if the user provided fusion tools are a valid choice
 //
-def validateFusionTools() {
-    def tools = params.fusion_tools.split(',').collect { tool -> tool.trim().toLowerCase() }
+def validateFusionTools(fusion_tools) {
+    def tools = fusion_tools.split(',').collect { tool -> tool.trim().toLowerCase() }
     def valid_tools = ['arriba', 'starfusion', 'fusioncatcher']
 
     // Validate

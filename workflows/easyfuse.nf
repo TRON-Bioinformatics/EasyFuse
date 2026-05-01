@@ -153,8 +153,13 @@ workflow EASYFUSE {
         []
     )
 
-    emit:multiqc_report = MULTIQC.out.report.toList() // channel: /path/to/multiqc_report.html
-    versions            = ch_versions                 // channel: [ path(versions.yml) ]
+    emit:
+
+    fusions        = SUMMARY.out.fusions                       // channel: [path(fusions.csv)]
+    fusions_pass   = RANDOM_FOREST_CLASSIFIER.out.predictions  // channel: [path(fusions.pass.csv)]
+
+    multiqc_report = MULTIQC.out.report.toList()               // channel: /path/to/multiqc_report.html
+    versions       = ch_versions                               // channel: [ path(versions.yml) ]
 }
 
 /*
