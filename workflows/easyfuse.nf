@@ -40,14 +40,26 @@ workflow EASYFUSE {
     ch_fusioncatcher_index = channel.empty()
 
     // get reference fasta
-    ch_reference_fasta = channel.value(
-        file(params.reference.toString().replaceFirst(/\/$/, '') + '/Homo_sapiens.GRCh38.dna.primary_assembly.fa', checkIfExists: true)
-    )
+    if (params.reference_fasta) {
+        ch_reference_fasta = channel.value(
+            file(params.reference_fasta.toString().replaceFirst(/\/$/, ''), checkIfExists: true)
+        )
+    } else {
+        ch_reference_fasta = channel.value(
+            file(params.reference.toString().replaceFirst(/\/$/, '') + '/Homo_sapiens.GRCh38.dna.primary_assembly.fa', checkIfExists: true)
+        )
+    }
 
     // get reference gtf
-    ch_reference_gtf = channel.value(
-        file(params.reference.toString().replaceFirst(/\/$/, '') + '/ref_genome.gtf', checkIfExists: true)
-    )
+    if (params.reference_gtf) {
+        ch_reference_gtf = channel.value(
+            file(params.reference_gtf.toString().replaceFirst(/\/$/, ''), checkIfExists: true)
+        )
+    } else {
+        ch_reference_gtf = channel.value(
+            file(params.reference.toString().replaceFirst(/\/$/, '') + '/ref_genome.gtf', checkIfExists: true)
+        )
+    }
 
     // get Fusioncatcher index path from params or set default path based on reference path
     if (params.fusioncatcher_index) {

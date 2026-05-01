@@ -31,6 +31,9 @@ workflow PIPELINE_INITIALISATION {
     nextflow_cli_args // array: List of positional nextflow CLI args
     outdir            // string: The output directory where the results will be saved
     input             // string: Path to input samplesheet
+    fusion_tools      // string: comma separated string of fusion prediction tools
+    ensembl_version   // string: ensembl version info.
+    reference         // string: Path to reference directory containing genome files (fasta, gtf, star indices etc.)
     help              // boolean: Display help message and exit
     help_full         // boolean: Show the full help message
     show_hidden       // boolean: Show hidden parameters in the help message
@@ -108,10 +111,57 @@ workflow PIPELINE_INITIALISATION {
     def run_tools = validateFusionTools()
     ch_fusiontools = channel.value(run_tools)
 
+    //
+    // Build reference file channels
+    //
+
+    // get reference fasta
+    ch_reference_fasta = channel.value(
+        file(reference.toString().replaceFirst(/\/$/, '') + '/Homo_sapiens.GRCh38.dna.primary_assembly.fa', checkIfExists: true)
+    )
+
+    // get reference gtf
+    ch_reference_gtf = channel.value(
+        file(reference.toString().replaceFirst(/\/$/, '') + "/Homo_sapiens.GRCh38.${ensembl_version}.gtf", checkIfExists: true)
+    )
+
+    // ch reference tsl
+    ch_reference_tsl = channel.value(
+        file(reference.toString().replaceFirst(/\/$/, '') + "/Homo_sapiens.GRCh38.${ensembl_version}.gtf.tsl", checkIfExists: true)
+    )
+
+    // get annotation db
+    ch_annotation_db = channel.value(
+        file(reference.toString().replaceFirst(/\/$/, '') + "/Homo_sapiens.GRCh38.${ensembl_version}.gff3.db", checkIfExists: true)
+    )
+
+    // get starfusion index
+    ch_starfusion_index = channel.value(
+        file(reference.toString().replaceFirst(/\/$/, '') + "/starfusion_index", checkIfExists: true)
+    )
+
+    // get fusioncatcher index
+    ch_fusioncatcher_index = channel.value(
+        file(reference.toString().replaceFirst(/\/$/, '') + "/fusioncatcher_index", checkIfExists: true)
+    )
+
+    // get stararriba index
+    ch_stararriba_index = channel.value(
+        file(reference.toString().replaceFirst(/\/$/, '') + "/star_index", checkIfExists: true)
+    )
+
+
     emit:
-    samplesheet = ch_samplesheet
-    fusiontools = ch_fusiontools
-    versions    = ch_versions
+    samplesheet         = ch_samplesheet
+    fusiontools         = ch_fusiontools
+    reference_fasta     = ch_reference_fasta
+    reference_gtf       = ch_reference_gtf
+    reference_tsl       = ch_reference_tsl
+    annotation_db       = ch_annotation_db
+    starfusion_index    = ch_starfusion_index
+    fusioncatcher_index = ch_fusioncatcher_index
+    stararriba_index    = ch_stararriba_index
+    versions            = ch_versions
 }
 
 /*

@@ -45,6 +45,21 @@
                     "description": "Comma-separated list of fusion calling tools to run. Options: arriba, starfusion, fusioncatcher",
                     "pattern": "^(arriba|starfusion|fusioncatcher)(,(arriba|starfusion|fusioncatcher))*$"
                 },
+                "ensembl_version": {
+                    "type": "string",
+                    "default": "110",
+                    "description": "Ensembl version of the reference genome build."
+                },
+                "model_pred": {
+                    "type": "string",
+                    "default": "${baseDir}/data/model/Fusion_modeling_FFPE_train_v39.random_forest.model_full_data.EF_full.rds",
+                    "description": "Model to use for the random forest classifier."
+                },
+                "model_threshold": {
+                    "type": "number",
+                    "default": 0.5,
+                    "description": "Threshold to use for the random forest classifier."
+                },
                 "multiqc_title": {
                     "type": "string",
                     "description": "MultiQC report title. Printed as page header, used for filename if not otherwise specified.",

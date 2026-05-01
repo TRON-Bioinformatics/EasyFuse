@@ -64,8 +64,11 @@ workflow {
         args,
         params.outdir,
         params.input,
-        params.reference,
         params.fusion_tools,
+        params.ensembl_version,
+        params.model_pred,
+        params.model_threshold,
+        params.reference,
         params.help,
         params.help_full,
         params.show_hidden
