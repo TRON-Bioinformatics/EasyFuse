@@ -27,7 +27,7 @@ import time
 import pysam
 # from logzero import logger
 
-__version__ = "20181126"
+__version__ = "v2018.11.26"
 
 class FusionReadFilter(object):
     """Select alignments belonging to putative fusions from an s/bam file"""

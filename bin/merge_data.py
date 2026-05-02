@@ -17,7 +17,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from count_input_reads import get_input_read_count
 
-__version__ = "20240129"
+__version__ = "v2024.01.29"
 
 class FusionSummary(object):
     """Collect stats of the run and write them to file"""

@@ -9,7 +9,7 @@ include { paramsSummaryMultiqc   } from '../subworkflows/nf-core/utils_nfcore_pi
 include { softwareVersionsToYAML } from '../subworkflows/nf-core/utils_nfcore_pipeline'
 include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_easyfuse_pipeline'
 
-include { FASTP as QC                            } from '../modules/local/fastp/main'
+include { QC                                     } from '../subworkflows/local/qc/main'
 include { READ_FILTERING                         } from '../subworkflows/local/read_filtering/main'
 include { FUSION_PREDICTION                      } from '../subworkflows/local/fusion_prediction/main'
 include { FUSION_ANNOTATION                      } from '../subworkflows/local/fusion_annotation/main'

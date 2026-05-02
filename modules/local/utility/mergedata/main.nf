@@ -39,7 +39,7 @@ process MERGE_DATA {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        merge_data.py: \$(merge_data.py --version)
+        merge_data.py: \$(merge_data.py --version 2>&1)
     END_VERSIONS
     """
 
@@ -52,7 +52,7 @@ process MERGE_DATA {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        merge_data.py: \$(merge_data.py --version)
+        merge_data.py: \$(merge_data.py --version 2>&1)
     END_VERSIONS
     """
 }

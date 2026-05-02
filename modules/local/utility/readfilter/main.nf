@@ -27,7 +27,7 @@ process READ_FILTER {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        fusionreadfilter: \$(fusionreadfilter --version)
+        fusionreadfilter.py: \$(fusionreadfilter.py --version 2>&1)
     END_VERSIONS
     """
 
@@ -39,7 +39,7 @@ process READ_FILTER {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        fusionreadfilter: \$(fusionreadfilter --version)
+        fusionreadfilter.py: \$(fusionreadfilter.py --version 2>&1)
     END_VERSIONS
     """
 }

@@ -30,7 +30,7 @@ import pysam  # pysam is not available for windows (where I run pylint) => pylin
 
 from count_input_reads import get_input_read_count
 
-__version__ = "20181126"
+__version__ = "v2018.11.26"
 # pylint: disable=line-too-long
 #         yes they are partially, but I do not consider this to be relevant here
 class ReadSelection(object):

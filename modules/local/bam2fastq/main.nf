@@ -33,7 +33,7 @@ process BAM2FASTQ {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        bam2fastq (samtools): \$(samtools version | sed '1!d;s/.* //')
+        samtools: \$(samtools --version | head -1 | cut -d ' ' -f2)
     END_VERSIONS
     """
 
@@ -46,7 +46,7 @@ process BAM2FASTQ {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        bam2fastq (samtools): \$(samtools version | sed '1!d;s/.* //')
+        samtools: \$(samtools --version | head -1 | cut -d ' ' -f2)
     END_VERSIONS
     """
 }

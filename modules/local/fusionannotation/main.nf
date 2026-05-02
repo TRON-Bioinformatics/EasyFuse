@@ -38,7 +38,7 @@ process FUSIONANNOTATER {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        fusionannotation: \$(fusionannotator.py --version 2>&1)
+        fusionannotator.py: \$(fusionannotator.py --version 2>&1)
     END_VERSIONS
     """
 
@@ -52,7 +52,7 @@ process FUSIONANNOTATER {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        fusionannotation: \$(fusionannotator.py --version 2>&1)
+        fusionannotator.py: \$(fusionannotator.py --version 2>&1)
     END_VERSIONS
     """
 }

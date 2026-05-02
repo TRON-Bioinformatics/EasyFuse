@@ -48,7 +48,7 @@ process STAR_ARRIBA {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        stararriba (star): \$(star --version)
+        stararriba: \$(STAR --version)
     END_VERSIONS
     """
 
@@ -60,7 +60,7 @@ process STAR_ARRIBA {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        stararriba (star): \$(star --version)
+        stararriba: \$(STAR --version)
     END_VERSIONS
     """
 }

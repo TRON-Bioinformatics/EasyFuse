@@ -16,8 +16,7 @@ lint:
     - assets/email_template.txt
     - docs/README.md
     - .prettierignore
-    - .prettierignore
-    - .prettierignore
+    - ro-crate-metadata.json
   nextflow_config:
     - manifest.name
     - manifest.homePage

@@ -10,7 +10,7 @@ library(stringr, quietly = TRUE)
 library(randomForest, quietly = TRUE)
 
 # Parse commandline arguments --------------------------------------------------
-version <- "v2.1.0"
+version <- "v1.0.0"
 
 argument_list <- list(
   make_option(c("-v", "--version"), action = "store_true", default = FALSE,
@@ -29,7 +29,7 @@ opt <- parse_args(OptionParser(option_list=argument_list))
 
 # print version and exit if requested
 if (opt$version) {
-    cat(version, "\n")
+    cat(version)
     quit(status = 0)
 }
 

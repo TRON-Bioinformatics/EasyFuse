@@ -8,7 +8,7 @@ into a single output file
 @version: 20241127
 """
 
-__version__ = "20241127"
+__version__ = "v2024.11.27"
 
 from argparse import ArgumentParser
 import csv

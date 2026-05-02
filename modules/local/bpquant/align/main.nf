@@ -47,7 +47,7 @@ process BPQUANT_ALIGN {
 
     """
     touch ${prefix}.sam
-    touch Log.final.out
+    touch ${prefix}.Log.final.out
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

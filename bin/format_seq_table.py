@@ -6,6 +6,9 @@ import sys
 
 csv.field_size_limit(sys.maxsize)
 
+
+__version__ = "v1.0.0"
+
 def main():
     parser = ArgumentParser(description="Reformats context seqs table to fit easyquant format")
     parser.add_argument(
@@ -21,6 +24,12 @@ def main():
         dest="output_table",
         required=True,
         help="Specify output table",
+    )
+    parser.add_argument(
+        "-v",
+        "--version",
+        action="version",
+        version=__version__
     )
 
     args = parser.parse_args()

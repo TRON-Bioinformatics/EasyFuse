@@ -19,7 +19,7 @@ from fusionparsing.src.file_headers import OUTPUT_HEADER
 # logging.basicConfig(format=FORMAT, level=logging.INFO)
 # logger = logging.getLogger(__name__)
 
-__version__ = "20241126"
+__version__ = "v2024.11.26"
 
 class FusionParser:
     """

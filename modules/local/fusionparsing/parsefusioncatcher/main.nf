@@ -31,7 +31,7 @@ process PARSE_FUSIONCATCHER {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        parsefusions: \$(parse_tool.py --version)
+        parse_tool.py: \$(parse_tool.py --version)
     END_VERSIONS
     """
 
@@ -43,7 +43,7 @@ process PARSE_FUSIONCATCHER {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        parsefusions: \$(parse_tool.py --version)
+        parse_tool.py: \$(parse_tool.py --version)
     END_VERSIONS
     """
 }

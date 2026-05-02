@@ -34,7 +34,7 @@ from fusionannotation.src.transcript import Transcript
 # logging.basicConfig(format=FORMAT, level=logging.DEBUG)
 # logger = logging.getLogger(__name__)
 
-__version__ = "241118"
+__version__ = "v24.11.18"
 
 
 class FusionAnnotator:
