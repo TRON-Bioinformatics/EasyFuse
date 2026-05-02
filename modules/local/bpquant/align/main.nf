@@ -11,9 +11,9 @@ process BPQUANT_ALIGN {
     tuple val(meta), path(fastq1), path(fastq2), path(star_index, stageAs: "star_index/")
 
     output:
-    tuple val(meta), path("${prefix}.sam") , emit: bam
-    tuple val(meta), path("*Log.final.out"), emit: read_stats
-    path("versions.yml")                   , emit: versions
+    tuple val(meta), path("${prefix}.sam")          , emit: bam
+    tuple val(meta), path("${prefix}.Log.final.out"), emit: read_stats
+    path("versions.yml")                            , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -28,10 +28,13 @@ process BPQUANT_ALIGN {
         -1 ${fastq1} \\
         -2 ${fastq2} \\
         -i ${star_index} \\
-        -o ${prefix} \\
+        -o . \\
         -t ${task.cpus} \\
         -m star \\
         ${args}
+
+    mv Aligned.out.sam ${prefix}.sam
+    mv Log.final.out ${prefix}.Log.final.out
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

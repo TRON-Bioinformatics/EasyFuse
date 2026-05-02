@@ -245,12 +245,9 @@ def main():
     parser = ArgumentParser(description="Filters alignment file for potential fusion reads")
     parser.add_argument("-i", "--input", dest="input", help="Specify input BAM file. Must be sorted by query name")
     parser.add_argument("-o", "--output", dest="output", help="Specify output prefix")
-    parser.add_argument("-v", "--version", dest="version", help="Return verison and exit")
+    parser.add_argument("-v", "--version", action="version", version=__version__)
 
     args = parser.parse_args()
-
-    if args.version:
-        return __version__
 
     read_filter = FusionReadFilter(args.input, args.output)
     read_filter.run()

@@ -319,11 +319,8 @@ def main():
         help="Path to input file with read stats",
     )
     parser.add_argument("-o", "--output", dest="output", help="Specify output prefix")
-    parser.add_argument("-v", "--version", dest="version", help="Return version and exit")
+    parser.add_argument("-v", "--version", action="version", version=__version__)
     args = parser.parse_args()
-
-    if args.version:
-        return __version__
 
     stats = ReadSelection(args.input, args.output, args.input2, args.input_read_stats)
     stats.run()

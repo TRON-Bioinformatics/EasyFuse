@@ -22,7 +22,7 @@ workflow FUSION_PREDICTION {
     ch_stararriba_index    // channel: [ path(stararriba_index) ]
     ch_reference_gtf       // channel: [ path(reference_gtf) ]
     ch_reference_fasta     // channel: [ path(reference_fasta) ]
-    ch_fusiontools         // [ [arriba: true, fusioncatcher: true, starfusion: true] ]
+    ch_fusiontools         // channel: [ [arriba: true, fusioncatcher: true, starfusion: true] ]
 
     main:
 
@@ -32,10 +32,9 @@ workflow FUSION_PREDICTION {
     ch_fusioncatcher_fusions = channel.empty()
 
     // run fusionctacher and generate parsed output
-    if (ch_fusiontools.fusioncatcher) {
+    if (ch_fusiontools.value.run_fusioncatcher) {
 
         ch_fusioncatcher_input = ch_filtered_fastqs.combine(ch_fusioncatcher_index)
-                                .map { meta, fastqs, index -> tuple(meta, fastqs, index) }
         FUSIONCATCHER(ch_fusioncatcher_input)
         ch_versions = ch_versions.mix(FUSIONCATCHER.out.versions)
 
@@ -45,10 +44,9 @@ workflow FUSION_PREDICTION {
     }
 
     // run starfusion and generate parsed output
-    if (ch_fusiontools.starfusion) {
+    if (ch_fusiontools.value.run_starfusion) {
 
         ch_starfusion_input = ch_filtered_fastqs.combine(ch_starfusion_index)
-                                .map { meta, fastqs, index -> tuple(meta, fastqs, index) }
         STARFUSION(ch_starfusion_input)
         ch_versions = ch_versions.mix(STARFUSION.out.versions)
 
@@ -58,10 +56,9 @@ workflow FUSION_PREDICTION {
     }
 
     // run stararriba and generate parsed output
-    if (ch_fusiontools.arriba) {
+    if (ch_fusiontools.value.run_arriba) {
 
         ch_stararriba_input = ch_filtered_fastqs.combine(ch_stararriba_index)
-                                .map { meta, fastqs, index -> tuple(meta, fastqs, index) }
         STAR_ARRIBA(ch_stararriba_input)
         ch_versions = ch_versions.mix(STAR_ARRIBA.out.versions)
 
@@ -79,9 +76,9 @@ workflow FUSION_PREDICTION {
 
     emit:
 
-    arriba_results = ch_arriba_fusions               // channel: [ tuple(val(meta), path(fusions)) ]
-    starfusion_results = ch_starfusion_fusions       // channel: [ tuple(val(meta), path(fusions)) ]
-    fusioncatcher_results = ch_fusioncatcher_fusions // channel: [ tuple(val(meta), path(fusions)) ]
+    arriba_results = ch_arriba_fusions               // channel: [ tuple(val(meta), path(arriba_fusions)) ]
+    starfusion_results = ch_starfusion_fusions       // channel: [ tuple(val(meta), path(starfusion_fusions)) ]
+    fusioncatcher_results = ch_fusioncatcher_fusions // channel: [ tuple(val(meta), path(fusioncatcher_fusions)) ]
 
     versions = ch_versions                           // channel: [ versions.yml ]
 }

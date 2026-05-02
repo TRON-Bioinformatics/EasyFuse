@@ -19,6 +19,7 @@ from fusionparsing.src.file_headers import OUTPUT_HEADER
 # logging.basicConfig(format=FORMAT, level=logging.INFO)
 # logger = logging.getLogger(__name__)
 
+__version__ = "20241126"
 
 class FusionParser:
     """
@@ -80,6 +81,12 @@ def main():
         dest="sample",
         help="Specify the sample to process.",
         required=True,
+    )
+    parser.add_argument(
+        "-v",
+        "--version",
+        action="version",
+        version=__version__
     )
     args = parser.parse_args()
 

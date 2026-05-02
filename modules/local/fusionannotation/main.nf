@@ -8,14 +8,14 @@ process FUSIONANNOTATER {
         'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/30/30840bab8184dfe45a8e2d0f41c869e5fcc447c4e83f0c9db5e74e9e3c07fa87/data' }"
 
     input:
-    tuple val(meta), path(fusions), path(annotation_db)
+    tuple val(meta), path(fusions), path(annotation_db), path(ref_fasta), path(ref_tsl)
 
     output:
     tuple val(meta),
           path("${prefix}_annotated_fusions.csv"),
-          path("*annotated_fusions.csv.debug"),
-          path("*annotated_fusions.csv.fasta"), emit: annot_fusions
-    path("versions.yml")                      , emit: versions
+          path("${prefix}_annotated_fusions.csv.debug"),
+          path("${prefix}_annotated_fusions.csv.fasta"), emit: annot_fusions
+    path("versions.yml")                               , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -29,8 +29,8 @@ process FUSIONANNOTATER {
         --detected_fusions ${fusions} \\
         --annotation_db ${annotation_db} \\
         --out_csv ${prefix}_annotated_fusions.csv \\
-        --genome_fasta ${params.fasta} \\
-        --tsl_info ${params.reference_tsl} \\
+        --genome_fasta ${ref_fasta} \\
+        --tsl_info ${ref_tsl} \\
         --cis_near_dist 1000000 \\
         --context_seq_len 400 \\
         --tsl_filter_level 4,5,NA \\
@@ -38,7 +38,7 @@ process FUSIONANNOTATER {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        fusionannotation: \$(fusionannotator.py --version)
+        fusionannotation: \$(fusionannotator.py --version 2>&1)
     END_VERSIONS
     """
 
@@ -52,7 +52,7 @@ process FUSIONANNOTATER {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        fusionannotation: \$(fusionannotator.py --version)
+        fusionannotation: \$(fusionannotator.py --version 2>&1)
     END_VERSIONS
     """
 }

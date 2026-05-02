@@ -8,7 +8,7 @@ process PREDICTION {
         'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/fd/fde5e222dd64b9eadebe8ceb397a8b2f3ed92afc55d7f5ff85824eceece7b7e9/data' }"
 
     input:
-    tuple val(meta), path(merged_results)
+    tuple val(meta), path(merged_results), path(pred_model), val(model_threshold)
 
     output:
     tuple val(meta), path("fusions.pass.csv"), emit: predictions
@@ -24,8 +24,8 @@ process PREDICTION {
     """
     R_model_prediction.R \\
       --fusion_summary ${merged_results} \\
-      --model_file ${params.model_pred} \\
-      --prediction_threshold ${params.model_threshold} \\
+      --model_file ${pred_model} \\
+      --prediction_threshold ${model_threshold} \\
       --output fusions.pass.csv \\
       ${args}
 

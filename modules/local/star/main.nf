@@ -51,7 +51,7 @@ process STAR_ALIGN {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        star: \$(star --version)
+        star: \$(STAR --version)
     END_VERSIONS
     """
 
@@ -65,7 +65,7 @@ process STAR_ALIGN {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        star: \$(star --version)
+        star: \$(STAR --version)
     END_VERSIONS
     """
 }

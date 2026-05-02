@@ -91,9 +91,9 @@ workflow PIPELINE_INITIALISATION {
         .map {
             meta, fastq_1, fastq_2 ->
                 if (!fastq_2) {
-                    return [ meta.id, meta + [ single_end:true ], [ fastq_1 ] ]
+                    return [ meta.id, meta + [ paired_end:false ],  [ fastq_1 ] ]
                 } else {
-                    return [ meta.id, meta + [ single_end:false ], [ fastq_1, fastq_2 ] ]
+                    return [ meta.id, meta + [ paired_end:true ], [ fastq_1, fastq_2 ] ]
                 }
         }
         .groupTuple()
@@ -102,7 +102,7 @@ workflow PIPELINE_INITIALISATION {
         }
         .map {
             meta, fastqs ->
-                return [ meta, fastqs.flatten() ]
+                return [ meta, fastqs[0], fastqs[1] ]
         }
         .set { ch_samplesheet }
 
@@ -110,7 +110,7 @@ workflow PIPELINE_INITIALISATION {
     //
     // Validate fusion tools provided by the user
     //
-    ch_fusiontools = channel.value(validateFusionTools(fusion_tools))
+    fusiontools = validateFusionTools(fusion_tools)
 
     //
     // Build reference file channels
@@ -153,14 +153,17 @@ workflow PIPELINE_INITIALISATION {
 
     // random forest classifier model
     ch_prediction_model = channel.value(
-        file("${baseDir}/assets/data/model/${model_pred}", checkIfExists: true)
+        file("${projectDir}/assets/data/model/${model_pred}", checkIfExists: true)
     )
+
+    // model threshold
+    ch_model_threshold = channel.value(model_threshold)
 
 
     emit:
 
     samplesheet         = ch_samplesheet
-    fusiontools         = ch_fusiontools
+    fusiontools         = fusiontools
     reference_fasta     = ch_reference_fasta
     reference_gtf       = ch_reference_gtf
     reference_tsl       = ch_reference_tsl
@@ -168,8 +171,8 @@ workflow PIPELINE_INITIALISATION {
     starfusion_index    = ch_starfusion_index
     fusioncatcher_index = ch_fusioncatcher_index
     stararriba_index    = ch_stararriba_index
-    pred_model          = ch_prediction_model
-    model_threshold     = model_threshold
+    prediction_model    = ch_prediction_model
+    model_threshold     = ch_model_threshold
 
     versions            = ch_versions
 }
@@ -221,23 +224,23 @@ def validateInputParameters() {
 // Validate if the user provided fusion tools are a valid choice
 //
 def validateFusionTools(fusion_tools) {
+    if (!fusion_tools) {
+        error "Please provide --fusion_tools. Valid options: arriba, starfusion, fusioncatcher"
+    }
+
     def tools = fusion_tools.split(',').collect { tool -> tool.trim().toLowerCase() }
     def valid_tools = ['arriba', 'starfusion', 'fusioncatcher']
 
-    // Validate
     def invalid = tools - valid_tools
     if (invalid) {
         error "Invalid fusion tool(s): ${invalid.join(', ')}. Valid options: ${valid_tools.join(', ')}"
     }
 
-    // Pass as a channel or boolean flags
-    def run_tools = [
-        arriba       : 'arriba'       in tools,
-        starfusion   : 'starfusion'   in tools,
-        fusioncatcher: 'fusioncatcher' in tools
+    return [
+        run_arriba       : 'arriba' in tools,
+        run_starfusion   : 'starfusion' in tools,
+        run_fusioncatcher: 'fusioncatcher' in tools
     ]
-
-    return run_tools
 }
 
 //
@@ -246,13 +249,12 @@ def validateFusionTools(fusion_tools) {
 def validateInputSamplesheet(input) {
     def (metas, fastqs) = input[1..2]
 
-    // Check that multiple runs of the same sample are of the same datatype i.e. single-end / paired-end
     def endedness_ok = metas.collect{ meta -> meta.single_end }.unique().size == 1
     if (!endedness_ok) {
         error("Please check input samplesheet -> Multiple runs of a sample must be of the same datatype i.e. single-end or paired-end: ${metas[0].id}")
     }
 
-    return [ metas[0], fastqs ]
+    return [ metas[0], fastqs.flatten() ]  // flatten here, not in the downstream map
 }
 //
 // Get attribute from genome config file e.g. fasta

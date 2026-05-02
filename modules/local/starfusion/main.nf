@@ -8,7 +8,7 @@ process STARFUSION {
         'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/a8/a8566c3e2ecd2afdb44563a65e894975fb746f335df651e76bc6c127cc62029c/data' }"
 
     input:
-    tuple val(meta), path(fastq1), file(fastq2), path(starfusion_index, stageAs: "starfusion_index/")
+    tuple val(meta), path(fastq1), path(fastq2), path(starfusion_index, stageAs: "starfusion_index/")
 
     output:
     tuple val(meta), path("${prefix}/star-fusion.fusion_predictions.tsv"), emit: fusions
@@ -32,7 +32,7 @@ process STARFUSION {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        starfusion: \$(STAR-Fusion --version | tr -d '\n' | cut -d ' ' -f3)
+        starfusion: \$(STAR-Fusion --version | tr -d '\\n' | cut -d ' ' -f3)
     END_VERSIONS
     """
 
@@ -45,7 +45,7 @@ process STARFUSION {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        starfusion: \$(STAR-Fusion --version | tr -d '\n' | cut -d ' ' -f3)
+        starfusion: \$(STAR-Fusion --version | tr -d '\\n' | cut -d ' ' -f3)
     END_VERSIONS
     """
 }

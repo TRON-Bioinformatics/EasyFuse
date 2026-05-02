@@ -339,14 +339,11 @@ def main():
         help="Fusion tools."
     )
     parser.add_argument(
-        "--version",
-        dest="version",
-        help="Return version and exit"
+        "-v", "--version",
+        action="version",
+        version=__version__
     )
     args = parser.parse_args()
-
-    if args.version:
-        return __version__
 
     summary = FusionSummary(
         input_fusions=args.input_detected_fusions,

@@ -106,13 +106,10 @@ def main():
     parser.add_argument(
         "-v", "--version",
         action="version",
-        version=f"%(prog)s {__version__}"
+        version=__version__
     )
 
     args = parser.parse_args()
-
-    if args.version:
-        return __version__
 
     run(args.input_file, args.input_file2, args.output_file, args.tool)
 

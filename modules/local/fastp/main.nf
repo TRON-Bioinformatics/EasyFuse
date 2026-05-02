@@ -8,12 +8,12 @@ process FASTP {
         'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/3f/3fcff4f02e7e012e4bab124d64a2a50817dd64303998170127c8cf9c1968e10a/data' }"
 
     input:
-    tuple val(meta), path(fastq1), path(fastq2)
+    tuple val(meta), path(fastq_1), path(fastq_2)
 
     output:
     tuple val(meta),
     path("${prefix}_trimmed_R1.fastq.gz"),
-    path("${prefix}_trimmed_R2.fastq.gz"), emit: trimmed_fastq
+    path("${prefix}_trimmed_R2.fastq.gz"), emit: trimmed_fastqs
     path("versions.yml")                 , emit: versions
 
     when:
@@ -23,10 +23,10 @@ process FASTP {
     def args = task.ext.args ?: ''
     prefix = task.ext.prefix ?: "${meta.id}"
 
-    def in1 = fastq1 ? "-in1 ${fastq1}" : ''
-    def in2 = fastq2 ? "-in2 ${fastq2}" : ''
-    def out1 = fastq1 ? "-out1 ${prefix}_trimmed_R1.fastq.gz" : ''
-    def out2 = fastq2 ? "-out2 ${prefix}_trimmed_R2.fastq.gz" : ''
+    def in1 = fastq_1 ? "-i ${fastq_1}" : ''
+    def in2 = fastq_2 ? "-I ${fastq_2}" : ''
+    def out1 = fastq_1 ? "-o ${prefix}_trimmed_R1.fastq.gz" : ''
+    def out2 = fastq_2 ? "-O ${prefix}_trimmed_R2.fastq.gz" : ''
 
     """
     fastp \\
@@ -34,8 +34,7 @@ process FASTP {
         ${in2} \\
         ${out1} \\
         ${out2} \\
-        --thread ${task.cpus} \\
-        ${args}
+        --thread ${task.cpus} ${args}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

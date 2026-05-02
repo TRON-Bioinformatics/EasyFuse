@@ -30,7 +30,7 @@ process PARSE_STARFUSION {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        parsefusions: \$(parse_tool.py --version)
+        parsefusions: \$(parse_tool.py --version 2>&1)
     END_VERSIONS
     """
 
@@ -42,7 +42,7 @@ process PARSE_STARFUSION {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        parsefusions: \$(parse_tool.py --version)
+        parsefusions: \$(parse_tool.py --version 2>&1)
     END_VERSIONS
     """
 }

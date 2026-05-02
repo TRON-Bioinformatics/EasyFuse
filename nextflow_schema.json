@@ -17,11 +17,11 @@
                     "format": "file-path",
                     "exists": true,
                     "schema": "assets/schema_input.json",
-                    "mimetype": "text/csv",
-                    "pattern": "^\\S+\\.csv$",
-                    "description": "Path to comma-separated file containing information about the samples in the experiment.",
-                    "help_text": "You will need to create a design file with information about the samples in your experiment before running the pipeline. Use this parameter to specify its location. It has to be a comma-separated file with 3 columns, and a header row.",
-                    "fa_icon": "fas fa-file-csv"
+                    "mimetype": "text/tsv",
+                    "pattern": "^\\S+\\.tsv$",
+                    "description": "Path to tab-separated file containing information about the samples in the experiment.",
+                    "help_text": "You will need to create a design file with information about the samples in your experiment before running the pipeline. Use this parameter to specify its location. It has to be a tab-separated file with 3 columns, and a header row.",
+                    "fa_icon": "fas fa-file-tsv"
                 },
                 "outdir": {
                     "type": "string",
@@ -31,10 +31,8 @@
                 },
                 "reference": {
                     "type": "string",
-                    "format": "file-path",
+                    "format": "directory-path",
                     "exists": true,
-                    "mimetype": "text/plain",
-                    "pattern": "^\\S+\\.txt$",
                     "description": "Path to reference files.",
                     "help_text": "Path to the reference genome and other reference files.",
                     "fa_icon": "fas fa-file-alt"
@@ -52,7 +50,7 @@
                 },
                 "model_pred": {
                     "type": "string",
-                    "default": "${baseDir}/assets/data/model/Fusion_modeling_FFPE_train_v39.random_forest.model_full_data.EF_full.rds",
+                    "default": "Fusion_modeling_FFPE_train_v39.random_forest.model_full_data.EF_full.rds",
                     "description": "Model to use for the random forest classifier."
                 },
                 "model_threshold": {

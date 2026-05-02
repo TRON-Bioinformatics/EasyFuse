@@ -13,6 +13,8 @@ library(randomForest, quietly = TRUE)
 version <- "v2.1.0"
 
 argument_list <- list(
+  make_option(c("-v", "--version"), action = "store_true", default = FALSE,
+                help = "Return version and exit"),
 	make_option(c("-i", "--fusion_summary"), default="",
 	            help="Input list of detected fusions"),
 	make_option(c("-m", "--model_file"), default="",
@@ -22,14 +24,13 @@ argument_list <- list(
 	            positive"),
 	make_option(c("-o", "--output"), default="",
 	            help="Final Output file for predicted fusion genes")
-  make_options(c("-v", "--version"), default=version,
-              help="Return version and exit")
 )
 opt <- parse_args(OptionParser(option_list=argument_list))
 
-if (!is.null(opt$version) && opt$version) {
-  cat(version)
-  quit(save="no")
+# print version and exit if requested
+if (opt$version) {
+    cat(version, "\n")
+    quit(status = 0)
 }
 
 # check mandatory arguments

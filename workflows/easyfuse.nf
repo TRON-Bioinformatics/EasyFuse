@@ -26,25 +26,30 @@ include { PREDICTION as RANDOM_FOREST_CLASSIFIER } from '../modules/local/predic
 workflow EASYFUSE {
 
     take:
-    ch_samplesheet // channel: samplesheet read in from --input
-    ch_fusiontools // channel: fusion tools to run (read in from params.fusion_tools)
+
+    ch_samplesheet         // channel: samplesheet read in from --input
+    ch_fusiontools         // groovy map [run_arriba: true, run_fusioncatcher: true, run_starfusion: true]
+    ch_reference_fasta     // channel: reference fasta (read in from --reference)
+    ch_reference_gtf       // channel: reference gtf (read in from --reference)
+    ch_reference_tsl       // channel: reference tsl (read in from --reference)
+    ch_annotation_db       // channel: annotation db
+    ch_starfusion_index    // channel: starfusion index
+    ch_fusioncatcher_index // channel: fusioncatcher index
+    ch_stararriba_index    // channel: stararriba index
+    ch_prediction_model    // channel: [prediction model]
+    ch_model_threshold     // channel: [val(threshold)]
 
     main:
 
     ch_versions            = channel.empty()
     ch_multiqc_files       = channel.empty()
-    ch_reference_gtf       = channel.empty()
-    ch_reference_fasta     = channel.empty()
-    ch_starfusion_index    = channel.empty()
-    ch_stararriba_index    = channel.empty()
-    ch_fusioncatcher_index = channel.empty()
 
     /*
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         QC Layer
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     */
-    QC( ch_samplesheet )
+    QC ( ch_samplesheet )
     ch_versions = ch_versions.mix(QC.out.versions)
 
     /*
@@ -52,7 +57,10 @@ workflow EASYFUSE {
         Read-Filtering Layer
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     */
-    READ_FILTERING( QC.out.trimmed_fastq )
+    READ_FILTERING (
+        QC.out.trimmed_fastqs,
+        ch_stararriba_index
+    )
     ch_versions = ch_versions.mix(READ_FILTERING.out.versions)
 
     /*
@@ -76,14 +84,14 @@ workflow EASYFUSE {
         Fusion-Annotation Layer
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     */
-    ch_arriba_fusions        = FUSION_PREDICTION.out.arriba_results
-    ch_starfusion_fusions    = FUSION_PREDICTION.out.starfusion_results
-    ch_fusioncatcher_fusions = FUSION_PREDICTION.out.fusioncatcher_results
-
     FUSION_ANNOTATION (
-        ch_fusioncatcher_fusions,
-        ch_starfusion_fusions,
-        ch_arriba_fusions
+        FUSION_PREDICTION.out.fusioncatcher_results,
+        FUSION_PREDICTION.out.starfusion_results,
+        FUSION_PREDICTION.out.arriba_results,
+        ch_annotation_db,
+        ch_reference_fasta,
+        ch_reference_tsl,
+        ch_fusiontools
     )
     ch_versions = ch_versions.mix(FUSION_ANNOTATION.out.versions)
 
@@ -118,7 +126,9 @@ workflow EASYFUSE {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     */
     RANDOM_FOREST_CLASSIFIER (
-        SUMMARY.out.merged_data
+        SUMMARY.out.merged_results
+            .combine(ch_prediction_model)
+            .combine(ch_model_threshold)
     )
     ch_versions = ch_versions.mix(RANDOM_FOREST_CLASSIFIER.out.versions)
 
@@ -155,7 +165,7 @@ workflow EASYFUSE {
 
     emit:
 
-    fusions        = SUMMARY.out.fusions                       // channel: [path(fusions.csv)]
+    fusions        = SUMMARY.out.merged_results                // channel: [path(fusions.csv)]
     fusions_pass   = RANDOM_FOREST_CLASSIFIER.out.predictions  // channel: [path(fusions.pass.csv)]
 
     multiqc_report = MULTIQC.out.report.toList()               // channel: /path/to/multiqc_report.html

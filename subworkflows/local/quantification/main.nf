@@ -33,7 +33,7 @@ workflow QUANTIFICATION {
     FUSION_FILTER ( ch_fusionsfilter_input )
     ch_versions = ch_versions.mix(FUSION_FILTER.out.versions)
 
-    BAM2FASTQ ( FUSION_FILTER.out.bams )
+    BAM2FASTQ ( FUSION_FILTER.out.bam )
     ch_versions = ch_versions.mix(BAM2FASTQ.out.versions)
 
     FUSION2CSV (ch_annotated_fusions)
@@ -48,7 +48,7 @@ workflow QUANTIFICATION {
     BPQUANT_ALIGN (BAM2FASTQ.out.fastqs.join(BPQUANT_INDEX.out.star_index))
     ch_versions = ch_versions.mix(BPQUANT_ALIGN.out.versions)
 
-    BPQUANT_COUNT (BPQUANT_ALIGN.out.bams.join(FUSION2CSV.out.formatted_csv))
+    BPQUANT_COUNT (BPQUANT_ALIGN.out.bam.join(FUSION2CSV.out.formatted_csv))
     ch_versions = ch_versions.mix(BPQUANT_COUNT.out.versions)
 
     emit:

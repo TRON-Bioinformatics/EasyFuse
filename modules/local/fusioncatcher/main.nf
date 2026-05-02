@@ -8,11 +8,13 @@ process FUSIONCATCHER {
         'biocontainers/fusioncatcher:1.33--hdfd78af_4' }"
 
     input:
-    tuple val(meta), path(fastq1), file(fastq2), path(fusioncatcher_index, stageAs: "fusioncatcher_index/")
+    tuple val(meta), path(fastq1), path(fastq2), path(fusioncatcher_index, stageAs: "fusioncatcher_index/")
 
     output:
-    tuple val(meta), path("summary_candidate_fusions.txt"), path("final-list_candidate-fusion-genes.txt"), emit: fusions
-    path("versions.yml")                                                                                 , emit: versions
+    tuple val(meta),
+    path("${prefix}/summary_candidate_fusions.txt"),
+    path("${prefix}/final-list_candidate-fusion-genes.txt"), emit: fusions
+    path("versions.yml")                                   , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -20,8 +22,8 @@ process FUSIONCATCHER {
     script:
     def args = task.ext.args ?: ''
     prefix = task.ext.prefix ?: "${meta.id}"
-    def run_type = "${fastq1}" && "${fastq2}" ? "" : "--single-end"
-    def input_fastq = "${fastq1}" && "${fastq2}" ? "${fastq1},${fastq2}" : "${fastq1}"
+    def run_type    = fastq2 ? "" : "--single-end"
+    def input_fastq = fastq2 ? "${fastq1},${fastq2}" : "${fastq1}"
 
     """
     fusioncatcher \\
@@ -42,8 +44,9 @@ process FUSIONCATCHER {
     prefix = task.ext.prefix ?: "${meta.id}"
 
     """
-    touch summary_candidate_fusions.txt
-    touch final-list_candidate-fusion-genes.txt
+    mkdir -p ${prefix}
+    touch ${prefix}/summary_candidate_fusions.txt
+    touch ${prefix}/final-list_candidate-fusion-genes.txt
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
