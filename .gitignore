@@ -6,4 +6,5 @@ testing/
 testing*
 *.pyc
 null/
-input_table.tsv
+samplesheet/
+*job.sh

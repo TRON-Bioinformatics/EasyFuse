@@ -14,6 +14,7 @@ process FASTP {
     tuple val(meta),
     path("${prefix}_trimmed_R1.fastq.gz"),
     path("${prefix}_trimmed_R2.fastq.gz"), emit: trimmed_fastqs
+    path("${prefix}_fastp.json")         , emit: fastp_json
     path("versions.yml")                 , emit: versions
 
     when:
@@ -34,7 +35,9 @@ process FASTP {
         ${in2} \\
         ${out1} \\
         ${out2} \\
-        --thread ${task.cpus} ${args}
+        --json ${prefix}_fastp.json \\
+        --thread ${task.cpus} \\
+        ${args}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

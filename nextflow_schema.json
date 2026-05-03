@@ -58,6 +58,11 @@
                     "default": 0.5,
                     "description": "Threshold to use for the random forest classifier."
                 },
+                "debug_mode": {
+                    "type": "boolean",
+                    "default": "false",
+                    "description": "Enable debug mode to generate easyfuse intermediate outputs."
+                },
                 "multiqc_title": {
                     "type": "string",
                     "description": "MultiQC report title. Printed as page header, used for filename if not otherwise specified.",

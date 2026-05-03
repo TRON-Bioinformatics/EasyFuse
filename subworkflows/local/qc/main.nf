@@ -20,5 +20,6 @@ workflow QC {
     emit:
 
     trimmed_fastqs = FASTP.out.trimmed_fastqs  // channel: [ val(meta), trimmed_fastq1, trimmed_fastq2 ]
+    fastp_json     = FASTP.out.fastp_json      // channel: [ val(meta), ${prefix}_fastp.json ]
     versions       = ch_versions               // channel: [ versions.yml ]
 }

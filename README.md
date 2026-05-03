@@ -1,4 +1,4 @@
-# TRON-Private/easyfuse
+# TRON-Private/EasyFuse
 
 [![GitHub Actions CI Status](https://github.com/TRON-Private/easyfuse/actions/workflows/nf-test.yml/badge.svg)](https://github.com/TRON-Private/easyfuse/actions/workflows/nf-test.yml)
 [![GitHub Actions Linting Status](https://github.com/TRON-Private/easyfuse/actions/workflows/linting.yml/badge.svg)](https://github.com/TRON-Private/easyfuse/actions/workflows/linting.yml)[![Cite with Zenodo](http://img.shields.io/badge/DOI-10.5281/zenodo.XXXXXXX-1073c8?labelColor=000000)](https://doi.org/10.5281/zenodo.XXXXXXX)
@@ -26,13 +26,8 @@ The current version of EasyFuse uses three fusion gene detection tools, [STAR-Fu
 
 - [NextFlow, 24.10.1](https://www.nextflow.io/)
 - [Conda](https://docs.anaconda.com/free/anaconda/install/index.html)
-
-Please have a look at environment.yml.
-The conda environment to run nextflow can be installed with the following command:
-
-```
-conda env create -f environment.yml --prefix conda_env/
-```
+- [Singularity](https://docs.sylabs.io/guides/3.5/user-guide/introduction.html)
+- [Docker](https://www.docker.com/)
 
 ### Download reference data
 
@@ -55,9 +50,6 @@ To install manually:
 ```
 git clone https://github.com/TRON-Bioinformatics/EasyFuse.git
 cd EasyFuse
-
-# In order to run the test script you have to move the reference folder to test/easyfuse_ref/
-mv ../easyfuse_ref_v4/ test/easyfuse_ref/
 ```
 
 To install with Nextflow (only available from release 2.0.1 onwards):
@@ -72,21 +64,22 @@ where x.y.z corresponds to an EasyFuse release.
 
 Provide your downloaded reference data with the parameter `--reference`
 
-Generate a tab-delimited input table with your matching FASTQs. The format of the table is: sample_name, fq1, fq2 (**without headers**).
+Generate a tab-delimited input table with your matching FASTQs. The format of the table is: `sample`, `fastq_1`, `fastq_2` (**with headers**).
 E.g.:
 
 ```
 sample_01	/path/to/sample_01_R1.fastq.gz	/path/to/sample_01_R2.fastq.gz
+sample_02	/path/to/sample_02_R1.fastq.gz	/path/to/sample_02_R2.fastq.gz
 ```
 
-Start the pipeline as follows if you installed manually
+Start the pipeline
 
 ```
 nextflow run main.nf \
   -profile conda \
-  --reference /path/to/reference/folder \
-  --input_files /path/to/input_table_file \
-  --output /path/to/output_folder
+  --input /path/to/input_table_file \
+  --output /path/to/output_folder \
+  --reference /path/to/reference/folder
 ```
 
 Or as follows if you installed it via Nextflow (only available from release 2.0.1 onwards):
@@ -94,12 +87,27 @@ Or as follows if you installed it via Nextflow (only available from release 2.0.
 ```
 nextflow run tron-bioinformatics/easyfuse -r x.y.z \
   -profile conda \
-  --reference /path/to/reference/folder \
   --input_files /path/to/input_table_file \
-  --output /path/to/output_folder
+  --output /path/to/output_folder \
+  --reference /path/to/reference/folder
 ```
 
+If you want to run the pipeline on cluster
+
+```
+nextflow run tron-bioinformatics/easyfuse -r x.y.z \
+  -profile conda,slurm \
+  --input_files /path/to/input_table_file \
+  --output /path/to/output_folder \
+  --reference /path/to/reference/folder
+```
+
+[NOTE!] `singularity` and `docker` profiles are also supported to run EasyFuse and can be used with the `--profile` option.
+
 Note: If you want to use a custom profile (e.g. for running jobs on a cluster), please refer to https://www.nextflow.io/docs/latest/config.html for further information.
+
+> [!TIP]
+> Please provide pipeline parameters via the CLI or Nextflow `-params-file` option. Custom config files including those provided by the `-c` Nextflow option can be used to provide any configuration _**except for parameters**_; see [docs](https://nf-co.re/docs/usage/getting_started/configuration#custom-configuration-files).
 
 ### Output format
 
@@ -175,63 +183,6 @@ Overview of all features/columns annotated by EasyFuse:
 
 - **prediction_prob:** The predicted probability according to the machine learning model that the fusion candidate is a true positive.
 - **prediction_class:** The predicted class (`negative` or `positive`) according to the machine learning model. This classification relies on a user-defined threshold (default 0.5) applied to the `precition_prob` column.
-
-<!-- TODO nf-core:
-   Complete this sentence with a 2-3 sentence summary of what types of data the pipeline ingests, a brief overview of the
-   major pipeline sections and the types of output it produces. You're giving an overview to someone new
-   to nf-core here, in 15-20 seconds. For an example, see https://github.com/nf-core/rnaseq/blob/master/README.md#introduction
--->
-
-<!-- TODO nf-core: Include a figure that guides the user through the major workflow steps. Many nf-core
-     workflows use the "tube map" design for that. See https://nf-co.re/docs/guidelines/graphic_design/workflow_diagrams#examples for examples.   -->
-<!-- TODO nf-core: Fill in short bullet-pointed list of the default steps in the pipeline -->2. Present QC for raw reads ([`MultiQC`](http://multiqc.info/))
-
-## Usage
-
-> [!NOTE]
-> If you are new to Nextflow and nf-core, please refer to [this page](https://nf-co.re/docs/usage/installation) on how to set-up Nextflow. Make sure to [test your setup](https://nf-co.re/docs/usage/introduction#how-to-run-a-pipeline) with `-profile test` before running the workflow on actual data.
-
-<!-- TODO nf-core: Describe the minimum required steps to execute the pipeline, e.g. how to prepare samplesheets.
-     Explain what rows and columns represent. For instance (please edit as appropriate):
-
-First, prepare a samplesheet with your input data that looks as follows:
-
-`samplesheet.csv`:
-
-```csv
-sample,fastq_1,fastq_2
-CONTROL_REP1,AEG588A1_S1_L002_R1_001.fastq.gz,AEG588A1_S1_L002_R2_001.fastq.gz
-```
-
-Each row represents a fastq file (single-end) or a pair of fastq files (paired end).
-
--->
-
-Now, you can run the pipeline using:
-
-<!-- TODO nf-core: update the following command to include all required parameters for a minimal example -->
-
-```bash
-nextflow run TRON-Private/easyfuse \
-   -profile <docker/singularity/.../institute> \
-   --input samplesheet.csv \
-   --outdir <OUTDIR>
-```
-
-> [!WARNING]
-> Please provide pipeline parameters via the CLI or Nextflow `-params-file` option. Custom config files including those provided by the `-c` Nextflow option can be used to provide any configuration _**except for parameters**_; see [docs](https://nf-co.re/docs/usage/getting_started/configuration#custom-configuration-files).
-
-## Credits
-
-TRON-Private/easyfuse was originally written by xyz.
-
-We thank the following people for their extensive assistance in the development of this pipeline:
-
-<!-- TODO nf-core: If applicable, make list of people who have also contributed -->
-
-## Contributions and Support
-
-If you would like to contribute to this pipeline, please see the [contributing guidelines](.github/CONTRIBUTING.md).
 
 ## Citations
 

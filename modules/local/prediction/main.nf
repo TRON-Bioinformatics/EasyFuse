@@ -11,8 +11,8 @@ process PREDICTION {
     tuple val(meta), path(merged_results), path(pred_model), val(model_threshold)
 
     output:
-    tuple val(meta), path("${prefix}/fusions.pass.csv"), emit: predictions
-    path("versions.yml")                               , emit: versions
+    tuple val(meta), path("fusions.pass.csv"), emit: predictions
+    path("versions.yml")                     , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -22,16 +22,12 @@ process PREDICTION {
     prefix = task.ext.prefix ?: "${meta.id}"
 
     """
-    mkdir -p ${prefix}
-
     R_model_prediction.R \\
       --fusion_summary ${merged_results} \\
       --model_file ${pred_model} \\
       --prediction_threshold ${model_threshold} \\
       --output fusions.pass.csv \\
       ${args}
-
-    mv fusions.pass.csv ${prefix}/fusions.pass.csv
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
@@ -43,8 +39,7 @@ process PREDICTION {
     prefix = task.ext.prefix ?: "${meta.id}"
 
     """
-    mkdir -p ${prefix}
-    touch ${prefix}/fusions.pass.csv
+    touch fusions.pass.csv
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

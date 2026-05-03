@@ -25,7 +25,6 @@ process MERGE_DATA {
 
     script:
     def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
 
     """
     merge_data.py \\
@@ -44,8 +43,6 @@ process MERGE_DATA {
     """
 
     stub:
-    def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
 
     """
     touch fusions.csv

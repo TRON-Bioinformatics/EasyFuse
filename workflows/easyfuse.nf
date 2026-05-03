@@ -9,13 +9,13 @@ include { paramsSummaryMultiqc   } from '../subworkflows/nf-core/utils_nfcore_pi
 include { softwareVersionsToYAML } from '../subworkflows/nf-core/utils_nfcore_pipeline'
 include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_easyfuse_pipeline'
 
-include { QC                                     } from '../subworkflows/local/qc/main'
-include { READ_FILTERING                         } from '../subworkflows/local/read_filtering/main'
-include { FUSION_PREDICTION                      } from '../subworkflows/local/fusion_prediction/main'
-include { FUSION_ANNOTATION                      } from '../subworkflows/local/fusion_annotation/main'
-include { QUANTIFICATION                         } from '../subworkflows/local/quantification/main'
-include { MERGE_DATA as SUMMARY                  } from '../modules/local/utility/mergedata/main'
-include { PREDICTION as RANDOM_FOREST_CLASSIFIER } from '../modules/local/prediction/main'
+include { QC                       } from '../subworkflows/local/qc/main'
+include { READ_FILTERING           } from '../subworkflows/local/read_filtering/main'
+include { FUSION_PREDICTION        } from '../subworkflows/local/fusion_prediction/main'
+include { FUSION_ANNOTATION        } from '../subworkflows/local/fusion_annotation/main'
+include { QUANTIFICATION           } from '../subworkflows/local/quantification/main'
+include { SUMMARY                  } from '../subworkflows/local/summary/main'
+include { RANDOM_FOREST_CLASSIFIER } from '../subworkflows/local/random_forest_classifier/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -113,10 +113,10 @@ workflow EASYFUSE {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     */
     SUMMARY (
-        FUSION_ANNOTATION.out.detected_fusions
-            .join(FUSION_ANNOTATION.out.annot_fusions)
-            .join(QUANTIFICATION.out.counts)
-            .join(QUANTIFICATION.out.read_stats)
+        FUSION_ANNOTATION.out.detected_fusions,
+        FUSION_ANNOTATION.out.annot_fusions,
+        QUANTIFICATION.out.counts,
+        QUANTIFICATION.out.read_stats
     )
     ch_versions = ch_versions.mix(SUMMARY.out.versions)
 
@@ -126,9 +126,9 @@ workflow EASYFUSE {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     */
     RANDOM_FOREST_CLASSIFIER (
-        SUMMARY.out.merged_results
-            .combine(ch_prediction_model)
-            .combine(ch_model_threshold)
+        SUMMARY.out.merged_results,
+        ch_prediction_model,
+        ch_model_threshold
     )
     ch_versions = ch_versions.mix(RANDOM_FOREST_CLASSIFIER.out.versions)
 
@@ -150,8 +150,8 @@ workflow EASYFUSE {
     ch_multiqc_logo          = params.multiqc_logo ? channel.fromPath(params.multiqc_logo, checkIfExists: true) : channel.empty()
     summary_params           = paramsSummaryMap(workflow, parameters_schema: "nextflow_schema.json")
     ch_workflow_summary      = channel.value(paramsSummaryMultiqc(summary_params))
-    ch_multiqc_files         = ch_multiqc_files.mix(ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
 
+    ch_multiqc_files         = ch_multiqc_files.mix(ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
     ch_multiqc_files         = ch_multiqc_files.mix(ch_collated_versions)
 
     MULTIQC (
