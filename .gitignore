@@ -1,4 +1,6 @@
-.nextflow*
+.idea
+.nextflow/
+.nextflow.log*
 work/
 results/
 .DS_Store
@@ -8,3 +10,17 @@ testing*
 null/
 samplesheet/
 *job.sh
+test/data/test_input.txt
+trace.txt*
+report.html*
+test/output
+conda_env
+__pycache__/
+trace*.txt
+dag*.html
+report*.html
+timeline*.html
+venv/
+ef_env/
+logs/
+*slurm*
