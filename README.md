@@ -111,7 +111,7 @@ nextflow run tron-bioinformatics/easyfuse -r x.y.z \
 
 The pipeline supports the following profiles:
 - Conda - nextflow builds a dedicated conda environment for each of the processes to run
-- Singularity - nextflow pulls dedicated singularity containers for the processes to run. If containers are available locally the `NXF_SINGULARITY_CACHEDIR=/path/to/local/images` environment variable for nextflow to find the images locally.
+- Singularity - nextflow pulls dedicated singularity containers for the processes to run. If containers are available locally, set the `NXF_SINGULARITY_CACHEDIR=/path/to/local/images` environment variable for nextflow to find the images locally.
 - Slurm - the slurm profile would run the pipeline with the slurm executor, parallelizing the nextflow processes.
 
 
