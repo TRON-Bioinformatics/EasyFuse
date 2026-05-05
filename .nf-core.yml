@@ -32,6 +32,8 @@ lint:
     - .github/workflows/awstest.yml
     - .github/workflows/awsfulltest.yml
     - assets/email_template.html
+    - assets/slackreport.json
+    - assets/adaptivecard.json
     - assets/sendmail_template.txt
     - assets/email_template.txt
     - CITATIONS.md

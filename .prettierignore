@@ -9,3 +9,5 @@ testing*
 *.pyc
 bin/
 .nf-test/
+adaptivecard.json
+slackreport.json
