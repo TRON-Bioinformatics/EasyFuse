@@ -51,6 +51,7 @@ process FASTP {
     """
     touch ${prefix}_trimmed_{R1,R2}.fastq
     gzip ${prefix}_trimmed_{R1,R2}.fastq
+    touch ${prefix}_fastp.json
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
