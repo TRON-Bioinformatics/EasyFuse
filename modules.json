@@ -1,6 +1,6 @@
 {
-    "name": "TRON-Private/easyfuse",
-    "homePage": "https://github.com/TRON-Private/easyfuse",
+    "name": "TRON/easyfuse",
+    "homePage": "https://github.com/TRON/easyfuse",
     "repos": {
         "https://github.com/nf-core/modules.git": {
             "modules": {

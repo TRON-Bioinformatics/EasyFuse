@@ -39,7 +39,7 @@ lint:
     - CITATIONS.md
 
 template:
-  org: TRON-Private
+  org: TRON
   name: EasyFuse
   description: EasyFuse is a pipeline to detect fusion transcripts from paired-end
     RNA-seq data with high accuracy.

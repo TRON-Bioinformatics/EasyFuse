@@ -1,5 +1,5 @@
 //
-// Subworkflow with functionality specific to the TRON-Private/easyfuse pipeline
+// Subworkflow with functionality specific to the TRON/easyfuse pipeline
 //
 
 /*

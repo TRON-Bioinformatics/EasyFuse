@@ -1,5 +1,5 @@
 name: Feature request
-description: Suggest an idea for the TRON-Private/easyfuse pipeline
+description: Suggest an idea for the TRON/easyfuse pipeline
 labels: enhancement
 body:
   - type: textarea

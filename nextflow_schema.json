@@ -1,7 +1,7 @@
 {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "$id": "https://raw.githubusercontent.com/TRON-Private/easyfuse/master/nextflow_schema.json",
-    "title": "TRON-Private/easyfuse pipeline parameters",
+    "$id": "https://raw.githubusercontent.com/TRON/easyfuse/master/nextflow_schema.json",
+    "title": "TRON/easyfuse pipeline parameters",
     "description": "EasyFuse is a pipeline to detect fusion transcripts from paired-end RNA-seq data with high accuracy.",
     "type": "object",
     "$defs": {

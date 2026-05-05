@@ -1,4 +1,4 @@
-# TRON-Private/easyfuse: Output
+# TRON/easyfuse: Output
 
 ## Introduction
 
