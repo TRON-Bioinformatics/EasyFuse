@@ -36,6 +36,7 @@ workflow PIPELINE_INITIALISATION {
     model_pred        // string: path to the random forest classifier model
     model_threshold   // number: model threshold for the random forest classifier
     reference         // string: Path to reference directory containing genome files (fasta, gtf, star indices etc.)
+    multiqc_report    // boolean: Whether to generate a multiqc report at the end of the pipeline run
     help              // boolean: Display help message and exit
     help_full         // boolean: Show the full help message
     show_hidden       // boolean: Show hidden parameters in the help message
@@ -159,20 +160,24 @@ workflow PIPELINE_INITIALISATION {
     // model threshold
     ch_model_threshold = channel.value(model_threshold)
 
+    // multiqc_report
+    ch_multiqc_report = channel.value(multiqc_report)
+
 
     emit:
 
-    samplesheet         = ch_samplesheet
-    fusiontools         = fusiontools
-    reference_fasta     = ch_reference_fasta
-    reference_gtf       = ch_reference_gtf
-    reference_tsl       = ch_reference_tsl
-    annotation_db       = ch_annotation_db
-    starfusion_index    = ch_starfusion_index
-    fusioncatcher_index = ch_fusioncatcher_index
-    stararriba_index    = ch_stararriba_index
-    prediction_model    = ch_prediction_model
-    model_threshold     = ch_model_threshold
+    samplesheet             = ch_samplesheet
+    fusiontools             = fusiontools
+    reference_fasta         = ch_reference_fasta
+    reference_gtf           = ch_reference_gtf
+    reference_tsl           = ch_reference_tsl
+    annotation_db           = ch_annotation_db
+    starfusion_index        = ch_starfusion_index
+    fusioncatcher_index     = ch_fusioncatcher_index
+    stararriba_index        = ch_stararriba_index
+    prediction_model        = ch_prediction_model
+    model_threshold         = ch_model_threshold
+    generate_multiqc_report = ch_multiqc_report
 
     versions            = ch_versions
 }

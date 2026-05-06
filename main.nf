@@ -40,6 +40,7 @@ workflow TRONPRIVATE_EASYFUSE {
     ch_stararriba_index     // channel: [stararriba index]
     ch_prediction_model     // channel: [prediction model]
     ch_model_threshold      // channel: [val(threshold)]
+    generate_multiqc_report // channel: [generate multiqc report (boolean)]
 
     main:
 
@@ -57,7 +58,8 @@ workflow TRONPRIVATE_EASYFUSE {
         ch_fusioncatcher_index,
         ch_stararriba_index,
         ch_prediction_model,
-        ch_model_threshold
+        ch_model_threshold,
+        generate_multiqc_report
     )
     emit:
     multiqc_report = EASYFUSE.out.multiqc_report // channel: /path/to/multiqc_report.html
@@ -86,6 +88,7 @@ workflow {
         params.model_pred,
         params.model_threshold,
         params.reference,
+        params.generate_multiqc_report,
         params.help,
         params.help_full,
         params.show_hidden
@@ -105,7 +108,8 @@ workflow {
         PIPELINE_INITIALISATION.out.fusioncatcher_index,
         PIPELINE_INITIALISATION.out.stararriba_index,
         PIPELINE_INITIALISATION.out.prediction_model,
-        PIPELINE_INITIALISATION.out.model_threshold
+        PIPELINE_INITIALISATION.out.model_threshold,
+        PIPELINE_INITIALISATION.out.generate_multiqc_report
     )
     //
     // SUBWORKFLOW: Run completion tasks

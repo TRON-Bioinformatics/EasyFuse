@@ -16,7 +16,6 @@ lint:
     - assets/email_template.txt
     - docs/README.md
     - .prettierignore
-    - ro-crate-metadata.json
   nextflow_config:
     - manifest.name
     - manifest.homePage
@@ -25,7 +24,6 @@ lint:
   files_exist:
     - LICENSE
     - CODE_OF_CONDUCT.md
-    - assets/nf-core-easyfuse_logo_light.png
     - docs/images/nf-core-easyfuse_logo_light.png
     - docs/images/nf-core-easyfuse_logo_dark.png
     - .github/ISSUE_TEMPLATE/config.yml
@@ -33,11 +31,15 @@ lint:
     - .github/workflows/awsfulltest.yml
     - .github/ISSUE_TEMPLATE/bug_report.yml
     - .github/ISSUE_TEMPLATE/feature_request.yml
+    - assets/nf-core-easyfuse_logo_light.png
     - assets/email_template.html
     - assets/slackreport.json
     - assets/adaptivecard.json
     - assets/sendmail_template.txt
     - assets/email_template.txt
+    - ro-crate-metadata.json
+    - conf/igenomes.config
+    - conf/igenomes_ignored.config
     - CITATIONS.md
 
 template:

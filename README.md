@@ -1,7 +1,7 @@
 # TRON/EasyFuse
 
 [![GitHub Actions CI Status](https://github.com/TRON/easyfuse/actions/workflows/nf-test.yml/badge.svg)](https://github.com/TRON/easyfuse/actions/workflows/nf-test.yml)
-[![GitHub Actions Linting Status](https://github.com/TRON/easyfuse/actions/workflows/linting.yml/badge.svg)](https://github.com/TRON/easyfuse/actions/workflows/linting.yml)[![Cite with Zenodo](http://img.shields.io/badge/DOI-10.5281/zenodo.XXXXXXX-1073c8?labelColor=000000)](https://doi.org/10.1038/s41587-022-01247-9)
+[![GitHub Actions Linting Status](https://github.com/TRON/easyfuse/actions/workflows/linting.yml/badge.svg)](https://github.com/TRON/easyfuse/actions/workflows/linting.yml)(https://doi.org/10.1038/s41587-022-01247-9)
 
 [![Nextflow](https://img.shields.io/badge/version-%E2%89%A525.04.0-green?style=flat&logo=nextflow&logoColor=white&color=%230DC09D&link=https%3A%2F%2Fnextflow.io)](https://www.nextflow.io/)
 [![nf-core template version](https://img.shields.io/badge/nf--core_template-3.4.1-green?style=flat&logo=nfcore&logoColor=white&color=%2324B064&link=https%3A%2F%2Fnf-co.re)](https://github.com/nf-core/tools/releases/tag/3.4.1)
@@ -20,21 +20,12 @@ The current version of EasyFuse uses three fusion gene detection tools, [STAR-Fu
 
 - Publication: [Weber D, Ibn-Salem J, Sorn P, et al. Nat Biotechnol. 2022](https://doi.org/10.1038/s41587-022-01247-9)
 
-## Usage
-
 ### Dependencies
 
 - [NextFlow, 24.10.1](https://www.nextflow.io/)
 - [Conda](https://docs.anaconda.com/free/anaconda/install/index.html)
 - [Singularity](https://docs.sylabs.io/guides/3.5/user-guide/introduction.html)
 - [Docker](https://www.docker.com/)
-
-Please have a look at environment.yml.
-The conda environment to run nextflow can be installed with the following command:
-
-```
-conda env create -f environment.yml --prefix conda_env/
-```
 
 ### Download reference data
 
