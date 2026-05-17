@@ -36,7 +36,6 @@ workflow INPUT_VALIDATION {
     model_pred        // string: path to the random forest classifier model
     model_threshold   // number: model threshold for the random forest classifier
     reference         // string: Path to reference directory containing genome files (fasta, gtf, star indices etc.)
-    multiqc_report    // boolean: Whether to generate a multiqc report at the end of the pipeline run
     help              // boolean: Display help message and exit
     help_full         // boolean: Show the full help message
     show_hidden       // boolean: Show hidden parameters in the help message
@@ -158,9 +157,6 @@ workflow INPUT_VALIDATION {
     // model threshold
     ch_model_threshold = channel.value(model_threshold)
 
-    // multiqc_report
-    ch_multiqc_report = channel.value(multiqc_report)
-
 
     emit:
 
@@ -175,7 +171,6 @@ workflow INPUT_VALIDATION {
     stararriba_index        = ch_stararriba_index
     prediction_model        = ch_prediction_model
     model_threshold         = ch_model_threshold
-    generate_multiqc_report = ch_multiqc_report
 
     versions            = ch_versions
 }

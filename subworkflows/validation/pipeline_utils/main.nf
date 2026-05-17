@@ -141,24 +141,6 @@ def checkProfileProvided(nextflow_cli_args) {
     }
 }
 
-// //
-// // Generate workflow version string
-// //
-// def getWorkflowVersion() {
-//     def version_string = "" as String
-//     if (workflow.manifest.version) {
-//         def prefix_v = workflow.manifest.version[0] != 'v' ? 'v' : ''
-//         version_string += "${prefix_v}${workflow.manifest.version}"
-//     }
-
-//     if (workflow.commitId) {
-//         def git_shortsha = workflow.commitId.substring(0, 7)
-//         version_string += "-g${git_shortsha}"
-//     }
-
-//     return version_string
-// }
-
 //
 // Get software versions for pipeline
 //
@@ -183,7 +165,7 @@ def workflowVersionToYAML() {
 // Get channel of software versions used in pipeline in YAML format
 //
 def softwareVersionsToYAML(ch_versions) {
-    return ch_versions.unique().map { version -> processVersionsFromYAML(version) }.unique().mix(Channel.of(workflowVersionToYAML()))
+    return ch_versions.unique().map { version -> processVersionsFromYAML(version) }.unique().mix(channel.of(workflowVersionToYAML()))
 }
 
 //
@@ -286,26 +268,6 @@ def logColours(monochrome_logs=true) {
     colorcodes['biwhite']  = monochrome_logs ? '' : "\033[1;97m"
 
     return colorcodes
-}
-
-// Return a single report from an object that may be a Path or List
-//
-def getSingleReport(multiqc_reports) {
-    if (multiqc_reports instanceof Path) {
-        return multiqc_reports
-    } else if (multiqc_reports instanceof List) {
-        if (multiqc_reports.size() == 0) {
-            log.warn("[${workflow.manifest.name}] No reports found from process 'MULTIQC'")
-            return null
-        } else if (multiqc_reports.size() == 1) {
-            return multiqc_reports.first()
-        } else {
-            log.warn("[${workflow.manifest.name}] Found multiple reports from process 'MULTIQC', will use only one")
-            return multiqc_reports.first()
-        }
-    } else {
-        return null
-    }
 }
 
 //

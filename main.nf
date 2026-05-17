@@ -20,8 +20,6 @@ workflow TRONBIOINFORMATICS_EASYFUSE {
     ch_stararriba_index     // channel: [stararriba index]
     ch_prediction_model     // channel: [prediction model]
     ch_model_threshold      // channel: [val(threshold)]
-    generate_multiqc_report // channel: [generate multiqc report (boolean)]
-
     main:
 
     //
@@ -38,11 +36,10 @@ workflow TRONBIOINFORMATICS_EASYFUSE {
         ch_fusioncatcher_index,
         ch_stararriba_index,
         ch_prediction_model,
-        ch_model_threshold,
-        generate_multiqc_report
+        ch_model_threshold
     )
     emit:
-    multiqc_report = EASYFUSE.out.multiqc_report // channel: /path/to/multiqc_report.html
+    versions = EASYFUSE.out.versions
 }
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -66,7 +63,6 @@ workflow {
         params.model_pred,
         params.model_threshold,
         params.reference,
-        params.generate_multiqc_report,
         params.help,
         params.help_full,
         params.show_hidden
@@ -86,8 +82,7 @@ workflow {
         INPUT_VALIDATION.out.fusioncatcher_index,
         INPUT_VALIDATION.out.stararriba_index,
         INPUT_VALIDATION.out.prediction_model,
-        INPUT_VALIDATION.out.model_threshold,
-        INPUT_VALIDATION.out.generate_multiqc_report
+        INPUT_VALIDATION.out.model_threshold
     )
 }
 

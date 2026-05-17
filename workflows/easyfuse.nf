@@ -3,7 +3,6 @@
     IMPORT MODULES / SUBWORKFLOWS / FUNCTIONS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
-include { MULTIQC                } from '../modules/multiqc/main'
 include { paramsSummaryMap       } from 'plugin/nf-schema'
 include { paramsSummaryMultiqc   } from '../subworkflows/validation/pipeline_utils'
 include { softwareVersionsToYAML } from '../subworkflows/validation/pipeline_utils'
@@ -37,13 +36,10 @@ workflow EASYFUSE {
     ch_stararriba_index        // channel: stararriba index
     ch_prediction_model        // channel: [prediction model]
     ch_model_threshold         // channel: [val(threshold)]
-    ch_generate_multiqc_report // channel: [ val(boolean)]
 
     main:
 
     ch_versions            = channel.empty()
-    ch_multiqc_files       = channel.empty()
-    ch_multiqc_report      = channel.empty()
 
     /*
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -146,34 +142,11 @@ workflow EASYFUSE {
             newLine: true
         ).set { ch_collated_versions }
 
-    if (ch_generate_multiqc_report.value) {
-
-        ch_multiqc_config        = channel.fromPath("$projectDir/assets/multiqc_config.yml", checkIfExists: true)
-        ch_multiqc_custom_config = params.multiqc_config ? channel.fromPath(params.multiqc_config, checkIfExists: true) : channel.empty()
-        ch_multiqc_logo          = params.multiqc_logo ? channel.fromPath(params.multiqc_logo, checkIfExists: true) : channel.empty()
-        summary_params           = paramsSummaryMap(workflow, parameters_schema: "nextflow_schema.json")
-        ch_workflow_summary      = channel.value(paramsSummaryMultiqc(summary_params))
-
-        ch_multiqc_files         = ch_multiqc_files.mix(ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
-        ch_multiqc_files         = ch_multiqc_files.mix(ch_collated_versions)
-
-        MULTIQC (
-            ch_multiqc_files.collect(),
-            ch_multiqc_config.toList(),
-            ch_multiqc_custom_config.toList(),
-            ch_multiqc_logo.toList(),
-            [],
-            []
-        )
-        ch_multiqc_report = MULTIQC.out.report
-    }
-
     emit:
 
     fusions        = SUMMARY.out.merged_results                // channel: [path(fusions.csv)]
     fusions_pass   = RANDOM_FOREST_CLASSIFIER.out.predictions  // channel: [path(fusions.pass.csv)]
 
-    multiqc_report = ch_multiqc_report                         // channel: /path/to/multiqc_report.html
     versions       = ch_versions                               // channel: [ path(versions.yml) ]
 }
 
