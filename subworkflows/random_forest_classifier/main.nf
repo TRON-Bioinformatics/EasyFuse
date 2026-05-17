@@ -3,7 +3,7 @@
 //
 //
 
-include { PREDICTION } from '../../../modules/local/prediction/main'
+include { PREDICTION } from '../../modules/prediction/main'
 
 workflow RANDOM_FOREST_CLASSIFIER {
 

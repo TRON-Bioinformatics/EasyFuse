@@ -3,14 +3,14 @@
 //
 //
 
-include { ARRIBA        } from '../../../modules/local/arriba/main'
-include { STARFUSION    } from '../../../modules/local/starfusion/main'
-include { STAR_ARRIBA   } from '../../../modules/local/stararriba/main'
-include { FUSIONCATCHER } from '../../../modules/local/fusioncatcher/main'
+include { ARRIBA        } from '../../modules/arriba/main'
+include { STARFUSION    } from '../../modules/starfusion/main'
+include { STAR_ARRIBA   } from '../../modules/stararriba/main'
+include { FUSIONCATCHER } from '../../modules/fusioncatcher/main'
 
-include { PARSE_ARRIBA        } from '../../../modules/local/fusionparsing/parsearriba/main'
-include { PARSE_STARFUSION    } from '../../../modules/local/fusionparsing/parsestarfusion/main'
-include { PARSE_FUSIONCATCHER } from '../../../modules/local/fusionparsing/parsefusioncatcher/main'
+include { PARSE_ARRIBA        } from '../../modules/fusionparsing/parsearriba/main'
+include { PARSE_STARFUSION    } from '../../modules/fusionparsing/parsestarfusion/main'
+include { PARSE_FUSIONCATCHER } from '../../modules/fusionparsing/parsefusioncatcher/main'
 
 workflow FUSION_PREDICTION {
 

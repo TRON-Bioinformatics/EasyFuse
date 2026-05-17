@@ -3,7 +3,7 @@
 //
 //
 
-include { FASTP } from '../../../modules/local/fastp/main'
+include { FASTP } from '../../modules/fastp/main'
 
 workflow QC {
 

@@ -3,9 +3,9 @@
 // and filter for fusion-supporting reads
 //
 
-include { STAR_ALIGN  } from '../../../modules/local/star/main'
-include { BAM2FASTQ   } from '../../../modules/local/bam2fastq/main'
-include { READ_FILTER } from '../../../modules/local/utility/readfilter/main'
+include { STAR_ALIGN  } from '../../modules/star/main'
+include { BAM2FASTQ   } from '../../modules/bam2fastq/main'
+include { READ_FILTER } from '../../modules/utility/readfilter/main'
 
 workflow READ_FILTERING {
 

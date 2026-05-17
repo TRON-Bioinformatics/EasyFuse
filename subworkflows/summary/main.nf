@@ -3,7 +3,7 @@
 //
 //
 
-include { MERGE_DATA } from '../../../modules/local/utility/mergedata/main'
+include { MERGE_DATA } from '../../modules/utility/mergedata/main'
 
 workflow SUMMARY {
 

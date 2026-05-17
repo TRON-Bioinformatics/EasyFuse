@@ -1,12 +1,35 @@
-//
-// Subworkflow with utility functions specific to the nf-core pipeline template
-//
-
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     SUBWORKFLOW DEFINITION
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
+
+workflow UTILS_NEXTFLOW_PIPELINE {
+    take:
+    print_version        // boolean: print version
+    check_conda_channels // boolean: check conda channels
+
+    main:
+
+    //
+    // Print workflow version and exit on --version
+    //
+    if (print_version) {
+        log.info("${workflow.manifest.name} ${getWorkflowVersion()}")
+        System.exit(0)
+    }
+
+    //
+    // When running with Conda, warn if channels have not been set-up appropriately
+    //
+    if (check_conda_channels) {
+        checkCondaChannels()
+    }
+
+    emit:
+    dummy_emit = true
+}
+
 
 workflow UTILS_NFCORE_PIPELINE {
     take:
@@ -25,6 +48,68 @@ workflow UTILS_NFCORE_PIPELINE {
     FUNCTIONS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
+
+//
+// Generate version string
+//
+def getWorkflowVersion() {
+    def version_string = "" as String
+    if (workflow.manifest.version) {
+        def prefix_v = workflow.manifest.version[0] != 'v' ? 'v' : ''
+        version_string += "${prefix_v}${workflow.manifest.version}"
+    }
+
+    if (workflow.commitId) {
+        def git_shortsha = workflow.commitId.substring(0, 7)
+        version_string += "-g${git_shortsha}"
+    }
+
+    return version_string
+}
+
+//
+// When running with -profile conda, warn if channels have not been set-up appropriately
+//
+def checkCondaChannels() {
+    def parser = new org.yaml.snakeyaml.Yaml()
+    def channels = []
+    try {
+        def config = parser.load("conda config --show channels".execute().text)
+        channels = config.channels
+    }
+    catch (NullPointerException e) {
+        log.debug(e)
+        log.warn("Could not verify conda channel configuration.")
+        return null
+    }
+    catch (IOException e) {
+        log.debug(e)
+        log.warn("Could not verify conda channel configuration.")
+        return null
+    }
+
+    // Check that all channels are present
+    // This channel list is ordered by required channel priority.
+    def required_channels_in_order = ['conda-forge', 'bioconda']
+    def channels_missing = ((required_channels_in_order as Set) - (channels as Set)) as Boolean
+
+    // Check that they are in the right order
+    def channel_priority_violation = required_channels_in_order != channels.findAll { ch -> ch in required_channels_in_order }
+
+    if (channels_missing | channel_priority_violation) {
+        log.warn """\
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            There is a problem with your Conda configuration!
+            You will need to set-up the conda-forge and bioconda channels correctly.
+            Please refer to https://bioconda.github.io/
+            The observed channel order is
+            ${channels}
+            but the following channel order is required:
+            ${required_channels_in_order}
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+        """.stripIndent(true)
+    }
+}
 
 //
 //  Warn if a -profile or Nextflow config has not been provided to run the pipeline
@@ -56,23 +141,23 @@ def checkProfileProvided(nextflow_cli_args) {
     }
 }
 
-//
-// Generate workflow version string
-//
-def getWorkflowVersion() {
-    def version_string = "" as String
-    if (workflow.manifest.version) {
-        def prefix_v = workflow.manifest.version[0] != 'v' ? 'v' : ''
-        version_string += "${prefix_v}${workflow.manifest.version}"
-    }
+// //
+// // Generate workflow version string
+// //
+// def getWorkflowVersion() {
+//     def version_string = "" as String
+//     if (workflow.manifest.version) {
+//         def prefix_v = workflow.manifest.version[0] != 'v' ? 'v' : ''
+//         version_string += "${prefix_v}${workflow.manifest.version}"
+//     }
 
-    if (workflow.commitId) {
-        def git_shortsha = workflow.commitId.substring(0, 7)
-        version_string += "-g${git_shortsha}"
-    }
+//     if (workflow.commitId) {
+//         def git_shortsha = workflow.commitId.substring(0, 7)
+//         version_string += "-g${git_shortsha}"
+//     }
 
-    return version_string
-}
+//     return version_string
+// }
 
 //
 // Get software versions for pipeline
@@ -224,119 +309,6 @@ def getSingleReport(multiqc_reports) {
 }
 
 //
-// Construct and send completion email
-//
-def completionEmail(summary_params, email, email_on_fail, plaintext_email, outdir, monochrome_logs=true, multiqc_report=null) {
-
-    // Set up the e-mail variables
-    def subject = "[${workflow.manifest.name}] Successful: ${workflow.runName}"
-    if (!workflow.success) {
-        subject = "[${workflow.manifest.name}] FAILED: ${workflow.runName}"
-    }
-
-    def summary = [:]
-    summary_params
-        .keySet()
-        .sort()
-        .each { group ->
-            summary << summary_params[group]
-        }
-
-    def misc_fields = [:]
-    misc_fields['Date Started']              = workflow.start
-    misc_fields['Date Completed']            = workflow.complete
-    misc_fields['Pipeline script file path'] = workflow.scriptFile
-    misc_fields['Pipeline script hash ID']   = workflow.scriptId
-    if (workflow.repository) {
-        misc_fields['Pipeline repository Git URL']    = workflow.repository
-    }
-    if (workflow.commitId) {
-        misc_fields['Pipeline repository Git Commit'] = workflow.commitId
-    }
-    if (workflow.revision) {
-        misc_fields['Pipeline Git branch/tag']        = workflow.revision
-    }
-    misc_fields['Nextflow Version']          = workflow.nextflow.version
-    misc_fields['Nextflow Build']            = workflow.nextflow.build
-    misc_fields['Nextflow Compile Timestamp'] = workflow.nextflow.timestamp
-
-    def email_fields = [:]
-    email_fields['version']      = getWorkflowVersion()
-    email_fields['runName']      = workflow.runName
-    email_fields['success']      = workflow.success
-    email_fields['dateComplete'] = workflow.complete
-    email_fields['duration']     = workflow.duration
-    email_fields['exitStatus']   = workflow.exitStatus
-    email_fields['errorMessage'] = (workflow.errorMessage ?: 'None')
-    email_fields['errorReport']  = (workflow.errorReport ?: 'None')
-    email_fields['commandLine']  = workflow.commandLine
-    email_fields['projectDir']   = workflow.projectDir
-    email_fields['summary']      = summary << misc_fields
-
-    // On success try attach the multiqc report
-    def mqc_report = getSingleReport(multiqc_report)
-
-    // Check if we are only sending emails on failure
-    def email_address = email
-    if (!email && email_on_fail && !workflow.success) {
-        email_address = email_on_fail
-    }
-
-    // Render the TXT template
-    def engine       = new groovy.text.GStringTemplateEngine()
-    def tf           = new File("${workflow.projectDir}/assets/email_template.txt")
-    def txt_template = engine.createTemplate(tf).make(email_fields)
-    def email_txt    = txt_template.toString()
-
-    // Render the HTML template
-    def hf            = new File("${workflow.projectDir}/assets/email_template.html")
-    def html_template = engine.createTemplate(hf).make(email_fields)
-    def email_html    = html_template.toString()
-
-    // Render the sendmail template
-    def max_multiqc_email_size = (params.containsKey('max_multiqc_email_size') ? params.max_multiqc_email_size : 0) as MemoryUnit
-    def smail_fields           = [email: email_address, subject: subject, email_txt: email_txt, email_html: email_html, projectDir: "${workflow.projectDir}", mqcFile: mqc_report, mqcMaxSize: max_multiqc_email_size.toBytes()]
-    def sf                     = new File("${workflow.projectDir}/assets/sendmail_template.txt")
-    def sendmail_template      = engine.createTemplate(sf).make(smail_fields)
-    def sendmail_html          = sendmail_template.toString()
-
-    // Send the HTML e-mail
-    def colors = logColours(monochrome_logs) as Map
-    if (email_address) {
-        try {
-            if (plaintext_email) {
-                new org.codehaus.groovy.GroovyException('Send plaintext e-mail, not HTML')
-            }
-            // Try to send HTML e-mail using sendmail
-            def sendmail_tf = new File(workflow.launchDir.toString(), ".sendmail_tmp.html")
-            sendmail_tf.withWriter { w -> w << sendmail_html }
-            ['sendmail', '-t'].execute() << sendmail_html
-            log.info("-${colors.purple}[${workflow.manifest.name}]${colors.green} Sent summary e-mail to ${email_address} (sendmail)-")
-        }
-        catch (Exception msg) {
-            log.debug(msg.toString())
-            log.debug("Trying with mail instead of sendmail")
-            // Catch failures and try with plaintext
-            def mail_cmd = ['mail', '-s', subject, '--content-type=text/html', email_address]
-            mail_cmd.execute() << email_html
-            log.info("-${colors.purple}[${workflow.manifest.name}]${colors.green} Sent summary e-mail to ${email_address} (mail)-")
-        }
-    }
-
-    // Write summary e-mail HTML to a file
-    def output_hf = new File(workflow.launchDir.toString(), ".pipeline_report.html")
-    output_hf.withWriter { w -> w << email_html }
-    nextflow.extension.FilesEx.copyTo(output_hf.toPath(), "${outdir}/pipeline_info/pipeline_report.html")
-    output_hf.delete()
-
-    // Write summary e-mail TXT to a file
-    def output_tf = new File(workflow.launchDir.toString(), ".pipeline_report.txt")
-    output_tf.withWriter { w -> w << email_txt }
-    nextflow.extension.FilesEx.copyTo(output_tf.toPath(), "${outdir}/pipeline_info/pipeline_report.txt")
-    output_tf.delete()
-}
-
-//
 // Print pipeline summary on completion
 //
 def completionSummary(monochrome_logs=true) {
@@ -351,69 +323,5 @@ def completionSummary(monochrome_logs=true) {
     }
     else {
         log.info("-${colors.purple}[${workflow.manifest.name}]${colors.red} Pipeline completed with errors${colors.reset}-")
-    }
-}
-
-//
-// Construct and send a notification to a web server as JSON e.g. Microsoft Teams and Slack
-//
-def imNotification(summary_params, hook_url) {
-    def summary = [:]
-    summary_params
-        .keySet()
-        .sort()
-        .each { group ->
-            summary << summary_params[group]
-        }
-
-    def misc_fields = [:]
-    misc_fields['start']          = workflow.start
-    misc_fields['complete']       = workflow.complete
-    misc_fields['scriptfile']     = workflow.scriptFile
-    misc_fields['scriptid']       = workflow.scriptId
-    if (workflow.repository) {
-        misc_fields['repository'] = workflow.repository
-    }
-    if (workflow.commitId) {
-        misc_fields['commitid']   = workflow.commitId
-    }
-    if (workflow.revision) {
-        misc_fields['revision']   = workflow.revision
-    }
-    misc_fields['nxf_version']    = workflow.nextflow.version
-    misc_fields['nxf_build']      = workflow.nextflow.build
-    misc_fields['nxf_timestamp']  = workflow.nextflow.timestamp
-
-    def msg_fields = [:]
-    msg_fields['version']      = getWorkflowVersion()
-    msg_fields['runName']      = workflow.runName
-    msg_fields['success']      = workflow.success
-    msg_fields['dateComplete'] = workflow.complete
-    msg_fields['duration']     = workflow.duration
-    msg_fields['exitStatus']   = workflow.exitStatus
-    msg_fields['errorMessage'] = (workflow.errorMessage ?: 'None')
-    msg_fields['errorReport']  = (workflow.errorReport ?: 'None')
-    msg_fields['commandLine']  = workflow.commandLine.replaceFirst(/ +--hook_url +[^ ]+/, "")
-    msg_fields['projectDir']   = workflow.projectDir
-    msg_fields['summary']      = summary << misc_fields
-
-    // Render the JSON template
-    def engine       = new groovy.text.GStringTemplateEngine()
-    // Different JSON depending on the service provider
-    // Defaults to "Adaptive Cards" (https://adaptivecards.io), except Slack which has its own format
-    def json_path     = hook_url.contains("hooks.slack.com") ? "slackreport.json" : "adaptivecard.json"
-    def hf            = new File("${workflow.projectDir}/assets/${json_path}")
-    def json_template = engine.createTemplate(hf).make(msg_fields)
-    def json_message  = json_template.toString()
-
-    // POST
-    def post = new URL(hook_url).openConnection()
-    post.setRequestMethod("POST")
-    post.setDoOutput(true)
-    post.setRequestProperty("Content-Type", "application/json")
-    post.getOutputStream().write(json_message.getBytes("UTF-8"))
-    def postRC = post.getResponseCode()
-    if (!postRC.equals(200)) {
-        log.warn(post.getErrorStream().getText())
     }
 }

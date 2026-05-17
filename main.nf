@@ -1,8 +1,7 @@
 #!/usr/bin/env nextflow
 
-include { EASYFUSE                } from './workflows/easyfuse'
-include { PIPELINE_INITIALISATION } from './subworkflows/local/utils_nfcore_easyfuse_pipeline'
-include { PIPELINE_COMPLETION     } from './subworkflows/local/utils_nfcore_easyfuse_pipeline'
+include { EASYFUSE         } from './workflows/easyfuse'
+include { INPUT_VALIDATION } from './subworkflows/validation/parameter_validation'
 
 //
 // WORKFLOW: Run main analysis pipeline depending on type of input
@@ -54,10 +53,8 @@ workflow TRONBIOINFORMATICS_EASYFUSE {
 workflow {
 
     main:
-    //
-    // SUBWORKFLOW: Run initialisation tasks
-    //
-    PIPELINE_INITIALISATION (
+
+    INPUT_VALIDATION (
         params.version,
         params.validate_params,
         params.monochrome_logs,
@@ -79,26 +76,18 @@ workflow {
     // WORKFLOW: Run main workflow
     //
     TRONBIOINFORMATICS_EASYFUSE (
-        PIPELINE_INITIALISATION.out.samplesheet,
-        PIPELINE_INITIALISATION.out.fusiontools,
-        PIPELINE_INITIALISATION.out.reference_fasta,
-        PIPELINE_INITIALISATION.out.reference_gtf,
-        PIPELINE_INITIALISATION.out.reference_tsl,
-        PIPELINE_INITIALISATION.out.annotation_db,
-        PIPELINE_INITIALISATION.out.starfusion_index,
-        PIPELINE_INITIALISATION.out.fusioncatcher_index,
-        PIPELINE_INITIALISATION.out.stararriba_index,
-        PIPELINE_INITIALISATION.out.prediction_model,
-        PIPELINE_INITIALISATION.out.model_threshold,
-        PIPELINE_INITIALISATION.out.generate_multiqc_report
-    )
-    //
-    // SUBWORKFLOW: Run completion tasks
-    //
-    PIPELINE_COMPLETION (
-        params.outdir,
-        params.monochrome_logs,
-        TRONBIOINFORMATICS_EASYFUSE.out.multiqc_report
+        INPUT_VALIDATION.out.samplesheet,
+        INPUT_VALIDATION.out.fusiontools,
+        INPUT_VALIDATION.out.reference_fasta,
+        INPUT_VALIDATION.out.reference_gtf,
+        INPUT_VALIDATION.out.reference_tsl,
+        INPUT_VALIDATION.out.annotation_db,
+        INPUT_VALIDATION.out.starfusion_index,
+        INPUT_VALIDATION.out.fusioncatcher_index,
+        INPUT_VALIDATION.out.stararriba_index,
+        INPUT_VALIDATION.out.prediction_model,
+        INPUT_VALIDATION.out.model_threshold,
+        INPUT_VALIDATION.out.generate_multiqc_report
     )
 }
 

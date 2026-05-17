@@ -3,19 +3,18 @@
     IMPORT MODULES / SUBWORKFLOWS / FUNCTIONS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
-include { MULTIQC                } from '../modules/nf-core/multiqc/main'
+include { MULTIQC                } from '../modules/multiqc/main'
 include { paramsSummaryMap       } from 'plugin/nf-schema'
-include { paramsSummaryMultiqc   } from '../subworkflows/nf-core/utils_nfcore_pipeline'
-include { softwareVersionsToYAML } from '../subworkflows/nf-core/utils_nfcore_pipeline'
-include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_easyfuse_pipeline'
+include { paramsSummaryMultiqc   } from '../subworkflows/validation/pipeline_utils'
+include { softwareVersionsToYAML } from '../subworkflows/validation/pipeline_utils'
 
-include { QC                       } from '../subworkflows/local/qc/main'
-include { READ_FILTERING           } from '../subworkflows/local/read_filtering/main'
-include { FUSION_PREDICTION        } from '../subworkflows/local/fusion_prediction/main'
-include { FUSION_ANNOTATION        } from '../subworkflows/local/fusion_annotation/main'
-include { QUANTIFICATION           } from '../subworkflows/local/quantification/main'
-include { SUMMARY                  } from '../subworkflows/local/summary/main'
-include { RANDOM_FOREST_CLASSIFIER } from '../subworkflows/local/random_forest_classifier/main'
+include { QC                       } from '../subworkflows/qc/main'
+include { READ_FILTERING           } from '../subworkflows/read_filtering/main'
+include { FUSION_PREDICTION        } from '../subworkflows/fusion_prediction/main'
+include { FUSION_ANNOTATION        } from '../subworkflows/fusion_annotation/main'
+include { QUANTIFICATION           } from '../subworkflows/quantification/main'
+include { SUMMARY                  } from '../subworkflows/summary/main'
+include { RANDOM_FOREST_CLASSIFIER } from '../subworkflows/random_forest_classifier/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -141,8 +140,8 @@ workflow EASYFUSE {
     */
     softwareVersionsToYAML(ch_versions)
         .collectFile(
-            storeDir: "${params.outdir}/pipeline_info",
-            name:  'easyfuse_software_'  + 'mqc_'  + 'versions.yml',
+            storeDir: "${params.outdir}/version_info",
+            name:  'easyfuse_software_' + 'versions.yml',
             sort: true,
             newLine: true
         ).set { ch_collated_versions }

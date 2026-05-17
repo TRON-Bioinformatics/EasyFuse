@@ -3,13 +3,13 @@
 //
 //
 
-include { FUSION_FILTER     } from '../../../modules/local/utility/fusionfilter/main'
-include { BAM2FASTQ         } from '../../../modules/local/bam2fastq/main'
-include { FUSION2CSV        } from '../../../modules/local/utility/fusion2csv/main'
-include { BPQUANT_CSV2FASTA } from '../../../modules/local/bpquant/csv2fasta/main'
-include { BPQUANT_INDEX     } from '../../../modules/local/bpquant/index/main'
-include { BPQUANT_ALIGN     } from '../../../modules/local/bpquant/align/main'
-include { BPQUANT_COUNT     } from '../../../modules/local/bpquant/count/main'
+include { FUSION_FILTER     } from '../../modules/utility/fusionfilter/main'
+include { BAM2FASTQ         } from '../../modules/bam2fastq/main'
+include { FUSION2CSV        } from '../../modules/utility/fusion2csv/main'
+include { BPQUANT_CSV2FASTA } from '../../modules/bpquant/csv2fasta/main'
+include { BPQUANT_INDEX     } from '../../modules/bpquant/index/main'
+include { BPQUANT_ALIGN     } from '../../modules/bpquant/align/main'
+include { BPQUANT_COUNT     } from '../../modules/bpquant/count/main'
 
 
 workflow QUANTIFICATION {

@@ -3,8 +3,8 @@
 //
 //
 
-include { FUSION_PARSER   } from '../../../modules/local/fusionparsing/fusionparser/main'
-include { FUSIONANNOTATER } from '../../../modules/local/fusionannotation/main'
+include { FUSION_PARSER   } from '../../modules/fusionparsing/fusionparser/main'
+include { FUSIONANNOTATER } from '../../modules/fusionannotation/main'
 
 workflow FUSION_ANNOTATION {
 
