@@ -34,8 +34,6 @@ from fusionannotation.src.transcript import Transcript
 # logging.basicConfig(format=FORMAT, level=logging.DEBUG)
 # logger = logging.getLogger(__name__)
 
-__version__ = "v24.11.18"
-
 
 class FusionAnnotator:
     """Annotation of predicted fusion genes soley based on the breakpoint information"""
@@ -234,11 +232,6 @@ def main():
         dest="out_csv",
         help="Path to output CSV with annotated fusions",
         required=True,
-    )
-    parser.add_argument(
-        "-v", "--version",
-        action="version",
-        version=__version__
     )
 
     args = parser.parse_args()

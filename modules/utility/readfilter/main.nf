@@ -12,7 +12,6 @@ process READ_FILTER {
 
     output:
     tuple val(meta), path("${prefix}.filtered.bam"), emit: filtered_bam
-    path("versions.yml")                           , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -24,11 +23,6 @@ process READ_FILTER {
     fusionreadfilter.py \\
         --input ${bam} \\
         --output ${prefix}.filtered.bam
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        fusionreadfilter.py: \$(fusionreadfilter.py --version 2>&1)
-    END_VERSIONS
     """
 
     stub:
@@ -36,10 +30,5 @@ process READ_FILTER {
 
     """
     touch ${prefix}.filtered.bam
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        fusionreadfilter.py: \$(fusionreadfilter.py --version 2>&1)
-    END_VERSIONS
     """
 }

@@ -26,7 +26,6 @@ workflow READ_FILTERING {
     ch_versions = ch_versions.mix(STAR_ALIGN.out.versions)
 
     READ_FILTER ( STAR_ALIGN.out.bam )
-    ch_versions = ch_versions.mix(READ_FILTER.out.versions)
 
     BAM2FASTQ ( READ_FILTER.out.filtered_bam )
     ch_versions = ch_versions.mix(BAM2FASTQ.out.versions)

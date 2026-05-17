@@ -12,7 +12,6 @@ process FUSION_FILTER {
 
     output:
     tuple val(meta), path("${prefix}.requantified.bam"), emit: bam
-    path "versions.yml"                                , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -28,11 +27,6 @@ process FUSION_FILTER {
         --input_read_stats ${read_stats} \\
         --output ${prefix}.requantified.bam \\
         ${args}
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        read_selection.py: \$(read_selection.py --version)
-    END_VERSIONS
     """
 
     stub:
@@ -40,10 +34,5 @@ process FUSION_FILTER {
 
     """
     touch ${prefix}.requantified.bam
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        read_selection.py: \$(read_selection.py --version)
-    END_VERSIONS
     """
 }

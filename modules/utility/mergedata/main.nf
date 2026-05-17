@@ -18,7 +18,6 @@ process MERGE_DATA {
 
     output:
     tuple val(meta), path("fusions.csv"), emit: merged_results
-    path("versions.yml")                , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -35,21 +34,11 @@ process MERGE_DATA {
         -o fusions.csv \\
         --fusion_tools fusioncatcher,starfusion,arriba \\
         ${args}
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        merge_data.py: \$(merge_data.py --version 2>&1)
-    END_VERSIONS
     """
 
     stub:
 
     """
     touch fusions.csv
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        merge_data.py: \$(merge_data.py --version 2>&1)
-    END_VERSIONS
     """
 }

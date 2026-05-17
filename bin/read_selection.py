@@ -30,7 +30,6 @@ import pysam  # pysam is not available for windows (where I run pylint) => pylin
 
 from count_input_reads import get_input_read_count
 
-__version__ = "v2018.11.26"
 # pylint: disable=line-too-long
 #         yes they are partially, but I do not consider this to be relevant here
 class ReadSelection(object):
@@ -319,7 +318,6 @@ def main():
         help="Path to input file with read stats",
     )
     parser.add_argument("-o", "--output", dest="output", help="Specify output prefix")
-    parser.add_argument("-v", "--version", action="version", version=__version__)
     args = parser.parse_args()
 
     stats = ReadSelection(args.input, args.output, args.input2, args.input_read_stats)

@@ -12,7 +12,6 @@ process FUSION_PARSER {
 
     output:
     tuple val(meta), path("${prefix}_Detected_Fusions.csv"), emit: fusions
-    path("versions.yml")                                   , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -33,12 +32,6 @@ process FUSION_PARSER {
         --output ${prefix}_Detected_Fusions.csv \\
         --sample ${prefix} \\
         ${args}
-
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        fusiontoolparser.py: \$(fusiontoolparser.py --version 2>&1)
-    END_VERSIONS
     """
 
     stub:
@@ -46,10 +39,5 @@ process FUSION_PARSER {
 
     """
     touch ${prefix}_Detected_Fusions.csv
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        fusiontoolparser.py: \$(fusiontoolparser.py --version 2>&1)
-    END_VERSIONS
     """
 }

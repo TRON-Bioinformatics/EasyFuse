@@ -12,7 +12,6 @@ process FUSION2CSV {
 
     output:
     tuple val(meta), path("${prefix}_seq_table.csv"), emit: formatted_csv
-    path("versions.yml")                            , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -26,11 +25,6 @@ process FUSION2CSV {
         --input_table ${annot_fusions_csv_debug} \\
         --output_table ${prefix}_seq_table.csv \\
         ${args}
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        format_seq_table.py: \$(format_seq_table.py --version)
-    END_VERSIONS
     """
 
     stub:
@@ -38,10 +32,5 @@ process FUSION2CSV {
 
     """
     touch ${prefix}_seq_table.csv
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        format_seq_table.py: \$(format_seq_table.py --version)
-    END_VERSIONS
     """
 }

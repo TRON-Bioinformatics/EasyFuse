@@ -19,8 +19,6 @@ from fusionparsing.src.file_headers import OUTPUT_HEADER
 # logging.basicConfig(format=FORMAT, level=logging.INFO)
 # logger = logging.getLogger(__name__)
 
-__version__ = "v2024.11.26"
-
 class FusionParser:
     """
     Get and parse results from previously run programs
@@ -82,12 +80,7 @@ def main():
         help="Specify the sample to process.",
         required=True,
     )
-    parser.add_argument(
-        "-v",
-        "--version",
-        action="version",
-        version=__version__
-    )
+
     args = parser.parse_args()
 
     # checks that at least one fusion prediction tool is provided

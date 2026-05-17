@@ -47,7 +47,6 @@ workflow FUSION_ANNOTATION {
                                     )
                                 }
     FUSION_PARSER ( ch_fusionparser_input )
-    ch_versions = ch_versions.mix(FUSION_PARSER.out.versions)
 
     ch_fusionannotater_input = FUSION_PARSER.out.fusions
                                 .combine(ch_annotation_db)
@@ -57,7 +56,6 @@ workflow FUSION_ANNOTATION {
                                     tuple(meta, fusions, annotation_db, ref_fasta, ref_tsl)
                                 }
     FUSIONANNOTATER ( ch_fusionannotater_input )
-    ch_versions = ch_versions.mix(FUSIONANNOTATER.out.versions)
 
     emit:
 

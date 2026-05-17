@@ -27,8 +27,6 @@ import time
 import pysam
 # from logzero import logger
 
-__version__ = "v2018.11.26"
-
 class FusionReadFilter(object):
     """Select alignments belonging to putative fusions from an s/bam file"""
 
@@ -245,7 +243,6 @@ def main():
     parser = ArgumentParser(description="Filters alignment file for potential fusion reads")
     parser.add_argument("-i", "--input", dest="input", help="Specify input BAM file. Must be sorted by query name")
     parser.add_argument("-o", "--output", dest="output", help="Specify output prefix")
-    parser.add_argument("-v", "--version", action="version", version=__version__)
 
     args = parser.parse_args()
 

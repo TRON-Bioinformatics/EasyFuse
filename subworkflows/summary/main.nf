@@ -23,7 +23,6 @@ workflow SUMMARY {
                             .join(ch_counts)
                             .join(ch_read_stats)
     MERGE_DATA( ch_mergedata_input )
-    ch_versions = ch_versions.mix(MERGE_DATA.out.versions)
 
     emit:
 

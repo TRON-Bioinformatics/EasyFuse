@@ -20,7 +20,6 @@ workflow RANDOM_FOREST_CLASSIFIER {
                             .combine(ch_prediction_model)
                             .combine(ch_model_threshold)
     PREDICTION( ch_prediction_input )
-    ch_versions = ch_versions.mix(PREDICTION.out.versions)
 
     emit:
 

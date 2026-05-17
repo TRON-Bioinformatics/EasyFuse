@@ -12,7 +12,6 @@ process PARSE_FUSIONCATCHER {
 
     output:
     tuple val(meta), path("${prefix}_fusioncatcher.csv"), emit: fusions
-    path("versions.yml")                                , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -28,11 +27,6 @@ process PARSE_FUSIONCATCHER {
         --output_file ${prefix}_fusioncatcher.csv \\
         --tool fusioncatcher \\
         ${args}
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        parse_tool.py: \$(parse_tool.py --version)
-    END_VERSIONS
     """
 
     stub:
@@ -40,10 +34,5 @@ process PARSE_FUSIONCATCHER {
 
     """
     touch ${prefix}_fusioncatcher.csv
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        parse_tool.py: \$(parse_tool.py --version)
-    END_VERSIONS
     """
 }

@@ -15,7 +15,6 @@ process FUSIONANNOTATER {
           path("${prefix}_annotated_fusions.csv"),
           path("${prefix}_annotated_fusions.csv.debug"),
           path("${prefix}_annotated_fusions.csv.fasta"), emit: annot_fusions
-    path("versions.yml")                               , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -35,11 +34,6 @@ process FUSIONANNOTATER {
         --context_seq_len 400 \\
         --tsl_filter_level 4,5,NA \\
         ${args}
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        fusionannotator.py: \$(fusionannotator.py --version 2>&1)
-    END_VERSIONS
     """
 
     stub:
@@ -49,10 +43,5 @@ process FUSIONANNOTATER {
     touch ${prefix}_annotated_fusions.csv
     touch ${prefix}_annotated_fusions.csv.debug
     touch ${prefix}_annotated_fusions.csv.fasta
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        fusionannotator.py: \$(fusionannotator.py --version 2>&1)
-    END_VERSIONS
     """
 }

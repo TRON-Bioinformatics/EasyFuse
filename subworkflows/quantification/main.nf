@@ -31,13 +31,11 @@ workflow QUANTIFICATION {
                                     -> tuple(meta, bam, annot_fusions_csv, annot_fusions_debug, annot_fusions_fasta, read_stats)
                                 }
     FUSION_FILTER ( ch_fusionsfilter_input )
-    ch_versions = ch_versions.mix(FUSION_FILTER.out.versions)
 
     BAM2FASTQ ( FUSION_FILTER.out.bam )
     ch_versions = ch_versions.mix(BAM2FASTQ.out.versions)
 
     FUSION2CSV (ch_annotated_fusions)
-    ch_versions = ch_versions.mix(FUSION2CSV.out.versions)
 
     BPQUANT_CSV2FASTA (FUSION2CSV.out.formatted_csv)
     ch_versions = ch_versions.mix(BPQUANT_CSV2FASTA.out.versions)

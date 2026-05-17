@@ -8,8 +8,6 @@ into a single output file
 @version: 20241127
 """
 
-__version__ = "v2024.11.27"
-
 from argparse import ArgumentParser
 import csv
 
@@ -102,11 +100,6 @@ def main():
         dest="tool",
         help="Tool name",
         required=True
-    )
-    parser.add_argument(
-        "-v", "--version",
-        action="version",
-        version=__version__
     )
 
     args = parser.parse_args()

@@ -12,7 +12,6 @@ process PREDICTION {
 
     output:
     tuple val(meta), path("fusions.pass.csv"), emit: predictions
-    path("versions.yml")                     , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -28,11 +27,6 @@ process PREDICTION {
       --prediction_threshold ${model_threshold} \\
       --output fusions.pass.csv \\
       ${args}
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        R_model_prediction.R: \$(R_model_prediction.R --version 2>/dev/null)
-    END_VERSIONS
     """
 
     stub:
@@ -40,10 +34,5 @@ process PREDICTION {
 
     """
     touch fusions.pass.csv
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        R_model_prediction.R: \$(R_model_prediction.R --version 2>/dev/null)
-    END_VERSIONS
     """
 }

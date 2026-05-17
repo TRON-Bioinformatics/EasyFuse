@@ -39,7 +39,6 @@ workflow FUSION_PREDICTION {
         ch_versions = ch_versions.mix(FUSIONCATCHER.out.versions)
 
         PARSE_FUSIONCATCHER(FUSIONCATCHER.out.fusions)
-        ch_versions = ch_versions.mix(PARSE_FUSIONCATCHER.out.versions)
         ch_fusioncatcher_fusions = PARSE_FUSIONCATCHER.out.fusions
     }
 
@@ -51,7 +50,6 @@ workflow FUSION_PREDICTION {
         ch_versions = ch_versions.mix(STARFUSION.out.versions)
 
         PARSE_STARFUSION(STARFUSION.out.fusions)
-        ch_versions = ch_versions.mix(PARSE_STARFUSION.out.versions)
         ch_starfusion_fusions = PARSE_STARFUSION.out.fusions
     }
 
@@ -70,7 +68,6 @@ workflow FUSION_PREDICTION {
         ch_versions = ch_versions.mix(ARRIBA.out.versions)
 
         PARSE_ARRIBA(ARRIBA.out.fusions)
-        ch_versions = ch_versions.mix(PARSE_ARRIBA.out.versions)
         ch_arriba_fusions = PARSE_ARRIBA.out.fusions
     }
 

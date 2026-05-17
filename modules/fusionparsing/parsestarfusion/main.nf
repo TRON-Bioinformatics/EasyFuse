@@ -12,7 +12,6 @@ process PARSE_STARFUSION {
 
     output:
     tuple val(meta), path("${prefix}_starfusion.csv"), emit: fusions
-    path("versions.yml")                             , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -27,11 +26,6 @@ process PARSE_STARFUSION {
         --output_file ${prefix}_starfusion.csv \\
         --tool starfusion \\
         ${args}
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        parse_tool.py: \$(parse_tool.py --version 2>&1)
-    END_VERSIONS
     """
 
     stub:
@@ -39,10 +33,5 @@ process PARSE_STARFUSION {
 
     """
     touch ${prefix}_starfusion.csv
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        parse_tool.py: \$(parse_tool.py --version 2>&1)
-    END_VERSIONS
     """
 }
