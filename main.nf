@@ -1,32 +1,13 @@
 #!/usr/bin/env nextflow
-/*
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    TRON/easyfuse
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    Github : https://github.com/TRON/easyfuse
-----------------------------------------------------------------------------------------
-*/
-
-/*
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    IMPORT FUNCTIONS / MODULES / SUBWORKFLOWS / WORKFLOWS
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-*/
 
 include { EASYFUSE                } from './workflows/easyfuse'
 include { PIPELINE_INITIALISATION } from './subworkflows/local/utils_nfcore_easyfuse_pipeline'
 include { PIPELINE_COMPLETION     } from './subworkflows/local/utils_nfcore_easyfuse_pipeline'
 
-/*
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    NAMED WORKFLOWS FOR PIPELINE
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-*/
-
 //
 // WORKFLOW: Run main analysis pipeline depending on type of input
 //
-workflow TRONPRIVATE_EASYFUSE {
+workflow TRONBIOINFORMATICS_EASYFUSE {
 
     take:
     samplesheet             // channel: samplesheet read in from --input
@@ -97,7 +78,7 @@ workflow {
     //
     // WORKFLOW: Run main workflow
     //
-    TRONPRIVATE_EASYFUSE (
+    TRONBIOINFORMATICS_EASYFUSE (
         PIPELINE_INITIALISATION.out.samplesheet,
         PIPELINE_INITIALISATION.out.fusiontools,
         PIPELINE_INITIALISATION.out.reference_fasta,
@@ -117,7 +98,7 @@ workflow {
     PIPELINE_COMPLETION (
         params.outdir,
         params.monochrome_logs,
-        TRONPRIVATE_EASYFUSE.out.multiqc_report
+        TRONBIOINFORMATICS_EASYFUSE.out.multiqc_report
     )
 }
 
