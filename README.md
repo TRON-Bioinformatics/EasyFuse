@@ -1,7 +1,7 @@
-# TRON/EasyFuse
+# TRON-Bioinformatics/EasyFuse
 
-[![GitHub Actions CI Status](https://github.com/TRON/easyfuse/actions/workflows/nf-test.yml/badge.svg)](https://github.com/TRON/easyfuse/actions/workflows/nf-test.yml)
-[![GitHub Actions Linting Status](https://github.com/TRON/easyfuse/actions/workflows/linting.yml/badge.svg)](https://github.com/TRON/easyfuse/actions/workflows/linting.yml)(https://doi.org/10.1038/s41587-022-01247-9)
+[![GitHub Actions CI Status](https://github.com/TRON-Bioinformatics/easyfuse/actions/workflows/nf-test.yml/badge.svg)](https://github.com/TRON-Bioinformatics/easyfuse/actions/workflows/nf-test.yml)
+[![GitHub Actions Linting Status](https://github.com/TRON-Bioinformatics/easyfuse/actions/workflows/linting.yml/badge.svg)](https://github.com/TRON-Bioinformatics/easyfuse/actions/workflows/linting.yml)(https://doi.org/10.1038/s41587-022-01247-9)
 
 [![Nextflow](https://img.shields.io/badge/version-%E2%89%A525.04.0-green?style=flat&logo=nextflow&logoColor=white&color=%230DC09D&link=https%3A%2F%2Fnextflow.io)](https://www.nextflow.io/)
 [![nf-core template version](https://img.shields.io/badge/nf--core_template-3.4.1-green?style=flat&logo=nfcore&logoColor=white&color=%2324B064&link=https%3A%2F%2Fnf-co.re)](https://github.com/nf-core/tools/releases/tag/3.4.1)
