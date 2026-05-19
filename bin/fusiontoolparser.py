@@ -80,7 +80,6 @@ def main():
         help="Specify the sample to process.",
         required=True,
     )
-
     args = parser.parse_args()
 
     # checks that at least one fusion prediction tool is provided

@@ -233,9 +233,7 @@ def main():
         help="Path to output CSV with annotated fusions",
         required=True,
     )
-
     args = parser.parse_args()
-
 
     fusannot = FusionAnnotator(
         args.annotation_db, args.detected_fusions, args.tsl_info

@@ -103,7 +103,6 @@ def main():
     )
 
     args = parser.parse_args()
-
     run(args.input_file, args.input_file2, args.output_file, args.tool)
 
 

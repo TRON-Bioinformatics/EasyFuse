@@ -336,7 +336,6 @@ def main():
         dest="fusion_tools",
         help="Fusion tools."
     )
-
     args = parser.parse_args()
 
     summary = FusionSummary(

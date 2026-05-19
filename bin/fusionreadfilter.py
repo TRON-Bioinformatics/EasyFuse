@@ -243,7 +243,6 @@ def main():
     parser = ArgumentParser(description="Filters alignment file for potential fusion reads")
     parser.add_argument("-i", "--input", dest="input", help="Specify input BAM file. Must be sorted by query name")
     parser.add_argument("-o", "--output", dest="output", help="Specify output prefix")
-
     args = parser.parse_args()
 
     read_filter = FusionReadFilter(args.input, args.output)
