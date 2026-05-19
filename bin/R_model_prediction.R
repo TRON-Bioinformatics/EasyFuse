@@ -10,8 +10,6 @@ library(stringr, quietly = TRUE)
 library(randomForest, quietly = TRUE)
 
 # Parse commandline arguments --------------------------------------------------
-version <- "v1.0.0"
-
 argument_list <- list(
 	make_option(c("-i", "--fusion_summary"), default="",
 	            help="Input list of detected fusions"),
