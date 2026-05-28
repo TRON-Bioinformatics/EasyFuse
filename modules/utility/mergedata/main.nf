@@ -15,6 +15,7 @@ process MERGE_DATA {
           path(annot_fusions_fasta),
           path(counts),
           path(read_stats)
+    val(fusion_tools)
 
     output:
     tuple val(meta), path("fusions.csv"), emit: merged_results
@@ -24,6 +25,10 @@ process MERGE_DATA {
 
     script:
     def args = task.ext.args ?: ''
+    def tool_list = []
+    if (fusion_tools.run_fusioncatcher) tool_list.add('fusioncatcher')
+    if (fusion_tools.run_starfusion)    tool_list.add('starfusion')
+    if (fusion_tools.run_arriba)        tool_list.add('arriba')
 
     """
     merge_data.py \\
@@ -32,7 +37,7 @@ process MERGE_DATA {
         --requant_counts ${counts} \\
         --read_stats ${read_stats} \\
         -o fusions.csv \\
-        --fusion_tools fusioncatcher,starfusion,arriba \\
+        --fusion_tools ${tool_list.join(',')} \\
         ${args}
     """
 

@@ -13,6 +13,7 @@ workflow SUMMARY {
     ch_annotated_fusions   // channel: [ val(meta), annot_fusion.csv, *.debug, *.fasta ]
     ch_counts              // channel: [ val(meta), quantification.tsv ]
     ch_read_stats          // channel: [ val(meta), read_stats.tsv ]
+    ch_fusiontools         // channel: [ [arriba: true, fusioncatcher: true, starfusion: true] ] 
 
     main:
 
@@ -22,7 +23,7 @@ workflow SUMMARY {
                             .join(ch_annotated_fusions)
                             .join(ch_counts)
                             .join(ch_read_stats)
-    MERGE_DATA( ch_mergedata_input )
+    MERGE_DATA( ch_mergedata_input, ch_fusiontools )
 
     emit:
 
