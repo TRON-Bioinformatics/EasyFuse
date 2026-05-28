@@ -25,10 +25,11 @@ process MERGE_DATA {
 
     script:
     def args = task.ext.args ?: ''
-    def tool_list = []
-    if (fusion_tools.run_fusioncatcher) tool_list.add('fusioncatcher')
-    if (fusion_tools.run_starfusion)    tool_list.add('starfusion')
-    if (fusion_tools.run_arriba)        tool_list.add('arriba')
+    def tools = []
+    if (fusion_tools.run_fusioncatcher) tools.add('fusioncatcher')
+    if (fusion_tools.run_starfusion)    tools.add('starfusion')
+    if (fusion_tools.run_arriba)        tools.add('arriba')
+    def tools_list = tools.join(',') ?: ''
 
     """
     merge_data.py \\
@@ -37,7 +38,7 @@ process MERGE_DATA {
         --requant_counts ${counts} \\
         --read_stats ${read_stats} \\
         -o fusions.csv \\
-        --fusion_tools ${tool_list.join(',')} \\
+        --fusion_tools ${tools_list} \\
         ${args}
     """
 

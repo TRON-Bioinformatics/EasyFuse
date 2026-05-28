@@ -113,7 +113,8 @@ workflow EASYFUSE {
         FUSION_ANNOTATION.out.detected_fusions,
         FUSION_ANNOTATION.out.annot_fusions,
         QUANTIFICATION.out.counts,
-        QUANTIFICATION.out.read_stats
+        QUANTIFICATION.out.read_stats,
+        ch_fusiontools
     )
     ch_versions = ch_versions.mix(SUMMARY.out.versions)
 
