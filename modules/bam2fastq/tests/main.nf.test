@@ -1,0 +1,56 @@
+
+nextflow_process {
+
+    name "Test Process BAM2FASTQ"
+    script "../main.nf"
+    process "BAM2FASTQ"
+
+    tag "modules"
+    tag "modules_local"
+    tag "bam2fastq"
+    tag "bam2fastq/bam2fastq"
+
+    test("bam2fastq - homo_sapiens - paired_end") {
+
+        when {
+            process {
+                """
+                input[0] = Channel.of([
+                            [id:'test_bam2fastq'],
+                            file(params.modules_testdata_base_path + 'genomics/homo_sapiens/illumina/bam/test.paired_end.sorted.bam', checkIfExists: true)
+                        ])
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                { assert snapshot(process.out).match() }
+            )
+        }
+    }
+
+    test("bam2fastq - homo_sapiens - paired_end - stub") {
+
+        options "-stub"
+
+        when {
+            process {
+                """
+                input[0] = Channel.of([
+                            [id:'test_bam2fastq'],
+                            file(params.modules_testdata_base_path + 'genomics/homo_sapiens/illumina/bam/test.paired_end.sorted.bam', checkIfExists: true)
+                        ])
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                { assert snapshot(process.out).match() }
+            )
+        }
+    }
+}

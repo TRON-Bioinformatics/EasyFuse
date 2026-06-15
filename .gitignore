@@ -25,3 +25,7 @@ ef_env/
 logs/
 *slurm*
 compare.sh
+*_fusions/
+results/
+.nf-test/
+.nf-test.log

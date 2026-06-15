@@ -1,0 +1,36 @@
+{
+    "bpquant align - homo_sapiens - paired_end - stub": {
+        "content": [
+            [
+                [
+                    {
+                        "id": "test_bpquant_align"
+                    },
+                    "test_bpquant_align.sam:md5,d41d8cd98f00b204e9800998ecf8427e"
+                ]
+            ]
+        ],
+        "meta": {
+            "nf-test": "0.9.3",
+            "nextflow": "25.10.0"
+        },
+        "timestamp": "2026-06-15T22:23:38.789423262"
+    },
+    "bpquant align - homo_sapiens - paired_end": {
+        "content": [
+            [
+                [
+                    {
+                        "id": "test_bpquant_align"
+                    },
+                    "test_bpquant_align.sam:md5,049abb66197c8c370797ba9c94f0da43"
+                ]
+            ]
+        ],
+        "meta": {
+            "nf-test": "0.9.3",
+            "nextflow": "25.10.0"
+        },
+        "timestamp": "2026-06-15T22:23:25.005785681"
+    }
+}
