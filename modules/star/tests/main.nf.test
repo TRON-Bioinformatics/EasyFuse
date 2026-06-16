@@ -1,0 +1,76 @@
+nextflow_process {
+
+    name "Test Process STAR_ALIGN"
+    script "../main.nf"
+    process "STAR_ALIGN"
+
+    tag "modules"
+    tag "modules_local"
+    tag "star_align"
+
+    setup {
+        run("UNTAR") {
+            script "../../utility/untar/main.nf"
+            process {
+            """
+            input[0] = Channel.of([
+                        [ id:'test_star_align'],
+                        file('https://raw.githubusercontent.com/TRON-Bioinformatics/test-datasets/long2tx/ref/star_index.tar.gz', checkIfExists: true)
+                    ])
+            """
+            }
+        }
+    }
+
+    test("star align - homo_sapiens - paired_end") {
+
+        when {
+            process {
+                """
+                input[0] = Channel.of([
+                            [id:'test_star_align'],
+                            file(params.modules_testdata_base_path + 'genomics/homo_sapiens/illumina/fastq/test_rnaseq_1.fastq.gz', checkIfExists: true),
+                            file(params.modules_testdata_base_path + 'genomics/homo_sapiens/illumina/fastq/test_rnaseq_2.fastq.gz', checkIfExists: true),
+                        ]).join(UNTAR.out.untar)
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                { assert snapshot (
+                    process.out.bam,
+                    process.out.chimeric_reads
+                ).match() }
+            )
+        }
+    }
+
+    test("star align - homo_sapiens - paired_end - stub") {
+
+        options "-stub"
+
+        when {
+            process {
+                """
+                input[0] = Channel.of([
+                            [id:'test_star_align'],
+                            file(params.modules_testdata_base_path + 'genomics/homo_sapiens/illumina/fastq/test_rnaseq_1.fastq.gz', checkIfExists: true),
+                            file(params.modules_testdata_base_path + 'genomics/homo_sapiens/illumina/fastq/test_rnaseq_2.fastq.gz', checkIfExists: true),
+                        ]).join(UNTAR.out.untar)
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                { assert snapshot (
+                    process.out.bam,
+                    process.out.chimeric_reads
+                ).match() }
+            )
+        }
+    }
+}

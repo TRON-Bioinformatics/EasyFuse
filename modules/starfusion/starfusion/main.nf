@@ -20,11 +20,12 @@ process STARFUSION {
     script:
     def args = task.ext.args ?: ''
     prefix = task.ext.prefix ?: "${meta.id}"
+    def fastq_input = (fastq1 && fastq2) ? "--left_fq ${fastq1} --right_fq ${fastq2}" :
+                      (fastq1 && !fastq2) ? "--left_fq ${fastq1}" : ''
 
     """
     STAR-Fusion \\
-        --left_fq ${fastq1} \\
-        --right_fq ${fastq2} \\
+        ${fastq_input} \\
         --genome_lib_dir ${starfusion_index} \\
         --CPU ${task.cpus} \\
         --output_dir ${prefix} \\
