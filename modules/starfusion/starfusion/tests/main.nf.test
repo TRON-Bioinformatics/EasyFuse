@@ -124,11 +124,8 @@ nextflow_process {
 
         then {
             assert process.success
-            assert snapshot(
-                process.out
-            ).match()
+            assert snapshot(process.out).match()
         }
-
     }
 
     test("starfusion - homo sapiens - single end fastqs -stub") {
@@ -152,17 +149,7 @@ nextflow_process {
 
         then {
             assert process.success
-            assert snapshot(
-                process.out.fusions,
-                process.out.abridged,
-                process.out.versions,
-                process.out.coding_effect.collect { meta, tsv ->
-                    [meta, path(tsv).readLines().collect { line ->
-                        line.split('\t')[0] // Get first column (tab-separated)
-                    }]
-                }
-            ).match()
+            assert snapshot(process.out).match()
         }
     }
-
 }

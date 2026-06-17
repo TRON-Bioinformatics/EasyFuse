@@ -1,28 +1,38 @@
 {
     "starfusion - homo sapiens - single end fastqs -stub": {
         "content": [
-            [
-                [
-                    {
-                        "id": "test_starfusion",
-                        "single_end": false
-                    },
-                    "star-fusion.fusion_predictions.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+            {
+                "0": [
+                    [
+                        {
+                            "id": "test_starfusion",
+                            "single_end": false
+                        },
+                        "star-fusion.fusion_predictions.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "1": [
+                    "versions.yml:md5,f83ea7b7236e727dd4b875343c1c8294"
+                ],
+                "fusions": [
+                    [
+                        {
+                            "id": "test_starfusion",
+                            "single_end": false
+                        },
+                        "star-fusion.fusion_predictions.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "versions": [
+                    "versions.yml:md5,f83ea7b7236e727dd4b875343c1c8294"
                 ]
-            ],
-            null,
-            [
-                "versions.yml:md5,f83ea7b7236e727dd4b875343c1c8294"
-            ],
-            [
-                
-            ]
+            }
         ],
         "meta": {
             "nf-test": "0.9.3",
             "nextflow": "25.10.0"
         },
-        "timestamp": "2026-06-16T14:08:51.843070427"
+        "timestamp": "2026-06-16T18:54:35.460097295"
     },
     "starfusion - homo sapiens - paired end fastqs - stub": {
         "content": [

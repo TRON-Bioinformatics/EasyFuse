@@ -4,9 +4,9 @@
 //
 
 include { ARRIBA        } from '../../modules/arriba/main'
-include { STARFUSION    } from '../../modules/starfusion/main'
 include { STAR_ARRIBA   } from '../../modules/stararriba/main'
 include { FUSIONCATCHER } from '../../modules/fusioncatcher/main'
+include { STARFUSION    } from '../../modules/starfusion/starfusion/main'
 
 include { PARSE_ARRIBA        } from '../../modules/fusionparsing/parsearriba/main'
 include { PARSE_STARFUSION    } from '../../modules/fusionparsing/parsestarfusion/main'

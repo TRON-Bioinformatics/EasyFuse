@@ -5,8 +5,8 @@ process STARFUSION_BUILD {
 
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'community.wave.seqera.io/library/star-fusion:1.12.0--359bb9f50e24aa17' :
-        'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/a8/a8566c3e2ecd2afdb44563a65e894975fb746f335df651e76bc6c127cc62029c/data' }"
+        'community.wave.seqera.io/library/star-fusion_dfam_hmmer_minimap2:45614ef783d3f553' :
+        'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/ee/ee1a3578042f5cf8d825af0126e83bce5c11441cda1a9f40e793171e28c0d68a/data' }"
 
     input:
     tuple val(meta), path(fasta)
@@ -142,5 +142,4 @@ process STARFUSION_BUILD {
         STAR-Fusion: \$(STAR-Fusion --version | tr -d '\\n' | cut -d ' ' -f3)
     END_VERSIONS
     """
-
 }

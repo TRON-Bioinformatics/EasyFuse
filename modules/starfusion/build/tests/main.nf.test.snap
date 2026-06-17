@@ -1,13 +1,5 @@
 {
-    "STARFUSION_BUILD - human - minigenome": {
-        "content": null,
-        "meta": {
-            "nf-test": "0.9.3",
-            "nextflow": "25.10.0"
-        },
-        "timestamp": "2026-06-16T13:34:59.739981024"
-    },
-    "STARFUSION_BUILD - human - minigenome - stub": {
+    "starfusion build - homo sapiens - minigenome - stub": {
         "content": [
             {
                 "0": [
@@ -96,7 +88,7 @@
                     ]
                 ],
                 "1": [
-                    "versions.yml:md5,71d53ed2aa4f063aecb789de629133d4"
+                    "versions.yml:md5,de588617337e62734d7159f334a4a05a"
                 ],
                 "reference": [
                     [
@@ -184,7 +176,7 @@
                     ]
                 ],
                 "versions": [
-                    "versions.yml:md5,71d53ed2aa4f063aecb789de629133d4"
+                    "versions.yml:md5,de588617337e62734d7159f334a4a05a"
                 ]
             }
         ],
@@ -192,6 +184,14 @@
             "nf-test": "0.9.3",
             "nextflow": "25.10.0"
         },
-        "timestamp": "2026-06-16T13:35:17.688708976"
+        "timestamp": "2026-06-16T18:32:16.913215319"
+    },
+    "starfusion build - homo sapiens - minigenome": {
+        "content": null,
+        "meta": {
+            "nf-test": "0.9.3",
+            "nextflow": "25.10.0"
+        },
+        "timestamp": "2026-06-16T14:35:56.523535483"
     }
 }
