@@ -57,7 +57,7 @@ workflow ALIGNMENT {
     trimmed_fastq
 
     main:
-    STAR(trimmed_fastq)
+    STAR(trimmed_fastq, params.star_index)
     READ_FILTER(STAR.out.bams)
     BAM2FASTQ(READ_FILTER.out.bams)
 
@@ -74,12 +74,12 @@ workflow TOOLS {
     chimeric_reads
 
     main:
-    FUSION_CATCHER(filtered_fastqs)
+    FUSION_CATCHER(filtered_fastqs, params.fusioncatcher_index)
     PARSE_FUSION_CATCHER(FUSION_CATCHER.out.fusions)
-    STAR_FUSION(filtered_fastqs)
+    STAR_FUSION(filtered_fastqs, params.starfusion_index)
     PARSE_STAR_FUSION(STAR_FUSION.out.fusions)
-    STAR_ARRIBA(filtered_fastqs)
-    ARRIBA(STAR_ARRIBA.out.bams)
+    STAR_ARRIBA(filtered_fastqs, params.star_index)
+    ARRIBA(STAR_ARRIBA.out.bams, params.gtf, params.fasta)
     PARSE_ARRIBA(ARRIBA.out.fusions)
 
 
@@ -101,7 +101,7 @@ workflow ANNOTATION {
         starfusion_results.join(
         arriba_results)
     ))
-    FUSION_ANNOTATION(FUSION_PARSER.out.fusions)
+    FUSION_ANNOTATION(FUSION_PARSER.out.fusions, params.annotation_db)
 
     emit:
     fusions = FUSION_PARSER.out.fusions

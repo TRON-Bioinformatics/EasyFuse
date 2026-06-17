@@ -82,7 +82,9 @@ class FusionSummary(object):
             "context_sequence",
             "context_sequence_bp",
             "neo_peptide_sequence",
-            "neo_peptide_sequence_bp"
+            "neo_peptide_sequence_bp",
+            "fusion_protein_sequence",
+            "fusion_protein_sequence_bp"
         )
         data = {}
         with open(self.input_fusion_context_seqs) as csvfile:
@@ -234,6 +236,8 @@ class FusionSummary(object):
             "context_sequence_bp", # context_seqs
             "neo_peptide_sequence", # context_seqs
             "neo_peptide_sequence_bp", # context_seqs
+            "fusion_protein_sequence", # context_seqs
+            "fusion_protein_sequence_bp", # context_seqs
         ]
         # detected_fusions
         for tool in self.fusion_tools:
