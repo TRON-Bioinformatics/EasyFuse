@@ -16,6 +16,10 @@ include { completionSummary         } from '../pipeline_utils'
 include { UTILS_NFCORE_PIPELINE     } from '../pipeline_utils'
 include { UTILS_NEXTFLOW_PIPELINE   } from '../pipeline_utils'
 
+include { UNTAR as UNTAR_STAR_INDEX          } from '../../../modules/utility/untar/main'
+include { UNTAR as UNTAR_STARFUSION_INDEX    } from '../../../modules/utility/untar/main'
+include { UNTAR as UNTAR_FUSIONCATCHER_INDEX } from '../../../modules/utility/untar/main'
+
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     SUBWORKFLOW TO INITIALISE PIPELINE
@@ -89,19 +93,20 @@ workflow INPUT_VALIDATION {
     .map {
         meta, fastq_1, fastq_2 ->
             if (!fastq_2) {
-                return [ meta.id, meta + [ paired_end:false ],  [ fastq_1 ] ]
+                return [ meta.id, meta + [ paired_end:false ], [fastq_1]  ]
             } else {
-                return [ meta.id, meta + [ paired_end:true ], [ fastq_1, fastq_2 ] ]
+                return [ meta.id, meta + [ paired_end:true ], [fastq_1, fastq_2]  ]
             }
     }
     .groupTuple()
     .map { samplesheet ->
-        def (_id, metas, fastqs) = samplesheet
-        workflow.profile.contains('test') ? [ metas[0], fastqs ] : validateInputSamplesheet(samplesheet)
+        def (_id, meta, fastqs) = samplesheet
+        workflow.profile.contains('test') ?
+            [ meta[0], [ fastqs[0], fastqs[1] ].flatten() ] :
+            validateInputSamplesheet(samplesheet)
     }
-    .map {
-        meta, fastqs ->
-            return [ meta, fastqs[0], fastqs[1] ]
+    .map { meta, fastqs ->
+        [ meta, fastqs[0], fastqs[1] ]
     }
     .set { ch_samplesheet }
 
@@ -114,66 +119,62 @@ workflow INPUT_VALIDATION {
     //
     // Build reference file channels
     //
+    def ref_fasta = reference.toString().replaceFirst(/\/$/, '') + '/Homo_sapiens.GRCh38.dna.primary_assembly.fa'
+    def ref_gtf = reference.toString().replaceFirst(/\/$/, '') + "/Homo_sapiens.GRCh38.${ensembl_version}.gtf"
+    def ref_tsl = reference.toString().replaceFirst(/\/$/, '') + "/Homo_sapiens.GRCh38.${ensembl_version}.gtf.tsl"
+    def annot_db = reference.toString().replaceFirst(/\/$/, '') + "/Homo_sapiens.GRCh38.${ensembl_version}.gff3.db"
 
-    // get reference fasta
-    ch_reference_fasta = channel.value(
-        file(reference.toString().replaceFirst(/\/$/, '') + '/Homo_sapiens.GRCh38.dna.primary_assembly.fa', checkIfExists: true)
-    )
+    def stararriba_idx_path     = reference.toString().replaceFirst(/\/$/, '') + "/star_index"
+    def starfusion_idx_path     = reference.toString().replaceFirst(/\/$/, '') + "/starfusion_index"
+    def fusioncatcher_idx_path  = reference.toString().replaceFirst(/\/$/, '') + "/fusioncatcher_index"
 
-    // get reference gtf
-    ch_reference_gtf = channel.value(
-        file(reference.toString().replaceFirst(/\/$/, '') + "/Homo_sapiens.GRCh38.${ensembl_version}.gtf", checkIfExists: true)
-    )
+    ch_ref_fasta = channel.value(file(ref_fasta, checkIfExists: true))
+    ch_ref_gtf = channel.value(file(ref_gtf, checkIfExists: true))
+    ch_ref_tsl = channel.value(file(ref_tsl, checkIfExists: true))
+    ch_annot_db = channel.value(file(annot_db, checkIfExists: true))
 
-    // ch reference tsl
-    ch_reference_tsl = channel.value(
-        file(reference.toString().replaceFirst(/\/$/, '') + "/Homo_sapiens.GRCh38.${ensembl_version}.gtf.tsl", checkIfExists: true)
-    )
+    //
+    // Index channels
+    //
 
-    // get annotation db
-    ch_annotation_db = channel.value(
-        file(reference.toString().replaceFirst(/\/$/, '') + "/Homo_sapiens.GRCh38.${ensembl_version}.gff3.db", checkIfExists: true)
-    )
+    if (workflow.profile.contains('test')) {
 
-    // get starfusion index
-    ch_starfusion_index = channel.value(
-        file(reference.toString().replaceFirst(/\/$/, '') + "/starfusion_index", checkIfExists: true)
-    )
+        UNTAR_STAR_INDEX([[id: 'test_idx'], "${stararriba_idx_path}.tar.gz"])
+        ch_stararriba_index = UNTAR_STAR_INDEX.out.untar.map { _meta, idx_path -> idx_path }
 
-    // get fusioncatcher index
-    ch_fusioncatcher_index = channel.value(
-        file(reference.toString().replaceFirst(/\/$/, '') + "/fusioncatcher_index", checkIfExists: true)
-    )
+        UNTAR_STARFUSION_INDEX([[id: 'test_idx'], "${starfusion_idx_path}.tar.gz"])
+        ch_starfusion_index = UNTAR_STARFUSION_INDEX.out.untar.map { _meta, idx_path -> idx_path }
 
-    // get stararriba index
-    ch_stararriba_index = channel.value(
-        file(reference.toString().replaceFirst(/\/$/, '') + "/star_index", checkIfExists: true)
-    )
+        UNTAR_FUSIONCATCHER_INDEX([[id: 'test_idx'], "${fusioncatcher_idx_path}.tar.gz"])
+        ch_fusioncatcher_index = UNTAR_FUSIONCATCHER_INDEX.out.untar.map { _meta, idx_path -> idx_path }
 
-    // random forest classifier model
-    ch_prediction_model = channel.value(
-        file("${projectDir}/assets/data/model/${model_pred}", checkIfExists: true)
-    )
+    }
+    else {
 
-    // model threshold
+        ch_stararriba_index = channel.value(file(stararriba_idx_path, checkIfExists: true))
+        ch_starfusion_index = channel.value(file(starfusion_idx_path, checkIfExists: true))
+        ch_fusioncatcher_index = channel.value(file(fusioncatcher_idx_path, checkIfExists: true))
+    }
+
+    ch_prediction_model = channel.value(file("${projectDir}/assets/data/model/${model_pred}", checkIfExists: true))
+
     ch_model_threshold = channel.value(model_threshold)
-
 
     emit:
 
     samplesheet             = ch_samplesheet
     fusiontools             = fusiontools
-    reference_fasta         = ch_reference_fasta
-    reference_gtf           = ch_reference_gtf
-    reference_tsl           = ch_reference_tsl
-    annotation_db           = ch_annotation_db
+    reference_fasta         = ch_ref_fasta
+    reference_gtf           = ch_ref_gtf
+    reference_tsl           = ch_ref_tsl
+    annotation_db           = ch_annot_db
     starfusion_index        = ch_starfusion_index
     fusioncatcher_index     = ch_fusioncatcher_index
     stararriba_index        = ch_stararriba_index
     prediction_model        = ch_prediction_model
     model_threshold         = ch_model_threshold
 
-    versions            = ch_versions
+    versions                = ch_versions
 }
 
 /*

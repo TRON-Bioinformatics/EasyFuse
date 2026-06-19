@@ -7,13 +7,13 @@ include { paramsSummaryMap       } from 'plugin/nf-schema'
 include { paramsSummaryMultiqc   } from '../subworkflows/validation/pipeline_utils'
 include { softwareVersionsToYAML } from '../subworkflows/validation/pipeline_utils'
 
-include { QC                       } from '../subworkflows/qc/main'
-include { READ_FILTERING           } from '../subworkflows/read_filtering/main'
-include { FUSION_PREDICTION        } from '../subworkflows/fusion_prediction/main'
-include { FUSION_ANNOTATION        } from '../subworkflows/fusion_annotation/main'
-include { QUANTIFICATION           } from '../subworkflows/quantification/main'
-include { SUMMARY                  } from '../subworkflows/summary/main'
-include { RANDOM_FOREST_CLASSIFIER } from '../subworkflows/random_forest_classifier/main'
+include { QC                        } from '../subworkflows/qc/main'
+include { READ_FILTERING            } from '../subworkflows/read_filtering/main'
+include { FUSION_PREDICTION         } from '../subworkflows/fusion_prediction/main'
+include { FUSION_ANNOTATION         } from '../subworkflows/fusion_annotation/main'
+include { QUANTIFICATION            } from '../subworkflows/quantification/main'
+include { SUMMARY                   } from '../subworkflows/summary/main'
+include { RANDOM_FOREST_CLASSIFIER  } from '../subworkflows/random_forest_classifier/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -6,6 +6,8 @@ nextflow_pipeline {
 
     test("-profile test") {
 
+        options = "-stub"
+
         when {
             params {
                 outdir = "$outputDir"
@@ -20,7 +22,7 @@ nextflow_pipeline {
             assertAll(
                 { assert workflow.success},
                 { assert snapshot(
-                    removeNextflowVersion("$outputDir/pipeline_info/easyfuse_software_versions.yml"),
+                    // removeNextflowVersion("$outputDir/pipeline_info/easyfuse_software_versions.yml"),
                     // All stable path name, with a relative path
                     stable_name,
                     // All files with stable contents

@@ -43,7 +43,7 @@ workflow QUANTIFICATION {
     BPQUANT_INDEX (BPQUANT_CSV2FASTA.out.formatted_fasta)
     ch_versions = ch_versions.mix(BPQUANT_INDEX.out.versions)
 
-    BPQUANT_ALIGN (BAM2FASTQ.out.fastqs.join(BPQUANT_INDEX.out.star_index))
+    BPQUANT_ALIGN (BAM2FASTQ.out.fastqs.combine(BPQUANT_INDEX.out.star_index, by: 0))
     ch_versions = ch_versions.mix(BPQUANT_ALIGN.out.versions)
 
     BPQUANT_COUNT (BPQUANT_ALIGN.out.bam.join(FUSION2CSV.out.formatted_csv))

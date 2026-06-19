@@ -20,8 +20,8 @@ workflow TRONBIOINFORMATICS_EASYFUSE {
     ch_stararriba_index     // channel: [stararriba index]
     ch_prediction_model     // channel: [prediction model]
     ch_model_threshold      // channel: [val(threshold)]
-    main:
 
+    main:
     //
     // WORKFLOW: Run pipeline
     //
@@ -38,6 +38,7 @@ workflow TRONBIOINFORMATICS_EASYFUSE {
         ch_prediction_model,
         ch_model_threshold
     )
+
     emit:
     versions = EASYFUSE.out.versions
 }
@@ -50,7 +51,6 @@ workflow TRONBIOINFORMATICS_EASYFUSE {
 workflow {
 
     main:
-
     INPUT_VALIDATION (
         params.version,
         params.validate_params,
