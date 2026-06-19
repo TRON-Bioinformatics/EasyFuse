@@ -1,0 +1,23 @@
+{
+    "-profile test": {
+        "content": [
+            [
+                "test_sample",
+                "test_sample/fusions.csv",
+                "test_sample/fusions.pass.csv",
+                "version_info",
+                "version_info/easyfuse_software_versions.yml"
+            ],
+            [
+                "fusions.csv:md5,d41d8cd98f00b204e9800998ecf8427e",
+                "fusions.pass.csv:md5,d41d8cd98f00b204e9800998ecf8427e",
+                "easyfuse_software_versions.yml:md5,c127efa729c8b24b11167c195450d04b"
+            ]
+        ],
+        "meta": {
+            "nf-test": "0.9.3",
+            "nextflow": "25.10.0"
+        },
+        "timestamp": "2026-06-19T18:03:29.833101634"
+    }
+}

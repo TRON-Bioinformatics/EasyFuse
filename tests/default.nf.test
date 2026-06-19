@@ -3,10 +3,11 @@ nextflow_pipeline {
     name "Test pipeline"
     script "../main.nf"
     tag "pipeline"
+    config "../conf/test.config"
 
     test("-profile test") {
 
-        options = "-stub"
+        options "-stub"
 
         when {
             params {
