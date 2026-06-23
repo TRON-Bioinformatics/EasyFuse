@@ -120,9 +120,9 @@ workflow INPUT_VALIDATION {
     // Build reference file channels
     //
     def ref_fasta = reference.toString().replaceFirst(/\/$/, '') + '/Homo_sapiens.GRCh38.dna.primary_assembly.fa'
-    def ref_gtf = reference.toString().replaceFirst(/\/$/, '')   + '/Homo_sapiens.GRCh38.${ensembl_version}.gtf'
-    def ref_tsl = reference.toString().replaceFirst(/\/$/, '')   + '/Homo_sapiens.GRCh38.${ensembl_version}.gtf.tsl'
-    def annot_db = reference.toString().replaceFirst(/\/$/, '')  + '/Homo_sapiens.GRCh38.${ensembl_version}.gff3.db'
+    def ref_gtf = reference.toString().replaceFirst(/\/$/, '')   + "/Homo_sapiens.GRCh38.${ensembl_version}.gtf"
+    def ref_tsl = reference.toString().replaceFirst(/\/$/, '')   + "/Homo_sapiens.GRCh38.${ensembl_version}.gtf.tsl"
+    def annot_db = reference.toString().replaceFirst(/\/$/, '')  + "/Homo_sapiens.GRCh38.${ensembl_version}.gff3.db"
 
     def stararriba_idx_path     = reference.toString().replaceFirst(/\/$/, '') + "/star_index"
     def starfusion_idx_path     = reference.toString().replaceFirst(/\/$/, '') + "/starfusion_index"
