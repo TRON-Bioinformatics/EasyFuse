@@ -120,24 +120,24 @@ workflow INPUT_VALIDATION {
     // Build reference file channels
     //
     def ref_fasta = reference.toString().replaceFirst(/\/$/, '') + '/Homo_sapiens.GRCh38.dna.primary_assembly.fa'
-    def ref_gtf = reference.toString().replaceFirst(/\/$/, '') + "/Homo_sapiens.GRCh38.${ensembl_version}.gtf"
-    def ref_tsl = reference.toString().replaceFirst(/\/$/, '') + "/Homo_sapiens.GRCh38.${ensembl_version}.gtf.tsl"
-    def annot_db = reference.toString().replaceFirst(/\/$/, '') + "/Homo_sapiens.GRCh38.${ensembl_version}.gff3.db"
+    def ref_gtf = reference.toString().replaceFirst(/\/$/, '')   + '/Homo_sapiens.GRCh38.${ensembl_version}.gtf'
+    def ref_tsl = reference.toString().replaceFirst(/\/$/, '')   + '/Homo_sapiens.GRCh38.${ensembl_version}.gtf.tsl'
+    def annot_db = reference.toString().replaceFirst(/\/$/, '')  + '/Homo_sapiens.GRCh38.${ensembl_version}.gff3.db'
 
     def stararriba_idx_path     = reference.toString().replaceFirst(/\/$/, '') + "/star_index"
     def starfusion_idx_path     = reference.toString().replaceFirst(/\/$/, '') + "/starfusion_index"
     def fusioncatcher_idx_path  = reference.toString().replaceFirst(/\/$/, '') + "/fusioncatcher_index"
-
-    ch_ref_fasta = channel.value(file(ref_fasta, checkIfExists: true))
-    ch_ref_gtf = channel.value(file(ref_gtf, checkIfExists: true))
-    ch_ref_tsl = channel.value(file(ref_tsl, checkIfExists: true))
-    ch_annot_db = channel.value(file(annot_db, checkIfExists: true))
 
     //
     // Index channels
     //
 
     if (workflow.profile.contains('test')) {
+
+        ref_fasta = reference.toString().replaceFirst(/\/$/, '') + '/minigenome.fa'
+        ref_gtf = reference.toString().replaceFirst(/\/$/, '')   + '/minigenome.gtf'
+        ref_tsl = reference.toString().replaceFirst(/\/$/, '')   + '/minigenome.gtf.tsl'
+        annot_db = reference.toString().replaceFirst(/\/$/, '')  + '/minigenome.gff3.db'
 
         UNTAR_STAR_INDEX([[id: 'test_idx'], "${stararriba_idx_path}.tar.gz"])
         ch_stararriba_index = UNTAR_STAR_INDEX.out.untar.map { _meta, idx_path -> idx_path }
@@ -155,6 +155,11 @@ workflow INPUT_VALIDATION {
         ch_starfusion_index = channel.value(file(starfusion_idx_path, checkIfExists: true))
         ch_fusioncatcher_index = channel.value(file(fusioncatcher_idx_path, checkIfExists: true))
     }
+
+    ch_ref_fasta = channel.value(file(ref_fasta, checkIfExists: true))
+    ch_ref_gtf = channel.value(file(ref_gtf, checkIfExists: true))
+    ch_ref_tsl = channel.value(file(ref_tsl, checkIfExists: true))
+    ch_annot_db = channel.value(file(annot_db, checkIfExists: true))
 
     ch_prediction_model = channel.value(file("${projectDir}/assets/data/model/${model_pred}", checkIfExists: true))
 

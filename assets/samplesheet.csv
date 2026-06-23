@@ -1,2 +1,2 @@
 sample,fastq_1,fastq_2
-test_sample,/home/khersame/test-datasets/fastqs/SRR1659960_05pc_R1.fastq.gz,/home/khersame/test-datasets/fastqs/SRR1659960_05pc_R2.fastq.gz
+test_sample,https://raw.githubusercontent.com/TRON-Bioinformatics/test-datasets/easyfuse/fastqs/test_sample1_R1.fastq.gz,https://raw.githubusercontent.com/TRON-Bioinformatics/test-datasets/easyfuse/fastqs/test_sample1_R2.fastq.gz
