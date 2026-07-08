@@ -128,7 +128,7 @@ nextflow_process {
         }
     }
 
-    test("starfusion - homo sapiens - single end fastqs -stub") {
+    test("starfusion - homo sapiens - single end fastqs - stub") {
 
         options "-stub"
 

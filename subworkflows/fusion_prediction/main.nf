@@ -26,9 +26,9 @@ workflow FUSION_PREDICTION {
 
     main:
 
-    ch_versions = channel.empty()
-    ch_arriba_fusions = channel.empty()
-    ch_starfusion_fusions = channel.empty()
+    ch_versions              = channel.empty()
+    ch_arriba_fusions        = channel.empty()
+    ch_starfusion_fusions    = channel.empty()
     ch_fusioncatcher_fusions = channel.empty()
 
     // run fusionctacher and generate parsed output
@@ -73,9 +73,10 @@ workflow FUSION_PREDICTION {
 
     emit:
 
-    arriba_results = ch_arriba_fusions               // channel: [ tuple(val(meta), path(arriba_fusions)) ]
-    starfusion_results = ch_starfusion_fusions       // channel: [ tuple(val(meta), path(starfusion_fusions)) ]
+    arriba_results        = ch_arriba_fusions        // channel: [ tuple(val(meta), path(arriba_fusions)) ]
+    starfusion_results    = ch_starfusion_fusions    // channel: [ tuple(val(meta), path(starfusion_fusions)) ]
     fusioncatcher_results = ch_fusioncatcher_fusions // channel: [ tuple(val(meta), path(fusioncatcher_fusions)) ]
+
 
     versions = ch_versions                           // channel: [ versions.yml ]
 }

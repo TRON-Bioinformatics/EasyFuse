@@ -39,7 +39,7 @@ workflow EASYFUSE {
 
     main:
 
-    ch_versions            = channel.empty()
+    ch_versions = channel.empty()
 
     /*
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

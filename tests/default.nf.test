@@ -23,8 +23,6 @@ nextflow_pipeline {
             assertAll(
                 { assert workflow.success},
                 { assert snapshot(
-                    // removeNextflowVersion("$outputDir/pipeline_info/easyfuse_software_versions.yml"),
-                    // All stable path name, with a relative path
                     stable_name,
                     // All files with stable contents
                     stable_path
