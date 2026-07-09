@@ -2,7 +2,7 @@ process STAR_ARRIBA {
     tag "$meta.id"
     label 'process_medium'
 
-    conda ("${moduleDir}/environments.yml")
+    conda ("${moduleDir}/environment.yml")
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'community.wave.seqera.io/library/star:2.7.11b--822039d47adf19a7' :
         'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/9b/9b8ecb2f9a77b5e7573ef6fae2f4c2e771064f7a129ed1329913c1025c33f365/data' }"
