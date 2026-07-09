@@ -109,7 +109,7 @@ class FusionAnnotator:
         for bp1_efeature, bp1_cfeature in zip(bp1_exons, bp1_cds):
             bp1.exon_boundary = bp1.get_boundary(bp1_efeature)
             # should be used for frame translation
-            bp1.cds_boundary = bp1.get_boundary(bp1_cfeature) 
+            bp1.cds_boundary = bp1.get_boundary(bp1_cfeature)
             wt1 = self.annotate_bp(bp1, bp1_efeature.id)
             # do the same stuff for transcript 2 and (if applicable)
             # combine the information from both transcripts
@@ -128,7 +128,7 @@ class FusionAnnotator:
                     )
                 fusion_transcript.set_flags(self.suspect_transcripts)
                 result_list.append(fusion_transcript)
-        
+
         # An improvement may be to add flags after the annotation process to catch all suspect_transcripts.
         # for fusion_transcript in result_list:
         #     fusion_transcript.set_flags(self.suspect_transcripts)

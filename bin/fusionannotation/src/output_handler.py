@@ -156,7 +156,7 @@ class OutputHandler:
                 ) / 10.0
                 SeqIO.write(
                     SeqRecord(
-                        result_line["fusion_protein_sequence"],
+                        result_line["fusion_peptide"],
                         id=f"{ftid}_{bp_in_fusion_aa}_{fusion_type}",
                         name="",
                         description="",

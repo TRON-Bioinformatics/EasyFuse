@@ -17,7 +17,6 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from count_input_reads import get_input_read_count
 
-
 class FusionSummary(object):
     """Collect stats of the run and write them to file"""
 
@@ -82,9 +81,7 @@ class FusionSummary(object):
             "context_sequence",
             "context_sequence_bp",
             "neo_peptide_sequence",
-            "neo_peptide_sequence_bp",
-            "fusion_protein_sequence",
-            "fusion_protein_sequence_bp"
+            "neo_peptide_sequence_bp"
         )
         data = {}
         with open(self.input_fusion_context_seqs) as csvfile:
@@ -112,7 +109,7 @@ class FusionSummary(object):
             "Sample", # <str>
             "Tool" # <str>
         )
-        
+
         data = {}
         with open(self.input_fusions) as csvfile:
             csv_reader = csv.DictReader(csvfile, delimiter=';')
@@ -121,7 +118,7 @@ class FusionSummary(object):
                 if bpid not in data:
                     data[bpid] = {}
                 data[bpid][row['Tool']] = {
-                    'junc': row['Junction_Reads'], 
+                    'junc': row['Junction_Reads'],
                     'span': row['Spanning_Reads']
                 }
         # logger.info("Loaded fusion tool data.")
@@ -162,7 +159,7 @@ class FusionSummary(object):
         context_seqs_data = self.load_context_seqs()
         detected_fusions_data = self.load_detected_fusions()
         requant_data = self.load_requant_counts()
-        
+
         return context_seqs_data, detected_fusions_data, requant_data
 
 
@@ -236,8 +233,6 @@ class FusionSummary(object):
             "context_sequence_bp", # context_seqs
             "neo_peptide_sequence", # context_seqs
             "neo_peptide_sequence_bp", # context_seqs
-            "fusion_protein_sequence", # context_seqs
-            "fusion_protein_sequence_bp", # context_seqs
         ]
         # detected_fusions
         for tool in self.fusion_tools:

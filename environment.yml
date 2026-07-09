@@ -1,6 +1,0 @@
-name: easyfuse_env
-channels:
-  - bioconda
-dependencies:
-  - python=3.9
-  - nextflow=24.10.1

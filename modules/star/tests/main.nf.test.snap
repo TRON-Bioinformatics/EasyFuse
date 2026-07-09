@@ -1,0 +1,52 @@
+{
+    "star align - homo_sapiens - paired_end - stub": {
+        "content": [
+            [
+                [
+                    {
+                        "id": "test_star_align"
+                    },
+                    "test_star_align.bam:md5,d41d8cd98f00b204e9800998ecf8427e"
+                ]
+            ],
+            [
+                [
+                    {
+                        "id": "test_star_align"
+                    },
+                    "test_star_align.Chimeric.out.junction:md5,d41d8cd98f00b204e9800998ecf8427e"
+                ]
+            ]
+        ],
+        "meta": {
+            "nf-test": "0.9.3",
+            "nextflow": "25.10.0"
+        },
+        "timestamp": "2026-06-16T10:47:36.223356256"
+    },
+    "star align - homo_sapiens - paired_end": {
+        "content": [
+            [
+                [
+                    {
+                        "id": "test_star_align"
+                    },
+                    "test_star_align.bam:md5,d0031b10fa9308226ff97ad58ebe9472"
+                ]
+            ],
+            [
+                [
+                    {
+                        "id": "test_star_align"
+                    },
+                    "test_star_align.Chimeric.out.junction:md5,ae082034e6aa03bbef578cfeb981b147"
+                ]
+            ]
+        ],
+        "meta": {
+            "nf-test": "0.9.3",
+            "nextflow": "25.10.0"
+        },
+        "timestamp": "2026-06-16T10:47:25.053779647"
+    }
+}

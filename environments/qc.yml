@@ -1,7 +1,0 @@
-name: qc
-channels:
-  - conda-forge
-  - bioconda
-  - nodefaults
-dependencies:
-  - bioconda::fastp=0.23.4

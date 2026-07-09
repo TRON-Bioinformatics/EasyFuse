@@ -1,0 +1,9 @@
+channels:
+  - conda-forge
+  - bioconda
+  - nodefaults
+dependencies:
+  - python=3.9
+  - conda-forge::biopython=1.84
+  - conda-forge::python-xxhash=3.5.0
+  - bioconda::gffutils=0.13

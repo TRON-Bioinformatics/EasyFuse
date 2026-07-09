@@ -169,17 +169,19 @@ class ResultHandler:
         # TODO: Use translation table 2 for mitochondrial genes
         translation_table = 1  # Standard table for human AA codes
         if fusion_cds in ["NA", ""]:
-            fusion_protein_sequence = ""
+            fusion_peptide = ""
+            fusion_protein_sequence = fusion_peptide
             fusion_protein_sequence_bp = 0
             neo_peptide_sequence = ""
             neo_peptide_sequence_bp = 0
         else:
-            fusion_protein_sequence = fusion_cds[wt1_full.frame_at_start:].translate(table=translation_table, to_stop=True)
+            fusion_peptide = fusion_cds[wt1_full.frame_at_start:].translate(table=translation_table, to_stop=True)
+            fusion_protein_sequence = fusion_peptide
 
             # Breakpoint in fusion transcript (CDS)
             bp_in_fusion_nt = len(ft1_cds_transcripts)
 
-            # Breakpoint in fusion peptide, whereas x.0 / x.3 / x.6 indicate that the breakpoint 
+            # Breakpoint in fusion peptide, whereas x.0 / x.3 / x.6 indicate that the breakpoint
             # is at the beginning / after first base / after second base of the underlying codon
             bp_in_fusion_aa = ((bp_in_fusion_nt - wt1_full.frame_at_start) * 10 // 3) / 10
             fusion_protein_sequence_bp = round(bp_in_fusion_aa, 1) # only used for printing, could be removed
@@ -191,7 +193,7 @@ class ResultHandler:
                 neo_peptide_sequence_bp = round(bp_in_fusion_aa - (int(bp_in_fusion_aa) - 13), 1)
 
             # Neo-peptide
-            neo_peptide_sequence = fusion_protein_sequence[max(0, int(bp_in_fusion_aa) - 13) :]
+            neo_peptide_sequence = fusion_peptide[max(0, int(bp_in_fusion_aa) - 13) :]
             # Truncate the neo-peptide sequence to the breakpoint position if in-frame
             if fusion_transcript.frame == "in_frame":
                 neo_peptide_sequence = neo_peptide_sequence[: (int(neo_peptide_sequence_bp) + 13)]
@@ -330,7 +332,7 @@ class ResultHandler:
             "wt1_peptide": wt1_peptide,
             "wt2_peptide": wt2_peptide,
             "fusion_transcript": fusion_cds,  # should be renamed in the output
-            "fusion_peptide": fusion_protein_sequence,  # compatibility alias for release stability
+            "fusion_peptide": fusion_peptide,  # same as fusion_protein_sequence
             "wt1_is_good_transcript": wt1_is_good_transcript,
             "wt2_is_good_transcript": wt2_is_good_transcript,
             "wt1_trans_biotype": wt1_full.transcript_biotype,

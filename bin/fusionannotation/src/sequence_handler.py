@@ -37,7 +37,7 @@ def get_trimmed_seq(seq: Seq, start: int, end: int) -> Seq:
 
 def get_stranded_seq(sequence: Seq, strand: str) -> Seq:
     """
-    Return the reverse complement of a sequence 
+    Return the reverse complement of a sequence
     if the strand is negative and the unchanged sequence otherwise.
     """
     if strand == "-":
