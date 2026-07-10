@@ -1,0 +1,35 @@
+name: Python Unit Tests (EasyFuse utility sripts)
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master, dev ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -l {0}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Miniconda
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          activate-environment: test-env
+          environment-file: environment.yml
+          miniforge-version: latest
+          use-mamba: true
+
+      - name: Show environment info (sanity check)
+        run: |
+          conda info
+          python --version
+          python -c "import Bio, gffutils, xxhash; print('imports OK')"
+
+      - name: Run unittest tests
+        run: python -m unittest discover -s tests -p "test_*.py" -v

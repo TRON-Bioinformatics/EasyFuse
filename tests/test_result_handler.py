@@ -7,12 +7,12 @@ import unittest
 # pylint: disable=E0401
 from Bio.Seq import Seq # type: ignore
 
-from fusionannotation.src.cds import CDS
-from fusionannotation.src.exon import Exon
-from fusionannotation.src.transcript import Transcript
-from fusionannotation.src.breakpoint import Breakpoint
-from fusionannotation.src.fusion_transcript import FusionTranscript
-from fusionannotation.src.result_handler import ResultHandler
+from bin.fusionannotation.src.cds import CDS
+from bin.fusionannotation.src.exon import Exon
+from bin.fusionannotation.src.transcript import Transcript
+from bin.fusionannotation.src.breakpoint import Breakpoint
+from bin.fusionannotation.src.fusion_transcript import FusionTranscript
+from bin.fusionannotation.src.result_handler import ResultHandler
 
 
 class TestResultHandler(unittest.TestCase):
@@ -99,7 +99,7 @@ class TestResultHandler(unittest.TestCase):
             'type': 'trans',
             'exon_nr': '2',
             'ft1_exon_nr': '1',
-            'ft2_exon_nr': '0',
+            'ft2_exon_nr': '1',
             'exon_starts': '30157*248000',
             'exon_ends': '30179*248030',
             'exon_boundary1': 'left_boundary',
@@ -109,14 +109,14 @@ class TestResultHandler(unittest.TestCase):
             'bp2_frame': 'None',
             'frame': 'in_frame',
             'context_sequence': Seq('ATCCGGGACAGTGTGCACCTCAATCTATCAAAATAAAAAATAGTGACAGCAAGT'),
-            'context_sequence_bp': 1,
+            'context_sequence_bp': 23,
             'neo_peptide_sequence': Seq('IRDSVHLNLSK'),
-            'neo_peptide_sequence_bp': 0.3,
+            'neo_peptide_sequence_bp': 7.6,
             'fusion_protein_sequence': Seq('IRDSVHLNLSK'),
-            'fusion_protein_sequence_bp': 0.3,
+            'fusion_protein_sequence_bp': 7.6,
             'context_sequence_wt1': Seq('ATCCGGGACAGTGTGCACCTCAA'),
             'context_sequence_wt2': Seq('TCTATCAAAATAAAAAATAGTGACAGCAAGT'),
-            'context_sequence_wt1_bp': 1,
+            'context_sequence_wt1_bp': 23,
             'context_sequence_wt2_bp': 0,
             'context_sequence_100': Seq('ATCCGGGACAGTGTGCACCTCAATCTATCAAAATAAAAAATAGTGACAGCAAGT'),
             'bp1_chr': '21',
@@ -208,10 +208,7 @@ class TestResultHandler(unittest.TestCase):
             'ft2_cds_no': 1,
             'wt1_start_stop': '21:30157:30179',
             'wt2_start_stop': '7:248000:248030',
-            'annotation_bias': False
+            'annotation_bias': False,
+            'filter_comment': 'pass'
         }
         self.assertEqual(actual_result, expected_result)
-
-
-if __name__ == '__main__':
-    unittest.main()
