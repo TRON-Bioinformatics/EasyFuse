@@ -5,11 +5,11 @@ Tests for fusion validation module.
 import unittest
 
 # pylint: disable=E0401
-from fusionannotation.src.breakpoint import Breakpoint
-from fusionannotation.src.cds import CDS
-from fusionannotation.src.exon import Exon
-from fusionannotation.src.fusion_transcript import FusionTranscript, get_involved_features
-from fusionannotation.src.transcript import Transcript
+from bin.fusionannotation.src.breakpoint import Breakpoint
+from bin.fusionannotation.src.cds import CDS
+from bin.fusionannotation.src.exon import Exon
+from bin.fusionannotation.src.fusion_transcript import FusionTranscript, get_involved_features
+from bin.fusionannotation.src.transcript import Transcript
 
 class TestFusionTranscript(unittest.TestCase):
     """
@@ -230,7 +230,3 @@ class TestFusionTranscript(unittest.TestCase):
         self.fusion_transcript = FusionTranscript(self.wt1, self.wt2, bp1, bp2)
         result = self.fusion_transcript.has_overlapping_transcripts()
         self.assertFalse(result)
-
-
-if __name__ == '__main__':
-    unittest.main()

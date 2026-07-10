@@ -7,20 +7,20 @@ import unittest
 # pylint: disable=E0401
 from Bio.Seq import Seq # type: ignore
 
-from fusionannotation.src.breakpoint import Breakpoint
-from fusionannotation.src.exon import Exon
-from fusionannotation.src.io_methods import load_detected_fusions # type: ignore
-from fusionannotation.src.io_methods import load_genomic_data # type: ignore
-from fusionannotation.src.transcript import Transcript
-from fusionannotation.src.fusion_transcript import FusionTranscript
+from bin.fusionannotation.src.breakpoint import Breakpoint
+from bin.fusionannotation.src.exon import Exon
+from bin.fusionannotation.src.io_methods import load_detected_fusions # type: ignore
+from bin.fusionannotation.src.io_methods import load_genomic_data # type: ignore
+from bin.fusionannotation.src.transcript import Transcript
+from bin.fusionannotation.src.fusion_transcript import FusionTranscript
 
 class TestIOMethods(unittest.TestCase):
     """
     Provides unit tests for fusion annotation module.
     """
     def setUp(self):
-        self.input_fusions = "fusionannotation/ref_data/Detected_Fusions.csv"
-        self.genome_fasta = "fusionannotation/ref_data/Homo_sapiens.GRCh38.110_minigenome.fa"
+        self.input_fusions = "tests/testdata/fusionannotation/ref_data/Detected_Fusions.csv"
+        self.genome_fasta = "tests/testdata/fusionannotation/ref_data/Homo_sapiens.GRCh38.110_minigenome.fa"
 
 
     def test_load_detected_fusions(self):
@@ -97,7 +97,3 @@ class TestIOMethods(unittest.TestCase):
         }
         result = load_genomic_data(self.genome_fasta, fusion_transcripts)
         self.assertEqual(result, cds_seqs)
-
-
-if __name__ == '__main__':
-    unittest.main()

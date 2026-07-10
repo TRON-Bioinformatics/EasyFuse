@@ -102,3 +102,28 @@ def get_peptide_sequence(transcript_sequence: Seq, bp: Breakpoint, transcript_fr
     )
     peptide_seq = peptide_seq_raw[transcript_frame:].translate(table=trans_table)
     return peptide_seq
+
+def get_fusion_transcript_sequence(
+    ft1_cds_seq: Seq,
+    ft2_cds_seq: Seq,
+    ft2_exon_seq: Seq,
+    ft1_strand: str,
+    ft2_strand: str,
+    frame: str,
+) -> Seq:
+    """
+    Construct the fusion transcript sequence from the 5' partner's CDS
+    sequence and the 3' partner's sequence.
+
+    If the fusion is in-frame, the 3' partner contributes its CDS sequence
+    (so the reading frame continues cleanly). If the fusion is out of frame
+    (e.g. "neo_frame"), the 3' partner contributes its full exon sequence
+    instead, since translation past the fusion junction is expected to run
+    into a novel/neo open reading frame rather than the annotated CDS.
+    """
+    if frame == "in_frame":
+        ft2_seq = ft2_cds_seq
+    else:
+        ft2_seq = ft2_exon_seq
+
+    return ft1_cds_seq + ft2_seq

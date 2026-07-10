@@ -5,10 +5,10 @@ Tests for exon validation module.
 import unittest
 
 # pylint: disable=E0401
-from fusionannotation.src.cds import CDS
-from fusionannotation.src.exon import Exon
-from fusionannotation.src.feature_validation import get_exon_cds_overlap
-from fusionannotation.src.feature_validation import filter_cds_by_exons
+from bin.fusionannotation.src.cds import CDS
+from bin.fusionannotation.src.exon import Exon
+from bin.fusionannotation.src.feature_validation import get_exon_cds_overlap
+from bin.fusionannotation.src.feature_validation import filter_cds_by_exons
 
 
 class TestFeatureValidation(unittest.TestCase):
@@ -56,7 +56,3 @@ class TestFeatureValidation(unittest.TestCase):
             None
         ]
         self.assertEqual(result, filtered_cds)
-
-
-if __name__ == '__main__':
-    unittest.main()
