@@ -1,4 +1,4 @@
-# TRON-Bioinformatics/EasyFuse
+# EasyFuse
 
 [![GitHub Actions CI Status](https://github.com/TRON-Bioinformatics/easyfuse/actions/workflows/nf-test.yml/badge.svg)](https://github.com/TRON-Bioinformatics/easyfuse/actions/workflows/nf-test.yml)
 [![GitHub Actions Linting Status](https://github.com/TRON-Bioinformatics/easyfuse/actions/workflows/linting.yml/badge.svg)](https://github.com/TRON-Bioinformatics/easyfuse/actions/workflows/linting.yml)(https://doi.org/10.1038/s41587-022-01247-9)
@@ -23,8 +23,10 @@ The current version of EasyFuse uses three fusion gene detection tools, [STAR-Fu
 ### Dependencies
 
 - [NextFlow, 24.10.1](https://www.nextflow.io/)
-- [Conda](https://docs.anaconda.com/free/anaconda/install/index.html)
-- [Singularity](https://docs.sylabs.io/guides/3.5/user-guide/introduction.html)
+
+Depending upon the profile the user selects the pipeline can be run with either of the following
+- [Conda](https://docs.anaconda.com/free/anaconda/install/index.html) or
+- [Singularity](https://docs.sylabs.io/guides/3.5/user-guide/introduction.html) or
 - [Docker](https://www.docker.com/)
 
 ### Download reference data
@@ -66,6 +68,7 @@ Generate a tab-delimited input table with your matching FASTQs. The format of th
 E.g.:
 
 ```
+sample  fastq_1  fastq_2
 sample_01	/path/to/sample_01_R1.fastq.gz	/path/to/sample_01_R2.fastq.gz
 sample_02	/path/to/sample_02_R1.fastq.gz	/path/to/sample_02_R2.fastq.gz
 ```
