@@ -1,182 +1,93 @@
 #!/usr/bin/env nextflow
 
-nextflow.enable.dsl = 2
+include { EASYFUSE         } from './workflows/easyfuse'
+include { INPUT_VALIDATION } from './subworkflows/validation/parameter_validation'
 
-include { FASTP } from './modules/01_qc'
-include { STAR ; STAR_ARRIBA ; READ_FILTER ; BAM2FASTQ } from './modules/02_alignment'
-include { FUSION_CATCHER ; STAR_FUSION ; ARRIBA } from './modules/03_fusion_callers'
-include { PARSE_FUSION_CATCHER ; PARSE_STAR_FUSION ; PARSE_ARRIBA ; FUSION_PARSER } from './modules/04_fusionparsing'
-include { FUSION_ANNOTATION } from './modules/05_fusionannotation'
-include { FUSION2CSV ; CSV2FASTA ; STAR_INDEX ; FUSION_FILTER ; STAR_CUSTOM ; READ_COUNT } from './modules/06_requantification'
-include { MERGE_DATA ; PREDICTION } from './modules/07_summarize'
-	    
+//
+// WORKFLOW: Run main analysis pipeline depending on type of input
+//
+workflow TRONBIOINFORMATICS_EASYFUSE {
 
-def helpMessage() {
-    log.info params.help_message
-}
-
-if (params.help) {
-    helpMessage()
-    exit 0
-}
-
-if (!params.output) {
-    log.error "--output is required"
-    exit 1
-}
-
-if (!params.reference) {
-    log.error "--reference is required"
-    exit 1
-}
-
-// checks required inputs
-if (params.input_files) {
-  Channel
-    .fromPath(params.input_files)
-    .splitCsv(header: ['name', 'fastq1', 'fastq2'], sep: "\t")
-    .map{ row-> tuple(row.name, row.fastq1, row.fastq2) }
-    .set { input_files }
-} else {
-  exit 1, "Input file not specified!"
-}
-
-workflow QC {
     take:
-    input_files
+    samplesheet             // channel: samplesheet read in from --input
+    fusion_tools            // channel: fusion tools to run (read in from params.fusion_tools)
+    ch_reference_fasta      // channel: [reference fasta (read in from --reference)]
+    ch_reference_gtf        // channel: [reference gtf (read in from --reference)]
+    ch_reference_tsl        // channel: [reference tsl (read in from --reference)]
+    ch_annotation_db        // channel: [annotation db]
+    ch_starfusion_index     // channel: [starfusion index]
+    ch_fusioncatcher_index  // channel: [fusioncatcher index]
+    ch_stararriba_index     // channel: [stararriba index]
+    ch_prediction_model     // channel: [prediction model]
+    ch_model_threshold      // channel: [val(threshold)]
 
     main:
-    FASTP(input_files)
+    //
+    // WORKFLOW: Run pipeline
+    //
+    EASYFUSE (
+        samplesheet,
+        fusion_tools,
+        ch_reference_fasta,
+        ch_reference_gtf,
+        ch_reference_tsl,
+        ch_annotation_db,
+        ch_starfusion_index,
+        ch_fusioncatcher_index,
+        ch_stararriba_index,
+        ch_prediction_model,
+        ch_model_threshold
+    )
 
     emit:
-    trimmed_fastq = FASTP.out.trimmed_fastq
+    versions = EASYFUSE.out.versions
 }
-
-workflow ALIGNMENT {
-    take:
-    trimmed_fastq
-
-    main:
-    STAR(trimmed_fastq, params.star_index)
-    READ_FILTER(STAR.out.bams)
-    BAM2FASTQ(READ_FILTER.out.bams)
-
-    emit:
-    chimeric_reads = STAR.out.chimeric_reads
-    fastqs = BAM2FASTQ.out.fastqs
-    bams = READ_FILTER.out.bams
-    read_stats = STAR.out.read_stats
-}
-
-workflow TOOLS {
-    take:
-    filtered_fastqs
-    chimeric_reads
-
-    main:
-    FUSION_CATCHER(filtered_fastqs, params.fusioncatcher_index)
-    PARSE_FUSION_CATCHER(FUSION_CATCHER.out.fusions)
-    STAR_FUSION(filtered_fastqs, params.starfusion_index)
-    PARSE_STAR_FUSION(STAR_FUSION.out.fusions)
-    STAR_ARRIBA(filtered_fastqs, params.star_index)
-    ARRIBA(STAR_ARRIBA.out.bams, params.gtf, params.fasta)
-    PARSE_ARRIBA(ARRIBA.out.fusions)
-
-
-    emit:
-    fusioncatcher_results = PARSE_FUSION_CATCHER.out.fusions
-    starfusion_results = PARSE_STAR_FUSION.out.fusions
-    arriba_results = PARSE_ARRIBA.out.fusions
-}
-
-workflow ANNOTATION {
-    take:
-    fusioncatcher_results
-    starfusion_results
-    arriba_results
-
-    main:
-    FUSION_PARSER(
-        fusioncatcher_results.join(
-        starfusion_results.join(
-        arriba_results)
-    ))
-    FUSION_ANNOTATION(FUSION_PARSER.out.fusions, params.annotation_db)
-
-    emit:
-    fusions = FUSION_PARSER.out.fusions
-    annotated_fusions = FUSION_ANNOTATION.out.annot_fusions
-}
-
-workflow REQUANTIFICATION {
-    take:
-    annotated_fusions
-    bams
-    read_stats
-
-    main:
-    FUSION_FILTER(
-        bams.join(
-        annotated_fusions).join(
-        read_stats
-    ))
-    BAM2FASTQ(FUSION_FILTER.out.bams)
-    FUSION2CSV(annotated_fusions)
-    CSV2FASTA(FUSION2CSV.out.formatted_csv)
-    STAR_INDEX(CSV2FASTA.out.formatted_fasta)
-    STAR_CUSTOM(
-        BAM2FASTQ.out.fastqs.join(
-        STAR_INDEX.out.star_index
-    ))
-    READ_COUNT(
-        STAR_CUSTOM.out.bams.join(
-        FUSION2CSV.out.formatted_csv
-    ))
-
-    emit:
-    counts = READ_COUNT.out.counts
-    read_stats = STAR_CUSTOM.out.read_stats
-}
-
+/*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    RUN MAIN WORKFLOW
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*/
 
 workflow {
 
-    // quality trimming
-    QC(input_files)
-
-    // read alignment and read filtering, required as tool input
-    ALIGNMENT(QC.out.trimmed_fastq)
-
-    // fusion calling
-    TOOLS(
-        ALIGNMENT.out.fastqs,
-        ALIGNMENT.out.chimeric_reads
+    main:
+    INPUT_VALIDATION (
+        params.version,
+        params.validate_params,
+        params.monochrome_logs,
+        args,
+        params.outdir,
+        params.input,
+        params.fusion_tools,
+        params.ensembl_version,
+        params.model_pred,
+        params.model_threshold,
+        params.reference,
+        params.help,
+        params.help_full,
+        params.show_hidden
     )
 
-    // fusion merging
-    ANNOTATION(
-        TOOLS.out.fusioncatcher_results,
-        TOOLS.out.starfusion_results,
-        TOOLS.out.arriba_results
-    )
-
-    // requantification
-    REQUANTIFICATION(
-        ANNOTATION.out.annotated_fusions,
-        ALIGNMENT.out.bams,
-        ALIGNMENT.out.read_stats
-    )
-
-    // summarize results
-    MERGE_DATA(
-        ANNOTATION.out.fusions.join(
-        ANNOTATION.out.annotated_fusions).join(
-        REQUANTIFICATION.out.counts).join(
-        REQUANTIFICATION.out.read_stats
-    ))
-
-    // run prediction
-    PREDICTION(
-        MERGE_DATA.out.merged_results
+    //
+    // WORKFLOW: Run main workflow
+    //
+    TRONBIOINFORMATICS_EASYFUSE (
+        INPUT_VALIDATION.out.samplesheet,
+        INPUT_VALIDATION.out.fusiontools,
+        INPUT_VALIDATION.out.reference_fasta,
+        INPUT_VALIDATION.out.reference_gtf,
+        INPUT_VALIDATION.out.reference_tsl,
+        INPUT_VALIDATION.out.annotation_db,
+        INPUT_VALIDATION.out.starfusion_index,
+        INPUT_VALIDATION.out.fusioncatcher_index,
+        INPUT_VALIDATION.out.stararriba_index,
+        INPUT_VALIDATION.out.prediction_model,
+        INPUT_VALIDATION.out.model_threshold
     )
 }
+
+/*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    THE END
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*/

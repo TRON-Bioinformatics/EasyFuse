@@ -2,6 +2,14 @@
 .nextflow/
 .nextflow.log*
 work/
+results/
+.DS_Store
+testing/
+testing*
+*.pyc
+null/
+samplesheet/
+*job.sh
 test/data/test_input.txt
 trace.txt*
 report.html*
@@ -16,3 +24,9 @@ venv/
 ef_env/
 logs/
 *slurm*
+compare.sh
+*_fusions/
+results/
+.nf-test/
+.nf-test.log
+.nf-test-*

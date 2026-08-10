@@ -7,7 +7,6 @@ from .file_headers import CHROMOSOMES
 
 csv.field_size_limit(sys.maxsize)
 
-
 def parse_starfusion_results(infile: str) -> list:
     """Load and parse results from star-fusion."""
     fusions = []

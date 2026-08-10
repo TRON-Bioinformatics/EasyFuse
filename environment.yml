@@ -1,6 +1,11 @@
-name: easyfuse_env
 channels:
   - bioconda
+  - conda-forge
 dependencies:
   - python=3.9
   - nextflow=24.10.1
+  - biopython
+  - gffutils
+  - pip
+  - pip:
+    - xxhash

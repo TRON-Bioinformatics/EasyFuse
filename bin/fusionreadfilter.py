@@ -27,7 +27,6 @@ import time
 import pysam
 # from logzero import logger
 
-
 class FusionReadFilter(object):
     """Select alignments belonging to putative fusions from an s/bam file"""
 

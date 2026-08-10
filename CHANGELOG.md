@@ -12,6 +12,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added `fusion_protein_sequence` and `fusion_protein_sequence_bp` to the merged final output table.
 
+#### Code Refactoring
+- **Modules**: the earlier modules have been restructed into per tool module file along with the environment.yml file, this reduces maintainence overhead
+    - Each tool is now encapsulated in its own module directory under `modules/`, containing:
+        - `main.nf` — Nextflow process definition
+        - `environment.yml` — per-tool Conda environment specification
+        - `tests/` — nf-test test cases
+- **Subworkflows**: closely related modules are clubbed together into subworkflows to reduce the final pipeline code
+- **main.nf**: the main pipeline script now only has the named subworkflows that are part of the pipeline flow diagram in the main README file.
+
+#### Technical Improvements
+- **Input validation**: easyfuse now uses the input validation subworkflow to validate the input samplesheet and parameters
+- **Configurable fusion tools**: Users can now select which fusion detection tools to run (Arriba, STARFusion, FusionCatcher); all three are run by default
+- **Improved resource management**: New config files with retry logic to automatically increase allocated resources on failure
+- **Multi-container support**: Added Singularity and Docker profiles alongside the existing Conda profile
+- Three execution profiles are now fully supported:
+    - **`conda`** — builds per-process Conda environments from `environment.yml` files
+    - **`singularity`** — pulls Seqera Wave containers; supports local cache via `NXF_SINGULARITY_CACHEDIR`
+    - **`docker`** — pulls Docker images from Seqera Wave registry
+    - **`slurm`** — can be combined with any container profile for HPC cluster execution
+
+#### Infrastructure & Dependencies
+ - Process resource labels (`process_single`, `process_low`, `process_medium`, `process_high`) now scale linearly with `task.attempt`, so resources are automatically increased on retry.
+ - Exit codes `130–145`, `104`, and `175` trigger a retry; all other failures terminate the task.
+
+#### Development & Testing
+- **CI pipeline**: Added GitHub Actions workflows running nf-tests and Python unittests, testing individual modules with data from `TRON-Bioinformatics/test-datasets` using both Conda and Singularity profiles
+- **nf-tests**: Added nf-test to test every module that runs in EasyFuse (testdata stored in the TRON-Bioinformatics/testdatasets repo)
+- **Python unit tests**: CI pipeline also has Python unit tests that were previously run locally
+- - Triggers on pull requests and releases
+    - Supports self-hosted runners for `TRON-Private` organisation branches; uses GitHub-hosted `ubuntu-24.04` runners for `main`/`dev`
+    - Tests with Nextflow `25.04.0` (required) and `latest-everything` (non-blocking)
+    - Tests with the `singularity` profile against the test config
+    - A `confirm-pass` job enforces that all required checks pass before merging
+
 
 ## [2.1.0] - 2026-02-13
 

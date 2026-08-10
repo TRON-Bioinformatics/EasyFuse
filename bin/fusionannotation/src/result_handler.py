@@ -179,7 +179,7 @@ class ResultHandler:
             # Breakpoint in fusion transcript (CDS)
             bp_in_fusion_nt = len(ft1_cds_transcripts)
 
-            # Breakpoint in fusion peptide, whereas x.0 / x.3 / x.6 indicate that the breakpoint 
+            # Breakpoint in fusion peptide, whereas x.0 / x.3 / x.6 indicate that the breakpoint
             # is at the beginning / after first base / after second base of the underlying codon
             bp_in_fusion_aa = ((bp_in_fusion_nt - wt1_full.frame_at_start) * 10 // 3) / 10
             fusion_protein_sequence_bp = round(bp_in_fusion_aa, 1) # only used for printing, could be removed

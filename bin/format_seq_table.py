@@ -9,8 +9,8 @@ csv.field_size_limit(sys.maxsize)
 def main():
     parser = ArgumentParser(description="Reformats context seqs table to fit easyquant format")
     parser.add_argument(
-        "-i", 
-        "--input_table", 
+        "-i",
+        "--input_table",
         dest="input_table",
         required=True,
         help="Specify input table (context_seqs.csv)",
@@ -39,7 +39,7 @@ def main():
         reader = csv.DictReader(csvfile, delimiter=';')
         for row in reader:
             ctx_seq_id = row['context_sequence_id']
-            
+
             if ctx_seq_id in ctx_seq_dict:
                 print(row['context_sequence_wt1'] == ctx_seq_dict[ctx_seq_id]["wt1"])
             else:
@@ -55,8 +55,8 @@ def main():
             values = ctx_seq_dict[ctx_seq_id]
             for seq_type in ("ft", "wt1", "wt2"):
                 outf.write("{0}_{1}_{2};{3};{1}\n".format(
-                    ctx_seq_id, 
-                    values[seq_type + "_bp"], 
+                    ctx_seq_id,
+                    values[seq_type + "_bp"],
                     seq_type,
                     values[seq_type]
                 ))

@@ -19,10 +19,9 @@ from fusionparsing.src.file_headers import OUTPUT_HEADER
 # logging.basicConfig(format=FORMAT, level=logging.INFO)
 # logger = logging.getLogger(__name__)
 
-
 class FusionParser:
     """
-    Get and parse results from previously run programs 
+    Get and parse results from previously run programs
     (fusion prediction, hla typing, expression estimation)
     """
 

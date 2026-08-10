@@ -1,0 +1,68 @@
+{
+    "arriba - homo_sapiens - paired_end - stub": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "test_arriba"
+                        },
+                        "test_arriba_fusions.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "1": [
+                    "versions.yml:md5,17453f44f72bfc7e855775a935ec39f2"
+                ],
+                "fusions": [
+                    [
+                        {
+                            "id": "test_arriba"
+                        },
+                        "test_arriba_fusions.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "versions": [
+                    "versions.yml:md5,17453f44f72bfc7e855775a935ec39f2"
+                ]
+            }
+        ],
+        "meta": {
+            "nf-test": "0.9.3",
+            "nextflow": "25.10.0"
+        },
+        "timestamp": "2026-06-15T20:49:29.246617012"
+    },
+    "arriba - homo_sapiens - paired_end": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "test_arriba"
+                        },
+                        "test_arriba_fusions.tsv:md5,7c3383f7eb6d79b84b0bd30a7ef02d70"
+                    ]
+                ],
+                "1": [
+                    "versions.yml:md5,17453f44f72bfc7e855775a935ec39f2"
+                ],
+                "fusions": [
+                    [
+                        {
+                            "id": "test_arriba"
+                        },
+                        "test_arriba_fusions.tsv:md5,7c3383f7eb6d79b84b0bd30a7ef02d70"
+                    ]
+                ],
+                "versions": [
+                    "versions.yml:md5,17453f44f72bfc7e855775a935ec39f2"
+                ]
+            }
+        ],
+        "meta": {
+            "nf-test": "0.9.3",
+            "nextflow": "25.10.0"
+        },
+        "timestamp": "2026-06-15T20:49:22.71668015"
+    }
+}

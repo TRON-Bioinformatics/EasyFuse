@@ -1,0 +1,84 @@
+{
+    "fastp - homo_sapiens - paired_end - stub": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "test_fastp"
+                        },
+                        "test_fastp_trimmed_R1.fastq.gz:md5,d41d8cd98f00b204e9800998ecf8427e",
+                        "test_fastp_trimmed_R2.fastq.gz:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "1": [
+                    "test_fastp_fastp.json:md5,d41d8cd98f00b204e9800998ecf8427e"
+                ],
+                "2": [
+                    "versions.yml:md5,48ffc994212fb1fc9f83a74fa69c9f02"
+                ],
+                "fastp_json": [
+                    "test_fastp_fastp.json:md5,d41d8cd98f00b204e9800998ecf8427e"
+                ],
+                "trimmed_fastqs": [
+                    [
+                        {
+                            "id": "test_fastp"
+                        },
+                        "test_fastp_trimmed_R1.fastq.gz:md5,d41d8cd98f00b204e9800998ecf8427e",
+                        "test_fastp_trimmed_R2.fastq.gz:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "versions": [
+                    "versions.yml:md5,48ffc994212fb1fc9f83a74fa69c9f02"
+                ]
+            }
+        ],
+        "meta": {
+            "nf-test": "0.9.3",
+            "nextflow": "25.10.0"
+        },
+        "timestamp": "2026-06-15T22:30:08.164202702"
+    },
+    "fastp - homo_sapiens - paired_end": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "test_fastp"
+                        },
+                        "test_fastp_trimmed_R1.fastq.gz:md5,e11c2f2b4da7aea2f3b10dc019719354",
+                        "test_fastp_trimmed_R2.fastq.gz:md5,0d739402149fd236a984e4e2ce826334"
+                    ]
+                ],
+                "1": [
+                    "test_fastp_fastp.json:md5,b10ff886d8856e89cd866c458080ca4a"
+                ],
+                "2": [
+                    "versions.yml:md5,48ffc994212fb1fc9f83a74fa69c9f02"
+                ],
+                "fastp_json": [
+                    "test_fastp_fastp.json:md5,b10ff886d8856e89cd866c458080ca4a"
+                ],
+                "trimmed_fastqs": [
+                    [
+                        {
+                            "id": "test_fastp"
+                        },
+                        "test_fastp_trimmed_R1.fastq.gz:md5,e11c2f2b4da7aea2f3b10dc019719354",
+                        "test_fastp_trimmed_R2.fastq.gz:md5,0d739402149fd236a984e4e2ce826334"
+                    ]
+                ],
+                "versions": [
+                    "versions.yml:md5,48ffc994212fb1fc9f83a74fa69c9f02"
+                ]
+            }
+        ],
+        "meta": {
+            "nf-test": "0.9.3",
+            "nextflow": "25.10.0"
+        },
+        "timestamp": "2026-06-15T22:30:01.739746317"
+    }
+}

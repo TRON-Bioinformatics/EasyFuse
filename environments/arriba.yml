@@ -1,7 +1,0 @@
-name: arriba
-channels:
-  - conda-forge
-  - bioconda
-  - nodefaults
-dependencies:
-  - bioconda::arriba=2.4.0
