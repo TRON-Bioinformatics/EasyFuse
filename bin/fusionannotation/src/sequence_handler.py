@@ -18,7 +18,8 @@ def calc_hash(seq: Seq) -> str:
     Returns:
         str: Hash of the sequence
     """
-    return xxhash.xxh64(str(seq)).hexdigest()
+    return xxhash.xxh64(str(seq).encode("utf-8")).hexdigest()
+    
 
 
 def get_trimmed_seq(seq: Seq, start: int, end: int) -> Seq:
