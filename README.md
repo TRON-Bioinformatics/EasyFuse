@@ -33,7 +33,7 @@ Depending upon the profile the user selects the pipeline can be run with either 
 
 Before running EasyFuse the following reference annotation data needs to be downloaded (~104 GB).
 
-```
+```bash
 # Download reference archive
 wget ftp://easyfuse.tron-mainz.de/easyfuse_ref_v4.tar.gz
 
@@ -54,7 +54,7 @@ cd EasyFuse
 
 To install with Nextflow (only available from release 2.0.1 onwards):
 
-```
+```bash
 nextflow run tron-bioinformatics/easyfuse -r x.y.z --help
 ```
 
@@ -67,7 +67,7 @@ Provide your downloaded reference data with the parameter `--reference`
 Generate a tab-delimited input table with your matching FASTQs. The format of the table is: `sample`, `fastq_1`, `fastq_2` (**with headers**).
 E.g.:
 
-```
+```tsv
 sample  fastq_1  fastq_2
 sample_01	/path/to/sample_01_R1.fastq.gz	/path/to/sample_01_R2.fastq.gz
 sample_02	/path/to/sample_02_R1.fastq.gz	/path/to/sample_02_R2.fastq.gz
@@ -75,7 +75,7 @@ sample_02	/path/to/sample_02_R1.fastq.gz	/path/to/sample_02_R2.fastq.gz
 
 Start the pipeline
 
-```
+```bash
 nextflow run main.nf \
   -profile conda \
   --input /path/to/input_table_file \
@@ -85,7 +85,7 @@ nextflow run main.nf \
 
 Or as follows if you installed it via Nextflow (only available from release 2.0.1 onwards):
 
-```
+```bash
 nextflow run tron-bioinformatics/easyfuse -r x.y.z \
   -profile conda \
   --input_files /path/to/input_table_file \
@@ -95,10 +95,10 @@ nextflow run tron-bioinformatics/easyfuse -r x.y.z \
 
 If you want to run the pipeline on cluster
 
-```
+```bash
 nextflow run tron-bioinformatics/easyfuse -r x.y.z \
   -profile conda,slurm \
-  --input_files /path/to/input_table_file \
+  --input_files </path/to/input_table_file> \
   --output /path/to/output_folder \
   --reference /path/to/reference/folder
 ```
@@ -123,9 +123,33 @@ EasyFuse creates an output folder for each input sample containing the following
 
 Within the files, each line describes a candidate fusion transcript. The file `fusions.csv` contains all candidate fusions with annotated features, the prediction probability assigned by the EasyFuse model, and the corresponding prediction class (_positive_ or _negative_). The file `fusions.pass.csv` contains only _positive_ predicted gene fusions.
 
-#### Column description
+### Using EasyFuse with Mouse (Mus Musculus) Data
+EasyFuse now supports fusion detection with **Mouse** data. The samplesheet specification for running Easyfuse in this case remains the same. The following command shows the correct parameter combination
 
-Overview of all features/columns annotated by EasyFuse:
+```bash
+nextflow run tron-bioinformatics/easyfuse -r x.y.z \
+  -profile conda,slurm \
+  --input_files /path/to/input_table_file \
+  --output /path/to/output_folder \
+  --reference /path/to/reference/folder \
+  --species mouse \
+  --fusion_tools arriba,starfusion
+```
+> **[!NOTE]**<br><br>
+> For **Human (Homo-spaiens)** samples, `arriba`, `starfusion`, and `fusioncatcher` are supported.
+>
+> For **Mouse (Mus Musculus)** samples, only `arriba` and `starfusion` are supported.
+<br><br>
+
+> **[!IMPORTANT]**<br><br>
+> The prediction model used also changes when Mouse data is used to run EasyFuse.
+<br><br>
+> Model : `Fusion_modeling_FFPE_train_v39.random_forest.model_full_data.EF_requant_type.rds`
+<br><br> 
+
+### Column description
+
+#### Overview of all features/columns annotated by EasyFuse:
 
 - **BPID:** The BPID (breakpoint ID) is an identifier composed of `chr1:position1:strand1_chr2:position2:strand2` and is used as the main identifier of fusion breakpoints throughout the EasyFuse publication. In the BPID, `chr` and `position` are 1-based genomic coordinates (GRCh38 reference) of the two breakpoint positions.
 - **context_sequence_id:** The context sequence id is a unique identifier (hash value) calculated from `context_sequence`, the fusion transcript sequence context (400 upstream and 400 bp downstream from the breakpoint position).
