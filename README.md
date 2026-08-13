@@ -98,7 +98,7 @@ If you want to run the pipeline on cluster
 ```bash
 nextflow run tron-bioinformatics/easyfuse -r x.y.z \
   -profile conda,slurm \
-  --input_files </path/to/input_table_file> \
+  --input_files /path/to/input_table_file \
   --output /path/to/output_folder \
   --reference /path/to/reference/folder
 ```
