@@ -8,13 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2.2.1] - 2026-08-14
 
 ### Feature Additions
-    - EasyFuse now supports mouse index
+- EasyFuse now supports mouse index
 
 ### Code Refactoring
-    - Validation subworkflow have been updated to add an extra argument `--species` which is set to `human` by default
-    - Updated readme and know-how for using easyfuse with mouse index
-    - Updated pipeline config
-    - Updated pipeline schema
+- Validation subworkflow have been updated to add an extra argument `--species` which is set to `human` by default
+- Updated readme and know-how for using easyfuse with mouse index
+- Updated pipeline config
+- Updated pipeline schema
 
 ## [2.2.0] - 2026-08-10
 
