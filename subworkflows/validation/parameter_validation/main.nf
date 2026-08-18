@@ -60,9 +60,10 @@ workflow INPUT_VALIDATION {
     // Validate parameters and generate parameter summary to stdout
     //
     command = "nextflow run ${workflow.manifest.name} \
-                -profile <docker/singularity/.../institute> \
-                --input <INPUT_TABLE> \
-                --outdir <OUTDIR>"
+                    -profile conda \
+                    --input </path/to/input_table> \
+                    --output </path/to/output_folder> \
+                    --reference </path/to/reference/folder>"
 
     UTILS_NFSCHEMA_PLUGIN (
         workflow,
