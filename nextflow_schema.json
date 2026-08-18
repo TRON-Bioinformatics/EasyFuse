@@ -37,37 +37,22 @@
                     "help_text": "Path to the reference genome and other reference files.",
                     "fa_icon": "fas fa-file-alt"
                 },
-                "species": {
-                    "type": "string",
-                    "default": "human",
-                    "description": "Species of the reference genome build.",
-                    "enum": ["human", "mouse"]
-                },
                 "fusion_tools": {
                     "type": "string",
                     "default": "arriba,starfusion,fusioncatcher",
                     "description": "Comma-separated list of fusion calling tools to run. Options: arriba, starfusion, fusioncatcher",
                     "pattern": "^(arriba|starfusion|fusioncatcher)(,(arriba|starfusion|fusioncatcher))*$"
                 },
-                "human_ensembl_version": {
+                "model_prefix": {
                     "type": "string",
-                    "default": "110",
-                    "description": "Ensembl version of the reference genome build."
+                    "default": "Fusion_modeling_FFPE_train_v39.random_forest.model_full_data.",
+                    "description": "Prefix for the random forest classifier model."
                 },
-                "human_model_pred": {
+                "model_pred": {
                     "type": "string",
-                    "default": "Fusion_modeling_FFPE_train_v39.random_forest.model_full_data.EF_full.rds",
-                    "description": "Model to use for the random forest classifier."
-                },
-                "mouse_ensembl_version": {
-                    "type": "string",
-                    "default": "113",
-                    "description": "Ensembl version of the reference genome build."
-                },
-                "mouse_model_pred": {
-                    "type": "string",
-                    "default": "Fusion_modeling_FFPE_train_v39.random_forest.model_full_data.EF_requant_type.rds",
-                    "description": "Model to use for the random forest classifier."
+                    "default": "EF_full",
+                    "description": "Default model to use for the random forest classifier. Options: EF_full, EF_requant, EF_requant_type",
+                    "enum": ["EF_full", "EF_requant", "EF_requant_type"]
                 },
                 "model_threshold": {
                     "type": "number",
