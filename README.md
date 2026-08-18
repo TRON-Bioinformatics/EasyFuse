@@ -145,7 +145,8 @@ nextflow run tron-bioinformatics/easyfuse -r x.y.z \
   --input_files /path/to/input_table_file \
   --output /path/to/output_folder \
   --reference /path/to/reference/folder \
-  --fusion_tools arriba,starfusion
+  --fusion_tools arriba,starfusion \
+   --model_pred EF_requant_type
 ```
 > [!NOTE]<br>
 > For **Mouse (Mus Musculus)** samples, only `arriba` and `starfusion` are supported and **NOT** `fusioncatcher`.
