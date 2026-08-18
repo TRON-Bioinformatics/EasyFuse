@@ -1,14 +1,16 @@
 # EasyFuse
+[![DOI](https://img.shields.io/badge/DOI-10.1038%2Fs41587--022--01247--9-blue)](https://doi.org/10.1038/s41587-022-01247-9)
 
 [![GitHub Actions CI Status](https://github.com/TRON-Bioinformatics/easyfuse/actions/workflows/nf-test.yml/badge.svg)](https://github.com/TRON-Bioinformatics/easyfuse/actions/workflows/nf-test.yml)
-[![GitHub Actions Linting Status](https://github.com/TRON-Bioinformatics/easyfuse/actions/workflows/linting.yml/badge.svg)](https://github.com/TRON-Bioinformatics/easyfuse/actions/workflows/linting.yml)(https://doi.org/10.1038/s41587-022-01247-9)
 
+[![GitHub Actions Linting Status](https://github.com/TRON-Bioinformatics/easyfuse/actions/workflows/linting.yml/badge.svg)](https://github.com/TRON-Bioinformatics/easyfuse/actions/workflows/linting.yml)
 [![Nextflow](https://img.shields.io/badge/version-%E2%89%A525.04.0-green?style=flat&logo=nextflow&logoColor=white&color=%230DC09D&link=https%3A%2F%2Fnextflow.io)](https://www.nextflow.io/)
 [![nf-core template version](https://img.shields.io/badge/nf--core_template-3.4.1-green?style=flat&logo=nfcore&logoColor=white&color=%2324B064&link=https%3A%2F%2Fnf-co.re)](https://github.com/nf-core/tools/releases/tag/3.4.1)
+
 [![run with conda](http://img.shields.io/badge/run%20with-conda-3EB049?labelColor=000000&logo=anaconda)](https://docs.conda.io/en/latest/)
-[![run with docker](https://img.shields.io/badge/run%20with-docker-0db7ed?labelColor=000000&logo=docker)](https://www.docker.com/)
 [![run with singularity](https://img.shields.io/badge/run%20with-singularity-1d355c.svg?labelColor=000000)](https://sylabs.io/docs/)
-[![nf-test](https://img.shields.io/badge/unit_tests-nf--test-337ab7.svg)](https://www.nf-test.com)
+[![run with conda](https://img.shields.io/badge/run%20with-conda-44A833.svg?labelColor=000000)](https://docs.conda.io/)
+[![run with docker](https://img.shields.io/badge/run%20with-docker-0db7ed?labelColor=000000&logo=docker)](https://www.docker.com/)
 [![License](https://img.shields.io/badge/license-GPLv3-green)](https://opensource.org/licenses/GPL-3.0)
 
 ## Introduction
@@ -20,7 +22,7 @@ The current version of EasyFuse uses three fusion gene detection tools, [STAR-Fu
 
 - Publication: [Weber D, Ibn-Salem J, Sorn P, et al. Nat Biotechnol. 2022](https://doi.org/10.1038/s41587-022-01247-9)
 
-### Dependencies
+## Dependencies
 
 - [NextFlow, 24.10.1](https://www.nextflow.io/)
 
@@ -29,7 +31,7 @@ Depending upon the profile the user selects the pipeline can be run with either 
 - [Singularity](https://docs.sylabs.io/guides/3.5/user-guide/introduction.html) or
 - [Docker](https://www.docker.com/)
 
-### Download reference data
+## Download reference data
 
 Before running EasyFuse the following reference annotation data needs to be downloaded (~104 GB).
 
@@ -41,7 +43,7 @@ wget ftp://easyfuse.tron-mainz.de/easyfuse_ref_v4.tar.gz
 tar xvfz easyfuse_ref_v4.tar.gz
 ```
 
-### Install the nextflow pipeline
+## Install the nextflow pipeline
 
 There are two alternatives, manually install the workflow or let Nexftlow handle this via the GitHub repository.
 
@@ -60,7 +62,7 @@ nextflow run tron-bioinformatics/easyfuse -r x.y.z --help
 
 where x.y.z corresponds to an EasyFuse release.
 
-### Run the pipeline
+## Run the pipeline
 
 Provide your downloaded reference data with the parameter `--reference`
 
@@ -111,10 +113,10 @@ The pipeline supports the following profiles:
 
 Note: If you want to use a custom profile (e.g. for running jobs on a cluster), please refer to https://www.nextflow.io/docs/latest/config.html for further information.
 
-> [!TIP]
+> [!TIP]<br>
 > Please provide pipeline parameters via the CLI or Nextflow `-params-file` option. Custom config files including those provided by the `-c` Nextflow option can be used to provide any configuration _**except for parameters**_; see [docs](https://nf-co.re/docs/usage/getting_started/configuration#custom-configuration-files).
 
-### Output format
+## Output format
 
 EasyFuse creates an output folder for each input sample containing the following files:
 
@@ -123,8 +125,19 @@ EasyFuse creates an output folder for each input sample containing the following
 
 Within the files, each line describes a candidate fusion transcript. The file `fusions.csv` contains all candidate fusions with annotated features, the prediction probability assigned by the EasyFuse model, and the corresponding prediction class (_positive_ or _negative_). The file `fusions.pass.csv` contains only _positive_ predicted gene fusions.
 
-### Using EasyFuse with Mouse (Mus Musculus) Data
-EasyFuse now supports fusion detection with **Mouse** data. The samplesheet specification for running Easyfuse in this case remains the same. The following command shows the correct parameter combination
+## Using EasyFuse with Mouse (Mus Musculus) Data
+EasyFuse now supports fusion detection with **Mouse** data.
+
+### Download reference data
+```bash
+# Download reference archive
+wget ftp://easyfuse.tron-mainz.de/easyfuse2_mouse_ref_v1.tar.gz
+
+# Extract reference archive
+tar xvfz easyfuse2_mouse_ref_v1.tar.gz
+```
+
+The samplesheet specification for running Easyfuse in this case remains the same. The following command shows the correct parameter combination
 
 ```bash
 nextflow run tron-bioinformatics/easyfuse -r x.y.z \
@@ -132,24 +145,15 @@ nextflow run tron-bioinformatics/easyfuse -r x.y.z \
   --input_files /path/to/input_table_file \
   --output /path/to/output_folder \
   --reference /path/to/reference/folder \
-  --species mouse \
   --fusion_tools arriba,starfusion
 ```
-> **[!NOTE]**<br><br>
-> For **Human (Homo-spaiens)** samples, `arriba`, `starfusion`, and `fusioncatcher` are supported.
->
-> For **Mouse (Mus Musculus)** samples, only `arriba` and `starfusion` are supported.
-<br><br>
+> [!NOTE]<br>
+> For **Mouse (Mus Musculus)** samples, only `arriba` and `starfusion` are supported and **NOT** `fusioncatcher`.
+<br>
 
-> **[!IMPORTANT]**<br><br>
-> The prediction model used also changes when Mouse data is used to run EasyFuse.
-<br><br>
-> Model : `Fusion_modeling_FFPE_train_v39.random_forest.model_full_data.EF_requant_type.rds`
-<br><br> 
+## Column description
 
-### Column description
-
-#### Overview of all features/columns annotated by EasyFuse:
+### Overview of all features/columns annotated by EasyFuse:
 
 - **BPID:** The BPID (breakpoint ID) is an identifier composed of `chr1:position1:strand1_chr2:position2:strand2` and is used as the main identifier of fusion breakpoints throughout the EasyFuse publication. In the BPID, `chr` and `position` are 1-based genomic coordinates (GRCh38 reference) of the two breakpoint positions.
 - **context_sequence_id:** The context sequence id is a unique identifier (hash value) calculated from `context_sequence`, the fusion transcript sequence context (400 upstream and 400 bp downstream from the breakpoint position).
