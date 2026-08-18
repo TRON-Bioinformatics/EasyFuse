@@ -7,7 +7,7 @@
                         {
                             "id": "test_star_arriba"
                         },
-                        "test_star_arriba.bam:md5,c56e3f6723e3bdafb0ecdb48d2787a13"
+                        "test_star_arriba.bam:md5,fffffb8b6178adfc2722470f2eb5f49d"
                     ]
                 ],
                 "1": [
@@ -18,7 +18,7 @@
                         {
                             "id": "test_star_arriba"
                         },
-                        "test_star_arriba.bam:md5,c56e3f6723e3bdafb0ecdb48d2787a13"
+                        "test_star_arriba.bam:md5,fffffb8b6178adfc2722470f2eb5f49d"
                     ]
                 ],
                 "versions": [
@@ -30,7 +30,7 @@
             "nf-test": "0.9.3",
             "nextflow": "25.10.0"
         },
-        "timestamp": "2026-06-15T22:52:07.656473364"
+        "timestamp": "2026-08-18T21:20:25.422861068"
     },
     "star arriba - homo_sapiens - paired_end - stub": {
         "content": [
