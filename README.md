@@ -102,7 +102,7 @@ nextflow run tron-bioinformatics/easyfuse -r x.y.z \
   -profile conda,slurm \
   --input_files /path/to/input_table_file \
   --output /path/to/output_folder \
-  --reference /path/to/reference/folder \
+  --reference /path/to/reference/folder
 ```
 
 The pipeline supports the following profiles:
