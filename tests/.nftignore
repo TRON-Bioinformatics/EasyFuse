@@ -1,2 +1,3 @@
 .DS_Store
 pipeline_info/*.{html,json,txt,yml}
+**/fusions.**
