@@ -14,8 +14,7 @@
 
 ## Introduction
 
-EasyFuse is a pipeline to detect fusion transcripts from paired-end RNA-seq data with high accuracy.
-The current version of EasyFuse uses three fusion gene detection tools, [STAR-Fusion](https://github.com/STAR-Fusion/STAR-Fusion/wiki), [Fusioncatcher](https://github.com/ndaniel/fusioncatcher) and [Arriba](https://arriba.readthedocs.io/en/latest/) along with a powerful read filtering strategy, stringent re-quantification of supporting reads and machine learning for highly accurate predictions.
+EasyFuse detects gene fusion transcripts from paired-end RNA-seq data with high accuracy. The NextFLow pipeline uses three fusion gene detection tools ([STAR-Fusion](https://github.com/STAR-Fusion/STAR-Fusion/wiki), [Fusioncatcher](https://github.com/ndaniel/fusioncatcher), and [Arriba](https://arriba.readthedocs.io/en/latest/)) along with a powerful read filtering strategy, stringent re-quantification of supporting reads, joint annotation, and machine-learning-based prioritization to improve fusion detection accuracy.
 
 <p align="center"><img src="assets/easyfuse_workflow.png" width="240px"></p>
 
@@ -28,7 +27,7 @@ The current version of EasyFuse uses three fusion gene detection tools, [STAR-Fu
 
 ## Download reference data
 
-Before running EasyFuse the following reference annotation data needs to be downloaded (~104 GB).
+Before running EasyFuse, some reference annotation data (~104 GB) needs to be downloaded.
 
 ```bash
 # Download reference archive
@@ -38,26 +37,27 @@ wget ftp://easyfuse.tron-mainz.de/easyfuse_ref_v4.tar.gz
 tar xvfz easyfuse_ref_v4.tar.gz
 ```
 
-## Install the nextflow pipeline
+## Install 
 
-There are two alternatives, manually install the workflow or let Nexftlow handle this via the GitHub repository.
-
-To install manually:
-
-```
-git clone https://github.com/TRON-Bioinformatics/EasyFuse.git
-cd EasyFuse
-```
-
-To install with Nextflow (only available from release 2.0.1 onwards):
+You can directly run EasyFuse from GitHub without installation as follows:
 
 ```bash
 nextflow run tron-bioinformatics/easyfuse -r x.y.z --help
 ```
+whereby `x.y.z` corresponds to an EasyFuse release version.
 
-where x.y.z corresponds to an EasyFuse release.
 
-## Run the pipeline
+
+Alternativelly, you can download the code manually:
+
+```bash
+git clone https://github.com/TRON-Bioinformatics/EasyFuse.git
+cd EasyFuse
+
+nextflow run main.nf --help
+```
+
+## Run EasyFuse
 
 Provide your downloaded reference data with the parameter `--reference`
 
@@ -73,16 +73,6 @@ sample_02	/path/to/sample_02_R1.fastq.gz	/path/to/sample_02_R2.fastq.gz
 Start the pipeline
 
 ```bash
-nextflow run main.nf \
-  -profile conda \
-  --input /path/to/input_table_file \
-  --output /path/to/output_folder \
-  --reference /path/to/reference/folder
-```
-
-Or as follows if you installed it via Nextflow (only available from release 2.0.1 onwards):
-
-```bash
 nextflow run tron-bioinformatics/easyfuse -r x.y.z \
   -profile conda \
   --input_files /path/to/input_table_file \
@@ -90,35 +80,20 @@ nextflow run tron-bioinformatics/easyfuse -r x.y.z \
   --reference /path/to/reference/folder
 ```
 
-If you want to run the pipeline on cluster
+If you want to run the pipeline on a SLURM cluster, you can add the `slurm` profile to the command line, e.g. `-profile conda,slurm`.
 
-```bash
-nextflow run tron-bioinformatics/easyfuse -r x.y.z \
-  -profile conda,slurm \
-  --input_files /path/to/input_table_file \
-  --output /path/to/output_folder \
-  --reference /path/to/reference/folder
-```
+EasyFuse supports the following profiles:
 
-The pipeline supports the following profiles:
-
-- Conda - nextflow builds a dedicated conda environment for each of the processes to run
-- Singularity - nextflow pulls dedicated singularity containers for the processes to run. If containers are available locally, set the `NXF_SINGULARITY_CACHEDIR=/path/to/local/images` environment variable for nextflow to find the images locally.
-- Slurm - the slurm profile would run the pipeline with the slurm executor, parallelizing the nextflow processes.
+- `conda` - Nextflow creates Conda environments for pipeline processes.
+- `apptainer` - Nextflow runs pipeline processes in Apptainer containers.
+- `singularity` - Nextflow runs pipeline processes in Singularity containers. If containers are available locally, set the `NXF_SINGULARITY_CACHEDIR=/path/to/local/images` environment variable for nextflow to find the images locally.
+- `docker` - Nextflow runs pipeline processes in Docker containers.
+- `slurm` - Nextflow uses the Slurm executor for pipeline processes. This profile can be combined with a runtime profile, for example `-profile apptainer,slurm`.
 
 Note: If you want to use a custom profile (e.g. for running jobs on a cluster), please refer to https://www.nextflow.io/docs/latest/config.html for further information.
 
 > [!TIP]<br>
-> Please provide pipeline parameters via the CLI or Nextflow `-params-file` option. Custom config files including those provided by the `-c` Nextflow option can be used to provide any configuration _**except for parameters**_; see [docs](https://nf-co.re/docs/usage/getting_started/configuration#custom-configuration-files).
-
-## Output format
-
-EasyFuse creates an output folder for each input sample containing the following files:
-
-- `fusions.csv`
-- `fusions.pass.csv`
-
-Within the files, each line describes a candidate fusion transcript. The file `fusions.csv` contains all candidate fusions with annotated features, the prediction probability assigned by the EasyFuse model, and the corresponding prediction class (_positive_ or _negative_). The file `fusions.pass.csv` contains only _positive_ predicted gene fusions.
+> Please provide pipeline parameters via the CLI or Nextflow `-params-file` option. Custom config files including those provided by the `-c` Nextflow option can be used to provide any configuration except for parameters; see [nf-core docs](https://nf-co.re/docs/usage/getting_started/configuration#custom-configuration-files).
 
 ## Using EasyFuse with Mouse (Mus Musculus) Data
 EasyFuse now supports fusion detection with **Mouse** data.
@@ -147,9 +122,18 @@ nextflow run tron-bioinformatics/easyfuse -r x.y.z \
 > For **Mouse (Mus Musculus)** samples, only `arriba` and `starfusion` are supported and **NOT** `fusioncatcher`.
 <br>
 
-## Column description
 
-### Overview of all features/columns annotated by EasyFuse:
+## Output format
+
+EasyFuse creates an output folder for each input sample containing the following files:
+
+- `fusions.csv`
+- `fusions.pass.csv`
+
+Within the files, each line describes a candidate fusion transcript. The file `fusions.csv` contains all candidate fusions with annotated features, the prediction probability assigned by the EasyFuse model, and the corresponding prediction class (_positive_ or _negative_). The file `fusions.pass.csv` contains only _positive_ predicted gene fusions.
+
+
+### Column description
 
 - **BPID:** The BPID (breakpoint ID) is an identifier composed of `chr1:position1:strand1_chr2:position2:strand2` and is used as the main identifier of fusion breakpoints throughout the EasyFuse publication. In the BPID, `chr` and `position` are 1-based genomic coordinates (GRCh38 reference) of the two breakpoint positions.
 - **context_sequence_id:** The context sequence id is a unique identifier (hash value) calculated from `context_sequence`, the fusion transcript sequence context (400 upstream and 400 bp downstream from the breakpoint position).
