@@ -31,7 +31,7 @@
                     {
                         "id": "test_star_align"
                     },
-                    "test_star_align.bam:md5,d0031b10fa9308226ff97ad58ebe9472"
+                    "test_star_align.bam:md5,7c386f110fe920db49c79519f893d8df"
                 ]
             ],
             [
@@ -39,7 +39,7 @@
                     {
                         "id": "test_star_align"
                     },
-                    "test_star_align.Chimeric.out.junction:md5,ae082034e6aa03bbef578cfeb981b147"
+                    "test_star_align.Chimeric.out.junction:md5,efbfbf12a8a236f9dbc759bc88a0f398"
                 ]
             ]
         ],
@@ -47,6 +47,6 @@
             "nf-test": "0.9.3",
             "nextflow": "25.10.0"
         },
-        "timestamp": "2026-06-16T10:47:25.053779647"
+        "timestamp": "2026-08-18T21:19:58.801738159"
     }
 }

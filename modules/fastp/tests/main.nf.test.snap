@@ -53,13 +53,13 @@
                     ]
                 ],
                 "1": [
-                    "test_fastp_fastp.json:md5,b10ff886d8856e89cd866c458080ca4a"
+                    "test_fastp_fastp.json:md5,8f4a3551115b87895d3da7f9764b6879"
                 ],
                 "2": [
                     "versions.yml:md5,48ffc994212fb1fc9f83a74fa69c9f02"
                 ],
                 "fastp_json": [
-                    "test_fastp_fastp.json:md5,b10ff886d8856e89cd866c458080ca4a"
+                    "test_fastp_fastp.json:md5,8f4a3551115b87895d3da7f9764b6879"
                 ],
                 "trimmed_fastqs": [
                     [
@@ -79,6 +79,6 @@
             "nf-test": "0.9.3",
             "nextflow": "25.10.0"
         },
-        "timestamp": "2026-06-15T22:30:01.739746317"
+        "timestamp": "2026-08-18T21:19:42.766427992"
     }
 }

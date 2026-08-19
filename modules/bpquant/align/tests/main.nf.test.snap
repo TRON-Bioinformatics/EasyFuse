@@ -23,7 +23,7 @@
                     {
                         "id": "test_bpquant_align"
                     },
-                    "test_bpquant_align.sam:md5,049abb66197c8c370797ba9c94f0da43"
+                    "test_bpquant_align.sam:md5,541fb476b5080669132ba6e8e81618c7"
                 ]
             ]
         ],
@@ -31,6 +31,6 @@
             "nf-test": "0.9.3",
             "nextflow": "25.10.0"
         },
-        "timestamp": "2026-06-15T22:23:25.005785681"
+        "timestamp": "2026-08-18T21:19:26.38273006"
     }
 }
