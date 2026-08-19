@@ -25,11 +25,7 @@ The current version of EasyFuse uses three fusion gene detection tools, [STAR-Fu
 ## Dependencies
 
 - [NextFlow, 24.10.1](https://www.nextflow.io/)
-
-Depending upon the profile the user selects the pipeline can be run with either of the following
-- [Conda](https://docs.anaconda.com/free/anaconda/install/index.html) or
-- [Singularity](https://docs.sylabs.io/guides/3.5/user-guide/introduction.html) or
-- [Docker](https://www.docker.com/)
+- One runtime environment: [Conda](https://docs.anaconda.com/free/anaconda/install/index.html), [Singularity](https://docs.sylabs.io/guides/3.5/user-guide/introduction.html), or [Docker](https://www.docker.com/)
 
 ## Download reference data
 
