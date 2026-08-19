@@ -74,13 +74,13 @@ Start the pipeline
 
 ```bash
 nextflow run tron-bioinformatics/easyfuse -r x.y.z \
-  -profile conda \
+  -profile singularity \
   --input_files /path/to/input_table_file \
   --output /path/to/output_folder \
   --reference /path/to/reference/folder
 ```
 
-If you want to run the pipeline on a SLURM cluster, you can add the `slurm` profile to the command line, e.g. `-profile conda,slurm`.
+If you want to run the pipeline on a SLURM cluster, you can add the `slurm` profile to the command line, e.g. `-profile singularity,slurm`.
 
 EasyFuse supports the following profiles:
 
@@ -113,7 +113,7 @@ The samplesheet specification for running Easyfuse in this case remains the same
 
 ```bash
 nextflow run tron-bioinformatics/easyfuse -r x.y.z \
-  -profile conda,slurm \
+  -profile singularity,slurm \
   --input_files /path/to/input_table_file \
   --output /path/to/output_folder \
   --reference /path/to/reference/folder \
