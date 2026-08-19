@@ -96,9 +96,11 @@ Note: If you want to use a custom profile (e.g. for running jobs on a cluster), 
 > Please provide pipeline parameters via the CLI or Nextflow `-params-file` option. Custom config files including those provided by the `-c` Nextflow option can be used to provide any configuration except for parameters; see [nf-core docs](https://nf-co.re/docs/usage/getting_started/configuration#custom-configuration-files).
 
 ## Using EasyFuse with Mouse (Mus Musculus) Data
-EasyFuse now supports fusion detection with **Mouse** data.
 
-### Download reference data
+Currently, EasyFuse supports gene fusion detection with human and mouse data. For human use the instructions above, for mouse proceed as follows. 
+
+### Download mouse reference data
+
 ```bash
 # Download reference archive
 wget ftp://easyfuse.tron-mainz.de/easyfuse2_mouse_ref_v1.tar.gz
@@ -107,7 +109,7 @@ wget ftp://easyfuse.tron-mainz.de/easyfuse2_mouse_ref_v1.tar.gz
 tar xvfz easyfuse2_mouse_ref_v1.tar.gz
 ```
 
-The samplesheet specification for running Easyfuse in this case remains the same. The following command shows the correct parameter combination
+The samplesheet specification for running Easyfuse in this case remains the same. The following command shows the correct parameter combination of reference, tools, and models required for mouse:
 
 ```bash
 nextflow run tron-bioinformatics/easyfuse -r x.y.z \
@@ -119,7 +121,7 @@ nextflow run tron-bioinformatics/easyfuse -r x.y.z \
    --model_pred EF_requant_type
 ```
 > [!NOTE]<br>
-> For **Mouse (Mus Musculus)** samples, only `arriba` and `starfusion` are supported and **NOT** `fusioncatcher`.
+> For Mouse (Mus Musculus) data, only `arriba` and `starfusion` are supported but not `fusioncatcher`. This restricts also the use of available models.
 <br>
 
 
