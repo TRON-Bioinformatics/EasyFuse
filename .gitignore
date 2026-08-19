@@ -31,3 +31,4 @@ results/
 .nf-test.log
 .nf-test-*
 data/
+.posit/assistant/settings.json
